@@ -61,6 +61,7 @@ class Fragment:
         self.type = type
         self.name = name
         self.data = data
+        self.pos = 0
     
     @classmethod
     def decode(cls, ID, type, name, data):
@@ -73,18 +74,31 @@ class Fragment:
         return classObj(ID, type, name, data)
     
     def unpack(self):
-        if not hasattr(self.__class__, "HeaderSize") or not hasattr(self.__class__, "HeaderValues"):
+        if not hasattr(self.__class__, "HeaderValues"):
             return
         types = "".join(type for (name, type) in self.__class__.HeaderValues)
-        params = struct.unpack(types, self.data[0:self.__class__.HeaderSize])
+        headerSize = struct.calcsize(types)
+        params = struct.unpack(types, self.data[0:headerSize])
+        self.pos += headerSize
         for (name, type), value in zip(self.HeaderValues, params):
             setattr(self, name, value)
+    
+    def unpackArray(self, pattern, n, fun=None, *args):
+        size = struct.calcsize(pattern)
+        array = []
+        for i in range(0, n * size, size):
+            params = struct.unpack(pattern, self.data[self.pos + i : self.pos + i + size])
+            if fun:
+                array.append(fun(params, *args))
+            else:
+                array.append(params)
+        self.pos += n * size
+        return array
     
     def __repr__(self):
         return "Fragment(%d, 0x%02x, %s)" % (self.ID, self.type, repr(self.name))
 
 class Fragment36(Fragment):
-    HeaderSize = 92
     HeaderValues = [
         ("Flags", "I"), ("Fragment1", "I"), ("Fragment2", "I"), ("Fragment3", "I"), ("Fragment4", "I"),
         ("CenterX", "f"), ("CenterY", "f"), ("CenterZ", "f"), ("Param2_0", "I"), ("Param2_1", "I"), ("Param2_2", "I"),
@@ -94,32 +108,15 @@ class Fragment36(Fragment):
     ]
     def unpack(self):
         super(Fragment36, self).unpack()
-        pos = self.HeaderSize
-        end = pos + self.VertexCount * 6
         scale = 1.0 / float(1 << self.Scale)
-        self.vertices = self.unpackArray(self.data[pos:end], "hhh", self.VertexCount, 6, self.unpackVertex, scale)
-        pos = end + 1
-        end = pos + self.TexCoordsCount * 4
-        self.texCoords = self.unpackArray(self.data[pos:end], "hh", self.TexCoordsCount, 4)
-        pos = end + 1
-        end = pos + self.NormalCount * 3
-        self.normals = self.unpackArray(self.data[pos:end], "bbb", self.NormalCount, 3, self.unpackNormal)
-        pos = end + 1
-        end = pos + self.ColorCount * 4
-        self.colors = self.unpackArray(self.data[pos:end], "BBBB", self.ColorCount, 4)
-        pos = end + 1
-        end = pos + self.PolygonCount * 8
-        self.polygons = self.unpackArray(self.data[pos:end], "HHHH", self.PolygonCount, 8)
-    
-    def unpackArray(self, data, pattern, n, size, fun=None, *args):
-        array = []
-        for i in range(0, n * size, size):
-            params = struct.unpack(pattern, data[i:i+size])
-            if fun:
-                array.append(fun(params, *args))
-            else:
-                array.append(params)
-        return array
+        self.vertices = self.unpackArray("hhh", self.VertexCount, self.unpackVertex, scale)
+        self.texCoords = self.unpackArray("hh", self.TexCoordsCount)
+        self.normals = self.unpackArray("bbb", self.NormalCount, self.unpackNormal)
+        self.colors = self.unpackArray("BBBB", self.ColorCount)
+        self.polygons = self.unpackArray("HHHH", self.PolygonCount)
+        self.vertexPieces = self.unpackArray("HH", self.VertexPieceCount)
+        self.polygonsByTex = self.unpackArray("HH", self.PolygonTexCount)
+        self.verticesByTex = self.unpackArray("HH", self.VertexTexCount)
     
     def unpackVertex(self, params, scale):
         return ((params[0] * scale) + self.CenterX,
