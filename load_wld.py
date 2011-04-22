@@ -1,8 +1,11 @@
 import sys
 import struct
 
+Key = [0x95, 0x3A, 0xC5, 0x2A, 0x95, 0x7A, 0x95, 0x6A]
+def decodeString(stringData):
+    return bytes(b ^ Key[i % len(Key)] for i, b in enumerate(stringData))
+
 class WLDData:
-    Key = [0x95, 0x3A, 0xC5, 0x2A, 0x95, 0x7A, 0x95, 0x6A]
     def __init__(self, magic, version, fragmentCount, header3, header4, stringHashSize, header6):
         self.magic = magic
         self.version = version
@@ -13,7 +16,7 @@ class WLDData:
         self.header6 = header6
         self.strings = None
         self.fragments = {}
-    
+
     @classmethod 
     def fromFile(cls, path):
         with open(path, "rb") as f:
@@ -39,12 +42,11 @@ class WLDData:
     def addFragment(self, fragID, type, name, data):
         if not fragID in self.fragments:
             frag = Fragment.decode(fragID, type, name, data)
-            frag.unpack()
+            frag.unpack(self)
             self.fragments[fragID] = frag
     
     def loadStrings(self, stringData):
-        key, keyLen = WLDData.Key, len(WLDData.Key)
-        self.strings = bytes(b ^ key[i % keyLen] for i, b in enumerate(stringData))
+        self.strings = decodeString(stringData)
     
     def lookupString(self, start):
         if self.strings is None:
@@ -54,6 +56,16 @@ class WLDData:
             if end >= 0:
                 return self.strings[start:end].decode("utf-8")
         return None
+    
+    def lookupReference(self, ref):
+        if ref < 0:
+            # reference by name
+            return self.lookupString(-ref - 1)
+        elif (ref > 0) and (ref <= len(self.fragments)):
+            # reference by index
+            return self.fragments[ref - 1]
+        else:
+            return None
     
     def fragmentsByType(self, type):
         return filter(lambda f: f.type == type, self.fragments.values())
@@ -76,8 +88,15 @@ class Fragment:
             classObj = cls
         return classObj(ID, type, name, data)
     
-    def unpack(self):
+    def unpack(self, wld):
         pass
+    
+    def unpackReference(self, wld, name="Reference"):
+        pattern = "i"
+        size = struct.calcsize(pattern)
+        value = struct.unpack(pattern, self.data[self.pos: self.pos + size])[0]
+        setattr(self, name, wld.lookupReference(value))
+        self.pos += size
     
     def unpackFields(self, fields):
         patterns = "".join(pattern for (name, pattern) in fields)
@@ -92,7 +111,6 @@ class Fragment:
         value = struct.unpack(pattern, self.data[self.pos: self.pos + size])[0]
         setattr(self, name, value)
         self.pos += size
-        return value
     
     def unpackArray(self, name, pattern, n, fun=None, *args):
         size = struct.calcsize(pattern)
@@ -105,44 +123,40 @@ class Fragment:
                 array.append(params)
         setattr(self, name, array)
         self.pos += n * size
-        return array
     
     def __repr__(self):
         return "Fragment(%d, 0x%02x, %s)" % (self.ID, self.type, repr(self.name))
 
-class Fragment36(Fragment):
-    """ This type of fragment describes a mesh. """
-    HeaderValues = [
-        ("Flags", "I"), ("Fragment1", "I"), ("Fragment2", "I"), ("Fragment3", "I"), ("Fragment4", "I"),
-        ("CenterX", "f"), ("CenterY", "f"), ("CenterZ", "f"), ("Param2_0", "I"), ("Param2_1", "I"), ("Param2_2", "I"),
-        ("MaxDist", "f"), ("MinX", "f"), ("MinY", "f"), ("MinZ", "f"), ("MaxX", "f"), ("MaxY", "f"), ("MaxZ", "f"),
-        ("VertexCount", "H"), ("TexCoordsCount", "H"), ("NormalCount", "H"), ("ColorCount", "H"), ("PolygonCount", "H"),
-        ("VertexPieceCount", "H"), ("PolygonTexCount", "H"), ("VertexTexCount", "H"), ("Size9", "H"), ("Scale", "H")
-    ]
-    
-    def unpack(self):
-        self.unpackFields(Fragment36.HeaderValues)
-        scale = 1.0 / float(1 << self.Scale)
-        self.unpackArray("vertices", "hhh", self.VertexCount, self.unpackVertex, scale)
-        self.unpackArray("texCoords", "hh", self.TexCoordsCount)
-        self.unpackArray("normals", "bbb", self.NormalCount, self.unpackNormal)
-        self.unpackArray("colors", "BBBB", self.ColorCount)
-        self.unpackArray("polygons", "HHHH", self.PolygonCount)
-        self.unpackArray("vertexPieces", "HH", self.VertexPieceCount)
-        self.unpackArray("polygonsByTex", "HH", self.PolygonTexCount)
-        self.unpackArray("verticesByTex", "HH", self.VertexTexCount)
-    
-    def unpackVertex(self, params, scale):
-        return ((params[0] * scale) + self.CenterX,
-                (params[1] * scale) + self.CenterY,
-                (params[2] * scale) + self.CenterZ)
-    
-    def unpackNormal(self, params):
-        return tuple([float(p) / 127.0 for p in params])
+class Fragment03(Fragment):
+    """ This type of fragment contains the name of a texture file. """
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        self.unpackField("_NameLength", "H")
+        nameData = self.data[self.pos: self.pos + self._NameLength]
+        self.FileName = decodeString(nameData)[0:-1].decode("utf-8")
+        self.pos += self._NameLength
+
+class Fragment04(Fragment):
+    """ This type of fragment describes a list of texture file names. """
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        self.unpackField("Size1", "I")
+        if self.Flags & 0b100:
+            self.unpackField("Param1", "I")
+        if self.Flags & 0b1000:
+            self.unpackField("Param2", "I")
+        self.unpackArray("Files", "i", self.Size1, lambda params: params[0])
+        self.Files = [wld.lookupReference(f) for f in self.Files]
+
+class Fragment05(Fragment):
+    """ This type of fragment refers to a 04 fragment. """
+    def unpack(self, wld):
+        self.unpackReference(wld)
+        self.unpackField("Flags", "I")
 
 class Fragment21(Fragment):
     """ This type of fragment describes a BSP tree for a zone divided into regions. """
-    def unpack(self):
+    def unpack(self, wld):
         self.unpackField("Size1", "I")
         self.unpackArray("nodes", "ffffiII", self.Size1)
 
@@ -153,7 +167,7 @@ class Fragment22(Fragment):
         ("Size3", "I"), ("Size4", "I"), ("Param2", "I"), ("Size5", "I"), ("Size6", "I")
     ]
     
-    def unpack(self):
+    def unpack(self, wld):
         self.unpackFields(Fragment22.HeaderValues)
         self.unpackArray("Data1", "B" * 12, self.Size1)
         self.unpackArray("Data2", "B" * 8, self.Size2)
@@ -218,12 +232,66 @@ class Fragment22(Fragment):
 
 class Fragment29(Fragment):
     """ This type of fragment describes the properties of a list of regions. """
-    def unpack(self):
+    def unpack(self, wld):
         self.unpackField("Flags", "I")
         self.unpackField("Size1", "I")
         self.unpackArray("regions", "I", self.Size1)
         self.unpackField("Size2", "I")
         self.unpackArray("Data2", "B", self.Size2)
+
+class Fragment30(Fragment):
+    """ This type of fragment describes a texture, and refers to a 05 fragment. """
+    def unpack(self, wld):
+        #self.unpackReference(wld)
+        self.unpackField("Flags", "I")
+        self.unpackField("Param1", "I")
+        self.unpackField("Param2", "I")
+        self.unpackField("Param3_0", "f")
+        self.unpackField("Param3_1", "f")
+        #if self.Flags & 0b1:
+        self.unpackReference(wld)
+        self.unpackField("Param4", "f")
+            
+class Fragment31(Fragment):
+    """ This type of fragment describes a list of textures. """
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        self.unpackField("Size1", "I")
+        self.unpackArray("Textures", "i", self.Size1, lambda params: params[0])
+        self.Textures = [wld.lookupReference(f) for f in self.Textures]
+
+class Fragment36(Fragment):
+    """ This type of fragment describes a mesh. """
+    HeaderValues = [
+        #("Flags", "I"), ("Fragment1", "I"), ("Fragment2", "I"), ("Fragment3", "I"), ("Fragment4", "I"),
+        ("CenterX", "f"), ("CenterY", "f"), ("CenterZ", "f"), ("Param2_0", "I"), ("Param2_1", "I"), ("Param2_2", "I"),
+        ("MaxDist", "f"), ("MinX", "f"), ("MinY", "f"), ("MinZ", "f"), ("MaxX", "f"), ("MaxY", "f"), ("MaxZ", "f"),
+        ("VertexCount", "H"), ("TexCoordsCount", "H"), ("NormalCount", "H"), ("ColorCount", "H"), ("PolygonCount", "H"),
+        ("VertexPieceCount", "H"), ("PolygonTexCount", "H"), ("VertexTexCount", "H"), ("Size9", "H"), ("Scale", "H")
+    ]
+    
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        for i in range(1, 5):
+            self.unpackReference(wld, "Fragment%d" % i)
+        self.unpackFields(Fragment36.HeaderValues)
+        scale = 1.0 / float(1 << self.Scale)
+        self.unpackArray("vertices", "hhh", self.VertexCount, self.unpackVertex, scale)
+        self.unpackArray("texCoords", "hh", self.TexCoordsCount)
+        self.unpackArray("normals", "bbb", self.NormalCount, self.unpackNormal)
+        self.unpackArray("colors", "BBBB", self.ColorCount)
+        self.unpackArray("polygons", "HHHH", self.PolygonCount)
+        self.unpackArray("vertexPieces", "HH", self.VertexPieceCount)
+        self.unpackArray("polygonsByTex", "HH", self.PolygonTexCount)
+        self.unpackArray("verticesByTex", "HH", self.VertexTexCount)
+    
+    def unpackVertex(self, params, scale):
+        return ((params[0] * scale) + self.CenterX,
+                (params[1] * scale) + self.CenterY,
+                (params[2] * scale) + self.CenterZ)
+    
+    def unpackNormal(self, params):
+        return tuple([float(p) / 127.0 for p in params])
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
