@@ -86,6 +86,7 @@ class Fragment:
             classObj = getattr(module, className)
         else:
             classObj = cls
+            print("Class '%s' not found" % className)
         return classObj(ID, type, name, data)
     
     def unpack(self, wld):
@@ -285,9 +286,10 @@ class Fragment36(Fragment):
         self.unpackArray("verticesByTex", "HH", self.VertexTexCount)
     
     def unpackVertex(self, params, scale):
-        return ((params[0] * scale) + self.CenterX,
-                (params[1] * scale) + self.CenterY,
-                (params[2] * scale) + self.CenterZ)
+        #return ((params[0] * scale) + self.CenterX,
+        #        (params[1] * scale) + self.CenterY,
+        #        (params[2] * scale) + self.CenterZ)
+        return (params[0] * scale, params[1] * scale, params[2] * scale)
     
     def unpackNormal(self, params):
         return tuple([float(p) / 127.0 for p in params])
