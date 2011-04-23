@@ -1,4 +1,5 @@
 import sys
+import os
 import struct
 
 Key = [0x95, 0x3A, 0xC5, 0x2A, 0x95, 0x7A, 0x95, 0x6A]
@@ -16,6 +17,7 @@ class WLDData:
         self.header6 = header6
         self.strings = None
         self.fragments = {}
+        self.path = None
 
     @classmethod 
     def fromFile(cls, path):
@@ -23,6 +25,7 @@ class WLDData:
             headerSize = 4 * 7
             header = f.read(headerSize)
             wld = cls(*struct.unpack("IIIIIII", header))
+            wld.path = os.path.dirname(path)
             stringData = f.read(wld.stringHashSize)
             wld.loadStrings(stringData)
             for i in range(0, wld.fragmentCount + 1):
@@ -60,7 +63,7 @@ class WLDData:
     def lookupReference(self, ref):
         if ref < 0:
             # reference by name
-            return self.lookupString(-ref - 1)
+            return self.lookupString(-ref)
         elif (ref > 0) and (ref <= len(self.fragments)):
             # reference by index
             return self.fragments[ref - 1]
@@ -155,6 +158,51 @@ class Fragment05(Fragment):
         self.unpackReference(wld)
         self.unpackField("Flags", "I")
 
+class Fragment14(Fragment):
+    """ This type of fragment describes a world object. """
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        self.unpackReference(wld, "Fragment1")
+        self.unpackField("Size1", "I")
+        self.unpackField("Size2", "I")
+        self.unpackReference(wld, "Fragment2")
+        #self.unpackField("Params1", "I")
+        #self.unpackArray("Params2", "I", 7)
+        self.Entry1 = []
+        for i in range(0, self.Size1):
+            self.unpackField("_Entry1Size", "I")
+            self.unpackArray("_Entry1", "If", self._Entry1Size)
+            self.Entry1.append(self._Entry1)
+        self.unpackArray("Fragment3", "I", self.Size2, lambda p: p[0])
+        self.Fragment3 = [wld.lookupReference(f) for f in self.Fragment3]
+        self.unpackField("Size3", "I")
+        #name3Data = self.data[self.pos: self.pos + self.Size3]
+        #self.name3 = name3Data.decode("utf-8")
+        #self.pos += self.Size3
+
+class Fragment15(Fragment):
+    """ This type of fragment refers to a world object. """
+    def unpack(self, wld):
+        self.unpackReference(wld)
+        self.unpackField("Flags", "I")
+        self.unpackReference(wld, "Fragment1")
+        self.unpackField("X", "f")
+        self.unpackField("Y", "f")
+        self.unpackField("Z", "f")
+        self.unpackField("RotateX", "f")
+        self.unpackField("RotateY", "f")
+        self.unpackField("RotateZ", "f")
+        #self.unpackArray("Param1", "f", 3)
+        self.unpackField("Param1", "f")
+        self.unpackField("ScaleY", "f")
+        self.unpackField("ScaleX", "f")
+        self.unpackReference(wld, "Fragment2")
+
+class Fragment16(Fragment):
+    """ The purpose of this zone-related fragment is unknown. """
+    def unpack(self, wld):
+        self.unpackField("Param1", "f")
+
 class Fragment21(Fragment):
     """ This type of fragment describes a BSP tree for a zone divided into regions. """
     def unpack(self, wld):
@@ -240,6 +288,12 @@ class Fragment29(Fragment):
         self.unpackField("Size2", "I")
         self.unpackArray("Data2", "B", self.Size2)
 
+class Fragment2d(Fragment):
+    """ This type of fragment referes to a mesh. """
+    def unpack(self, wld):
+        self.unpackReference(wld, "Mesh")
+        self.unpackField("Param1", "I")
+
 class Fragment30(Fragment):
     """ This type of fragment describes a texture, and refers to a 05 fragment. """
     def unpack(self, wld):
@@ -252,7 +306,7 @@ class Fragment30(Fragment):
         #if self.Flags & 0b1:
         self.unpackReference(wld)
         self.unpackField("Param4", "f")
-            
+
 class Fragment31(Fragment):
     """ This type of fragment describes a list of textures. """
     def unpack(self, wld):
@@ -260,6 +314,22 @@ class Fragment31(Fragment):
         self.unpackField("Size1", "I")
         self.unpackArray("Textures", "i", self.Size1, lambda params: params[0])
         self.Textures = [wld.lookupReference(f) for f in self.Textures]
+
+class Fragment32(Fragment):
+    """ This type of fragment describes an object color table. """
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        self.unpackField("Size1", "I")
+        self.unpackField("Data2", "I")
+        self.unpackField("Data3", "I")
+        self.unpackField("Data4", "I")
+        self.unpackArray("Colors", "I", self.Size1, lambda params: params[0])
+    
+class Fragment33(Fragment):
+    """ This type of fragment refers to an object color table. """
+    def unpack(self, wld):
+        self.unpackReference(wld)
+        self.unpackField("Flags", "I")
 
 class Fragment36(Fragment):
     """ This type of fragment describes a mesh. """
@@ -286,17 +356,7 @@ class Fragment36(Fragment):
         self.unpackArray("verticesByTex", "HH", self.VertexTexCount)
     
     def unpackVertex(self, params, scale):
-        #return ((params[0] * scale) + self.CenterX,
-        #        (params[1] * scale) + self.CenterY,
-        #        (params[2] * scale) + self.CenterZ)
         return (params[0] * scale, params[1] * scale, params[2] * scale)
     
     def unpackNormal(self, params):
         return tuple([float(p) / 127.0 for p in params])
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("usage: %s <WLD file>" % sys.argv[0])
-    else:
-        wld = WLDData.fromFile(sys.argv[1])
-        print("%d fragments, %d loaded" % (wld.fragmentCount, len(wld.fragments)))

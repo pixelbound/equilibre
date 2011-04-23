@@ -1,27 +1,58 @@
 import os
 import struct
-import load_wld
+from load_wld import WLDData
 import bpy
 
-DefaultPath = "Data/gfaydark.d"
+def importZone(path, zoneName, importTextures):
+    importZoneGeometry(path, zoneName, importTextures)
+    importZoneObjects(path, zoneName, importTextures)
 
-def importWldMeshes(wld, fragments):
-    objects = []
-    try:
-        for f in fragments:
-            objects.append(importWldMesh(wld, f))
-    except Exception:
-        for obj in objects:
-            bpy.context.scene.objects.link(obj)
-        raise
+def importZoneGeometry(path, zoneName, importTextures):
+    wldZonePath = os.path.join(path, "%s.d/%s.wld" % (zoneName, zoneName))
+    wldZone = WLDData.fromFile(wldZonePath)
+    zoneMeshFrags = list(wldZone.fragmentsByType(0x36))
+    zoneMeshes = importWldMeshes(wldZone, zoneMeshFrags, importTextures)
+    for frag, mesh in zip(zoneMeshFrags, zoneMeshes):
+        obj = bpy.data.objects.new(frag.name, mesh)
+        obj.location = (frag.CenterX, frag.CenterY, frag.CenterZ)
+        bpy.context.scene.objects.link(obj)
 
-def importWldMesh(wld, frag):
+def importZoneObjects(path, zoneName, importTextures):
+    wldObjDefsPath = os.path.join(path, "%s.d/objects.wld" % zoneName)
+    wldObjMeshesPath = os.path.join(path, "%s_obj.d/%s_obj.wld" % (zoneName, zoneName))
+    wldObjDefs = WLDData.fromFile(wldObjDefsPath)
+    wldObjMeshes = WLDData.fromFile(wldObjMeshesPath)
+    # load meshes in blender
+    objectMeshes = {}
+    for meshFrag in wldObjMeshes.fragmentsByType(0x36):
+        objectMeshes[meshFrag.ID] = importWldMesh(wldObjMeshes, meshFrag, importTextures)
+
+    # place objects that use the meshes
+    actorMap = {f.name: f for f in wldObjMeshes.fragmentsByType(0x14)}
+    for objectDef in wldObjDefs.fragmentsByType(0x15):
+        actor = actorMap.get(objectDef.Reference)
+        if actor:
+            for meshRef in actor.Fragment3:
+                mesh = objectMeshes.get(meshRef.Mesh.ID)
+                if mesh:
+                    obj = bpy.data.objects.new(actor.name, mesh)
+                    obj.location = (objectDef.X, objectDef.Y, objectDef.Z)
+                    #obj.rotation_euler = (objectDef.RotateX, objectDef.RotateY, objectDef.RotateZ)
+                    obj.scale = (objectDef.ScaleX, objectDef.ScaleY, 1)
+                    bpy.context.scene.objects.link(obj)
+        else:
+            print("Actor '%s' not found" % objectDef.name)
+
+def importWldMeshes(wld, fragments, importTextures=True):
+    return [importWldMesh(wld, f, importTextures) for f in fragments]
+
+def importWldMesh(wld, frag, importTextures=True):
     if frag.type != 0x36:
         return
     polys = [p[1:] for p in frag.polygons]
     mesh = bpy.data.meshes.new(frag.name)
     mesh.from_pydata(frag.vertices, [], polys)
-    if False and frag.Fragment1 is not None:
+    if importTextures and frag.Fragment1 is not None:
         # create materials
         materials, images = loadTextureMaterials(wld, frag.Fragment1)
         for mat in materials:
@@ -45,10 +76,7 @@ def importWldMesh(wld, frag):
     # update mesh to allow proper display
     mesh.validate()
     mesh.update()
-    object = bpy.data.objects.new(frag.name, mesh)
-    object.location = (frag.CenterX, frag.CenterY, frag.CenterZ)
-    bpy.context.scene.objects.link(object)
-    return object
+    return mesh
 
 def normalizeTexCoords(tc):
     return tc[0] / 256.0, tc[1] / 256.0
@@ -77,7 +105,7 @@ def loadTextureMaterial(wld, texFrag):
     if len(imgFrag.Files) == 0:
         return None, None
     fileName = imgFrag.Files[0].FileName.lower()
-    texture.image = loadImage(fileName, os.path.join(DefaultPath, fileName))
+    texture.image = loadImage(fileName, os.path.join(wld.path, fileName))
     matTex = material.texture_slots.add()
     matTex.texture = texture
     matTex.texture_coords = 'UV'
