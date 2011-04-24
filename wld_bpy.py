@@ -1,6 +1,6 @@
 import os
 import struct
-from load_wld import WLDData
+from wld import WLDData
 import bpy
 
 def importZone(path, zoneName, importTextures):

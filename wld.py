@@ -6,14 +6,25 @@ Key = [0x95, 0x3A, 0xC5, 0x2A, 0x95, 0x7A, 0x95, 0x6A]
 def decodeString(stringData):
     return bytes(b ^ Key[i % len(Key)] for i, b in enumerate(stringData))
 
+def readStruct(stream, pattern, cls=None):
+    size = struct.calcsize(pattern)
+    data = stream.read(size)
+    if len(data) < size:
+        raise EOFError("Tried to read %d bytes but only read %d" % (size, len(data)))
+    args = struct.unpack(pattern, data)
+    if cls is None:
+        return args
+    else:
+        return cls(*args)
+
 class WLDData:
-    def __init__(self, magic, version, fragmentCount, header3, header4, stringHashSize, header6):
+    def __init__(self, magic, version, fragmentCount, header3, header4, stringTableSize, header6):
         self.magic = magic
         self.version = version
         self.fragmentCount = fragmentCount
         self.header3 = header3
         self.header4 = header4
-        self.stringHashSize = stringHashSize
+        self.stringTableSize = stringTableSize
         self.header6 = header6
         self.strings = None
         self.fragments = {}
@@ -22,24 +33,28 @@ class WLDData:
     @classmethod 
     def fromFile(cls, path):
         with open(path, "rb") as f:
-            headerSize = 4 * 7
-            header = f.read(headerSize)
-            wld = cls(*struct.unpack("IIIIIII", header))
-            wld.path = os.path.dirname(path)
-            stringData = f.read(wld.stringHashSize)
-            wld.loadStrings(stringData)
-            for i in range(0, wld.fragmentCount + 1):
-                fragmentHeaderSize = 4 * 3
-                fragmentHeader = f.read(fragmentHeaderSize)
-                if len(fragmentHeader) < fragmentHeaderSize:
-                    break
-                fragmentSize, fragmentID, fragmentNamePtr = struct.unpack("IIi", fragmentHeader)
-                if fragmentNamePtr < 0:
-                    fragmentName = wld.lookupString(-fragmentNamePtr)
-                else:
-                    fragmentName = None
-                fragmentData = f.read(fragmentSize - 4)
-                wld.addFragment(i, fragmentID, fragmentName, fragmentData)
+            return cls.fromStream(f)
+    
+    @classmethod 
+    def fromStream(cls, stream):
+        wld = readStruct(stream, "IIIIIII", cls)
+        stringData = stream.read(wld.stringTableSize)
+        if len(stringData) < wld.stringTableSize:
+            raise EOFError("Incomplete string table")
+        wld.loadStrings(stringData)
+        for i in range(0, wld.fragmentCount + 1):
+            try:
+                fragmentSize, fragmentID, fragmentNamePtr = readStruct(stream, "IIi")
+            except EOFError:
+                break
+            if fragmentNamePtr < 0:
+                fragmentName = wld.lookupString(-fragmentNamePtr)
+            else:
+                fragmentName = None
+            fragmentData = stream.read(fragmentSize - 4)
+            if (len(fragmentData) + 4) < fragmentSize:
+                raise EOFError("Incomplete fragment")
+            wld.addFragment(i, fragmentID, fragmentName, fragmentData)
         return wld
     
     def addFragment(self, fragID, type, name, data):
