@@ -1,5 +1,6 @@
 import sys
 import os
+import io
 import struct
 
 Key = [0x95, 0x3A, 0xC5, 0x2A, 0x95, 0x7A, 0x95, 0x6A]
@@ -34,6 +35,11 @@ class WLDData:
     def fromFile(cls, path):
         with open(path, "rb") as f:
             return cls.fromStream(f)
+    
+    @classmethod 
+    def fromArchive(cls, archive, name):
+        with archive.openFile(name) as stream:
+            return cls.fromStream(stream)
     
     @classmethod 
     def fromStream(cls, stream):
@@ -242,7 +248,8 @@ class Fragment22(Fragment):
         for i in range(0, self.Size6):
             self.unpackField("_NearbyRegionSize", "H")
             regionData = self.data[self.pos: self.pos + self._NearbyRegionSize]
-            self.NearbyRegions.append(self.decodeRegionList(regionData))
+            # crashes for Kedge keep
+            #self.NearbyRegions.append(self.decodeRegionList(regionData))
             self.pos += self._NearbyRegionSize
     
     def decodeRegionList(self, data):
