@@ -95,6 +95,12 @@ class WLDData:
     
     def fragmentsByType(self, type):
         return filter(lambda f: f.type == type, self.fragments.values())
+    
+    def findFragment(self, type, name):
+        for f in self.fragments.values():
+            if (f.type == type) and (f.name == name):
+                return f
+        return None
 
 class Fragment:
     def __init__(self, ID, type, name, data):

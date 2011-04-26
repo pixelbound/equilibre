@@ -6,6 +6,9 @@ import bpy
 from mathutils import Vector, Matrix, Quaternion
 import math
 
+#TODO: actor class
+#           references meshes, skeletons (all animations)
+
 def importZone(path, zoneName, importTextures):
     importZoneGeometry(path, zoneName, importTextures)
     importZoneObjects(path, zoneName, importTextures)
@@ -50,18 +53,40 @@ def importZoneObjects(path, zoneName, importTextures):
         else:
             print("Actor '%s' not found" % objectDef.name)
 
-def importZoneCharacter(path, zoneName, spriteDef, importTextures):
+def importZoneCharacter(path, zoneName, actorName, importTextures):
     chrPath = os.path.join(path, "%s_chr.s3d" % zoneName)
     with S3DArchive(chrPath) as chrArchive:
         wldChrMeshes = WLDData.fromArchive(chrArchive, "%s_chr.wld" % zoneName)
+        actorFrag = wldChrMeshes.findFragment(0x14, actorName)
+        if not actorFrag:
+            raise Exception("Actor not found '%s' in archive" % actorName)
         meshes = []
-        meshFrags = filter(lambda f: f.type == 0x36 and (f.name.find(spriteDef) >= 0), 
-            wldChrMeshes.fragments.values())
-        for meshFrag in meshFrags:
-            meshes.append((meshFrag, importWldMesh(chrArchive, meshFrag, importTextures)))
+        skeletons = []
+        for modelFrag in actorFrag.models:
+            if (modelFrag.type == 0x11) and modelFrag.Reference:
+                skelFrag = modelFrag.Reference
+                meshes.extend(importCharacterFromSkeletonDef(chrArchive, skelFrag, importTextures))
+            elif (modelFrag.type == 0x2d) and modelFrag.Mesh:
+                meshFrag = modelFrag.Mesh
+                meshes.append((meshFrag, importWldMesh(chrArchive, meshFrag, importTextures)))
+    actorObj = bpy.data.objects.new(actorName, None)
+    bpy.context.scene.objects.link(actorObj)
     for meshFrag, mesh in meshes:
         obj = bpy.data.objects.new(meshFrag.name, mesh)
+        obj.parent = actorObj
         bpy.context.scene.objects.link(obj)
+
+def importCharacterFromSkeletonDef(archive, skelFrag, importTextures):
+    if skelFrag.type != 0x10:
+        return
+    transforms = computeSkeletonTransformations(skelFrag)
+    meshes = []
+    for meshRef in skelFrag.Fragments:
+        if (meshRef.type == 0x2d) and meshRef.Mesh:
+            meshFrag = meshRef.Mesh
+            skinMesh(meshFrag, transforms)
+            meshes.append((meshFrag, importWldMesh(archive, meshFrag, importTextures)))
+    return meshes
 
 def importWldMeshes(archive, fragments, importTextures=True):
     return [importWldMesh(archive, f, importTextures) for f in fragments]
@@ -163,15 +188,15 @@ def loadIndexedBitmap(stream, fileName, masked):
     for i in range(0, biClrUsed * 4, 4):
         b, g, r, x = colorTableData[i : i + 4]
         colors.append((r / 255.0, g / 255.0, b / 255.0, 1.0))
-    if masked:
-        colors[0] = (1.0, 1.0, 1.0, 0.0)
+    #if masked:
+    #    colors[0] = (1.0, 1.0, 1.0, 0.0)
     
     # read pixels
     pixelCount = biWidth * biHeight
     pixelData = stream.read(pixelCount)
     pixels = []
-    #if masked:
-    #    colors[pixelData[0]] = (1.0, 1.0, 1.0, 0.0)
+    if masked:
+        colors[pixelData[0]] = (0.0, 0.0, 0.0, 0.0)
     for i in range(0, pixelCount):
         try:
             p = pixelData[i]
@@ -219,6 +244,45 @@ def importSkeletonPiece(skel, tree, piece, parentName, depth=0):
     # recursively import the children bones
     for childID in piece.children:
         importSkeletonPiece(skel, tree, tree[childID], piece.name, depth+1)
+
+def computeSkeletonTransformations(frag):
+    if frag.type != 0x10:
+        raise Exception("Expected fragment type 0x10, got %x" % frag.type)
+    transforms = {}
+    rootLoc = Vector()
+    rootLoc.resize_4d()
+    rootRot = Quaternion()
+    rootRot.identity()
+    computePieceTransformation(frag.tree, transforms, 0, rootLoc, rootRot)
+    return transforms
+
+def computePieceTransformation(tree, transforms, pieceID, parentLoc, parentRot):
+    piece = tree[pieceID]
+    track = piece.trackRef.Reference
+    pieceLoc, pieceRot = track.location(), track.rotation()
+    transLoc = rotateThenTranslate(pieceLoc, parentRot, parentLoc)
+    transRot = parentRot * Quaternion(pieceRot)
+    transforms[pieceID] = (piece.name, transLoc, transRot)
+    for childID in piece.children:
+        computePieceTransformation(tree, transforms, childID, transLoc, transRot)
+
+def skinMesh(meshFrag, transforms):
+    pos = 0
+    vertices = meshFrag.vertices
+    for count, pieceID in meshFrag.vertexPieces:
+        pieceName, trans, rot = transforms[pieceID]
+        for i in range(pos, pos + count):
+            v = vertices[i]
+            v = rotateThenTranslate(v, rot, trans)
+            vertices[i] = v[0:3]
+        pos += count
+
+def rotateThenTranslate(v, rotation, translation):
+    return translation + Vector(rotateQuat(v, rotation) + (0., ))
+
+def rotateQuat(v, q):
+    """ Rotate the vector v around the axis defined by the quaternion q. """
+    return (q * Quaternion((0.0, v[0], v[1], v[2])) * q.conjugated())[1:4]
 
 def transform(m, v):
     " Transform the vector v using the matrix m and return the resulting vector. "
