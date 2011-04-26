@@ -80,7 +80,7 @@ class WLDData:
         elif (start >= 0) and (start < len(self.strings)):
             end = self.strings.find(b"\0", start)
             if end >= 0:
-                return self.strings[start:end].decode("utf-8")
+                return self.strings[start:end].decode("latin1")
         return None
     
     def lookupReference(self, ref):
@@ -166,21 +166,21 @@ class Fragment03(Fragment):
     """ This type of fragment contains the name of a texture file. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("_NameLength", "H")
-        nameData = self.data[self.pos: self.pos + self._NameLength]
-        self.FileName = decodeString(nameData)[0:-1].decode("utf-8")
-        self.pos += self._NameLength
+        nameLength = self.unpackField(None, "H")
+        nameData = self.data[self.pos: self.pos + nameLength]
+        self.FileName = decodeString(nameData)[0:-1].decode("latin1")
+        self.pos += nameLength
 
 class Fragment04(Fragment):
     """ This type of fragment describes a list of texture file names. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("Size1", "I")
+        fileCount = self.unpackField(None, "I")
         if self.Flags & 0b100:
             self.unpackField("Param1", "I")
         if self.Flags & 0b1000:
             self.unpackField("Param2", "I")
-        self.unpackArray("Files", "i", self.Size1, lambda params: params[0])
+        self.unpackArray("Files", "i", fileCount, lambda params: params[0])
         self.Files = [wld.lookupReference(f) for f in self.Files]
 
 class Fragment05(Fragment):
@@ -196,7 +196,7 @@ class Fragment10(Fragment):
     It is defined as a tree of skeleton pieces. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("Size1", "I")
+        nodeCount = self.unpackField(None, "I")
         self.unpackReference(wld, "Fragment")
         if self.Flags & 0b1:
             self.unpackField("Param1_0", "I")
@@ -205,7 +205,7 @@ class Fragment10(Fragment):
         if self.Flags & 0b10:
             self.unpackField("Param2", "f")
         self.tree = []
-        for i in range(0, self.Size1):
+        for i in range(0, nodeCount):
             name = self.unpackReference(wld, None)
             flags = self.unpackField(None, "I")
             trackRef = self.unpackReference(wld, None)
@@ -214,10 +214,10 @@ class Fragment10(Fragment):
             children = self.unpackArray(None, "I", size, lambda p: p[0])
             self.tree.append(SkeletonNode(name, flags, trackRef, meshRef, children))
         if self.Flags & 0b1000000000:
-            self.unpackField("Size2", "I")
-            refs = self.unpackArray(None, "I", self.Size2, lambda p: p[0])
+            refCount = self.unpackField(None, "I")
+            refs = self.unpackArray(None, "I", refCount, lambda p: p[0])
             self.Fragments = [wld.lookupReference(r) for r in refs]
-            self.unpackArray("Data3", "I", self.Size2, lambda p: p[0])
+            self.unpackArray("Data3", "I", refCount, lambda p: p[0])
 
     def dumpTree(self, pieceID=0, indent=0):
         piece = self.tree[pieceID]
@@ -232,35 +232,40 @@ class Fragment11(Fragment):
         self.unpackReference(wld)
         self.unpackField("Params1", "I")
 
-SkeletonFrame = collections.namedtuple("SkeletonFrame", ["RotateW", "RotateX", 
-    "RotateY", "RotateZ", "TranslateX", "TranslateY", "TranslateZ", "TranslateScale"])
+SkeletonFrame = collections.namedtuple("SkeletonFrame", ["location", "rotation"])
 
 class Fragment12(Fragment):
     """ This type of fragment describes a skeleton piece track, which is a list of frames
     each containing transformation parameters for one piece of the skeleton. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("Size1", "I")
-        self.unpackArray("frames", "h" * 8, self.Size1, lambda p: SkeletonFrame(*p))
+        frameCount = self.unpackField(None, "I")
+        self.unpackArray("frames", "h" * 8, frameCount, self.unpackFrame)
+    
+    def unpackFrame(self, params):
+        rw, rx, ry, rz, dx, dy, dz, scale = params
+        if rw != 0:
+            # normalize the quaternion, since it is stored as a 16-bit integer
+            s = math.sqrt(rw * rw + rx * rx + ry * ry + rz * rz)
+            rotation = (rw / s, rx / s, ry / s, rz / s)
+        else:
+            rotation = None
+        if scale != 0:
+            s = 1.0 / scale
+            location = (dx * s, dy * s, dz * s)
+        else:
+            location = None
+        return SkeletonFrame(location, rotation)
     
     def rotation(self, frameIndex=0):
         if (frameIndex < 0) or (frameIndex >= len(self.frames)):
-            return 0, 0, 0, 0
-        f = self.frames[frameIndex]
-        w, x, y, z = f.RotateW, f.RotateX, f.RotateY, f.RotateZ
-        # normalize the quaternion, since it is stored as a 16-bit integer
-        s = math.sqrt(w * w + x * x + y * y + z * z)
-        return w / s, x / s, y / s, z / s
+            return None
+        return self.frames[frameIndex].rotation
     
-    def translation(self, frameIndex=0):
+    def location(self, frameIndex=0):
         if (frameIndex < 0) or (frameIndex >= len(self.frames)):
-            return 0, 0, 0
-        f = self.frames[frameIndex]
-        if f.TranslateScale:
-            scale = 1.0 / f.TranslateScale
-            return f.TranslateX * scale, f.TranslateY * scale, f.TranslateZ * scale
-        else:
-            return 0, 0, 0
+            return None
+        return self.frames[frameIndex].location
 
 class Fragment13(Fragment):
     """ This type of fragment refers to a skeleton track (0x12 fragment). """
@@ -275,21 +280,20 @@ class Fragment14(Fragment):
     def unpack(self, wld):
         self.unpackField("Flags", "I")
         self.unpackReference(wld, "Fragment1")
-        self.unpackField("Size1", "I")
-        self.unpackField("Size2", "I")
+        size1 = self.unpackField(None, "I")
+        modelCount = self.unpackField(None, "I")
         self.unpackReference(wld, "Fragment2")
         #self.unpackField("Params1", "I")
         #self.unpackArray("Params2", "I", 7)
         self.Entry1 = []
-        for i in range(0, self.Size1):
-            self.unpackField("_Entry1Size", "I")
-            self.unpackArray("_Entry1", "If", self._Entry1Size)
-            self.Entry1.append(self._Entry1)
-        self.unpackArray("Fragment3", "I", self.Size2, lambda p: p[0])
-        self.Fragment3 = [wld.lookupReference(f) for f in self.Fragment3]
+        for i in range(0, size1):
+            entrySize = self.unpackField(None, "I")
+            self.Entry1.append(self.unpackArray(None, "If", entrySize))
+        models = self.unpackArray(None, "I", modelCount, lambda p: p[0])
+        self.models = [wld.lookupReference(m) for m in models]
         self.unpackField("Size3", "I")
         #name3Data = self.data[self.pos: self.pos + self.Size3]
-        #self.name3 = name3Data.decode("utf-8")
+        #self.name3 = name3Data.decode("latin1")
         #self.pos += self.Size3
 
 class Fragment15(Fragment):
@@ -298,18 +302,17 @@ class Fragment15(Fragment):
         self.unpackReference(wld)
         self.unpackField("Flags", "I")
         self.unpackReference(wld, "Fragment1")
-        self.unpackField("X", "f")
-        self.unpackField("Y", "f")
-        self.unpackField("Z", "f")
-        # TODO: rotation x 512 / 360 degrees
-        self.unpackField("RotateX", "f")
-        self.unpackField("RotateY", "f")
-        self.unpackField("RotateZ", "f")
+        self.unpackArray("location", "f", 3, lambda p: p[0])
+        self.unpackArray("rotation", "f", 3, self.unpackRotation)
         #self.unpackArray("Param1", "f", 3)
         self.unpackField("Param1", "f")
-        self.unpackField("ScaleY", "f")
-        self.unpackField("ScaleX", "f")
+        sy = self.unpackField(None, "f")
+        sx = self.unpackField(None, "f")
+        self.scale = (sx, sy, 1.0)
         self.unpackReference(wld, "Fragment2")
+    
+    def unpackRotation(self, params):
+        return params[0] * 512 / 360
 
 class Fragment16(Fragment):
     """ The purpose of this zone-related fragment is unknown. """
@@ -319,8 +322,9 @@ class Fragment16(Fragment):
 class Fragment21(Fragment):
     """ This type of fragment describes a BSP tree for a zone divided into regions. """
     def unpack(self, wld):
-        self.unpackField("Size1", "I")
-        self.unpackArray("nodes", "ffffiII", self.Size1)
+        nodeCount = self.unpackField(None, "I")
+        #XXX use named tuple here
+        self.unpackArray("nodes", "ffffiII", nodeCount)
 
 class Fragment22(Fragment):
     """ This type of fragment describes the node of a BSP tree. """
@@ -338,11 +342,11 @@ class Fragment22(Fragment):
         self.unpackArray("Data5", "I" * 7, self.Size5)
         self.NearbyRegions = []
         for i in range(0, self.Size6):
-            self.unpackField("_NearbyRegionSize", "H")
-            regionData = self.data[self.pos: self.pos + self._NearbyRegionSize]
-            # crashes for Kedge keep
+            nearbyRegionSize = self.unpackField(None, "H")
+            regionData = self.data[self.pos: self.pos + nearbyRegionSize]
+            # crashes for Kedge keep (probably because of missing Data3 and Data4)
             #self.NearbyRegions.append(self.decodeRegionList(regionData))
-            self.pos += self._NearbyRegionSize
+            self.pos += nearbyRegionSize
     
     def decodeRegionList(self, data):
         RID = 0
@@ -397,10 +401,10 @@ class Fragment29(Fragment):
     """ This type of fragment describes the properties of a list of regions. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("Size1", "I")
-        self.unpackArray("regions", "I", self.Size1)
-        self.unpackField("Size2", "I")
-        self.unpackArray("Data2", "B", self.Size2)
+        regionCount = self.unpackField(None, "I")
+        self.unpackArray("regions", "I", regionCount)
+        size2 = self.unpackField(None, "I")
+        self.unpackArray("Data2", "B", size2)
 
 class Fragment2d(Fragment):
     """ This type of fragment referes to a mesh. """
@@ -422,22 +426,22 @@ class Fragment30(Fragment):
         self.unpackField("Param4", "f")
 
 class Fragment31(Fragment):
-    """ This type of fragment describes a list of textures. """
+    """ This type of fragment describes a list of materials. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("Size1", "I")
-        self.unpackArray("Textures", "i", self.Size1, lambda params: params[0])
-        self.Textures = [wld.lookupReference(f) for f in self.Textures]
+        materialCount = self.unpackField(None, "I")
+        materials = self.unpackArray(None, "i", materialCount, lambda params: params[0])
+        self.Textures = [wld.lookupReference(f) for f in materials]
 
 class Fragment32(Fragment):
     """ This type of fragment describes an object color table. """
     def unpack(self, wld):
         self.unpackField("Flags", "I")
-        self.unpackField("Size1", "I")
+        colorCount = self.unpackField(None, "I")
         self.unpackField("Data2", "I")
         self.unpackField("Data3", "I")
         self.unpackField("Data4", "I")
-        self.unpackArray("Colors", "I", self.Size1, lambda params: params[0])
+        self.unpackArray("colors", "I", colorCount, lambda params: params[0])
     
 class Fragment33(Fragment):
     """ This type of fragment refers to an object color table. """

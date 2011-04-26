@@ -38,14 +38,14 @@ def importZoneObjects(path, zoneName, importTextures):
     for objectDef in wldObjDefs.fragmentsByType(0x15):
         actor = actorMap.get(objectDef.Reference)
         if actor:
-            for meshRef in actor.Fragment3:
+            for meshRef in actor.models:
                 #XXX: this can be a skeleton instead of a mesh. Okay, maybe not for placeable objects.
                 mesh = objectMeshes.get(meshRef.Mesh.ID)
                 if mesh:
                     obj = bpy.data.objects.new(actor.name, mesh)
-                    obj.location = (objectDef.X, objectDef.Y, objectDef.Z)
-                    #obj.rotation_euler = (objectDef.RotateX, objectDef.RotateY, objectDef.RotateZ)
-                    obj.scale = (objectDef.ScaleX, objectDef.ScaleY, 1)
+                    obj.location = objectDef.location
+                    #obj.rotation_euler = objectDef.rotation
+                    obj.scale = objectDef.scale
                     bpy.context.scene.objects.link(obj)
         else:
             print("Actor '%s' not found" % objectDef.name)
