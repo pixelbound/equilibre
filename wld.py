@@ -264,13 +264,17 @@ class Fragment12(Fragment):
         return SkeletonFrame(location, rotation)
     
     def rotation(self, frameIndex=0):
-        if (frameIndex < 0) or (frameIndex >= len(self.frames)):
-            return None
+        if frameIndex < 0:
+            frameIndex = 0
+        elif (frameIndex >= len(self.frames)):
+            frameIndex = len(self.frames) - 1
         return self.frames[frameIndex].rotation
     
     def location(self, frameIndex=0):
-        if (frameIndex < 0) or (frameIndex >= len(self.frames)):
-            return None
+        if frameIndex < 0:
+            frameIndex = 0
+        elif (frameIndex >= len(self.frames)):
+            frameIndex = len(self.frames) - 1
         return self.frames[frameIndex].location
 
 class Fragment13(Fragment):

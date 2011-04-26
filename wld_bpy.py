@@ -2,6 +2,7 @@ import os
 import struct
 from s3d import S3DArchive, readStruct
 from wld import WLDData
+import skeleton
 import bpy
 from mathutils import Vector, Matrix, Quaternion
 import math
@@ -61,11 +62,13 @@ def importZoneCharacter(path, zoneName, actorName, importTextures):
         if not actorFrag:
             raise Exception("Actor not found '%s' in archive" % actorName)
         meshes = []
-        skeletons = []
+        skeletons = skeleton.skeletonsFromWld(wldChrMeshes)
         for modelFrag in actorFrag.models:
             if (modelFrag.type == 0x11) and modelFrag.Reference:
                 skelFrag = modelFrag.Reference
-                meshes.extend(importCharacterFromSkeletonDef(chrArchive, skelFrag, importTextures))
+                skel = skeletons.get(skelFrag.name[0:3])
+                if skel:
+                    meshes.extend(importCharacterFromSkeletonDef(chrArchive, skel, importTextures))
             elif (modelFrag.type == 0x2d) and modelFrag.Mesh:
                 meshFrag = modelFrag.Mesh
                 meshes.append((meshFrag, importWldMesh(chrArchive, meshFrag, importTextures)))
@@ -76,16 +79,15 @@ def importZoneCharacter(path, zoneName, actorName, importTextures):
         obj.parent = actorObj
         bpy.context.scene.objects.link(obj)
 
-def importCharacterFromSkeletonDef(archive, skelFrag, importTextures):
-    if skelFrag.type != 0x10:
-        return
-    transforms = computeSkeletonTransformations(skelFrag)
+def importCharacterFromSkeletonDef(archive, skel, importTextures):
+    transforms = skel.animations["P01"].transformations(6)
     meshes = []
-    for meshRef in skelFrag.Fragments:
+    for meshRef in skel.skelDef.Fragments:
         if (meshRef.type == 0x2d) and meshRef.Mesh:
             meshFrag = meshRef.Mesh
-            skinMesh(meshFrag, transforms)
-            meshes.append((meshFrag, importWldMesh(archive, meshFrag, importTextures)))
+            mesh = importWldMesh(archive, meshFrag, importTextures)
+            skinMesh(meshFrag, mesh, transforms)
+            meshes.append((meshFrag, mesh))
     return meshes
 
 def importWldMeshes(archive, fragments, importTextures=True):
@@ -158,8 +160,9 @@ def loadTextureMaterial(archive, texFrag):
     return material, texture
 
 def loadImage(name, archive, fileName, masked):
+    #print(fileName)
     with archive.openFile(fileName) as f:
-        width, height, pixels = loadIndexedBitmap(f, fileName, masked)
+        width, height, pixels = loadIndexedBitmap(f, masked)
     if pixels is None:
         return None
     image = bpy.data.images.new(name, width, height)
@@ -167,7 +170,7 @@ def loadImage(name, archive, fileName, masked):
     image.update()
     return image
 
-def loadIndexedBitmap(stream, fileName, masked):
+def loadIndexedBitmap(stream, masked):
     # read file header
     fileHeader = readStruct(stream, "<2sIHHI")
     if fileHeader[0] != b"BM":
@@ -185,6 +188,7 @@ def loadIndexedBitmap(stream, fileName, masked):
         biClrUsed = 256
     colorTableData = stream.read(biClrUsed * 4)
     colors = []
+    transparent = (0.0, 0.0, 0.0, 0.0)
     for i in range(0, biClrUsed * 4, 4):
         b, g, r, x = colorTableData[i : i + 4]
         colors.append((r / 255.0, g / 255.0, b / 255.0, 1.0))
@@ -196,13 +200,13 @@ def loadIndexedBitmap(stream, fileName, masked):
     pixelData = stream.read(pixelCount)
     pixels = []
     if masked:
-        colors[pixelData[0]] = (0.0, 0.0, 0.0, 0.0)
+        colors[pixelData[0]] = transparent
     for i in range(0, pixelCount):
         try:
             p = pixelData[i]
             pixels.extend(colors[p])
         except IndexError as e:
-            raise Exception("i = %d, p = %d, file = %s" % (i, p, fileName))
+            pixels.extend(transparent)
     return biWidth, biHeight, pixels
 
 def importSkeleton(frag):
@@ -245,36 +249,17 @@ def importSkeletonPiece(skel, tree, piece, parentName, depth=0):
     for childID in piece.children:
         importSkeletonPiece(skel, tree, tree[childID], piece.name, depth+1)
 
-def computeSkeletonTransformations(frag):
-    if frag.type != 0x10:
-        raise Exception("Expected fragment type 0x10, got %x" % frag.type)
-    transforms = {}
-    rootLoc = Vector()
-    rootLoc.resize_4d()
-    rootRot = Quaternion()
-    rootRot.identity()
-    computePieceTransformation(frag.tree, transforms, 0, rootLoc, rootRot)
-    return transforms
-
-def computePieceTransformation(tree, transforms, pieceID, parentLoc, parentRot):
-    piece = tree[pieceID]
-    track = piece.trackRef.Reference
-    pieceLoc, pieceRot = track.location(), track.rotation()
-    transLoc = rotateThenTranslate(pieceLoc, parentRot, parentLoc)
-    transRot = parentRot * Quaternion(pieceRot)
-    transforms[pieceID] = (piece.name, transLoc, transRot)
-    for childID in piece.children:
-        computePieceTransformation(tree, transforms, childID, transLoc, transRot)
-
-def skinMesh(meshFrag, transforms):
+def skinMesh(meshFrag, mesh, transforms):
     pos = 0
-    vertices = meshFrag.vertices
+    vertices = mesh.vertices
     for count, pieceID in meshFrag.vertexPieces:
         pieceName, trans, rot = transforms[pieceID]
+        trans = Vector((trans[0], trans[1], trans[2], 1.0))
+        rot = Quaternion(rot)
         for i in range(pos, pos + count):
-            v = vertices[i]
+            v = vertices[i].co
             v = rotateThenTranslate(v, rot, trans)
-            vertices[i] = v[0:3]
+            vertices[i].co = v[0:3]
         pos += count
 
 def rotateThenTranslate(v, rotation, translation):
