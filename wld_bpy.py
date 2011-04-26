@@ -3,6 +3,8 @@ import struct
 from s3d import S3DArchive, readStruct
 from wld import WLDData
 import bpy
+from mathutils import Vector, Matrix, Quaternion
+import math
 
 def importZone(path, zoneName, importTextures):
     importZoneGeometry(path, zoneName, importTextures)
@@ -37,6 +39,7 @@ def importZoneObjects(path, zoneName, importTextures):
         actor = actorMap.get(objectDef.Reference)
         if actor:
             for meshRef in actor.Fragment3:
+                #XXX: this can be a skeleton instead of a mesh. Okay, maybe not for placeable objects.
                 mesh = objectMeshes.get(meshRef.Mesh.ID)
                 if mesh:
                     obj = bpy.data.objects.new(actor.name, mesh)
@@ -46,6 +49,19 @@ def importZoneObjects(path, zoneName, importTextures):
                     bpy.context.scene.objects.link(obj)
         else:
             print("Actor '%s' not found" % objectDef.name)
+
+def importZoneCharacter(path, zoneName, spriteDef, importTextures):
+    chrPath = os.path.join(path, "%s_chr.s3d" % zoneName)
+    with S3DArchive(chrPath) as chrArchive:
+        wldChrMeshes = WLDData.fromArchive(chrArchive, "%s_chr.wld" % zoneName)
+        meshes = []
+        meshFrags = filter(lambda f: f.type == 0x36 and (f.name.find(spriteDef) >= 0), 
+            wldChrMeshes.fragments.values())
+        for meshFrag in meshFrags:
+            meshes.append((meshFrag, importWldMesh(chrArchive, meshFrag, importTextures)))
+    for meshFrag, mesh in meshes:
+        obj = bpy.data.objects.new(meshFrag.name, mesh)
+        bpy.context.scene.objects.link(obj)
 
 def importWldMeshes(archive, fragments, importTextures=True):
     return [importWldMesh(archive, f, importTextures) for f in fragments]
@@ -109,15 +125,16 @@ def loadTextureMaterial(archive, texFrag):
     if len(imgFrag.Files) == 0:
         return None, None
     fileName = imgFrag.Files[0].FileName.lower()
-    texture.image = loadImage(fileName, archive, fileName)
+    masked = (texFrag.Param1 & 0b11) == 0b11
+    texture.image = loadImage(fileName, archive, fileName, masked)
     matTex = material.texture_slots.add()
     matTex.texture = texture
     matTex.texture_coords = 'UV'
     return material, texture
 
-def loadImage(name, archive, fileName):
+def loadImage(name, archive, fileName, masked):
     with archive.openFile(fileName) as f:
-        width, height, pixels = loadIndexedBitmap(f)
+        width, height, pixels = loadIndexedBitmap(f, fileName, masked)
     if pixels is None:
         return None
     image = bpy.data.images.new(name, width, height)
@@ -125,7 +142,7 @@ def loadImage(name, archive, fileName):
     image.update()
     return image
 
-def loadIndexedBitmap(stream):
+def loadIndexedBitmap(stream, fileName, masked):
     # read file header
     fileHeader = readStruct(stream, "<2sIHHI")
     if fileHeader[0] != b"BM":
@@ -146,11 +163,66 @@ def loadIndexedBitmap(stream):
     for i in range(0, biClrUsed * 4, 4):
         b, g, r, x = colorTableData[i : i + 4]
         colors.append((r / 255.0, g / 255.0, b / 255.0, 1.0))
+    if masked:
+        colors[0] = (1.0, 1.0, 1.0, 0.0)
     
     # read pixels
     pixelCount = biWidth * biHeight
     pixelData = stream.read(pixelCount)
     pixels = []
+    #if masked:
+    #    colors[pixelData[0]] = (1.0, 1.0, 1.0, 0.0)
     for i in range(0, pixelCount):
-        pixels.extend(colors[pixelData[i]])
+        try:
+            p = pixelData[i]
+            pixels.extend(colors[p])
+        except IndexError as e:
+            raise Exception("i = %d, p = %d, file = %s" % (i, p, fileName))
     return biWidth, biHeight, pixels
+
+def importSkeleton(frag):
+    if frag.type != 0x10:
+        raise Exception("Expected fragment type 0x10, got %x" % frag.type)
+    origin = Vector((0, 0, 0))
+    bpy.ops.object.add(type='ARMATURE', enter_editmode=True, location=origin)
+    obj = bpy.context.object
+    obj.show_x_ray = True
+    obj.name = frag.name
+    skel = obj.data
+    skel.name = frag.name + '_ARMATURE'
+    skel.show_axes = True
+    bpy.ops.object.mode_set(mode='EDIT')
+    importSkeletonPiece(skel, frag.tree, frag.tree[0], None)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    return obj
+
+def importSkeletonPiece(skel, tree, piece, parentName, depth=0):
+    bone = skel.edit_bones.new(piece.name)
+    track = piece.trackRef.Reference
+    trans = Vector(track.translation())
+    rot = Quaternion(track.rotation())
+    mTrans = Matrix.Translation(trans)
+    mRot = rot.to_matrix()
+    mRot.resize_4x4()
+    if parentName:
+        parent = skel.edit_bones[parentName]
+        bone.parent = parent
+        bone.head = parent.tail
+        bone.use_connect = False
+        m = parent.matrix.copy()
+    else:
+        bone.head = (0, 0, 0)
+        m = Matrix()
+    m = m * mTrans
+    m = m * mRot
+    bone.tail = transform(m, bone.head)
+    # recursively import the children bones
+    for childID in piece.children:
+        importSkeletonPiece(skel, tree, tree[childID], piece.name, depth+1)
+
+def transform(m, v):
+    " Transform the vector v using the matrix m and return the resulting vector. "
+    x = (m[0][0] * v[0]) + (m[1][0] * v[1]) + (m[2][0] * v[2]) + m[3][0]
+    y = (m[0][1] * v[0]) + (m[1][1] * v[1]) + (m[2][1] * v[2]) + m[3][1]
+    z = (m[0][2] * v[0]) + (m[1][2] * v[1]) + (m[2][2] * v[2]) + m[3][2]
+    return x, y, z

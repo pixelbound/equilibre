@@ -2,6 +2,8 @@ import struct
 import io
 import zlib
 import collections
+import sys
+import os
 
 __all__ = ["S3DArchive", "readStruct"]
 ArchiveHeader = collections.namedtuple("ArchiveHeader", ["directoryOffset", "magic", "unknownSize"])
@@ -20,7 +22,7 @@ def readStruct(stream, pattern, cls=None):
         return cls(*args)
 
 class S3DArchive:
-    """ Allows  extraction of S3D archives. """
+    """ Allows extraction of S3D archives. """
     DIRECTORY_CRC = 0x61580AC9
     
     def __init__(self, path):
@@ -55,10 +57,9 @@ class S3DArchive:
     
     def openFile(self, name):
         data = self._unpackFileEntry(self.entries.get(name))
-        if data is not None:
-            return io.BytesIO(data)
-        else:
-            return None
+        if data is None:
+            raise Exception("The file '%s' was not found in the archive" % name)
+        return io.BytesIO(data)
     
     def close(self):
         if self.file:
@@ -105,3 +106,30 @@ class S3DArchive:
                 name = f.read(nameSize)[0:-1].decode("latin1")
                 files.append(name)
             return files
+
+if __name__ == "__main__":
+    def listFiles(path):
+        with S3DArchive(path) as a:
+            for fileName in a.files:
+                print(fileName)
+    
+    def extractFiles(path, destPath):
+        os.makedirs(destPath, exist_ok=True)
+        with S3DArchive(path) as a:
+            for fileName in a.files:
+                filePath = os.path.join(destPath, fileName)
+                with open(filePath, "wb") as f:
+                    f.write(a.unpackFile(fileName))
+                
+    if len(sys.argv) < 2:
+        print("usage: %s <.S3D file>" % sys.argv[0])
+        print("       [option] <.S3D file>")
+    elif len(sys.argv) == 2:
+        listFiles(sys.argv[1])
+    else:
+        mode = sys.argv[1]
+        path = sys.argv[2]
+        if mode.find("t") >= 0:
+            listFiles(path)
+        elif mode.find("x") >= 0:
+            extractFiles(path, os.path.join(os.getcwd(), "%s.d" % os.path.basename(path)))
