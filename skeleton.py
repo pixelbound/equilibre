@@ -12,10 +12,9 @@ def skeletonsFromWld(wld):
             skeletons[skelDef.name[0:3]] = Skeleton(skelDef)
     for trackRef in wld.fragmentsByType(0x13):
         if re.match("^\w\d{2}.*_TRACK$", trackRef.name):
-            animName = trackRef.name[0:3]
-            skelName = trackRef.name[3:6]
+            animName, skelName = trackRef.name[0:3], trackRef.name[3:6]
             skel = skeletons.get(skelName)
-            if skel is not None:
+            if skel:
                 skel.addTrack(animName, trackRef)
     return skeletons
 

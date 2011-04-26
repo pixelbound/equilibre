@@ -5,6 +5,7 @@ from wld import WLDData
 import skeleton
 import bpy
 from mathutils import Vector, Matrix, Quaternion
+import euclid
 import math
 
 #TODO: actor class
@@ -54,7 +55,7 @@ def importZoneObjects(path, zoneName, importTextures):
         else:
             print("Actor '%s' not found" % objectDef.name)
 
-def importZoneCharacter(path, zoneName, actorName, importTextures):
+def importZoneCharacter(path, zoneName, actorName, animName, frame, importTextures):
     chrPath = os.path.join(path, "%s_chr.s3d" % zoneName)
     with S3DArchive(chrPath) as chrArchive:
         wldChrMeshes = WLDData.fromArchive(chrArchive, "%s_chr.wld" % zoneName)
@@ -68,7 +69,7 @@ def importZoneCharacter(path, zoneName, actorName, importTextures):
                 skelFrag = modelFrag.Reference
                 skel = skeletons.get(skelFrag.name[0:3])
                 if skel:
-                    meshes.extend(importCharacterFromSkeletonDef(chrArchive, skel, importTextures))
+                    meshes.extend(importCharacterFromSkeletonDef(chrArchive, skel, animName, frame, importTextures))
             elif (modelFrag.type == 0x2d) and modelFrag.Mesh:
                 meshFrag = modelFrag.Mesh
                 meshes.append((meshFrag, importWldMesh(chrArchive, meshFrag, importTextures)))
@@ -79,8 +80,8 @@ def importZoneCharacter(path, zoneName, actorName, importTextures):
         obj.parent = actorObj
         bpy.context.scene.objects.link(obj)
 
-def importCharacterFromSkeletonDef(archive, skel, importTextures):
-    transforms = skel.animations["P01"].transformations(6)
+def importCharacterFromSkeletonDef(archive, skel, animName, frame, importTextures):
+    transforms = skel.animations[animName].transformations(frame)
     meshes = []
     for meshRef in skel.skelDef.Fragments:
         if (meshRef.type == 0x2d) and meshRef.Mesh:
@@ -254,20 +255,11 @@ def skinMesh(meshFrag, mesh, transforms):
     vertices = mesh.vertices
     for count, pieceID in meshFrag.vertexPieces:
         pieceName, trans, rot = transforms[pieceID]
-        trans = Vector((trans[0], trans[1], trans[2], 1.0))
-        rot = Quaternion(rot)
         for i in range(pos, pos + count):
-            v = vertices[i].co
-            v = rotateThenTranslate(v, rot, trans)
+            v = euclid.Vector3(*vertices[i].co)
+            v = (rot * v) + trans
             vertices[i].co = v[0:3]
         pos += count
-
-def rotateThenTranslate(v, rotation, translation):
-    return translation + Vector(rotateQuat(v, rotation) + (0., ))
-
-def rotateQuat(v, q):
-    """ Rotate the vector v around the axis defined by the quaternion q. """
-    return (q * Quaternion((0.0, v[0], v[1], v[2])) * q.conjugated())[1:4]
 
 def transform(m, v):
     " Transform the vector v using the matrix m and return the resulting vector. "
