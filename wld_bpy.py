@@ -117,9 +117,8 @@ def importWldMesh(archive, frag, importTextures=True):
                     td.use_image = True
                     mesh.faces[polyID].material_index = texID
                     poly = frag.polygons[polyID]
-                    td.uv1 = normalizeTexCoords(frag.texCoords[poly[1]])
-                    td.uv2 = normalizeTexCoords(frag.texCoords[poly[2]])
-                    td.uv3 = normalizeTexCoords(frag.texCoords[poly[3]])
+                    polyTexCoords = [frag.texCoords[poly[i]] for i in range(1, 4)]
+                    td.uv1, td.uv2, td.uv3 = normalizeTexCoords(polyTexCoords)
             pos += count
     # update mesh to allow proper display
     mesh.validate()
@@ -127,7 +126,10 @@ def importWldMesh(archive, frag, importTextures=True):
     return mesh
 
 def normalizeTexCoords(tc):
-    return tc[0] / 256.0, tc[1] / 256.0
+    minU, dU = min(uv[0] for uv in tc) / 256.0, 0.0
+    minV, dV = min(uv[1] for uv in tc) / 256.0, 0.0
+    dU, dV = minU - math.modf(minU)[0], minV - math.modf(minV)[0]
+    return [((uv[0] / 256.0) + dU, (uv[1] / 256.0) + dV) for uv in tc]
 
 def loadTextureMaterials(archive, frag):
     materials, images = [], []
