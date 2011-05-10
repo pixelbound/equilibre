@@ -30,6 +30,7 @@ class WLDData:
         self.stringTableSize = stringTableSize
         self.header6 = header6
         self.strings = None
+        # change to list?
         self.fragments = {}
         self.path = None
 
