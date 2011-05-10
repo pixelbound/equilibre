@@ -5,10 +5,27 @@
 #include "Scene.h"
 #include "RenderState.h"
 #include "RenderStateGL2.h"
+#include "WLDData.h"
+#include "WLDFragment.h"
+
+const char *PATH = "Data/gfaydark_obj.d/gfaydark_obj.wld";
 
 bool loadResources(RenderState *state)
 {
-    return true;
+    WLDData *d = WLDData::fromFile(PATH);
+    if(d)
+    {
+        qDebug("%d fragments", d->fragments().count());
+        foreach(WLDFragment *f, d->fragments())
+        {
+            qDebug("kind = 0x%x, name = '%s', size = %d",
+                f->kind(), f->name().toLatin1().constData(), f->data().size());
+        }
+
+        delete d;
+        return true;
+    }
+    return false;
 }
 
 int main(int argc, char **argv)
@@ -28,7 +45,7 @@ int main(int argc, char **argv)
     // create viewport for rendering the scene
     SceneViewport w(&scene, &state, f);
     w.setWindowState(Qt::WindowMaximized);
-    w.setWindowTitle("Dragons Demo");
+    w.setWindowTitle("OpenEQ Character Viewer");
     w.makeCurrent();
     if(!loadResources(&state))
     {

@@ -5,5 +5,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <cstdio>
+#include <inttypes.h>
 
 #endif
