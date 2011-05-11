@@ -1,6 +1,9 @@
 #include <QApplication>
 #include <QGLFormat>
 #include <QMessageBox>
+#include <QWidget>
+#include <QComboBox>
+#include <QVBoxLayout>
 #include "SceneViewport.h"
 #include "Scene.h"
 #include "RenderState.h"
@@ -16,17 +19,16 @@ bool loadResources(RenderState *state)
     WLDData *d = WLDData::fromFile(PATH);
     if(d)
     {
-        MeshFragment *f = d->findFragment<MeshFragment>("ARMORSIGN_DMSPRITEDEF");
-        if(f)
+        foreach(WLDFragment *f, d->fragments())
         {
-            VertexGroup *vg = f->toGroup();
-            if(vg)
+            MeshFragment *mf = f->cast<MeshFragment>();
+            if(mf)
             {
-                state->loadMeshFromGroup("tree", vg);
+                VertexGroup *vg = mf->toGroup();
+                state->loadMeshFromGroup(mf->name().toStdString(), vg);
                 delete vg;
             }
         }
-
         delete d;
         return true;
     }
@@ -48,16 +50,34 @@ int main(int argc, char **argv)
     Scene scene(&state);
 
     // create viewport for rendering the scene
-    SceneViewport w(&scene, &state, f);
-    w.setWindowState(Qt::WindowMaximized);
-    w.setWindowTitle("OpenEQ Character Viewer");
-    w.makeCurrent();
+    SceneViewport vp(&scene, &state, f);
+    vp.makeCurrent();
     if(!loadResources(&state))
     {
-        QMessageBox::critical(0, "Error", "Could not load the mesh.");
+        QMessageBox::critical(0, "Error", "Could not load the WLD file.");
         return 1;
     }
-    w.show();
+
+    // add all mesh names to the combo box
+    QComboBox *meshCombo = new QComboBox();
+    map<string, Mesh *>::iterator it = state.meshes().begin();
+    while(it != state.meshes().end())
+    {
+        meshCombo->addItem(QString::fromStdString(it->first));
+        it++;
+    }
+    QObject::connect(meshCombo, SIGNAL(activated(QString)),
+                     &scene, SLOT(setMeshName(QString)));
+
+    QWidget *w = new QWidget();
+    w->setWindowState(Qt::WindowMaximized);
+    w->setWindowTitle("OpenEQ Character Viewer");
+
+    QVBoxLayout *l = new QVBoxLayout(w);
+    l->addWidget(meshCombo);
+    l->addWidget(&vp);
+
+    w->show();
     
     // main window loop
     app.exec();

@@ -31,8 +31,8 @@ void Scene::init()
 void Scene::reset()
 {
     m_delta = vec3(-0.0, -0.0, -5.0);
-    m_theta = vec3();
-    m_sigma = 0.01;
+    m_theta = vec3(-90.0, 0.0, 0.0);
+    m_sigma = 0.10;
     m_started = currentTime();
 }
 
@@ -51,6 +51,16 @@ vec3 & Scene::delta()
     return m_delta;
 }
 
+QString Scene::meshName() const
+{
+    return m_meshName;
+}
+
+void Scene::setMeshName(QString name)
+{
+    m_meshName = name;
+}
+
 void Scene::draw()
 {
     vec3 rot = m_theta;
@@ -60,7 +70,7 @@ void Scene::draw()
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
     m_state->pushMaterial(debugMaterial);
-    m_state->drawMesh("tree");
+    m_state->drawMesh(m_meshName.toStdString());
     m_state->popMaterial();
 }
 
