@@ -15,11 +15,17 @@ bool loadResources(RenderState *state)
     WLDData *d = WLDData::fromFile(PATH);
     if(d)
     {
-        qDebug("%d fragments", d->fragments().count());
+        /*qDebug("%d fragments", d->fragments().count());
         foreach(WLDFragment *f, d->fragments())
         {
             qDebug("kind = 0x%x, name = '%s', size = %d",
                 f->kind(), f->name().toLatin1().constData(), f->data().size());
+        }*/
+        WLDFragment *f = d->findFragment(WLDFragment::MESH, "NEKPINE2_DMSPRITEDEF");
+        if(f)
+        {
+            Fragment36 *f2 = static_cast<Fragment36 *>(f);
+            qDebug("x = %f, y = %f, z = %f", f2->m_center.x, f2->m_center.y, f2->m_center.z);
         }
 
         delete d;

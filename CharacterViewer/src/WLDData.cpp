@@ -55,13 +55,9 @@ WLDData *WLDData::fromStream(QIODevice *s, QObject *parent)
     wld->m_stringData = decodeString(stringData);
 
     // load fragments
-    WLDFragment *f = 0;
-    WLDFragmentHeader fh;
-    QString fragmentName;
-    QByteArray fragmentData;
     for(uint i = 0; i < h.fragmentCount; i++)
     {
-        f = WLDFragment::fromStream(s, wld);
+        WLDFragment *f = WLDFragment::fromStream(s, wld);
         if(!f)
             break;
         wld->m_fragments.append(f);
@@ -101,23 +97,35 @@ QString WLDData::lookupString(int start) const
     return QString::null;
 }
 
-/*
-def lookupReference(self, ref):
-    if ref < 0:
-        # reference by name
-        return self.lookupString(-ref)
-    elif (ref > 0) and (ref <= len(self.fragments)):
-        # reference by index
-        return self.fragments[ref - 1]
-    else:
-        return None
+WLDFragmentRef *WLDData::lookupReference(int32_t ref) const
+{
+    if(ref < 0)
+    {
+        // reference by name
+        return new WLDFragmentRef(lookupString(-ref));
+    }
+    else if((ref > 0) && (ref <= m_fragments.size()))
+    {
+        // reference by index
+        return new WLDFragmentRef(m_fragments[ref - 1]);
+    }
+    else
+        return 0;
+}
 
-def fragmentsByType(self, type):
-    return filter(lambda f: f.type == type, self.fragments.values())
+QList<WLDFragment *> WLDData::fragmentsByType(uint32_t type) const
+{
+    QList<WLDFragment *> byType;
+    foreach(WLDFragment *f, m_fragments)
+        if(f->kind() == type)
+            byType.append(f);
+    return byType;
+}
 
-def findFragment(self, type, name):
-    for f in self.fragments.values():
-        if (f.type == type) and (f.name == name):
-            return f
-    return None
-*/
+WLDFragment * WLDData::findFragment(uint32_t type, QString name) const
+{
+    foreach(WLDFragment *f, m_fragments)
+        if((f->kind() == type) && (f->name() == name))
+            return f;
+    return 0;
+}

@@ -7,6 +7,7 @@
 
 class QIODevice;
 class WLDFragment;
+class WLDFragmentRef;
 
 /*!
   \brief Describes the header of a .wld file.
@@ -37,6 +38,9 @@ public:
     const QList<WLDFragment *> &fragments() const;
     QString lookupString(int start) const;
     static QByteArray decodeString(QByteArray data);
+    WLDFragmentRef *lookupReference(int32_t ref) const;
+    QList<WLDFragment *> fragmentsByType(uint32_t type) const;
+    WLDFragment * findFragment(uint32_t type, QString name) const;
 
 private:
     WLDHeader m_header;
