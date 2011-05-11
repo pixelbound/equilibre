@@ -14,6 +14,7 @@ public:
 
     inline vec2()
     {
+        x = y = 0.0;
     }
 
     inline vec2(float x, float y)
@@ -32,6 +33,7 @@ public:
 
     inline vec3()
     {
+        x = y = z = 0.0;
     }
 
     inline vec3(float x, float y, float z)
@@ -57,6 +59,7 @@ public:
 
     inline vec4()
     {
+        x = y = z = w = 0.0;
     }
 
     inline vec4(float x, float y, float z, float w)
@@ -111,6 +114,7 @@ public:
     uint32_t count;
     VertexData *data;
     uint32_t id;
+    std::vector<uint16_t> indices;
 };
 
 #endif

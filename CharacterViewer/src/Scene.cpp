@@ -30,9 +30,9 @@ void Scene::init()
 
 void Scene::reset()
 {
-    m_delta = vec3(-0.0, -0.5, -5.0);
-    m_theta = vec3(21.0, -37.0, 0.0);
-    m_sigma = 0.40;
+    m_delta = vec3(-0.0, -0.0, -5.0);
+    m_theta = vec3();
+    m_sigma = 0.01;
     m_started = currentTime();
 }
 
@@ -59,6 +59,9 @@ void Scene::draw()
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
+    m_state->pushMaterial(debugMaterial);
+    m_state->drawMesh("tree");
+    m_state->popMaterial();
 }
 
 void Scene::topView()

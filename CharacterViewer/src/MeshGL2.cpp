@@ -51,6 +51,8 @@ void MeshGL2::addGroup(VertexGroup *vg)
     VertexGroup *copy = new VertexGroup(vg->mode, vg->count);
     uint32_t size = vg->count * sizeof(VertexData);
     memcpy(copy->data, vg->data, size);
+    for(uint32_t i = 0; i < vg->indices.size(); i++)
+        copy->indices.push_back(vg->indices[i]);
     m_groups.push_back(copy);
 }
 
@@ -76,10 +78,10 @@ void MeshGL2::draw()
     for(uint32_t i = 0; i < m_groups.size(); i++)
     {
         VertexGroup *vg = m_groups[i];
-        if(vg->count > 100)
-            drawVBO(vg, position, normal, texCoords);
-        else
-            drawArray(vg, position, normal, texCoords);
+        //if(vg->count > 100)
+        //    drawVBO(vg, position, normal, texCoords);
+        //else
+        drawArray(vg, position, normal, texCoords);
     }
     glDisableVertexAttribArray(position);
     glDisableVertexAttribArray(normal);
@@ -94,7 +96,10 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
         sizeof(VertexData), &vg->data->normal);
     glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), &vg->data->texCoords);
-    glDrawArrays(vg->mode, 0, vg->count);
+    if(vg->indices.size() > 0)
+        glDrawElements(vg->mode, vg->indices.size(), GL_UNSIGNED_SHORT, vg->indices.data());
+    else
+        glDrawArrays(vg->mode, 0, vg->count);
 }
 
 void MeshGL2::drawVBO(VertexGroup *vg, int position, int normal, int texCoords)

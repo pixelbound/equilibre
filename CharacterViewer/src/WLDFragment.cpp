@@ -119,6 +119,10 @@ bool WLDFragmentStream::unpackField(char type, void *field)
         return readUint16((uint16_t *)field);
     case 'h':
         return readInt16((int16_t *)field);
+    case 'B':
+        return readUint8((uint8_t *)field);
+    case 'b':
+        return readInt8((int8_t *)field);
     case 'f':
         return readFloat32((float *)field);
     default:
@@ -176,6 +180,26 @@ uint32_t WLDFragmentStream::structSize(char *types) const
         types++;
     }
     return s;
+}
+
+bool WLDFragmentStream::readInt8(int8_t *dest)
+{
+    if((m_pos + 1) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = src[0];
+    m_pos += 1;
+    return true;
+}
+
+bool WLDFragmentStream::readUint8(uint8_t *dest)
+{
+    if((m_pos + 1) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = src[0];
+    m_pos += 1;
+    return true;
 }
 
 bool WLDFragmentStream::readInt16(int16_t *dest)

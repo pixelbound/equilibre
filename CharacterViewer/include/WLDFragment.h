@@ -66,6 +66,8 @@ public:
 
 private:
     static uint32_t fieldSize(char c);
+    bool readUint8(uint8_t *dest);
+    bool readInt8(int8_t *dest);
     bool readUint16(uint16_t *dest);
     bool readInt16(int16_t *dest);
     bool readUint32(uint32_t *dest);

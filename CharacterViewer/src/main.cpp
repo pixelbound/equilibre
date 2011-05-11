@@ -16,15 +16,16 @@ bool loadResources(RenderState *state)
     WLDData *d = WLDData::fromFile(PATH);
     if(d)
     {
-        /*qDebug("%d fragments", d->fragments().count());
-        foreach(WLDFragment *f, d->fragments())
-        {
-            qDebug("kind = 0x%x, name = '%s', size = %d",
-                f->kind(), f->name().toLatin1().constData(), f->data().size());
-        }*/
-        MeshFragment *f = d->findFragment<MeshFragment>("NEKPINE2_DMSPRITEDEF");
+        MeshFragment *f = d->findFragment<MeshFragment>("ARMORSIGN_DMSPRITEDEF");
         if(f)
-            qDebug("x = %f, y = %f, z = %f", f->m_center.x, f->m_center.y, f->m_center.z);
+        {
+            VertexGroup *vg = f->toGroup();
+            if(vg)
+            {
+                state->loadMeshFromGroup("tree", vg);
+                delete vg;
+            }
+        }
 
         delete d;
         return true;

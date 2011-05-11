@@ -30,6 +30,12 @@ void RenderState::freeMeshes()
     m_meshes.clear();
 }
 
+void RenderState::addMesh(string name, Mesh *m)
+{
+    if(m)
+         m_meshes.insert(pair<string, Mesh *>(name, m));
+}
+
 Mesh * RenderState::loadMeshFromGroup(string name, VertexGroup *vg)
 {
     Mesh *m = 0;
@@ -39,9 +45,8 @@ Mesh * RenderState::loadMeshFromGroup(string name, VertexGroup *vg)
         if(m)
         {
             m->addGroup(vg);
-            m_meshes.insert(pair<string, Mesh *>(name, m));
+            addMesh(name, m);
         }
-        delete vg;
     }
     return m;
 }

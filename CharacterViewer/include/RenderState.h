@@ -30,6 +30,7 @@ public:
     virtual const map<string, Mesh *> & meshes() const;
 
     virtual Mesh * createMesh() const = 0;
+    virtual void addMesh(string name, Mesh *m);
     virtual Mesh * loadMeshFromGroup(string name, VertexGroup *vg);
     virtual void freeMeshes();
 
