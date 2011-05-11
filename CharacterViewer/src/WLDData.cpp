@@ -97,20 +97,20 @@ QString WLDData::lookupString(int start) const
     return QString::null;
 }
 
-WLDFragmentRef *WLDData::lookupReference(int32_t ref) const
+WLDFragmentRef WLDData::lookupReference(int32_t ref) const
 {
     if(ref < 0)
     {
         // reference by name
-        return new WLDFragmentRef(lookupString(-ref));
+        return WLDFragmentRef(lookupString(-ref));
     }
     else if((ref > 0) && (ref <= m_fragments.size()))
     {
         // reference by index
-        return new WLDFragmentRef(m_fragments[ref - 1]);
+        return WLDFragmentRef(m_fragments[ref - 1]);
     }
     else
-        return 0;
+        return WLDFragmentRef();
 }
 
 QList<WLDFragment *> WLDData::fragmentsByType(uint32_t type) const

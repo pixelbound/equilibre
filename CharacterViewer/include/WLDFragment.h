@@ -9,6 +9,7 @@
 class QIODevice;
 class WLDData;
 class WLDFragmentStream;
+class WLDFragmentRef;
 
 /*!
   \brief Describes the header of fragment contained in a .wld file.
@@ -59,10 +60,27 @@ public:
     WLDData *wld() const;
 
     bool unpackField(char type, void *field);
-    bool unpackFields(char *types, ...);
-    bool unpackStruct(char *types, void *first);
-    bool unpackArray(char *types, uint32_t count, void *first);
-    uint32_t structSize(char *types) const;
+    bool unpackFields(const char *types, ...);
+    bool unpackStruct(const char *types, void *first);
+    bool unpackArray(const char *types, uint32_t count, void *first);
+    /*!
+      \def Return the in-memory size of the structure.
+      */
+    uint32_t structSize(const char *types) const;
+    bool readEncodedString(uint32_t size, QString *dest);
+
+    template<typename T>
+    bool unpackReference(T **ref)
+    {
+        WLDFragment *frag;
+        if(!unpackField('r', &frag))
+            return false;
+        else if(!frag)
+            *ref = 0;
+        else
+            *ref = frag->cast<T>();
+        return true;
+    }
 
 private:
     static uint32_t fieldSize(char c);
@@ -73,6 +91,8 @@ private:
     bool readUint32(uint32_t *dest);
     bool readInt32(int32_t *dest);
     bool readFloat32(float *dest);
+    bool readReference(WLDFragmentRef *dest);
+    bool readFragmentReference(WLDFragment **dest);
 
     QByteArray m_data;
     int m_pos;
@@ -85,6 +105,7 @@ private:
 class WLDFragmentRef
 {
 public:
+    WLDFragmentRef();
     WLDFragmentRef(WLDFragment *f);
     WLDFragmentRef(QString name);
 

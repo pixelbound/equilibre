@@ -56,6 +56,16 @@ WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
 {
     switch(kind)
     {
+    case BitmapNameFragment::ID:
+        return new BitmapNameFragment(name);
+    case SpriteDefFragment::ID:
+        return new SpriteDefFragment(name);
+    case SpriteFragment::ID:
+        return new SpriteFragment(name);
+    case MaterialDefFragment::ID:
+        return new MaterialDefFragment(name);
+    case MaterialPaletteFragment::ID:
+        return new MaterialPaletteFragment(name);
     case MeshFragment::ID:
         return new MeshFragment(name);
     default:
@@ -64,6 +74,12 @@ WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+
+WLDFragmentRef::WLDFragmentRef()
+{
+    m_name = QString::null;
+    m_fragment = 0;
+}
 
 WLDFragmentRef::WLDFragmentRef(WLDFragment *f)
 {
@@ -113,8 +129,11 @@ bool WLDFragmentStream::unpackField(char type, void *field)
     case 'I':
         return readUint32((uint32_t *)field);
     case 'i':
-    case 'r':
         return readInt32((int32_t *)field);
+    case 'R':
+        return readReference((WLDFragmentRef *)field);
+    case 'r':
+        return readFragmentReference((WLDFragment **)field);
     case 'H':
         return readUint16((uint16_t *)field);
     case 'h':
@@ -130,7 +149,7 @@ bool WLDFragmentStream::unpackField(char type, void *field)
     }
 }
 
-bool WLDFragmentStream::unpackFields(char *types, ...)
+bool WLDFragmentStream::unpackFields(const char *types, ...)
 {
     va_list args;
     va_start(args, types);
@@ -145,7 +164,7 @@ bool WLDFragmentStream::unpackFields(char *types, ...)
     return true;
 }
 
-bool WLDFragmentStream::unpackStruct(char *types, void *first)
+bool WLDFragmentStream::unpackStruct(const char *types, void *first)
 {
     uint8_t *dest = (uint8_t *)first;
     while(*types)
@@ -158,7 +177,7 @@ bool WLDFragmentStream::unpackStruct(char *types, void *first)
     return true;
 }
 
-bool WLDFragmentStream::unpackArray(char *types, uint32_t count, void *first)
+bool WLDFragmentStream::unpackArray(const char *types, uint32_t count, void *first)
 {
     uint8_t *dest = (uint8_t *)first;
     uint32_t size = structSize(types);
@@ -171,7 +190,7 @@ bool WLDFragmentStream::unpackArray(char *types, uint32_t count, void *first)
     return true;
 }
 
-uint32_t WLDFragmentStream::structSize(char *types) const
+uint32_t WLDFragmentStream::structSize(const char *types) const
 {
     uint32_t s = 0;
     while(*types)
@@ -252,12 +271,53 @@ bool WLDFragmentStream::readFloat32(float *dest)
     return true;
 }
 
+bool WLDFragmentStream::readReference(WLDFragmentRef *dest)
+{
+    int32_t encoded;
+    if(!readInt32(&encoded))
+        return false;
+    *dest = m_wld->lookupReference(encoded);
+    return true;
+}
+
+bool WLDFragmentStream::readFragmentReference(WLDFragment **dest)
+{
+    int32_t encoded;
+    if(!readInt32(&encoded))
+        return false;
+    *dest = m_wld->lookupReference(encoded).fragment();
+    return true;
+}
+
 uint32_t WLDFragmentStream::fieldSize(char c)
 {
-    if((c == 'I') || (c == 'i') || (c == 'f') || (c == 'r'))
+    switch(c)
+    {
+    case 'I':
+    case 'i':
+    case 'f':
         return 4;
-    else if((c == 'H') || (c == 'h'))
+    case 'H':
+    case 'h':
         return 2;
-    else
+    case 'B':
+    case 'b':
+        return 1;
+    case 'R':
+        return sizeof(WLDFragmentRef);
+    case 'r':
+        return sizeof(WLDFragment *);
+    default:
         return 0;
+    }
+}
+
+bool WLDFragmentStream::readEncodedString(uint32_t size, QString *dest)
+{
+    if((m_pos + size) > m_data.length())
+        return false;
+    QByteArray decoded = m_wld->decodeString(m_data.mid(m_pos, size));
+    *dest = QString::fromLatin1(decoded);
+    m_pos += size;
+    return true;
 }

@@ -12,7 +12,80 @@
 typedef QPair<uint16_t, uint16_t> vec2us;
 
 /*!
-  \brief This type of fragment describes a mesh.
+  \brief This type of fragment (0x03) holds the name of a texture bitmap.
+  */
+class BitmapNameFragment : public WLDFragment
+{
+public:
+    BitmapNameFragment(QString name);
+    virtual bool unpack(WLDFragmentStream *s);
+
+    const static uint32_t ID = 0x03;
+    uint32_t m_flags;
+    QString m_fileName;
+};
+
+/*!
+  \brief This type of fragment (0x04) defines sprites (texture) which can have
+    multiple bitmaps (e.g. animated sprite).
+  */
+class SpriteDefFragment : public WLDFragment
+{
+public:
+    SpriteDefFragment(QString name);
+    virtual bool unpack(WLDFragmentStream *s);
+
+    const static uint32_t ID = 0x04;
+    uint32_t m_flags, m_param1, m_param2;
+    QVector<BitmapNameFragment *> m_bitmaps;
+};
+
+/*!
+  \brief This type of fragment (0x05) defines instances of a sprite (fragment 0x04).
+  */
+class SpriteFragment : public WLDFragment
+{
+public:
+    SpriteFragment(QString name);
+    virtual bool unpack(WLDFragmentStream *s);
+
+    const static uint32_t ID = 0x05;
+    SpriteDefFragment *m_def;
+    uint32_t m_flags;
+};
+
+/*!
+  \brief This type of fragment (0x30) defines materials (i.e. how to render part of a mesh).
+  */
+class MaterialDefFragment : public WLDFragment
+{
+public:
+    MaterialDefFragment(QString name);
+    virtual bool unpack(WLDFragmentStream *s);
+
+    const static uint32_t ID = 0x30;
+    uint32_t m_flags, m_param1, m_param2;
+    float m_brightness, m_scaledAmbient;
+    SpriteFragment *m_sprite;
+    float m_param3;
+};
+
+/*!
+  \brief This type of fragment (0x31) defines palettes of materials.
+  */
+class MaterialPaletteFragment : public WLDFragment
+{
+public:
+    MaterialPaletteFragment(QString name);
+    virtual bool unpack(WLDFragmentStream *s);
+
+    const static uint32_t ID = 0x31;
+    uint32_t m_flags;
+    QVector<MaterialDefFragment *> m_materials;
+};
+
+/*!
+  \brief This type of fragment (0x36) describes a mesh.
   */
 class MeshFragment : public WLDFragment
 {
@@ -23,9 +96,9 @@ public:
     VertexGroup *toGroup() const;
 
     const static uint32_t ID = 0x36;
-
     uint32_t m_flags;
-    int32_t m_ref[4];
+    MaterialPaletteFragment *m_palette;
+    WLDFragmentRef m_ref[3];
     vec3 m_center;
     uint32_t m_param2[3];
     float m_maxDist;

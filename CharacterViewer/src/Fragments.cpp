@@ -1,5 +1,86 @@
 #include "Fragments.h"
 
+BitmapNameFragment::BitmapNameFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool BitmapNameFragment::unpack(WLDFragmentStream *s)
+{
+    uint16_t size;
+    s->unpackFields("IH", &m_flags, &size);
+    s->readEncodedString(size, &m_fileName);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+SpriteDefFragment::SpriteDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool SpriteDefFragment::unpack(WLDFragmentStream *s)
+{
+    uint32_t fileCount;
+    s->unpackFields("IIII", &m_flags, &fileCount, &m_param1, &m_param2);
+    for(uint32_t i = 0; i < fileCount; i++)
+    {
+        BitmapNameFragment *frag;
+        s->unpackReference(&frag);
+        if(frag)
+            m_bitmaps.append(frag);
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+SpriteFragment::SpriteFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool SpriteFragment::unpack(WLDFragmentStream *s)
+{
+    s->unpackReference(&m_def);
+    s->unpackField('I', &m_flags);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MaterialDefFragment::MaterialDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool MaterialDefFragment::unpack(WLDFragmentStream *s)
+{
+    s->unpackFields("IIIff", &m_flags, &m_param1, &m_param2, &m_brightness, &m_scaledAmbient);
+    s->unpackReference(&m_sprite);
+    s->unpackField('f', &m_param3);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MaterialPaletteFragment::MaterialPaletteFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool MaterialPaletteFragment::unpack(WLDFragmentStream *s)
+{
+    uint32_t materialCount;
+    s->unpackFields("II", &m_flags, &materialCount);
+    for(uint32_t i = 0; i < materialCount; i++)
+    {
+        MaterialDefFragment *frag;
+        s->unpackReference(&frag);
+        if(frag)
+            m_materials.append(frag);
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 MeshFragment::MeshFragment(QString name) : WLDFragment(ID, name)
 {
 }
@@ -9,7 +90,8 @@ bool MeshFragment::unpack(WLDFragmentStream *s)
     uint16_t vertexCount, texCoordsCount, normalCount, colorCount, polyCount;
     uint16_t vertexPieceCount, polyTexCount, vertexTexCount, scaleFactor;
     s->unpackField('I', &m_flags);
-    s->unpackArray("i", 4, m_ref);
+    s->unpackReference(&m_palette);
+    s->unpackArray("R", 3, m_ref);
     s->unpackArray("f", 3, &m_center);
     s->unpackArray("I", 3, &m_param2);
     s->unpackField('f', &m_maxDist);
@@ -80,7 +162,7 @@ VertexGroup *MeshFragment::toGroup() const
         vd->normal = m_normals.value(i);
         vd->texCoords = m_texCoords.value(i);
     }
-    for(uint32_t i = 0; i < m_indices.count(); i++)
+    for(uint32_t i = 0; i < (uint32_t)m_indices.count(); i++)
         vg->indices.push_back(m_indices[i]);
     return vg;
 }
