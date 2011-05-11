@@ -42,6 +42,16 @@ public:
     QList<WLDFragment *> fragmentsByType(uint32_t type) const;
     WLDFragment * findFragment(uint32_t type, QString name) const;
 
+    template<typename T>
+    T * findFragment(QString name) const
+    {
+        WLDFragment *f = findFragment(T::ID, name);
+        if(f)
+            return static_cast<T *>(f);
+        else
+            return 0;
+    }
+
 private:
     WLDHeader m_header;
     QByteArray m_stringData;

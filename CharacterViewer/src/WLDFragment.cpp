@@ -2,15 +2,12 @@
 #include <stdarg.h>
 #include "WLDFragment.h"
 #include "WLDData.h"
+#include "Fragments.h"
 
-const uint32_t WLDFragment::MESH = 0x36;
-
-WLDFragment::WLDFragment(uint32_t kind, QString name, QByteArray data)
+WLDFragment::WLDFragment(uint32_t kind, QString name)
 {
     m_kind = kind;
     m_name = name;
-    m_data = data;
-    m_pos = 0;
 }
 
 uint32_t WLDFragment::kind() const
@@ -21,11 +18,6 @@ uint32_t WLDFragment::kind() const
 QString WLDFragment::name() const
 {
     return m_name;
-}
-
-QByteArray WLDFragment::data() const
-{
-    return m_data;
 }
 
 WLDFragment *WLDFragment::fromStream(QIODevice *s, WLDData *wld)
@@ -45,158 +37,30 @@ WLDFragment *WLDFragment::fromStream(QIODevice *s, WLDData *wld)
     fragmentData = s->read(fh.size - 4);
     if((fragmentData.length() + 4) < fh.size)
         return 0;
-    WLDFragment *f = createByKind(fh.kind, fragmentName, fragmentData);
+    WLDFragment *f = createByKind(fh.kind, fragmentName);
     if(f)
-        f->unpack(wld);
+    {
+        WLDFragmentStream s(fragmentData, wld);
+        f->unpack(&s);
+    }
     return f;
 }
 
-bool WLDFragment::unpack(WLDData *wld)
+bool WLDFragment::unpack(WLDFragmentStream *s)
 {
+    (void)s;
     return true;
 }
 
-WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name, QByteArray data)
+WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
 {
     switch(kind)
     {
-    case MESH:
-        return new Fragment36(kind, name, data);
+    case MeshFragment::ID:
+        return new MeshFragment(name);
     default:
-        return new WLDFragment(kind, name, data);
+        return new WLDFragment(kind, name);
     }
-}
-
-bool WLDFragment::unpackField(char type, void *field)
-{
-    switch(type)
-    {
-    case 'I':
-        return readUint32((uint32_t *)field);
-    case 'i':
-    case 'r':
-        return readInt32((int32_t *)field);
-    case 'H':
-        return readUint16((uint16_t *)field);
-    case 'h':
-        return readInt16((int16_t *)field);
-    case 'f':
-        return readFloat32((float *)field);
-    default:
-        return false;
-    }
-}
-
-bool WLDFragment::unpackFields(char *types, ...)
-{
-    va_list args;
-    va_start(args, types);
-    while(*types)
-    {
-        void *dest = va_arg(args, void *);
-        if(!unpackField(*types, dest))
-            return false;
-        types++;
-    }
-    va_end(args);
-    return true;
-}
-
-bool WLDFragment::unpackStruct(char *types, void *first)
-{
-    uint8_t *dest = (uint8_t *)first;
-    while(*types)
-    {
-        if(!unpackField(*types, dest))
-            return false;
-        dest += fieldSize(*types);
-        types++;
-    }
-    return true;
-}
-
-bool WLDFragment::unpackArray(char *types, uint32_t count, void *first)
-{
-    uint8_t *dest = (uint8_t *)first;
-    uint32_t size = structSize(types);
-    for(uint32_t i = 0; i < count; i++)
-    {
-        if(!unpackStruct(types, dest))
-            return false;
-        dest += size;
-    }
-    return true;
-}
-
-uint32_t WLDFragment::structSize(char *types) const
-{
-    uint32_t s = 0;
-    while(*types)
-    {
-        s += fieldSize(*types);
-        types++;
-    }
-    return s;
-}
-
-bool WLDFragment::readInt16(int16_t *dest)
-{
-    if((m_pos + 2) > m_data.length())
-        return false;
-    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
-    *dest = (src[1] << 8) | src[0];
-    m_pos += 2;
-    return true;
-}
-
-bool WLDFragment::readUint16(uint16_t *dest)
-{
-    if((m_pos + 2) > m_data.length())
-        return false;
-    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
-    *dest = (src[1] << 8) | src[0];
-    m_pos += 2;
-    return true;
-}
-
-bool WLDFragment::readInt32(int32_t *dest)
-{
-    if((m_pos + 4) > m_data.length())
-        return false;
-    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
-    *dest = (src[3] << 24) | (src[2] << 16) | (src[1] << 8) | src[0];
-    m_pos += 4;
-    return true;
-}
-
-bool WLDFragment::readUint32(uint32_t *dest)
-{
-    if((m_pos + 4) > m_data.length())
-        return false;
-    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
-    *dest = (src[3] << 24) | (src[2] << 16) | (src[1] << 8) | src[0];
-    m_pos += 4;
-    return true;
-}
-
-bool WLDFragment::readFloat32(float *dest)
-{
-    if((m_pos + 4) > m_data.length())
-        return false;
-    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
-    *dest = *((float *)src);
-    m_pos += 4;
-    return true;
-}
-
-uint32_t WLDFragment::fieldSize(char c)
-{
-    if((c == 'I') || (c == 'i') || (c == 'f') || (c == 'r'))
-        return 4;
-    else if((c == 'H') || (c == 'h'))
-        return 2;
-    else
-        return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -225,21 +89,151 @@ QString WLDFragmentRef::name() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Fragment36::Fragment36(uint32_t kind, QString name, QByteArray data) : WLDFragment(kind, name, data)
+WLDFragmentStream::WLDFragmentStream(QByteArray data, WLDData *wld)
 {
+    m_data = data;
+    m_pos = 0;
+    m_wld = wld;
 }
 
-bool Fragment36::unpack(WLDData *wld)
+QByteArray WLDFragmentStream::data() const
 {
-    unpackField('I', &m_flags);
-    unpackArray("i", 4, m_ref);
-    unpackArray("f", 3, &m_center);
-    unpackArray("I", 3, &m_param2);
-    unpackField('f', &m_maxDist);
-    unpackArray("f", 3, &m_min);
-    unpackArray("f", 3, &m_max);
-    unpackFields("hhhhhhhhhh", &m_vertexCount, &m_texCoordsCount, &m_normalCount,
-                 &m_colorCount, &m_polyCount, &m_vertexPieceCount, &m_polyTexCount,
-                 &m_vertexTexCount, &m_size9, &m_scale);
+    return m_data;
+}
+
+WLDData *WLDFragmentStream::wld() const
+{
+    return m_wld;
+}
+
+bool WLDFragmentStream::unpackField(char type, void *field)
+{
+    switch(type)
+    {
+    case 'I':
+        return readUint32((uint32_t *)field);
+    case 'i':
+    case 'r':
+        return readInt32((int32_t *)field);
+    case 'H':
+        return readUint16((uint16_t *)field);
+    case 'h':
+        return readInt16((int16_t *)field);
+    case 'f':
+        return readFloat32((float *)field);
+    default:
+        return false;
+    }
+}
+
+bool WLDFragmentStream::unpackFields(char *types, ...)
+{
+    va_list args;
+    va_start(args, types);
+    while(*types)
+    {
+        void *dest = va_arg(args, void *);
+        if(!unpackField(*types, dest))
+            return false;
+        types++;
+    }
+    va_end(args);
     return true;
+}
+
+bool WLDFragmentStream::unpackStruct(char *types, void *first)
+{
+    uint8_t *dest = (uint8_t *)first;
+    while(*types)
+    {
+        if(!unpackField(*types, dest))
+            return false;
+        dest += fieldSize(*types);
+        types++;
+    }
+    return true;
+}
+
+bool WLDFragmentStream::unpackArray(char *types, uint32_t count, void *first)
+{
+    uint8_t *dest = (uint8_t *)first;
+    uint32_t size = structSize(types);
+    for(uint32_t i = 0; i < count; i++)
+    {
+        if(!unpackStruct(types, dest))
+            return false;
+        dest += size;
+    }
+    return true;
+}
+
+uint32_t WLDFragmentStream::structSize(char *types) const
+{
+    uint32_t s = 0;
+    while(*types)
+    {
+        s += fieldSize(*types);
+        types++;
+    }
+    return s;
+}
+
+bool WLDFragmentStream::readInt16(int16_t *dest)
+{
+    if((m_pos + 2) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = (src[1] << 8) | src[0];
+    m_pos += 2;
+    return true;
+}
+
+bool WLDFragmentStream::readUint16(uint16_t *dest)
+{
+    if((m_pos + 2) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = (src[1] << 8) | src[0];
+    m_pos += 2;
+    return true;
+}
+
+bool WLDFragmentStream::readInt32(int32_t *dest)
+{
+    if((m_pos + 4) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = (src[3] << 24) | (src[2] << 16) | (src[1] << 8) | src[0];
+    m_pos += 4;
+    return true;
+}
+
+bool WLDFragmentStream::readUint32(uint32_t *dest)
+{
+    if((m_pos + 4) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = (src[3] << 24) | (src[2] << 16) | (src[1] << 8) | src[0];
+    m_pos += 4;
+    return true;
+}
+
+bool WLDFragmentStream::readFloat32(float *dest)
+{
+    if((m_pos + 4) > m_data.length())
+        return false;
+    const uint8_t *src = (const uint8_t *)m_data.constData() + m_pos;
+    *dest = *((float *)src);
+    m_pos += 4;
+    return true;
+}
+
+uint32_t WLDFragmentStream::fieldSize(char c)
+{
+    if((c == 'I') || (c == 'i') || (c == 'f') || (c == 'r'))
+        return 4;
+    else if((c == 'H') || (c == 'h'))
+        return 2;
+    else
+        return 0;
 }

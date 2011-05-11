@@ -7,6 +7,7 @@
 #include "RenderStateGL2.h"
 #include "WLDData.h"
 #include "WLDFragment.h"
+#include "Fragments.h"
 
 const char *PATH = "Data/gfaydark_obj.d/gfaydark_obj.wld";
 
@@ -21,12 +22,9 @@ bool loadResources(RenderState *state)
             qDebug("kind = 0x%x, name = '%s', size = %d",
                 f->kind(), f->name().toLatin1().constData(), f->data().size());
         }*/
-        WLDFragment *f = d->findFragment(WLDFragment::MESH, "NEKPINE2_DMSPRITEDEF");
+        MeshFragment *f = d->findFragment<MeshFragment>("NEKPINE2_DMSPRITEDEF");
         if(f)
-        {
-            Fragment36 *f2 = static_cast<Fragment36 *>(f);
-            qDebug("x = %f, y = %f, z = %f", f2->m_center.x, f2->m_center.y, f2->m_center.z);
-        }
+            qDebug("x = %f, y = %f, z = %f", f->m_center.x, f->m_center.y, f->m_center.z);
 
         delete d;
         return true;

@@ -5,14 +5,16 @@ HEADERS = include/SceneViewport.h \
     include/Scene.h include/MeshGL2.h \
     include/Platform.h \
     include/WLDData.h \
-    include/WLDFragment.h
+    include/WLDFragment.h \
+    include/Fragments.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp \
     src/Mesh.cpp src/Material.cpp src/Vertex.cpp \
     src/Scene.cpp src/MeshGL2.cpp \
     src/WLDData.cpp \
-    src/WLDFragment.cpp
+    src/WLDFragment.cpp \
+    src/Fragments.cpp
 LIBS += -lm
 
 TARGET = CharacterViewer

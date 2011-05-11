@@ -8,6 +8,7 @@
 
 class QIODevice;
 class WLDData;
+class WLDFragmentStream;
 
 /*!
   \brief Describes the header of fragment contained in a .wld file.
@@ -25,17 +26,38 @@ typedef struct
 class WLDFragment
 {
 public:
-    WLDFragment(uint32_t kind, QString name, QByteArray data);
+    WLDFragment(uint32_t kind, QString name);
     static WLDFragment *fromStream(QIODevice *s, WLDData *wld);
 
     uint32_t kind() const;
     QString name() const;
+
+    virtual bool unpack(WLDFragmentStream *s);
+
+    template<typename T>
+    T * cast()
+    {
+        if(m_kind == T::ID)
+            return static_cast<T *>(this);
+        else
+            return 0;
+    }
+
+private:
+    static WLDFragment *createByKind(uint32_t kind, QString name);
+
+    uint32_t m_kind;
+    QString m_name;
+};
+
+class WLDFragmentStream
+{
+public:
+    WLDFragmentStream(QByteArray data, WLDData *wld);
+
     QByteArray data() const;
+    WLDData *wld() const;
 
-    //! \brief The fragment is a mesh.
-    const static uint32_t MESH;
-
-    virtual bool unpack(WLDData *wld);
     bool unpackField(char type, void *field);
     bool unpackFields(char *types, ...);
     bool unpackStruct(char *types, void *first);
@@ -43,17 +65,16 @@ public:
     uint32_t structSize(char *types) const;
 
 private:
-    static WLDFragment *createByKind(uint32_t kind, QString name, QByteArray data);
     static uint32_t fieldSize(char c);
     bool readUint16(uint16_t *dest);
     bool readInt16(int16_t *dest);
     bool readUint32(uint32_t *dest);
     bool readInt32(int32_t *dest);
     bool readFloat32(float *dest);
-    uint32_t m_kind;
-    QString m_name;
+
     QByteArray m_data;
     int m_pos;
+    WLDData *m_wld;
 };
 
 /*!
@@ -73,24 +94,4 @@ private:
     QString m_name;
 };
 
-/*!
-  \brief This type of fragment describes a mesh.
-  */
-class Fragment36 : public WLDFragment
-{
-public:
-    Fragment36(uint32_t kind, QString name, QByteArray data);
-    virtual bool unpack(WLDData *wld);
-
-    uint32_t m_flags;
-    int32_t m_ref[4];
-    vec3 m_center;
-    uint32_t m_param2[3];
-    float m_maxDist;
-    vec3 m_min, m_max;
-    uint16_t m_vertexCount, m_texCoordsCount, m_normalCount, m_colorCount, m_polyCount;
-    uint16_t m_vertexPieceCount, m_polyTexCount, m_vertexTexCount, m_size9, m_scale;
-};
-
 #endif
-
