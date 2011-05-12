@@ -93,6 +93,11 @@ void setTextureParams(uint32_t target, bool mipmaps)
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
+void Material::loadTexture(QImage &img, bool mipmaps)
+{
+    m_texture = textureFromImage(img, mipmaps);
+}
+
 void Material::loadTexture(string path, bool mipmaps)
 {
     m_texture = textureFromImage(path, mipmaps);
@@ -103,20 +108,23 @@ void Material::loadTexture(const char *data, size_t size, bool mipmaps)
     m_texture = textureFromImage(data, size, mipmaps);
 }
 
-uint32_t Material::textureFromImage(string path, bool mipmaps)
+uint32_t Material::textureFromImage(QImage &img, bool mipmaps)
 {
-    QImage raw(QString::fromStdString(path));
-    QImage img = QGLWidget::convertToGLFormat(raw);
-
-    // create a texture
+    QImage img2 = QGLWidget::convertToGLFormat(img);
     uint32_t texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width(), img.height(), 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, img.bits());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img2.width(), img2.height(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
     setTextureParams(GL_TEXTURE_2D, false);
     glBindTexture(GL_TEXTURE_2D, 0);
     return texID;
+}
+
+uint32_t Material::textureFromImage(string path, bool mipmaps)
+{
+    QImage img(QString::fromStdString(path));
+    return textureFromImage(img, mipmaps);
 }
 
 uint32_t Material::textureFromImage(const char *data, size_t size, bool mipmaps)

@@ -7,6 +7,8 @@
 
 using namespace std;
 
+class QImage;
+
 class Material
 {
 public:
@@ -26,8 +28,10 @@ public:
     void setTexture(uint32_t texture);
     void freeTexture();
 
+    void loadTexture(QImage &img, bool mipmaps = false);
     void loadTexture(string path, bool mipmaps = false);
     void loadTexture(const char *data, size_t size, bool mipmaps = false);
+    static uint32_t textureFromImage(QImage &img, bool mipmaps = false);
     static uint32_t textureFromImage(string path, bool mipmaps = false);
     static uint32_t textureFromImage(const char *data, size_t size, bool mipmaps = false);
 

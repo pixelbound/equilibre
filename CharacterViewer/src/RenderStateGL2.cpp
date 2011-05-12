@@ -153,6 +153,8 @@ void RenderStateGL2::beginFrame(int w, int h)
     glUseProgram(m_program);
     initShaders();
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     setUniformValue("u_light_ambient", m_ambient0);
     setUniformValue("u_light_diffuse", m_diffuse0);
     setUniformValue("u_light_specular", m_specular0);

@@ -1,3 +1,4 @@
+#include <QImage>
 #include "WLDModel.h"
 #include "Fragments.h"
 
@@ -82,11 +83,26 @@ Material * WLDModel::importMaterial(MaterialDefFragment *frag)
     BitmapNameFragment *bmp = spriteDef->m_bitmaps.value(0);
     if(!bmp)
         return 0;
+
     QString fileName = QString("%1/%2").arg(m_path).arg(bmp->m_fileName.toLower());
+    QImage img(fileName);
+    // masked bitmap?
+    if((frag->m_param1 & 0x3) == 0x3)
+    {
+        if(img.colorCount() > 0)
+        {
+            // replace the color of the first pixel by a transparent color in the table
+            uchar index = *img.bits();
+            QVector<QRgb> colors = img.colorTable();
+            colors[index] = qRgba(0, 0, 0, 0);
+            img.setColorTable(colors);
+        }
+    }
+
     Material *mat = new Material();
     mat->setAmbient(vec4(0.2, 0.2, 0.2, 1.0));
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
-    mat->loadTexture(fileName.toStdString());
+    mat->loadTexture(img);
     m_materials.insert(frag->name(), mat);
     return mat;
 }
