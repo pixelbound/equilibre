@@ -25,7 +25,7 @@ public:
     void draw();
 
 private:
-    void importVertexGroups(MeshFragment *frag, Mesh *m);
+    void importMaterialGroups(MeshFragment *frag, Mesh *m);
     Material * importMaterial(MaterialDefFragment *frag);
 
     QList<Mesh *> m_meshes;

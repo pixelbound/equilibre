@@ -23,26 +23,20 @@ void WLDModel::draw()
     {
         MeshFragment *frag = m_meshFrags[i];
         Mesh *m = m_meshes[i];
+        // create the mesh on first use
         if(!m)
         {
-            // load textures
-            if(frag->m_palette)
-            {
-                foreach(MaterialDefFragment *matDef, frag->m_palette->m_materials)
-                    importMaterial(matDef);
-            }
-
-            // load vertices, texCoords, normals, faces
             m = m_state->createMesh();
-            importVertexGroups(frag, m);
+            importMaterialGroups(frag, m);
             m_meshes[i] = m;
         }
         m_state->drawMesh(m);
     }
 }
 
-void WLDModel::importVertexGroups(MeshFragment *frag, Mesh *m)
+void WLDModel::importMaterialGroups(MeshFragment *frag, Mesh *m)
 {
+    // load vertices, texCoords, normals, faces
     VertexGroup *vg = new VertexGroup(GL_TRIANGLES, frag->m_vertices.count());
     VertexData *vd = vg->data;
     for(uint32_t i = 0; i < vg->count; i++, vd++)
@@ -54,6 +48,7 @@ void WLDModel::importVertexGroups(MeshFragment *frag, Mesh *m)
     for(uint32_t i = 0; i < (uint32_t)frag->m_indices.count(); i++)
         vg->indices.push_back(frag->m_indices[i]);
 
+    // load material groups
     MaterialPaletteFragment *palette = frag->m_palette;
     uint32_t pos = 0;
     foreach(vec2us g, frag->m_polygonsByTex)
@@ -99,8 +94,9 @@ Material * WLDModel::importMaterial(MaterialDefFragment *frag)
         }
     }
 
+    float ambient = frag->m_scaledAmbient;
     Material *mat = new Material();
-    mat->setAmbient(vec4(0.2, 0.2, 0.2, 1.0));
+    mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
     mat->loadTexture(img);
     m_materials.insert(frag->name(), mat);

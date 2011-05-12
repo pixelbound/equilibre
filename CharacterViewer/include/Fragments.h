@@ -18,7 +18,7 @@ class BitmapNameFragment : public WLDFragment
 {
 public:
     BitmapNameFragment(QString name);
-    virtual bool unpack(WLDFragmentStream *s);
+    virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x03;
     uint32_t m_flags;
@@ -33,7 +33,7 @@ class SpriteDefFragment : public WLDFragment
 {
 public:
     SpriteDefFragment(QString name);
-    virtual bool unpack(WLDFragmentStream *s);
+    virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x04;
     uint32_t m_flags, m_param1, m_param2;
@@ -47,7 +47,7 @@ class SpriteFragment : public WLDFragment
 {
 public:
     SpriteFragment(QString name);
-    virtual bool unpack(WLDFragmentStream *s);
+    virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x05;
     SpriteDefFragment *m_def;
@@ -61,7 +61,7 @@ class MaterialDefFragment : public WLDFragment
 {
 public:
     MaterialDefFragment(QString name);
-    virtual bool unpack(WLDFragmentStream *s);
+    virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x30;
     uint32_t m_flags, m_param1, m_param2;
@@ -77,7 +77,7 @@ class MaterialPaletteFragment : public WLDFragment
 {
 public:
     MaterialPaletteFragment(QString name);
-    virtual bool unpack(WLDFragmentStream *s);
+    virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x31;
     uint32_t m_flags;
@@ -91,7 +91,7 @@ class MeshFragment : public WLDFragment
 {
 public:
     MeshFragment(QString name);
-    virtual bool unpack(WLDFragmentStream *s);
+    virtual bool unpack(WLDReader *s);
 
     VertexGroup *toGroup() const;
 

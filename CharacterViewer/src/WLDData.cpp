@@ -1,11 +1,23 @@
 #include <QIODevice>
 #include <QFile>
 #include "WLDData.h"
-#include "WLDFragment.h"
 
-WLDData::WLDData(WLDHeader header, QObject *parent) : QObject(parent)
+/*!
+  \brief Describes the header of a .wld file.
+  */
+typedef struct
 {
-    m_header = header;
+    uint32_t magic;
+    uint32_t version;
+    uint32_t fragmentCount;
+    uint32_t header3;
+    uint32_t header4;
+    uint32_t stringDataSize;
+    uint32_t header6;
+} WLDHeader;
+
+WLDData::WLDData(QObject *parent) : QObject(parent)
+{
     m_stringData = 0;
 }
 
@@ -15,7 +27,7 @@ WLDData::~WLDData()
         delete m_fragments.takeLast();
 }
 
-const QList<WLDFragment *> &WLDData::fragments() const
+const QList<WLDFragment *> & WLDData::fragments() const
 {
     return m_fragments;
 }
@@ -30,34 +42,30 @@ WLDData *WLDData::fromFile(QString path, QObject *parent)
 
 WLDData *WLDData::fromStream(QIODevice *s, QObject *parent)
 {
+    WLDData *wld = new WLDData(parent);
+    WLDReader reader(s, wld);
     WLDHeader h;
-    qint64 read = 0;
-    QByteArray stringData;
 
     // read header
-    // XXX: fix endianness issues
-    read = s->read((char *)&h, sizeof(WLDHeader));
-    if(read < (qint64)sizeof(WLDHeader))
+    if(!reader.unpackStruct("IIIIIII", &h))
     {
         fprintf(stderr, "Incomplete header");
+        delete wld;
         return 0;
     }
-    WLDData *wld = new WLDData(h, parent);
 
     // read string table
-    stringData = s->read(h.stringDataSize);
-    if((uint32_t)stringData.length() < h.stringDataSize)
+    if(!reader.readEncodedData(h.stringDataSize, &wld->m_stringData))
     {
         fprintf(stderr, "Incomplete string table");
         delete wld;
         return 0;
     }
-    wld->m_stringData = decodeString(stringData);
 
     // load fragments
     for(uint i = 0; i < h.fragmentCount; i++)
     {
-        WLDFragment *f = WLDFragment::fromStream(s, wld);
+        WLDFragment *f = WLDFragment::fromStream(&reader);
         if(!f)
             break;
         wld->m_fragments.append(f);
@@ -128,4 +136,82 @@ WLDFragment * WLDData::findFragment(uint32_t type, QString name) const
         if((f->kind() == type) && (f->name() == name))
             return f;
     return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+WLDReader::WLDReader(QIODevice *stream, WLDData *wld) : StreamReader(stream)
+{
+    m_wld = wld;
+}
+
+WLDData *WLDReader::wld() const
+{
+    return m_wld;
+}
+
+void WLDReader::setWld(WLDData *wld)
+{
+    m_wld = wld;
+}
+
+bool WLDReader::unpackField(char type, void *field)
+{
+    switch(type)
+    {
+    case 'R':
+        return readReference((WLDFragmentRef *)field);
+    case 'r':
+        return readFragmentReference((WLDFragment **)field);
+    }
+    return StreamReader::unpackField(type, field);
+}
+
+bool WLDReader::readReference(WLDFragmentRef *dest)
+{
+    int32_t encoded;
+    if(!readInt32(&encoded) || !m_wld)
+        return false;
+    *dest = m_wld->lookupReference(encoded);
+    return true;
+}
+
+bool WLDReader::readFragmentReference(WLDFragment **dest)
+{
+    int32_t encoded;
+    if(!readInt32(&encoded) || !m_wld)
+        return false;
+    *dest = m_wld->lookupReference(encoded).fragment();
+    return true;
+}
+
+uint32_t WLDReader::fieldSize(char c) const
+{
+    switch(c)
+    {
+    case 'R':
+        return sizeof(WLDFragmentRef);
+    case 'r':
+        return sizeof(WLDFragment *);
+    default:
+        return StreamReader::fieldSize(c);
+    }
+}
+
+bool WLDReader::readEncodedData(uint32_t size, QByteArray *dest)
+{
+    QByteArray data = m_stream->read(size);
+    if(((uint32_t)data.length() < size) || !m_wld)
+        return false;
+    *dest = m_wld->decodeString(data);
+    return true;
+}
+
+bool WLDReader::readEncodedString(uint32_t size, QString *dest)
+{
+    QByteArray data;
+    if(!readEncodedData(size, &data))
+        return false;
+    *dest = QString(data);
+    return true;
 }

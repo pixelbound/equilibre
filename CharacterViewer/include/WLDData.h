@@ -3,25 +3,12 @@
 
 #include <QObject>
 #include <QList>
+#include <QByteArray>
 #include "Platform.h"
+#include "WLDFragment.h"
+#include "StreamReader.h"
 
 class QIODevice;
-class WLDFragment;
-class WLDFragmentRef;
-
-/*!
-  \brief Describes the header of a .wld file.
-  */
-typedef struct
-{
-    uint32_t magic;
-    uint32_t version;
-    uint32_t fragmentCount;
-    uint32_t header3;
-    uint32_t header4;
-    uint32_t stringDataSize;
-    uint32_t header6;
-} WLDHeader;
 
 /*!
   \brief Holds the content of a .wld file (mostly a list of fragments such as
@@ -30,7 +17,7 @@ typedef struct
 class WLDData : public QObject
 {
 public:
-    WLDData(WLDHeader header, QObject *parent = 0);
+    WLDData(QObject *parent = 0);
     virtual ~WLDData();
     static WLDData *fromStream(QIODevice *s, QObject *parent = 0);
     static WLDData *fromFile(QString path, QObject *parent = 0);
@@ -53,9 +40,43 @@ public:
     }
 
 private:
-    WLDHeader m_header;
     QByteArray m_stringData;
     QList<WLDFragment *> m_fragments;
+};
+
+class WLDReader : public StreamReader
+{
+public:
+    WLDReader(QIODevice *stream, WLDData *wld);
+
+    WLDData *wld() const;
+    void setWld(WLDData *wld);
+
+    virtual bool unpackField(char type, void *field);
+    bool readEncodedData(uint32_t size, QByteArray *dest);
+    bool readEncodedString(uint32_t size, QString *dest);
+
+    template<typename T>
+    bool unpackReference(T **ref)
+    {
+        WLDFragment *frag;
+        if(!unpackField('r', &frag))
+            return false;
+        else if(!frag)
+            *ref = 0;
+        else
+            *ref = frag->cast<T>();
+        return true;
+    }
+
+protected:
+    uint32_t fieldSize(char c) const;
+
+private:
+    bool readReference(WLDFragmentRef *dest);
+    bool readFragmentReference(WLDFragment **dest);
+
+    WLDData *m_wld;
 };
 
 #endif

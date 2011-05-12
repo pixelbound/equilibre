@@ -1,10 +1,11 @@
 #include "Fragments.h"
+#include "WLDData.h"
 
 BitmapNameFragment::BitmapNameFragment(QString name) : WLDFragment(ID, name)
 {
 }
 
-bool BitmapNameFragment::unpack(WLDFragmentStream *s)
+bool BitmapNameFragment::unpack(WLDReader *s)
 {
     uint16_t size;
     s->unpackFields("IH", &m_flags, &size);
@@ -19,7 +20,7 @@ SpriteDefFragment::SpriteDefFragment(QString name) : WLDFragment(ID, name)
     m_flags = m_param1 = m_param2 = 0;
 }
 
-bool SpriteDefFragment::unpack(WLDFragmentStream *s)
+bool SpriteDefFragment::unpack(WLDReader *s)
 {
     uint32_t fileCount;
     s->unpackFields("II", &m_flags, &fileCount);
@@ -43,7 +44,7 @@ SpriteFragment::SpriteFragment(QString name) : WLDFragment(ID, name)
 {
 }
 
-bool SpriteFragment::unpack(WLDFragmentStream *s)
+bool SpriteFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
     s->unpackField('I', &m_flags);
@@ -56,7 +57,7 @@ MaterialDefFragment::MaterialDefFragment(QString name) : WLDFragment(ID, name)
 {
 }
 
-bool MaterialDefFragment::unpack(WLDFragmentStream *s)
+bool MaterialDefFragment::unpack(WLDReader *s)
 {
     s->unpackFields("IIIff", &m_flags, &m_param1, &m_param2, &m_brightness, &m_scaledAmbient);
     s->unpackReference(&m_sprite);
@@ -70,7 +71,7 @@ MaterialPaletteFragment::MaterialPaletteFragment(QString name) : WLDFragment(ID,
 {
 }
 
-bool MaterialPaletteFragment::unpack(WLDFragmentStream *s)
+bool MaterialPaletteFragment::unpack(WLDReader *s)
 {
     uint32_t materialCount;
     s->unpackFields("II", &m_flags, &materialCount);
@@ -90,7 +91,7 @@ MeshFragment::MeshFragment(QString name) : WLDFragment(ID, name)
 {
 }
 
-bool MeshFragment::unpack(WLDFragmentStream *s)
+bool MeshFragment::unpack(WLDReader *s)
 {
     uint16_t vertexCount, texCoordsCount, normalCount, colorCount, polyCount;
     uint16_t vertexPieceCount, polyTexCount, vertexTexCount, scaleFactor;

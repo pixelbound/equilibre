@@ -7,7 +7,8 @@ HEADERS = include/SceneViewport.h \
     include/WLDData.h \
     include/WLDFragment.h \
     include/Fragments.h \
-    include/WLDModel.h
+    include/WLDModel.h \
+    include/StreamReader.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp \
@@ -16,7 +17,8 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/WLDData.cpp \
     src/WLDFragment.cpp \
     src/Fragments.cpp \
-    src/WLDModel.cpp
+    src/WLDModel.cpp \
+    src/StreamReader.cpp
 LIBS += -lm
 
 TARGET = CharacterViewer
