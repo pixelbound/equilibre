@@ -12,12 +12,18 @@
 #include "WLDFragment.h"
 #include "WLDModel.h"
 #include "Fragments.h"
+#include "PFSArchive.h"
 
+const char *S3D_PATH = "Data/gfaydark_obj.s3d";
 const char *WLD_DIR = "Data/gfaydark_obj.d";
 const char *WLD_PATH = "Data/gfaydark_obj.d/gfaydark_obj.wld";
 
 bool loadResources(RenderState *state, Scene *scene)
 {
+    PFSArchive a(S3D_PATH);
+    foreach(QString name, a.files())
+        qDebug("%s", name.toLatin1().constData());
+
     scene->openWLD(WLD_PATH);
     if(scene->wldData())
     {

@@ -8,7 +8,8 @@ HEADERS = include/SceneViewport.h \
     include/WLDFragment.h \
     include/Fragments.h \
     include/WLDModel.h \
-    include/StreamReader.h
+    include/StreamReader.h \
+    include/PFSArchive.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp \
@@ -18,8 +19,9 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/WLDFragment.cpp \
     src/Fragments.cpp \
     src/WLDModel.cpp \
-    src/StreamReader.cpp
-LIBS += -lm
+    src/StreamReader.cpp \
+    src/PFSArchive.cpp
+LIBS += -lm -lz
 
 TARGET = CharacterViewer
 CONFIG += qt warn_on debug thread
