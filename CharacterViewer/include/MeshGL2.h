@@ -12,7 +12,7 @@ class RenderStateGL2;
 class MeshGL2 : public Mesh
 {
 public:
-    MeshGL2(const RenderStateGL2 *state);
+    MeshGL2(RenderStateGL2 *state);
     virtual ~MeshGL2();
 
     virtual int groupCount() const;
@@ -26,7 +26,7 @@ private:
     void drawArray(VertexGroup *vg, int position, int normal, int texCoords);
     void drawVBO(VertexGroup *vg, int position, int normal, int texCoords);
 
-    const RenderStateGL2 *m_state;
+    RenderStateGL2 *m_state;
     std::vector<VertexGroup *> m_groups;
 };
 

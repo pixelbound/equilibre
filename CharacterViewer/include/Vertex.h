@@ -2,9 +2,11 @@
 #define OPENEQ_VERTEX_H
 
 #include <inttypes.h>
-#include <vector>
+#include <QVector>
 
 bool fequal(double a, double b);
+
+class Material;
 
 class vec2
 {
@@ -103,6 +105,14 @@ public:
     vec2 texCoords;
 };
 
+class MaterialGroup
+{
+public:
+    uint32_t offset;
+    uint32_t count;
+    Material *mat;
+};
+
 class VertexGroup
 {
 public:
@@ -114,7 +124,8 @@ public:
     uint32_t count;
     VertexData *data;
     uint32_t id;
-    std::vector<uint16_t> indices;
+    QVector<uint16_t> indices;
+    QVector<MaterialGroup> matGroups;
 };
 
 #endif

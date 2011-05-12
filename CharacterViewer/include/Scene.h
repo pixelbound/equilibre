@@ -2,8 +2,12 @@
 #define OPENEQ_SCENE_H
 
 #include <QObject>
+#include <QMap>
 #include "RenderState.h"
 #include "Vertex.h"
+
+class WLDData;
+class WLDModel;
 
 class Scene : public QObject, StateObject
 {
@@ -19,8 +23,10 @@ public:
     float & sigma();
     vec3 & delta();
 
-    QString meshName() const;
-
+    WLDData * wldData() const;
+    QMap<QString, WLDModel *> & models();
+    WLDModel * selectedModel() const;
+    QString selectedModelName() const;
 
     void draw();
 
@@ -34,8 +40,10 @@ public:
     void reset();
     void animate();
 
+    void openWLD(QString path);
+
 public slots:
-    void setMeshName(QString name);
+    void setSelectedModelName(QString name);
 
 private:
     double m_started;
@@ -44,6 +52,8 @@ private:
     vec3 m_theta;
     float m_sigma;
     QString m_meshName;
+    WLDData *m_wldData;
+    QMap<QString, WLDModel *> m_models;
 };
 
 #endif

@@ -10,26 +10,27 @@
 #include "RenderStateGL2.h"
 #include "WLDData.h"
 #include "WLDFragment.h"
+#include "WLDModel.h"
 #include "Fragments.h"
 
-const char *PATH = "Data/gfaydark_obj.d/gfaydark_obj.wld";
+const char *WLD_DIR = "Data/gfaydark_obj.d";
+const char *WLD_PATH = "Data/gfaydark_obj.d/gfaydark_obj.wld";
 
-bool loadResources(RenderState *state)
+bool loadResources(RenderState *state, Scene *scene)
 {
-    WLDData *d = WLDData::fromFile(PATH);
-    if(d)
+    scene->openWLD(WLD_PATH);
+    if(scene->wldData())
     {
-        foreach(WLDFragment *f, d->fragments())
+        foreach(WLDFragment *f, scene->wldData()->fragments())
         {
             MeshFragment *mf = f->cast<MeshFragment>();
             if(mf)
             {
-                VertexGroup *vg = mf->toGroup();
-                state->loadMeshFromGroup(mf->name().toStdString(), vg);
-                delete vg;
+                WLDModel *m = new WLDModel(state, WLD_DIR, scene);
+                m->addMesh(mf);
+                scene->models().insert(mf->name(), m);
             }
         }
-        delete d;
         return true;
     }
     return false;
@@ -52,7 +53,7 @@ int main(int argc, char **argv)
     // create viewport for rendering the scene
     SceneViewport vp(&scene, &state, f);
     vp.makeCurrent();
-    if(!loadResources(&state))
+    if(!loadResources(&state, &scene))
     {
         QMessageBox::critical(0, "Error", "Could not load the WLD file.");
         return 1;
@@ -60,14 +61,11 @@ int main(int argc, char **argv)
 
     // add all mesh names to the combo box
     QComboBox *meshCombo = new QComboBox();
-    map<string, Mesh *>::iterator it = state.meshes().begin();
-    while(it != state.meshes().end())
-    {
-        meshCombo->addItem(QString::fromStdString(it->first));
-        it++;
-    }
+    foreach(QString name, scene.models().keys())
+        meshCombo->addItem(name);
+    scene.setSelectedModelName(meshCombo->itemText(0));
     QObject::connect(meshCombo, SIGNAL(activated(QString)),
-                     &scene, SLOT(setMeshName(QString)));
+                     &scene, SLOT(setSelectedModelName(QString)));
 
     QWidget *w = new QWidget();
     w->setWindowState(Qt::WindowMaximized);

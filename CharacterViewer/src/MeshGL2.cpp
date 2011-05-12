@@ -8,7 +8,7 @@
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
-MeshGL2::MeshGL2(const RenderStateGL2 *state) : Mesh()
+MeshGL2::MeshGL2(RenderStateGL2 *state) : Mesh()
 {
     m_state = state;
 }
@@ -48,12 +48,7 @@ uint32_t MeshGL2::groupSize(int index) const
 
 void MeshGL2::addGroup(VertexGroup *vg)
 {
-    VertexGroup *copy = new VertexGroup(vg->mode, vg->count);
-    uint32_t size = vg->count * sizeof(VertexData);
-    memcpy(copy->data, vg->data, size);
-    for(uint32_t i = 0; i < vg->indices.size(); i++)
-        copy->indices.push_back(vg->indices[i]);
-    m_groups.push_back(copy);
+    m_groups.push_back(vg);
 }
 
 bool MeshGL2::copyGroupTo(int index, VertexGroup *vg) const
@@ -96,10 +91,29 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
         sizeof(VertexData), &vg->data->normal);
     glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), &vg->data->texCoords);
-    if(vg->indices.size() > 0)
-        glDrawElements(vg->mode, vg->indices.size(), GL_UNSIGNED_SHORT, vg->indices.data());
+    if(vg->indices.count() > 0)
+    {
+        const uint16_t *indices = vg->indices.constData();
+        foreach(MaterialGroup mg, vg->matGroups)
+        {
+            if(mg.mat)
+                m_state->pushMaterial(*mg.mat);
+            glDrawElements(vg->mode, mg.count, GL_UNSIGNED_SHORT, indices + mg.offset);
+            if(mg.mat)
+                m_state->popMaterial();
+        }
+    }
     else
-        glDrawArrays(vg->mode, 0, vg->count);
+    {
+        foreach(MaterialGroup mg, vg->matGroups)
+        {
+            if(mg.mat)
+                m_state->pushMaterial(*mg.mat);
+            glDrawArrays(vg->mode, mg.offset, mg.count);
+            if(mg.mat)
+                m_state->popMaterial();
+        }
+    }
 }
 
 void MeshGL2::drawVBO(VertexGroup *vg, int position, int normal, int texCoords)

@@ -14,7 +14,7 @@ public:
 
     virtual void init();
 
-    virtual Mesh * createMesh() const;
+    virtual Mesh * createMesh();
     virtual void drawMesh(Mesh *m);
     virtual void freeTextures();
 

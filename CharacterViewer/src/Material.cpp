@@ -1,4 +1,5 @@
-#include <tiffio.h>
+#include <QImage>
+#include <QGLWidget>
 #include <cstring>
 #include <cstdio>
 #include "Platform.h"
@@ -104,7 +105,18 @@ void Material::loadTexture(const char *data, size_t size, bool mipmaps)
 
 uint32_t Material::textureFromImage(string path, bool mipmaps)
 {
-    return 0;
+    QImage raw(QString::fromStdString(path));
+    QImage img = QGLWidget::convertToGLFormat(raw);
+
+    // create a texture
+    uint32_t texID = 0;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width(), img.height(), 0,
+        GL_RGBA, GL_UNSIGNED_BYTE, img.bits());
+    setTextureParams(GL_TEXTURE_2D, false);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return texID;
 }
 
 uint32_t Material::textureFromImage(const char *data, size_t size, bool mipmaps)

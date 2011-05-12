@@ -33,7 +33,7 @@ RenderStateGL2::~RenderStateGL2()
         glDeleteProgram(m_program);
 }
 
-Mesh * RenderStateGL2::createMesh() const
+Mesh * RenderStateGL2::createMesh()
 {
     return new MeshGL2(this);
 }

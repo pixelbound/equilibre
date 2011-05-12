@@ -16,15 +16,20 @@ bool BitmapNameFragment::unpack(WLDFragmentStream *s)
 
 SpriteDefFragment::SpriteDefFragment(QString name) : WLDFragment(ID, name)
 {
+    m_flags = m_param1 = m_param2 = 0;
 }
 
 bool SpriteDefFragment::unpack(WLDFragmentStream *s)
 {
     uint32_t fileCount;
-    s->unpackFields("IIII", &m_flags, &fileCount, &m_param1, &m_param2);
+    s->unpackFields("II", &m_flags, &fileCount);
+    if(m_flags & 0x4)
+        s->unpackField('I', &m_param1);
+    if(m_flags & 0x8)
+        s->unpackField('I', &m_param2);
     for(uint32_t i = 0; i < fileCount; i++)
     {
-        BitmapNameFragment *frag;
+        BitmapNameFragment *frag = 0;
         s->unpackReference(&frag);
         if(frag)
             m_bitmaps.append(frag);
@@ -113,7 +118,7 @@ bool MeshFragment::unpack(WLDFragmentStream *s)
     for(uint16_t i = 0; i < texCoordsCount; i++)
     {
         s->unpackStruct("hh", texCoord);
-        m_texCoords.append(vec2(texCoord[0] / 256.0, texCoord[1] / 256.0));
+        m_texCoords.append(vec2((texCoord[0] / 256.0), (texCoord[1] / 256.0)));
     }
     for(uint16_t i = 0; i < normalCount; i++)
     {
@@ -148,21 +153,4 @@ bool MeshFragment::unpack(WLDFragmentStream *s)
         m_verticesByTex.append(vec2us(vertexTex[0], vertexTex[1]));
     }
     return true;
-}
-
-VertexGroup *MeshFragment::toGroup() const
-{
-    if(m_vertices.count() == 0)
-        return 0;
-    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_vertices.count());
-    VertexData *vd = vg->data;
-    for(uint32_t i = 0; i < vg->count; i++, vd++)
-    {
-        vd->position = m_vertices.value(i);
-        vd->normal = m_normals.value(i);
-        vd->texCoords = m_texCoords.value(i);
-    }
-    for(uint32_t i = 0; i < (uint32_t)m_indices.count(); i++)
-        vg->indices.push_back(m_indices[i]);
-    return vg;
 }

@@ -317,7 +317,7 @@ bool WLDFragmentStream::readEncodedString(uint32_t size, QString *dest)
     if((m_pos + size) > m_data.length())
         return false;
     QByteArray decoded = m_wld->decodeString(m_data.mid(m_pos, size));
-    *dest = QString::fromLatin1(decoded);
+    *dest = QString(decoded);
     m_pos += size;
     return true;
 }

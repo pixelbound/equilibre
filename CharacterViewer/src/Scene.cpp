@@ -3,6 +3,8 @@
 #include "Scene.h"
 #include "Mesh.h"
 #include "Material.h"
+#include "WLDData.h"
+#include "WLDModel.h"
 
 static Material debugMaterial(vec4(0.2, 0.2, 0.2, 1.0),
     vec4(1.0, 4.0/6.0, 0.0, 1.0), vec4(0.2, 0.2, 0.2, 1.0), 20.0);
@@ -15,13 +17,23 @@ static double currentTime();
 Scene::Scene(RenderState *state) : StateObject(state)
 {
     m_sigma = 1.0;
-
+    m_wldData = 0;
     reset();
     animate();
 }
 
 Scene::~Scene()
 {
+}
+
+WLDData * Scene::wldData() const
+{
+    return m_wldData;
+}
+
+QMap<QString, WLDModel *> & Scene::models()
+{
+    return m_models;
 }
 
 void Scene::init()
@@ -31,7 +43,7 @@ void Scene::init()
 void Scene::reset()
 {
     m_delta = vec3(-0.0, -0.0, -5.0);
-    m_theta = vec3(-90.0, 0.0, 0.0);
+    m_theta = vec3(-90.0, 00.0, 90.0);
     m_sigma = 0.10;
     m_started = currentTime();
 }
@@ -51,14 +63,19 @@ vec3 & Scene::delta()
     return m_delta;
 }
 
-QString Scene::meshName() const
+QString Scene::selectedModelName() const
 {
     return m_meshName;
 }
 
-void Scene::setMeshName(QString name)
+void Scene::setSelectedModelName(QString name)
 {
     m_meshName = name;
+}
+
+WLDModel * Scene::selectedModel() const
+{
+    return m_models.value(m_meshName);
 }
 
 void Scene::draw()
@@ -69,9 +86,16 @@ void Scene::draw()
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
-    m_state->pushMaterial(debugMaterial);
-    m_state->drawMesh(m_meshName.toStdString());
-    m_state->popMaterial();
+    WLDModel *model = selectedModel();
+    if(model)
+        model->draw();
+}
+
+void Scene::openWLD(QString path)
+{
+    if(m_wldData)
+        delete m_wldData;
+    m_wldData = WLDData::fromFile(path, this);
 }
 
 void Scene::topView()
