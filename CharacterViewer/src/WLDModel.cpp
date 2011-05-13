@@ -1,10 +1,11 @@
 #include <QImage>
 #include "WLDModel.h"
 #include "Fragments.h"
+#include "PFSArchive.h"
 
-WLDModel::WLDModel(RenderState *state, QString path, QObject *parent) : QObject(parent), StateObject(state)
+WLDModel::WLDModel(RenderState *state, PFSArchive *archive, QObject *parent) : QObject(parent), StateObject(state)
 {
-    m_path = path;
+    m_archive = archive;
 }
 
 WLDModel::~WLDModel()
@@ -79,8 +80,11 @@ Material * WLDModel::importMaterial(MaterialDefFragment *frag)
     if(!bmp)
         return 0;
 
-    QString fileName = QString("%1/%2").arg(m_path).arg(bmp->m_fileName.toLower());
-    QImage img(fileName);
+    QImage img;
+    // XXX case-insensitive lookup
+    if(m_archive)
+        img.loadFromData(m_archive->unpackFile(bmp->m_fileName.toLower()));
+
     // masked bitmap?
     if((frag->m_param1 & 0x3) == 0x3)
     {

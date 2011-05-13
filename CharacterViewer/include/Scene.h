@@ -8,6 +8,8 @@
 
 class WLDData;
 class WLDModel;
+class MeshFragment;
+class PFSArchive;
 
 class Scene : public QObject, StateObject
 {
@@ -28,6 +30,8 @@ public:
     WLDModel * selectedModel() const;
     QString selectedModelName() const;
 
+    WLDModel * createModelFromMesh(MeshFragment *frag);
+
     void draw();
 
     void selectNext();
@@ -40,7 +44,7 @@ public:
     void reset();
     void animate();
 
-    void openWLD(QString path);
+    void openWLD(QString archivePath, QString wldName);
 
 public slots:
     void setSelectedModelName(QString name);
@@ -52,6 +56,7 @@ private:
     vec3 m_theta;
     float m_sigma;
     QString m_meshName;
+    PFSArchive *m_archive;
     WLDData *m_wldData;
     QMap<QString, WLDModel *> m_models;
 };

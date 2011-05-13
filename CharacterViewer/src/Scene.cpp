@@ -5,6 +5,8 @@
 #include "Material.h"
 #include "WLDData.h"
 #include "WLDModel.h"
+#include "PFSArchive.h"
+#include "Fragments.h"
 
 static Material debugMaterial(vec4(0.2, 0.2, 0.2, 1.0),
     vec4(1.0, 4.0/6.0, 0.0, 1.0), vec4(0.2, 0.2, 0.2, 1.0), 20.0);
@@ -17,6 +19,7 @@ static double currentTime();
 Scene::Scene(RenderState *state) : StateObject(state)
 {
     m_sigma = 1.0;
+    m_archive = 0;
     m_wldData = 0;
     reset();
     animate();
@@ -78,6 +81,16 @@ WLDModel * Scene::selectedModel() const
     return m_models.value(m_meshName);
 }
 
+WLDModel * Scene::createModelFromMesh(MeshFragment *frag)
+{
+    if(!frag)
+        return 0;
+    WLDModel *m = new WLDModel(m_state, m_archive, this);
+    m->addMesh(frag);
+    m_models.insert(frag->name(), m);
+    return m;
+}
+
 void Scene::draw()
 {
     vec3 rot = m_theta;
@@ -91,11 +104,10 @@ void Scene::draw()
         model->draw();
 }
 
-void Scene::openWLD(QString path)
+void Scene::openWLD(QString archivePath, QString wldName)
 {
-    if(m_wldData)
-        delete m_wldData;
-    m_wldData = WLDData::fromFile(path, this);
+    m_archive = new PFSArchive(archivePath, this);
+    m_wldData = WLDData::fromArchive(m_archive, wldName, this);
 }
 
 void Scene::topView()

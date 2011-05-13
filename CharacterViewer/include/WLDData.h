@@ -9,6 +9,7 @@
 #include "StreamReader.h"
 
 class QIODevice;
+class PFSArchive;
 
 /*!
   \brief Holds the content of a .wld file (mostly a list of fragments such as
@@ -21,6 +22,7 @@ public:
     virtual ~WLDData();
     static WLDData *fromStream(QIODevice *s, QObject *parent = 0);
     static WLDData *fromFile(QString path, QObject *parent = 0);
+    static WLDData *fromArchive(PFSArchive *a, QString name, QObject *parent = 0);
 
     const QList<WLDFragment *> &fragments() const;
     QString lookupString(int start) const;

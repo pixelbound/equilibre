@@ -15,28 +15,14 @@
 #include "PFSArchive.h"
 
 const char *S3D_PATH = "Data/gfaydark_obj.s3d";
-const char *WLD_DIR = "Data/gfaydark_obj.d";
-const char *WLD_PATH = "Data/gfaydark_obj.d/gfaydark_obj.wld";
 
 bool loadResources(RenderState *state, Scene *scene)
 {
-    PFSArchive a(S3D_PATH);
-    foreach(QString name, a.files())
-        qDebug("%s", name.toLatin1().constData());
-
-    scene->openWLD(WLD_PATH);
+    scene->openWLD(S3D_PATH, "gfaydark_obj.wld");
     if(scene->wldData())
     {
         foreach(WLDFragment *f, scene->wldData()->fragments())
-        {
-            MeshFragment *mf = f->cast<MeshFragment>();
-            if(mf)
-            {
-                WLDModel *m = new WLDModel(state, WLD_DIR, scene);
-                m->addMesh(mf);
-                scene->models().insert(mf->name(), m);
-            }
-        }
+            scene->createModelFromMesh(f->cast<MeshFragment>());
         return true;
     }
     return false;

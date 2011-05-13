@@ -11,6 +11,7 @@ class Mesh;
 class MeshFragment;
 class MaterialDefFragment;
 class Material;
+class PFSArchive;
 
 /*!
   \brief Describes a model (such as an object or a character) that can be rendered.
@@ -18,7 +19,7 @@ class Material;
 class WLDModel : public QObject, StateObject
 {
 public:
-    WLDModel(RenderState *state, QString path, QObject *parent = 0);
+    WLDModel(RenderState *state, PFSArchive *archive, QObject *parent = 0);
     virtual ~WLDModel();
 
     void addMesh(MeshFragment *frag);
@@ -31,7 +32,7 @@ private:
     QList<Mesh *> m_meshes;
     QList<MeshFragment *> m_meshFrags;
     QMap<QString, Material *> m_materials;
-    QString m_path;
+    PFSArchive *m_archive;
 };
 
 #endif

@@ -1,6 +1,8 @@
 #include <QIODevice>
 #include <QFile>
+#include <QBuffer>
 #include "WLDData.h"
+#include "PFSArchive.h"
 
 /*!
   \brief Describes the header of a .wld file.
@@ -38,6 +40,16 @@ WLDData *WLDData::fromFile(QString path, QObject *parent)
     if(f.open(QFile::ReadOnly))
         return fromStream(&f, parent);
     return 0;
+}
+
+WLDData *WLDData::fromArchive(PFSArchive *a, QString name, QObject *parent)
+{
+    if(!a)
+        return 0;
+    QByteArray data = a->unpackFile(name);
+    QBuffer buffer(&data);
+    buffer.open(QBuffer::ReadOnly);
+    return fromStream(&buffer, parent);
 }
 
 WLDData *WLDData::fromStream(QIODevice *s, QObject *parent)
