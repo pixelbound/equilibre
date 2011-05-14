@@ -10,11 +10,12 @@
 #include "RenderStateGL2.h"
 #include "WLDModel.h"
 
-const char *PATH = "Data";
+//const char *PATH = "Data";
+const char *PATH = "EQ Classic";
 
 bool loadResources(Scene *scene)
 {
-    return scene->openZone(PATH, "gfaydark");
+    return scene->openZone(PATH, "butcher");
 }
 
 int main(int argc, char **argv)
@@ -36,7 +37,7 @@ int main(int argc, char **argv)
     vp.makeCurrent();
     if(!loadResources(&scene))
     {
-        QMessageBox::critical(0, "Error", "Could not load the WLD file.");
+        QMessageBox::critical(0, "Error", "Could not load the zone.");
         return 1;
     }
 

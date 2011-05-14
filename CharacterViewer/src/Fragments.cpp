@@ -100,7 +100,8 @@ bool ActorFragment::unpack(WLDReader *s)
     s->unpackFields("RIr", &m_def, &m_flags, &m_fragment1);
     s->unpackStruct("fff", &m_location);
     s->unpackFields("ffff", &rotZ, &rotY, &rotX, &m_param1); // param1: rotW (quaternion)?
-    m_rotation = vec3(rotX * 512.0 / 360.0, rotY * 512.0 / 360.0, rotZ * 512.0 / 360.0);
+    float rotFactor = 1.0 / (512.0 / 360.0);
+    m_rotation = vec3(rotX * rotFactor, rotY * rotFactor, rotZ * rotFactor);
     s->unpackFields("ff", &scaleX, &scaleY);
     m_scale = vec3(scaleX, scaleY, 1.0);
     s->unpackField('r', &m_fragment2);

@@ -125,11 +125,17 @@ void WLDModelPart::importMaterialGroups(Mesh *m)
     foreach(vec2us g, m_meshDef->m_polygonsByTex)
     {
         MaterialGroup mg;
-        mg.offset = pos;
-        mg.count = g.first * 3;
-        mg.mat = m_model->importMaterial(palette->m_materials[g.second]);
-        vg->matGroups.append(mg);
-        pos += mg.count;
+        MaterialDefFragment *matDef = palette->m_materials[g.second];
+        uint32_t vertexCount = g.first * 3;
+        // skip invisible groups
+        if(matDef->m_param1 != 0)
+        {
+            mg.offset = pos;
+            mg.count = vertexCount;
+            mg.mat = m_model->importMaterial(matDef);
+            vg->matGroups.append(mg);
+        }
+        pos += vertexCount;
     }
     m->addGroup(vg);
 }
