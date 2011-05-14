@@ -74,6 +74,8 @@ void Scene::draw()
     WLDModel *model = selectedModel();
     if(model)
         model->draw(m_state);
+    //m_zone->drawGeometry(m_state);
+    //m_zone->drawObjects(m_state);
 }
 
 bool Scene::openZone(QString path, QString zoneName)

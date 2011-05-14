@@ -4,11 +4,11 @@
 #include "PFSArchive.h"
 #include "RenderState.h"
 
-WLDModel::WLDModel(ActorDefFragment *def, PFSArchive *archive, QObject *parent) : QObject(parent)
+WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, QObject *parent) : QObject(parent)
 {
-    m_def = def;
     m_archive = archive;
-    importDefinition(def);
+    if(def)
+        importDefinition(def);
 }
 
 WLDModel::~WLDModel()
@@ -28,54 +28,13 @@ void WLDModel::importDefinition(ActorDefFragment *def)
 
 void WLDModel::importMesh(MeshDefFragment *frag)
 {
-    m_meshFrags.append(frag);
-    m_meshes.append(0);
+    m_parts.append(new WLDModelPart(this, frag, this));
 }
 
 void WLDModel::draw(RenderState *state)
 {
-    for(int i = 0; i < m_meshFrags.count(); i++)
-    {
-        MeshDefFragment *frag = m_meshFrags[i];
-        Mesh *m = m_meshes[i];
-        // create the mesh on first use
-        if(!m)
-        {
-            m = state->createMesh();
-            importMaterialGroups(frag, m);
-            m_meshes[i] = m;
-        }
-        state->drawMesh(m);
-    }
-}
-
-void WLDModel::importMaterialGroups(MeshDefFragment *frag, Mesh *m)
-{
-    // load vertices, texCoords, normals, faces
-    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, frag->m_vertices.count());
-    VertexData *vd = vg->data;
-    for(uint32_t i = 0; i < vg->count; i++, vd++)
-    {
-        vd->position = frag->m_vertices.value(i);
-        vd->normal = frag->m_normals.value(i);
-        vd->texCoords = frag->m_texCoords.value(i);
-    }
-    for(uint32_t i = 0; i < (uint32_t)frag->m_indices.count(); i++)
-        vg->indices.push_back(frag->m_indices[i]);
-
-    // load material groups
-    MaterialPaletteFragment *palette = frag->m_palette;
-    uint32_t pos = 0;
-    foreach(vec2us g, frag->m_polygonsByTex)
-    {
-        MaterialGroup mg;
-        mg.offset = pos;
-        mg.count = g.first * 3;
-        mg.mat = importMaterial(palette->m_materials[g.second]);
-        vg->matGroups.append(mg);
-        pos += mg.count;
-    }
-    m->addGroup(vg);
+    foreach(WLDModelPart *part, m_parts)
+        part->draw(state);
 }
 
 Material * WLDModel::importMaterial(MaterialDefFragment *frag)
@@ -119,4 +78,58 @@ Material * WLDModel::importMaterial(MaterialDefFragment *frag)
     mat->loadTexture(img);
     m_materials.insert(frag->name(), mat);
     return mat;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+WLDModelPart::WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *parent) : QObject(parent)
+{
+    m_model = model;
+    m_meshDef = meshDef;
+    m_mesh = 0;
+}
+
+void WLDModelPart::draw(RenderState *state)
+{
+    // create the mesh on first use
+    if(!m_mesh)
+    {
+        m_mesh = state->createMesh();
+        importMaterialGroups(m_mesh);
+    }
+
+    // draw the mesh
+    state->pushMatrix();
+    state->translate(m_meshDef->m_center);
+    state->drawMesh(m_mesh);
+    state->popMatrix();
+}
+
+void WLDModelPart::importMaterialGroups(Mesh *m)
+{
+    // load vertices, texCoords, normals, faces
+    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
+    VertexData *vd = vg->data;
+    for(uint32_t i = 0; i < vg->count; i++, vd++)
+    {
+        vd->position = m_meshDef->m_vertices.value(i);
+        vd->normal = m_meshDef->m_normals.value(i);
+        vd->texCoords = m_meshDef->m_texCoords.value(i);
+    }
+    for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
+        vg->indices.push_back(m_meshDef->m_indices[i]);
+
+    // load material groups
+    MaterialPaletteFragment *palette = m_meshDef->m_palette;
+    uint32_t pos = 0;
+    foreach(vec2us g, m_meshDef->m_polygonsByTex)
+    {
+        MaterialGroup mg;
+        mg.offset = pos;
+        mg.count = g.first * 3;
+        mg.mat = m_model->importMaterial(palette->m_materials[g.second]);
+        vg->matGroups.append(mg);
+        pos += mg.count;
+    }
+    m->addGroup(vg);
 }

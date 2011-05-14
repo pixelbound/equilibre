@@ -13,6 +13,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_mainWld = 0;
     m_objMeshWld = m_objDefWld = 0;
     m_charWld = 0;
+    m_geometry = 0;
 }
 
 Zone::~Zone()
@@ -22,6 +23,11 @@ Zone::~Zone()
 const QMap<QString, WLDModel *> & Zone::models() const
 {
     return m_models;
+}
+
+const QList<WLDActor *> & Zone::actors() const
+{
+    return m_actors;
 }
 
 bool Zone::load(QString path, QString name)
@@ -59,6 +65,9 @@ bool Zone::load(QString path, QString name)
 
 void Zone::importGeometry()
 {
+    m_geometry = new WLDModel(m_mainArchive, 0, this);
+    foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
+        m_geometry->importMesh(meshDef);
 }
 
 void Zone::importObjects()
@@ -66,7 +75,7 @@ void Zone::importObjects()
     // import models through ActorDef fragments
     foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
     {
-        m_models.insert(actorDef->name(), new WLDModel(actorDef, m_objMeshArchive, this));
+        m_models.insert(actorDef->name(), new WLDModel(m_objMeshArchive, actorDef, this));
     }
 
     // import actors through Actor fragments
@@ -94,6 +103,18 @@ void Zone::importCharacters()
 {
     foreach(ActorDefFragment *actorDef, m_charWld->fragmentsByType<ActorDefFragment>())
     {
-        m_models.insert(actorDef->name(), new WLDModel(actorDef, m_charArchive, this));
+        m_models.insert(actorDef->name(), new WLDModel(m_charArchive, actorDef, this));
     }
+}
+
+void Zone::drawGeometry(RenderState *state)
+{
+    if(m_geometry)
+        m_geometry->draw(state);
+}
+
+void Zone::drawObjects(RenderState *state)
+{
+    foreach(WLDActor *actor, m_actors)
+        actor->draw(state);
 }

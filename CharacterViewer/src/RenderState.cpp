@@ -98,6 +98,16 @@ void RenderState::init()
 {
 }
 
+void RenderState::translate(const vec3 &v)
+{
+    translate(v.x, v.y, v.z);
+}
+
+void RenderState::scale(const vec3 &v)
+{
+    scale(v.x, v.y, v.z);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 StateObject::StateObject(RenderState *s)

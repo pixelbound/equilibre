@@ -55,6 +55,8 @@ public:
     virtual void pushMatrix() = 0;
     virtual void popMatrix() = 0;
 
+    void translate(const vec3 &v);
+    void scale(const vec3 &v);
     virtual void translate(float dx, float dy, float dz) = 0;
     virtual void rotate(float angle, float rx, float ry, float rz) = 0;
     virtual void scale(float sx, float sy, float sz) = 0;
