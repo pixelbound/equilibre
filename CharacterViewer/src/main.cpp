@@ -8,24 +8,13 @@
 #include "Scene.h"
 #include "RenderState.h"
 #include "RenderStateGL2.h"
-#include "WLDData.h"
-#include "WLDFragment.h"
 #include "WLDModel.h"
-#include "Fragments.h"
-#include "PFSArchive.h"
 
-const char *S3D_PATH = "Data/gfaydark_obj.s3d";
+const char *PATH = "Data";
 
-bool loadResources(RenderState *state, Scene *scene)
+bool loadResources(Scene *scene)
 {
-    scene->openWLD(S3D_PATH, "gfaydark_obj.wld");
-    if(scene->wldData())
-    {
-        foreach(WLDFragment *f, scene->wldData()->fragments())
-            scene->createModelFromMesh(f->cast<MeshFragment>());
-        return true;
-    }
-    return false;
+    return scene->openZone(PATH, "gfaydark");
 }
 
 int main(int argc, char **argv)
@@ -45,7 +34,7 @@ int main(int argc, char **argv)
     // create viewport for rendering the scene
     SceneViewport vp(&scene, &state, f);
     vp.makeCurrent();
-    if(!loadResources(&state, &scene))
+    if(!loadResources(&scene))
     {
         QMessageBox::critical(0, "Error", "Could not load the WLD file.");
         return 1;

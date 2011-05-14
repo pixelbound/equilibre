@@ -9,7 +9,9 @@ HEADERS = include/SceneViewport.h \
     include/Fragments.h \
     include/WLDModel.h \
     include/StreamReader.h \
-    include/PFSArchive.h
+    include/PFSArchive.h \
+    include/WLDActor.h \
+    include/Zone.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp \
@@ -20,7 +22,9 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/Fragments.cpp \
     src/WLDModel.cpp \
     src/StreamReader.cpp \
-    src/PFSArchive.cpp
+    src/PFSArchive.cpp \
+    src/WLDActor.cpp \
+    src/Zone.cpp
 LIBS += -lm -lz
 
 TARGET = CharacterViewer

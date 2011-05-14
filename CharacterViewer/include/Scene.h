@@ -6,10 +6,8 @@
 #include "RenderState.h"
 #include "Vertex.h"
 
-class WLDData;
 class WLDModel;
-class MeshFragment;
-class PFSArchive;
+class Zone;
 
 class Scene : public QObject, StateObject
 {
@@ -25,12 +23,9 @@ public:
     float & sigma();
     vec3 & delta();
 
-    WLDData * wldData() const;
-    QMap<QString, WLDModel *> & models();
+    const QMap<QString, WLDModel *> & models() const;
     WLDModel * selectedModel() const;
     QString selectedModelName() const;
-
-    WLDModel * createModelFromMesh(MeshFragment *frag);
 
     void draw();
 
@@ -44,7 +39,7 @@ public:
     void reset();
     void animate();
 
-    void openWLD(QString archivePath, QString wldName);
+    bool openZone(QString path, QString zoneName);
 
 public slots:
     void setSelectedModelName(QString name);
@@ -56,9 +51,7 @@ private:
     vec3 m_theta;
     float m_sigma;
     QString m_meshName;
-    PFSArchive *m_archive;
-    WLDData *m_wldData;
-    QMap<QString, WLDModel *> m_models;
+    Zone *m_zone;
 };
 
 #endif

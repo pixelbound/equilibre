@@ -19,6 +19,16 @@ typedef struct
 } WLDFragmentHeader;
 
 /*!
+  \brief Data type found in WLD files that serve an unknown purpose.
+  */
+class WLDPair
+{
+public:
+    uint32_t first;
+    float second;
+};
+
+/*!
   \brief Holds the content of a WLD fragment (e.g. texture, mesh, skeleton, etc).
   */
 class WLDFragment

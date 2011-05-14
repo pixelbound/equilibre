@@ -41,6 +41,19 @@ public:
             return 0;
     }
 
+    template<typename T>
+    QList<T *> fragmentsByType() const
+    {
+        QList<T *> byType;
+        foreach(WLDFragment *f, m_fragments)
+        {
+            T * frag = f->cast<T>();
+            if(frag)
+                byType.append(frag);
+        }
+        return byType;
+    }
+
 private:
     QByteArray m_stringData;
     QList<WLDFragment *> m_fragments;

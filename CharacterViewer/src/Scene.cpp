@@ -1,26 +1,13 @@
-#include <cmath>
-#include <sstream>
 #include "Scene.h"
-#include "Mesh.h"
-#include "Material.h"
-#include "WLDData.h"
 #include "WLDModel.h"
-#include "PFSArchive.h"
-#include "Fragments.h"
-
-static Material debugMaterial(vec4(0.2, 0.2, 0.2, 1.0),
-    vec4(1.0, 4.0/6.0, 0.0, 1.0), vec4(0.2, 0.2, 0.2, 1.0), 20.0);
-
-static Material floorMaterial(vec4(0.5, 0.5, 0.5, 1.0),
-    vec4(1.0, 1.0, 1.0, 1.0), vec4(0.0, 0.0, 0.0, 1.0), 00.0);
+#include "Zone.h"
 
 static double currentTime();
 
 Scene::Scene(RenderState *state) : StateObject(state)
 {
     m_sigma = 1.0;
-    m_archive = 0;
-    m_wldData = 0;
+    m_zone = new Zone(this);
     reset();
     animate();
 }
@@ -29,14 +16,9 @@ Scene::~Scene()
 {
 }
 
-WLDData * Scene::wldData() const
+const QMap<QString, WLDModel *> & Scene::models() const
 {
-    return m_wldData;
-}
-
-QMap<QString, WLDModel *> & Scene::models()
-{
-    return m_models;
+    return m_zone->models();
 }
 
 void Scene::init()
@@ -78,17 +60,7 @@ void Scene::setSelectedModelName(QString name)
 
 WLDModel * Scene::selectedModel() const
 {
-    return m_models.value(m_meshName);
-}
-
-WLDModel * Scene::createModelFromMesh(MeshFragment *frag)
-{
-    if(!frag)
-        return 0;
-    WLDModel *m = new WLDModel(m_state, m_archive, this);
-    m->addMesh(frag);
-    m_models.insert(frag->name(), m);
-    return m;
+    return models().value(m_meshName);
 }
 
 void Scene::draw()
@@ -101,13 +73,12 @@ void Scene::draw()
     m_state->scale(m_sigma, m_sigma, m_sigma);
     WLDModel *model = selectedModel();
     if(model)
-        model->draw();
+        model->draw(m_state);
 }
 
-void Scene::openWLD(QString archivePath, QString wldName)
+bool Scene::openZone(QString path, QString zoneName)
 {
-    m_archive = new PFSArchive(archivePath, this);
-    m_wldData = WLDData::fromArchive(m_archive, wldName, this);
+    return m_zone->load(path, zoneName);
 }
 
 void Scene::topView()

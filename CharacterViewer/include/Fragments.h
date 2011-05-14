@@ -55,6 +55,42 @@ public:
 };
 
 /*!
+  \brief This type of fragment (0x14) defines actors (e.g. placeable objects or characters).
+  */
+class ActorDefFragment : public WLDFragment
+{
+public:
+    ActorDefFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x14;
+    uint32_t m_flags;
+    WLDFragment *m_fragment1, *m_fragment2;
+    QList< QVector<WLDPair> > m_entries;
+    QList<WLDFragment *> m_models;
+};
+
+/*!
+  \brief This type of fragment (0x15) describes actor instances (fragment 0x14).
+  */
+class ActorFragment : public WLDFragment
+{
+public:
+    ActorFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x15;
+    WLDFragmentRef m_def;
+    uint32_t m_flags;
+    WLDFragment *m_fragment1;
+    vec3 m_location;
+    vec3 m_rotation;
+    float m_param1;
+    vec3 m_scale;
+    WLDFragment *m_fragment2;
+};
+
+/*!
   \brief This type of fragment (0x30) defines materials (i.e. how to render part of a mesh).
   */
 class MaterialDefFragment : public WLDFragment
@@ -85,12 +121,12 @@ public:
 };
 
 /*!
-  \brief This type of fragment (0x36) describes a mesh.
+  \brief This type of fragment (0x36) defines meshes.
   */
-class MeshFragment : public WLDFragment
+class MeshDefFragment : public WLDFragment
 {
 public:
-    MeshFragment(QString name);
+    MeshDefFragment(QString name);
     virtual bool unpack(WLDReader *s);
 
     VertexGroup *toGroup() const;
@@ -112,6 +148,20 @@ public:
     QVector<vec2us> m_vertexPieces;
     QVector<vec2us> m_polygonsByTex;
     QVector<vec2us> m_verticesByTex;
+};
+
+/*!
+  \brief This type of fragment (0x2D) describes instances of meshes (fragment 0x36).
+  */
+class MeshFragment : public WLDFragment
+{
+public:
+    MeshFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x2D;
+    MeshDefFragment *m_def;
+    uint32_t m_flags;
 };
 
 #endif

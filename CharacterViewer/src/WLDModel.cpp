@@ -2,40 +2,54 @@
 #include "WLDModel.h"
 #include "Fragments.h"
 #include "PFSArchive.h"
+#include "RenderState.h"
 
-WLDModel::WLDModel(RenderState *state, PFSArchive *archive, QObject *parent) : QObject(parent), StateObject(state)
+WLDModel::WLDModel(ActorDefFragment *def, PFSArchive *archive, QObject *parent) : QObject(parent)
 {
+    m_def = def;
     m_archive = archive;
+    importDefinition(def);
 }
 
 WLDModel::~WLDModel()
 {
 }
 
-void WLDModel::addMesh(MeshFragment *frag)
+void WLDModel::importDefinition(ActorDefFragment *def)
+{
+    //TODO: handle skeletons
+    foreach(WLDFragment *modelFrag, def->m_models)
+    {
+        MeshFragment *meshFrag = modelFrag->cast<MeshFragment>();
+        if(meshFrag)
+            importMesh(meshFrag->m_def);
+    }
+}
+
+void WLDModel::importMesh(MeshDefFragment *frag)
 {
     m_meshFrags.append(frag);
     m_meshes.append(0);
 }
 
-void WLDModel::draw()
+void WLDModel::draw(RenderState *state)
 {
     for(int i = 0; i < m_meshFrags.count(); i++)
     {
-        MeshFragment *frag = m_meshFrags[i];
+        MeshDefFragment *frag = m_meshFrags[i];
         Mesh *m = m_meshes[i];
         // create the mesh on first use
         if(!m)
         {
-            m = m_state->createMesh();
+            m = state->createMesh();
             importMaterialGroups(frag, m);
             m_meshes[i] = m;
         }
-        m_state->drawMesh(m);
+        state->drawMesh(m);
     }
 }
 
-void WLDModel::importMaterialGroups(MeshFragment *frag, Mesh *m)
+void WLDModel::importMaterialGroups(MeshDefFragment *frag, Mesh *m)
 {
     // load vertices, texCoords, normals, faces
     VertexGroup *vg = new VertexGroup(GL_TRIANGLES, frag->m_vertices.count());

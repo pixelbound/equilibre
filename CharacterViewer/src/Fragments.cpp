@@ -53,6 +53,62 @@ bool SpriteFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+ActorDefFragment::ActorDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool ActorDefFragment::unpack(WLDReader *s)
+{
+    uint32_t size1, modelCount, entrySize;
+    s->unpackFields("IrIIr", &m_flags, &m_fragment1, &size1, &modelCount, &m_fragment2);
+
+    // load entries (unknown purpose)
+    for(uint32_t i = 0; i < size1; i++)
+    {
+        QVector<WLDPair> entry;
+        WLDPair p;
+        s->unpackField('I', &entrySize);
+        for(uint32_t j = 0; j < entrySize; j++)
+        {
+            s->unpackStruct("If", &p);
+            entry.append(p);
+        }
+        m_entries.append(entry);
+    }
+
+    // load model references
+    WLDFragment *f = 0;
+    for(uint32_t i = 0; i < modelCount; i++)
+    {
+        s->unpackField('r', &f);
+        m_models.append(f);
+    }
+    //s->unpackField('I', &m_nameSize);
+    //s->readString(m_nameSize, &m_name);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ActorFragment::ActorFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool ActorFragment::unpack(WLDReader *s)
+{
+    float scaleX, scaleY, rotX, rotY, rotZ;
+    s->unpackFields("RIr", &m_def, &m_flags, &m_fragment1);
+    s->unpackStruct("fff", &m_location);
+    s->unpackFields("ffff", &rotZ, &rotY, &rotX, &m_param1); // param1: rotW (quaternion)?
+    m_rotation = vec3(rotX * 512.0 / 360.0, rotY * 512.0 / 360.0, rotZ * 512.0 / 360.0);
+    s->unpackFields("ff", &scaleX, &scaleY);
+    m_scale = vec3(scaleX, scaleY, 1.0);
+    s->unpackField('r', &m_fragment2);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 MaterialDefFragment::MaterialDefFragment(QString name) : WLDFragment(ID, name)
 {
 }
@@ -87,11 +143,11 @@ bool MaterialPaletteFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshFragment::MeshFragment(QString name) : WLDFragment(ID, name)
+MeshDefFragment::MeshDefFragment(QString name) : WLDFragment(ID, name)
 {
 }
 
-bool MeshFragment::unpack(WLDReader *s)
+bool MeshDefFragment::unpack(WLDReader *s)
 {
     uint16_t vertexCount, texCoordsCount, normalCount, colorCount, polyCount;
     uint16_t vertexPieceCount, polyTexCount, vertexTexCount, scaleFactor;
@@ -153,5 +209,18 @@ bool MeshFragment::unpack(WLDReader *s)
         s->unpackStruct("HH", vertexTex);
         m_verticesByTex.append(vec2us(vertexTex[0], vertexTex[1]));
     }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MeshFragment::MeshFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool MeshFragment::unpack(WLDReader *s)
+{
+    s->unpackReference(&m_def);
+    s->unpackField('I', &m_flags);
     return true;
 }
