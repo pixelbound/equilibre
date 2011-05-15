@@ -15,7 +15,7 @@ const char *PATH = "EQ Classic";
 
 bool loadResources(Scene *scene)
 {
-    return scene->openZone(PATH, "butcher");
+    return scene->openZone(PATH, "gfaydark");
 }
 
 int main(int argc, char **argv)

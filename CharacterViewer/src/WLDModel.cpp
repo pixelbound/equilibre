@@ -1,12 +1,14 @@
 #include <QImage>
 #include "WLDModel.h"
 #include "Fragments.h"
+#include "WLDSkeleton.h"
 #include "PFSArchive.h"
 #include "RenderState.h"
 
 WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, QObject *parent) : QObject(parent)
 {
     m_archive = archive;
+    m_skel = 0;
     if(def)
         importDefinition(def);
 }
@@ -15,15 +17,29 @@ WLDModel::~WLDModel()
 {
 }
 
+WLDSkeleton * WLDModel::skeleton() const
+{
+    return m_skel;
+}
+
 void WLDModel::importDefinition(ActorDefFragment *def)
 {
-    //TODO: handle skeletons
     foreach(WLDFragment *modelFrag, def->m_models)
     {
         MeshFragment *meshFrag = modelFrag->cast<MeshFragment>();
         if(meshFrag)
             importMesh(meshFrag->m_def);
+        HierSpriteFragment *skelFrag = modelFrag->cast<HierSpriteFragment>();
+        if(skelFrag)
+            importHierMesh(skelFrag->m_def);
     }
+}
+
+void WLDModel::importHierMesh(HierSpriteDefFragment *def)
+{
+    m_skel = new WLDSkeleton(def, this);
+    foreach(MeshFragment *meshFrag, def->m_meshes)
+        importMesh(meshFrag->m_def);
 }
 
 void WLDModel::importMesh(MeshDefFragment *frag)
@@ -136,6 +152,25 @@ void WLDModelPart::importMaterialGroups(Mesh *m)
             vg->matGroups.append(mg);
         }
         pos += vertexCount;
+    }
+
+    // skin mesh if there is a skeleton
+    WLDSkeleton *skel = m_model->skeleton();
+    if(skel)
+    {
+        WLDAnimation *anim = skel->pose();
+        QVector<BoneTransform> trans = anim->transformations();
+        pos = 0;
+        vd = vg->data;
+        foreach(vec2us g, m_meshDef->m_vertexPieces)
+        {
+            uint16_t count = g.first;
+            uint16_t pieceID = g.second;
+            BoneTransform pieceTrans = trans[pieceID];
+            for(uint32_t i = 0; i < count; i++, vd++)
+                vd->position = pieceTrans.map(vd->position);
+            pos += count;
+        }
     }
     m->addGroup(vg);
 }

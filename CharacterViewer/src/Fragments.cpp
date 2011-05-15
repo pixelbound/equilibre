@@ -1,3 +1,4 @@
+#include <cmath>
 #include "Fragments.h"
 #include "WLDData.h"
 
@@ -26,8 +27,12 @@ bool SpriteDefFragment::unpack(WLDReader *s)
     s->unpackFields("II", &m_flags, &fileCount);
     if(m_flags & 0x4)
         s->unpackField('I', &m_param1);
+    else
+        m_param1 = 0;
     if(m_flags & 0x8)
         s->unpackField('I', &m_param2);
+    else
+        m_param2 = 0;
     for(uint32_t i = 0; i < fileCount; i++)
     {
         BitmapNameFragment *frag = 0;
@@ -48,6 +53,109 @@ bool SpriteFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
     s->unpackField('I', &m_flags);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+HierSpriteDefFragment::HierSpriteDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool HierSpriteDefFragment::unpack(WLDReader *s)
+{
+    uint32_t nodeCount, childrenCount, meshCount;
+    s->unpackFields("IIr", &m_flags, &nodeCount, &m_fragment);
+    if((m_flags & 0x1) == 0x1)
+        s->unpackArray("I", 3, &m_param1);
+    else
+        m_param1[0] = m_param1[1] = m_param1[2] = 0;
+    if((m_flags & 0x2) == 0x2)
+        s->unpackField('I', &m_param2);
+    else
+        m_param2 = 0.0;
+    for(uint32_t i = 0; i < nodeCount; i++)
+    {
+        SkeletonNode node;
+        s->unpackFields("RIrrI", &node.name, &node.flags, &node.track, &node.mesh, &childrenCount);
+        node.children.resize(childrenCount);
+        s->unpackArray("I", childrenCount, node.children.data());
+        m_tree.append(node);
+    }
+    if((m_flags & 0x200) == 0x200)
+    {
+        s->unpackField('I', &meshCount);
+        m_meshes.resize(meshCount);
+        s->unpackArray("r", meshCount, m_meshes.data());
+        m_data3.resize(meshCount);
+        s->unpackArray("I", meshCount, m_data3.data());
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+HierSpriteFragment::HierSpriteFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool HierSpriteFragment::unpack(WLDReader *s)
+{
+    s->unpackFields("rI", &m_def, &m_flags);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+TrackDefFragment::TrackDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool TrackDefFragment::unpack(WLDReader *s)
+{
+    uint32_t frameCount;
+    int16_t rw, rx, ry, rz, dx, dy, dz, scale;
+    float l;
+    s->unpackFields("II", &m_flags, &frameCount);
+    for(uint32_t i = 0; i < frameCount; i++)
+    {
+        BoneTransform frame;
+        s->unpackFields("hhhhhhhh", &rw, &rx, &ry, &rz, &dx, &dy, &dz, &scale);
+        if(rw != 0)
+        {
+            // normalize the quaternion, since it is stored as a 16-bit integer
+            l = sqrt(rw * rw + rx * rx + ry * ry + rz * rz);
+            frame.rotation = QQuaternion(rw / l, rx / l, ry / l, rz / l);
+        }
+        if(scale != 0)
+        {
+            // rescale the location vector
+            l = 1.0 / scale;
+            frame.location = QVector3D(dx * l, dy * l, dz * l);
+        }
+        m_frames.append(frame);
+    }
+    return true;
+}
+
+BoneTransform TrackDefFragment::frame(uint32_t frameIndex) const
+{
+    frameIndex = std::min(frameIndex, (uint32_t)m_frames.count());
+    return m_frames[frameIndex];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+TrackFragment::TrackFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool TrackFragment::unpack(WLDReader *s)
+{
+    s->unpackReference(&m_def);
+    s->unpackField('I', &m_flags);
+    if((m_flags & 0x1) == 0x1)
+        s->unpackField('I', &m_param1);
     return true;
 }
 

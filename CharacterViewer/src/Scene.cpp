@@ -71,11 +71,11 @@ void Scene::draw()
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
-    //WLDModel *model = selectedModel();
-    //if(model)
-    //    model->draw(m_state);
-    m_zone->drawGeometry(m_state);
-    m_zone->drawObjects(m_state);
+    WLDModel *model = selectedModel();
+    if(model)
+        model->draw(m_state);
+    //m_zone->drawGeometry(m_state);
+    //m_zone->drawObjects(m_state);
 }
 
 bool Scene::openZone(QString path, QString zoneName)

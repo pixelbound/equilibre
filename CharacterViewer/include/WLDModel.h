@@ -8,12 +8,14 @@
 
 class Mesh;
 class MeshDefFragment;
+class HierSpriteDefFragment;
 class MaterialDefFragment;
 class ActorDefFragment;
 class Material;
 class PFSArchive;
 class RenderState;
 class WLDModelPart;
+class WLDSkeleton;
 
 /*!
   \brief Describes a model (such as an object or a character) that can be rendered.
@@ -24,6 +26,8 @@ public:
     WLDModel(PFSArchive *archive, ActorDefFragment *def = 0, QObject *parent = 0);
     virtual ~WLDModel();
 
+    WLDSkeleton *skeleton() const;
+
     void importMesh(MeshDefFragment *frag);
     Material * importMaterial(MaterialDefFragment *frag);
 
@@ -31,8 +35,10 @@ public:
 
 private:
     void importDefinition(ActorDefFragment *def);
+    void importHierMesh(HierSpriteDefFragment *def);
 
     QList<WLDModelPart *> m_parts;
+    WLDSkeleton *m_skel;
     QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
 };

@@ -8,8 +8,12 @@
 #include "Platform.h"
 #include "Vertex.h"
 #include "WLDFragment.h"
+#include "WLDSkeleton.h"
 
 typedef QPair<uint16_t, uint16_t> vec2us;
+
+class TrackFragment;
+class MeshFragment;
 
 /*!
   \brief This type of fragment (0x03) holds the name of a texture bitmap.
@@ -52,6 +56,70 @@ public:
     const static uint32_t ID = 0x05;
     SpriteDefFragment *m_def;
     uint32_t m_flags;
+};
+
+/*!
+  \brief This type of fragment (0x10) defines hierarchical meshes (i.e. skeleton).
+  */
+class HierSpriteDefFragment : public WLDFragment
+{
+public:
+    HierSpriteDefFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x10;
+    uint32_t m_flags;
+    WLDFragment *m_fragment;
+    uint32_t m_param1[3];
+    float m_param2;
+    QVector<SkeletonNode> m_tree;
+    QVector<MeshFragment *> m_meshes;
+    QVector<uint32_t> m_data3;
+};
+
+/*!
+  \brief This type of fragment (0x11) defines instances of hierarchical meshes (fragment 0x10).
+  */
+class HierSpriteFragment : public WLDFragment
+{
+public:
+    HierSpriteFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x11;
+    HierSpriteDefFragment *m_def;
+    uint32_t m_flags;
+};
+
+/*!
+  \brief This type of fragment (0x12) defines animation tracks (set of frames
+  each containing animation parameters relative to a skeleton piece).
+  */
+class TrackDefFragment : public WLDFragment
+{
+public:
+    TrackDefFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    BoneTransform frame(uint32_t frameIndex = 0) const;
+
+    const static uint32_t ID = 0x12;
+    uint32_t m_flags;
+    QVector<BoneTransform> m_frames;
+};
+
+/*!
+  \brief This type of fragment (0x13) defines instances of animation tracks (fragment 0x12).
+  */
+class TrackFragment : public WLDFragment
+{
+public:
+    TrackFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x13;
+    TrackDefFragment *m_def;
+    uint32_t m_flags, m_param1;
 };
 
 /*!

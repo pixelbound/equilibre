@@ -56,10 +56,10 @@ bool Zone::load(QString path, QString name)
         return false;
 
     // import geometry, objects, characters
-    importGeometry();
-    importObjects();
+    //importGeometry();
+    //importObjects();
     importSkeletons();
-    //importCharacters();
+    importCharacters();
     return true;
 }
 

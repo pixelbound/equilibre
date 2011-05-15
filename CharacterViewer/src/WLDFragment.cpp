@@ -58,6 +58,14 @@ WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
         return new SpriteDefFragment(name);
     case SpriteFragment::ID:
         return new SpriteFragment(name);
+    case HierSpriteDefFragment::ID:
+        return new HierSpriteDefFragment(name);
+    case HierSpriteFragment::ID:
+        return new HierSpriteFragment(name);
+    case TrackDefFragment::ID:
+        return new TrackDefFragment(name);
+    case TrackFragment::ID:
+        return new TrackFragment(name);
     case ActorDefFragment::ID:
         return new ActorDefFragment(name);
     case ActorFragment::ID:
