@@ -11,7 +11,8 @@ WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, WLDSkeleton *skel
     m_archive = archive;
     m_skel = skel;
     m_animName = "POS";
-    m_palette = new WLDMaterialPalette("00", archive, this);
+    m_palName = "00";
+    addPalette(m_palName, new WLDMaterialPalette(m_palName, archive, this));
     if(def)
         importDefinition(def);
 }
@@ -37,7 +38,23 @@ void WLDModel::setAnimName(QString name)
 
 WLDMaterialPalette * WLDModel::palette() const
 {
-    return m_palette;
+    return m_palettes.value(m_palName);
+}
+
+void WLDModel::setPalette(QString palName)
+{
+    m_palName = palName;
+}
+
+const QMap<QString, WLDMaterialPalette *> & WLDModel::palettes() const
+{
+    return m_palettes;
+}
+
+void WLDModel::addPalette(QString palName, WLDMaterialPalette *palette)
+{
+    if(palette)
+        m_palettes.insert(palName, palette);
 }
 
 void WLDModel::importDefinition(ActorDefFragment *def)
@@ -56,14 +73,22 @@ void WLDModel::importDefinition(ActorDefFragment *def)
 void WLDModel::importHierMesh(HierSpriteDefFragment *def)
 {
     foreach(MeshFragment *meshFrag, def->m_meshes)
-        importMesh(meshFrag->m_def);
+    {
+        if(meshFrag->m_def)
+            importMesh(meshFrag->m_def);
+        else
+        {
+            qDebug("HierMesh without Mesh (%s)", def->name().toLatin1().constData());
+        }
+    }
 }
 
 void WLDModel::importMesh(MeshDefFragment *frag)
 {
     MaterialPaletteFragment *palDef = frag->m_palette;
-    if(palDef)
-        m_palette->addPaletteDef(palDef);
+    WLDMaterialPalette *pal = palette();
+    if(palDef && pal)
+        pal->addPaletteDef(palDef);
     m_parts.append(new WLDModelPart(this, frag, this));
 }
 
@@ -128,7 +153,7 @@ void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
         mg.offset = pos;
         mg.count = vertexCount;
         // invisible groups have no material
-        if(matDef->m_param1 == 0)
+        if((matDef->m_param1 == 0) || !pal)
         {
             mg.palette = 0;
         }

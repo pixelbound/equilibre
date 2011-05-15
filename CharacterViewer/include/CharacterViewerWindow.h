@@ -25,6 +25,7 @@ public:
 
 private slots:
     void loadActor(QString name);
+    void loadPalette(QString name);
     void loadAnimation(QString animName);
 
 private:
@@ -32,6 +33,7 @@ private:
     Scene *m_scene;
     RenderState *m_state;
     QComboBox *m_actorText;
+    QComboBox *m_paletteText;
     QComboBox *m_animationText;
 };
 

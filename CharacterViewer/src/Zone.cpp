@@ -64,8 +64,9 @@ bool Zone::load(QString path, QString name)
     // import geometry, objects, characters
     importGeometry();
     importObjects();
-    importSkeletons();
-    importCharacters();
+    importSkeletons(m_charArchive, m_charWld);
+    importCharacterPalettes(m_charArchive, m_charWld);
+    importCharacters(m_charArchive, m_charWld);
     return true;
 }
 
@@ -75,8 +76,9 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
     m_charWld = WLDData::fromArchive(m_charArchive, wldName, this);
     if(!m_charWld)
         return false;
-    importSkeletons();
-    importCharacters();
+    importSkeletons(m_charArchive, m_charWld);
+    importCharacterPalettes(m_charArchive, m_charWld);
+    importCharacters(m_charArchive, m_charWld);
     return true;
 }
 
@@ -109,14 +111,14 @@ void Zone::importObjects()
     }
 }
 
-void Zone::importSkeletons()
+void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
 {
     // import skeletons which contain the pose animation
-    foreach(HierSpriteDefFragment *skelDef, m_charWld->fragmentsByType<HierSpriteDefFragment>())
+    foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
         m_skeletons.insert(skelDef->name().left(3), new WLDSkeleton(skelDef, this));
 
     // import other animations
-    foreach(TrackFragment *track, m_charWld->fragmentsByType<TrackFragment>())
+    foreach(TrackFragment *track, wld->fragmentsByType<TrackFragment>())
     {
         QString animName = track->name().left(3);
         QString skelName = track->name().mid(3, 3);
@@ -126,13 +128,37 @@ void Zone::importSkeletons()
     }
 }
 
-void Zone::importCharacters()
+void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
 {
-    foreach(ActorDefFragment *actorDef, m_charWld->fragmentsByType<ActorDefFragment>())
+    foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
+    {
+        QString charName, palName, partName;
+        if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName) &&
+                (palName != "00"))
+        {
+            QMap<QString, WLDMaterialPalette *> &palettes = m_charPalettes[charName];
+            WLDMaterialPalette *pal = palettes.value(palName);
+            if(!pal)
+            {
+                pal = new WLDMaterialPalette(palName, archive, this);
+                palettes[palName] = pal;
+            }
+            pal->addMaterialDef(matDef);
+        }
+    }
+}
+
+void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
+{
+    foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
         QString actorName = actorDef->name().left(3);
         WLDSkeleton *skel = m_skeletons.value(actorName);
-        m_charModels.insert(actorDef->name(), new WLDModel(m_charArchive, actorDef, skel, this));
+        WLDModel *model = new WLDModel(archive, actorDef, skel, this);
+        foreach(WLDMaterialPalette *pal, m_charPalettes[actorName])
+            model->addPalette(pal->paletteID(), pal);
+        m_charPalettes.remove(actorName);
+        m_charModels.insert(actorDef->name(), model);
     }
 }
 

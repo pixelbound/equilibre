@@ -12,6 +12,7 @@ class WLDData;
 class WLDModel;
 class WLDActor;
 class WLDSkeleton;
+class WLDMaterialPalette;
 class ActorDefFragment;
 class RenderState;
 
@@ -37,8 +38,9 @@ public:
 private:
     void importGeometry();
     void importObjects();
-    void importSkeletons();
-    void importCharacters();
+    void importSkeletons(PFSArchive *archive, WLDData *wld);
+    void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
+    void importCharacters(PFSArchive *archive, WLDData *wld);
 
     QString m_name;
     WLDModel *m_geometry;
@@ -51,6 +53,7 @@ private:
     QMap<QString, WLDModel *> m_objModels;
     QMap<QString, WLDModel *> m_charModels;
     QMap<QString, WLDSkeleton *> m_skeletons;
+    QMap<QString, QMap<QString, WLDMaterialPalette *> > m_charPalettes;
     QList<WLDActor *> m_actors;
 };
 

@@ -15,10 +15,12 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
     setWindowTitle("OpenEQ Character Viewer");
     m_viewport = new SceneViewport(scene, state);
     m_actorText = new QComboBox();
+    m_paletteText = new QComboBox();
     m_animationText = new QComboBox();
 
     QHBoxLayout *hbox = new QHBoxLayout();
     hbox->addWidget(m_actorText);
+    hbox->addWidget(m_paletteText);
     hbox->addWidget(m_animationText);
 
     QVBoxLayout *l = new QVBoxLayout(this);
@@ -26,6 +28,7 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
     l->addWidget(m_viewport);
 
     connect(m_actorText, SIGNAL(activated(QString)), this, SLOT(loadActor(QString)));
+    connect(m_paletteText, SIGNAL(activated(QString)), this, SLOT(loadPalette(QString)));
     connect(m_animationText, SIGNAL(activated(QString)), this, SLOT(loadAnimation(QString)));
 }
 
@@ -61,14 +64,29 @@ void CharacterViewerWindow::loadActor(QString name)
 {
     m_actorText->setCurrentIndex(m_actorText->findText(name));
     m_scene->setSelectedModelName(name);
+    m_paletteText->clear();
     m_animationText->clear();
     WLDModel *model = m_scene->selectedModel();
     if(model && model->skeleton())
     {
-        foreach(QString animName, model->skeleton()->animations().keys())
-            m_animationText->addItem(animName);
-        loadAnimation(model->animName());
+        if(model->skeleton())
+        {
+            foreach(QString animName, model->skeleton()->animations().keys())
+                m_animationText->addItem(animName);
+            loadAnimation(model->animName());
+        }
+        foreach(WLDMaterialPalette *pal, model->palettes())
+            m_paletteText->addItem(pal->paletteID());
+        loadPalette(model->palette()->paletteID());
     }
+}
+
+void CharacterViewerWindow::loadPalette(QString name)
+{
+    m_paletteText->setCurrentIndex(m_paletteText->findText(name));
+    WLDModel *model = m_scene->selectedModel();
+    if(model)
+        model->setPalette(name);
 }
 
 void CharacterViewerWindow::loadAnimation(QString animName)

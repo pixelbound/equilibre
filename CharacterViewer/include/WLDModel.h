@@ -33,6 +33,9 @@ public:
     void setAnimName(QString name);
 
     WLDMaterialPalette *palette() const;
+    void setPalette(QString palName);
+    const QMap<QString, WLDMaterialPalette *> & palettes() const;
+    void addPalette(QString palName, WLDMaterialPalette *palette);
 
     void importMesh(MeshDefFragment *frag);
 
@@ -45,7 +48,8 @@ private:
     QList<WLDModelPart *> m_parts;
     WLDSkeleton *m_skel;
     QString m_animName;
-    WLDMaterialPalette *m_palette;
+    QString m_palName;
+    QMap<QString, WLDMaterialPalette *> m_palettes;
     PFSArchive *m_archive;
 };
 
