@@ -5,6 +5,7 @@
 #include "Material.h"
 #include "RenderState.h"
 #include "RenderStateGL2.h"
+#include "WLDModel.h"
 
 #define BUFFER_OFFSET(i) ((char *)NULL + (i))
 
@@ -85,6 +86,7 @@ void MeshGL2::draw()
 
 void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords)
 {
+    Material *mat = 0;
     glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), &vg->data->position);
     glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE,
@@ -96,10 +98,12 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
         const uint16_t *indices = vg->indices.constData();
         foreach(MaterialGroup mg, vg->matGroups)
         {
-            if(mg.mat)
-                m_state->pushMaterial(*mg.mat);
+            if(mg.palette)
+                mat = mg.palette->material(mg.matName);
+            if(mat)
+                m_state->pushMaterial(*mat);
             glDrawElements(vg->mode, mg.count, GL_UNSIGNED_SHORT, indices + mg.offset);
-            if(mg.mat)
+            if(mat)
                 m_state->popMaterial();
         }
     }
@@ -107,10 +111,12 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
     {
         foreach(MaterialGroup mg, vg->matGroups)
         {
-            if(mg.mat)
-                m_state->pushMaterial(*mg.mat);
+            if(mg.palette)
+                mat = mg.palette->material(mg.matName);
+            if(mat)
+                m_state->pushMaterial(*mat);
             glDrawArrays(vg->mode, mg.offset, mg.count);
-            if(mg.mat)
+            if(mat)
                 m_state->popMaterial();
         }
     }

@@ -2,11 +2,13 @@
 #define OPENEQ_VERTEX_H
 
 #include <inttypes.h>
+#include <QString>
 #include <QVector>
 
 bool fequal(double a, double b);
 
 class Material;
+class WLDMaterialPalette;
 
 class vec2
 {
@@ -110,7 +112,8 @@ class MaterialGroup
 public:
     uint32_t offset;
     uint32_t count;
-    Material *mat;
+    QString matName;
+    WLDMaterialPalette *palette;
 };
 
 class VertexGroup
