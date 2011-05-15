@@ -37,9 +37,15 @@ public:
     void frontView();
 
     void reset();
-    void animate();
 
     bool openZone(QString path, QString zoneName);
+
+    enum Mode
+    {
+        CharacterViewer,
+        ObjectViewer,
+        ZoneViewer
+    };
 
 public slots:
     void setSelectedModelName(QString name);
@@ -52,6 +58,7 @@ private:
     float m_sigma;
     QString m_meshName;
     Zone *m_zone;
+    Mode m_mode;
 };
 
 #endif

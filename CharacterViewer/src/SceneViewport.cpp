@@ -10,7 +10,7 @@
 #include "Material.h"
 #include "RenderState.h"
 
-SceneViewport::SceneViewport(Scene *scene, RenderState *state, const QGLFormat &format, QWidget *parent) : QGLWidget(format, parent)
+SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) : QGLWidget(parent)
 {
     setMinimumSize(640, 480);
     m_scene = scene;
@@ -23,7 +23,7 @@ SceneViewport::SceneViewport(Scene *scene, RenderState *state, const QGLFormat &
     m_fpsTimer->setInterval(1000 / 10);
     setAutoFillBackground(false);
     connect(m_fpsTimer, SIGNAL(timeout()), this, SLOT(updateFPS()));
-    connect(m_renderTimer, SIGNAL(timeout()), this, SLOT(animateScene()));
+    connect(m_renderTimer, SIGNAL(timeout()), this, SLOT(update()));
 }
 
 SceneViewport::~SceneViewport()
@@ -119,12 +119,6 @@ void SceneViewport::updateAnimationState()
         m_renderTimer->stop();
         m_fpsTimer->stop();
     }
-}
-
-void SceneViewport::animateScene()
-{
-    m_scene->animate();
-    update();
 }
 
 void SceneViewport::keyReleaseEvent(QKeyEvent *e)

@@ -24,7 +24,7 @@ class SceneViewport : public QGLWidget
     Q_OBJECT
 
 public:
-    SceneViewport(Scene *scene, RenderState *state, const QGLFormat &format, QWidget *parent = 0);
+    SceneViewport(Scene *scene, RenderState *state, QWidget *parent = 0);
     virtual ~SceneViewport();
 
 protected:
@@ -40,7 +40,6 @@ protected:
 
 private slots:
     void updateFPS();
-    void animateScene();
 
 private:
     void paintFPS(QPainter *p, float fps);

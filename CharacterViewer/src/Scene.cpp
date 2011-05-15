@@ -8,8 +8,8 @@ Scene::Scene(RenderState *state) : StateObject(state)
 {
     m_sigma = 1.0;
     m_zone = new Zone(this);
+    m_mode = CharacterViewer;
     reset();
-    animate();
 }
 
 Scene::~Scene()
@@ -71,11 +71,23 @@ void Scene::draw()
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
+
     WLDModel *model = selectedModel();
-    if(model)
-        model->draw(m_state, currentTime());
-    //m_zone->drawGeometry(m_state);
-    //m_zone->drawObjects(m_state);
+    switch(m_mode)
+    {
+    case CharacterViewer:
+        if(model)
+            model->draw(m_state, currentTime());
+        break;
+    case ObjectViewer:
+        if(model)
+            model->draw(m_state);
+        break;
+    case ZoneViewer:
+        m_zone->drawGeometry(m_state);
+        m_zone->drawObjects(m_state);
+        break;
+    }
 }
 
 bool Scene::openZone(QString path, QString zoneName)
@@ -96,11 +108,6 @@ void Scene::sideView()
 void Scene::frontView()
 {
     m_theta = vec3(-90.0, 0.0, 0.0);
-}
-
-void Scene::animate()
-{
-    //double t = currentTime() - m_started;
 }
 
 #ifdef WIN32
