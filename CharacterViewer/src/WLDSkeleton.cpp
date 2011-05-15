@@ -2,6 +2,28 @@
 #include "WLDSkeleton.h"
 #include "Fragments.h"
 
+vec3 BoneTransform::map(const vec3 &v)
+{
+    QVector3D v2(v.x, v.y, v.z);
+    v2 = rotation.rotatedVector(v2) + location;
+    return vec3(v2.x(), v2.y(), v2.z());
+}
+
+QVector3D BoneTransform::map(const QVector3D &v)
+{
+    return rotation.rotatedVector(v) + location;
+}
+
+BoneTransform BoneTransform::interpolate(BoneTransform a, BoneTransform b, double f)
+{
+    BoneTransform c;
+    c.rotation = QQuaternion::slerp(a.rotation, b.rotation, f);
+    c.location = (a.location * (1.0 - f)) + (b.location * f);
+    return c;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 WLDSkeleton::WLDSkeleton(HierSpriteDefFragment *def, QObject *parent) : QObject(parent)
 {
     m_def = def;
@@ -75,34 +97,41 @@ WLDAnimation * WLDAnimation::copy(QString newName, QObject *parent) const
     return new WLDAnimation(newName, m_tracks, m_skel, parent);
 }
 
-QVector<BoneTransform> WLDAnimation::transformations(double t) const
+QVector<BoneTransform> WLDAnimation::transformationsAtTime(double t) const
 {
-    const double fps = 2.0;
+    const double fps = 10.0;
     double dur = m_frameCount / fps;
-    uint32_t frameIndex = qRound(fmod(t, dur) * fps) % m_frameCount;
-    return transformations(frameIndex);
+    return transformationsAtFrame(fmod(fmod(t, dur) * fps, m_frameCount));
 }
 
-QVector<BoneTransform> WLDAnimation::transformations(uint32_t frameIndex) const
+QVector<BoneTransform> WLDAnimation::transformationsAtFrame(double f) const
 {
     BoneTransform initTrans;
     initTrans.location = QVector3D();
     initTrans.rotation = QQuaternion();
     QVector<BoneTransform> trans;
     trans.resize(m_tracks.count());
-    transformPiece(trans, m_skel->tree(), 0, frameIndex, initTrans);
+    transformPiece(trans, m_skel->tree(), 0, f, initTrans);
     return trans;
 }
 
 void WLDAnimation::transformPiece(QVector<BoneTransform> &transforms, const QVector<SkeletonNode> &tree,
-    uint32_t pieceID, uint32_t frameIndex, BoneTransform parentTrans) const
+    uint32_t pieceID, double f, BoneTransform parentTrans) const
 {
     SkeletonNode piece = tree.value(pieceID);
     TrackDefFragment *track = m_tracks[pieceID];
-    BoneTransform pieceTrans = track->frame(frameIndex), effTrans;
+    BoneTransform pieceTrans = interpolate(track, f);
+    BoneTransform effTrans;
     effTrans.location = parentTrans.map(pieceTrans.location);
     effTrans.rotation = parentTrans.rotation * pieceTrans.rotation;
     transforms[pieceID] = effTrans;
     foreach(uint32_t childID, piece.children)
-        transformPiece(transforms, tree, childID, frameIndex, effTrans);
+        transformPiece(transforms, tree, childID, f, effTrans);
+}
+
+BoneTransform WLDAnimation::interpolate(TrackDefFragment *t, double f) const
+{
+    int i = qRound(floor(f));
+    //int next = prev + 1;
+    return BoneTransform::interpolate(t->frame(i), t->frame(i + 1), f - i);
 }

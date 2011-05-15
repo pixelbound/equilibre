@@ -28,7 +28,7 @@ void Scene::init()
 void Scene::reset()
 {
     m_delta = vec3(-0.0, -0.0, -5.0);
-    m_theta = vec3(-90.0, 00.0, 90.0);
+    m_theta = vec3(-90.0, 00.0, 270.0);
     m_sigma = 0.10;
     m_started = currentTime();
 }

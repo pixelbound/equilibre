@@ -161,10 +161,10 @@ void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
     WLDSkeleton *skel = m_model->skeleton();
     if(skel)
     {
-        WLDAnimation *anim = skel->animations().value("C05");
+        WLDAnimation *anim = skel->animations().value("L02");
         if(!anim)
             anim = skel->pose();
-        QVector<BoneTransform> trans = anim->transformations(currentTime);
+        QVector<BoneTransform> trans = anim->transformationsAtTime(currentTime);
         pos = 0;
         vd = vg->data;
         foreach(vec2us g, m_meshDef->m_vertexPieces)

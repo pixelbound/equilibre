@@ -140,8 +140,11 @@ bool TrackDefFragment::unpack(WLDReader *s)
 
 BoneTransform TrackDefFragment::frame(uint32_t frameIndex) const
 {
-    frameIndex = (uint32_t)std::max(std::min((int)frameIndex, m_frames.count() - 1), 0);
-    return m_frames[frameIndex];
+    int n = m_frames.count();
+    if(n > 0)
+        return m_frames[frameIndex % n];
+    else
+        return BoneTransform();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

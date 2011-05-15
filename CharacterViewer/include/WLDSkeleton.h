@@ -31,17 +31,9 @@ public:
     QVector3D location;
     QQuaternion rotation;
 
-    inline vec3 map(const vec3 &v)
-    {
-        QVector3D v2(v.x, v.y, v.z);
-        v2 = rotation.rotatedVector(v2) + location;
-        return vec3(v2.x(), v2.y(), v2.z());
-    }
-
-    inline QVector3D map(const QVector3D &v)
-    {
-        return rotation.rotatedVector(v) + location;
-    }
+    vec3 map(const vec3 &v);
+    QVector3D map(const QVector3D &v);
+    static BoneTransform interpolate(BoneTransform a, BoneTransform b, double c);
 };
 
 /*!
@@ -77,12 +69,13 @@ public:
 
     void replaceTrack(TrackDefFragment *track);
     WLDAnimation * copy(QString newName, QObject *parent = 0) const;
-    QVector<BoneTransform> transformations(double t) const;
-    QVector<BoneTransform> transformations(uint32_t frame = 0) const;
+    QVector<BoneTransform> transformationsAtTime(double t) const;
+    QVector<BoneTransform> transformationsAtFrame(double f) const;
 
 private:
     void transformPiece(QVector<BoneTransform> &transforms, const QVector<SkeletonNode> &tree,
-        uint32_t pieceID, uint32_t frameIndex, BoneTransform parentTrans) const;
+        uint32_t pieceID, double f, BoneTransform parentTrans) const;
+    BoneTransform interpolate(TrackDefFragment *track, double f) const;
 
     QString m_name;
     QVector<TrackDefFragment *> m_tracks;
