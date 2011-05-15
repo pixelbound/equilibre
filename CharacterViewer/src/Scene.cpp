@@ -73,7 +73,7 @@ void Scene::draw()
     m_state->scale(m_sigma, m_sigma, m_sigma);
     WLDModel *model = selectedModel();
     if(model)
-        model->draw(m_state);
+        model->draw(m_state, currentTime());
     //m_zone->drawGeometry(m_state);
     //m_zone->drawObjects(m_state);
 }

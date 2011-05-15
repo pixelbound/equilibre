@@ -5,10 +5,10 @@
 #include "PFSArchive.h"
 #include "RenderState.h"
 
-WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, QObject *parent) : QObject(parent)
+WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, WLDSkeleton *skel, QObject *parent) : QObject(parent)
 {
     m_archive = archive;
-    m_skel = 0;
+    m_skel = skel;
     if(def)
         importDefinition(def);
 }
@@ -37,7 +37,6 @@ void WLDModel::importDefinition(ActorDefFragment *def)
 
 void WLDModel::importHierMesh(HierSpriteDefFragment *def)
 {
-    m_skel = new WLDSkeleton(def, this);
     foreach(MeshFragment *meshFrag, def->m_meshes)
         importMesh(meshFrag->m_def);
 }
@@ -47,10 +46,10 @@ void WLDModel::importMesh(MeshDefFragment *frag)
     m_parts.append(new WLDModelPart(this, frag, this));
 }
 
-void WLDModel::draw(RenderState *state)
+void WLDModel::draw(RenderState *state, double currentTime)
 {
     foreach(WLDModelPart *part, m_parts)
-        part->draw(state);
+        part->draw(state, currentTime);
 }
 
 Material * WLDModel::importMaterial(MaterialDefFragment *frag)
@@ -105,13 +104,13 @@ WLDModelPart::WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *p
     m_mesh = 0;
 }
 
-void WLDModelPart::draw(RenderState *state)
+void WLDModelPart::draw(RenderState *state, double currentTime)
 {
     // create the mesh on first use
     if(!m_mesh)
     {
         m_mesh = state->createMesh();
-        importMaterialGroups(m_mesh);
+        importMaterialGroups(m_mesh, currentTime);
     }
 
     // draw the mesh
@@ -119,9 +118,13 @@ void WLDModelPart::draw(RenderState *state)
     state->translate(m_meshDef->m_center);
     state->drawMesh(m_mesh);
     state->popMatrix();
+
+    // HACK until skinning is implemented in shaders
+    delete m_mesh;
+    m_mesh = 0;
 }
 
-void WLDModelPart::importMaterialGroups(Mesh *m)
+void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
 {
     // load vertices, texCoords, normals, faces
     VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
@@ -158,8 +161,10 @@ void WLDModelPart::importMaterialGroups(Mesh *m)
     WLDSkeleton *skel = m_model->skeleton();
     if(skel)
     {
-        WLDAnimation *anim = skel->pose();
-        QVector<BoneTransform> trans = anim->transformations();
+        WLDAnimation *anim = skel->animations().value("C05");
+        if(!anim)
+            anim = skel->pose();
+        QVector<BoneTransform> trans = anim->transformations(currentTime);
         pos = 0;
         vd = vg->data;
         foreach(vec2us g, m_meshDef->m_vertexPieces)

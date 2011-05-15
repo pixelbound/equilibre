@@ -3,6 +3,7 @@
 #include "WLDData.h"
 #include "WLDModel.h"
 #include "WLDActor.h"
+#include "WLDSkeleton.h"
 #include "Fragments.h"
 
 Zone::Zone(QObject *parent) : QObject(parent)
@@ -65,7 +66,7 @@ bool Zone::load(QString path, QString name)
 
 void Zone::importGeometry()
 {
-    m_geometry = new WLDModel(m_mainArchive, 0, this);
+    m_geometry = new WLDModel(m_mainArchive, 0, 0, this);
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
         m_geometry->importMesh(meshDef);
 }
@@ -74,9 +75,7 @@ void Zone::importObjects()
 {
     // import models through ActorDef fragments
     foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
-    {
-        m_models.insert(actorDef->name(), new WLDModel(m_objMeshArchive, actorDef, this));
-    }
+        m_models.insert(actorDef->name(), new WLDModel(m_objMeshArchive, actorDef, 0, this));
 
     // import actors through Actor fragments
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
@@ -96,14 +95,28 @@ void Zone::importObjects()
 
 void Zone::importSkeletons()
 {
+    // import skeletons which contain the pose animation
+    foreach(HierSpriteDefFragment *skelDef, m_charWld->fragmentsByType<HierSpriteDefFragment>())
+        m_skeletons.insert(skelDef->name().left(3), new WLDSkeleton(skelDef, this));
 
+    // import other animations
+    foreach(TrackFragment *track, m_charWld->fragmentsByType<TrackFragment>())
+    {
+        QString animName = track->name().left(3);
+        QString skelName = track->name().mid(3, 3);
+        WLDSkeleton *skel = m_skeletons.value(skelName);
+        if(skel && track->m_def)
+            skel->addTrack(animName, track->m_def);
+    }
 }
 
 void Zone::importCharacters()
 {
     foreach(ActorDefFragment *actorDef, m_charWld->fragmentsByType<ActorDefFragment>())
     {
-        m_models.insert(actorDef->name(), new WLDModel(m_charArchive, actorDef, this));
+        QString actorName = actorDef->name().left(3);
+        WLDSkeleton *skel = m_skeletons.value(actorName);
+        m_models.insert(actorDef->name(), new WLDModel(m_charArchive, actorDef, skel, this));
     }
 }
 

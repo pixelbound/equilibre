@@ -23,7 +23,7 @@ class WLDSkeleton;
 class WLDModel : public QObject
 {
 public:
-    WLDModel(PFSArchive *archive, ActorDefFragment *def = 0, QObject *parent = 0);
+    WLDModel(PFSArchive *archive, ActorDefFragment *def = 0, WLDSkeleton *skel = 0, QObject *parent = 0);
     virtual ~WLDModel();
 
     WLDSkeleton *skeleton() const;
@@ -31,7 +31,7 @@ public:
     void importMesh(MeshDefFragment *frag);
     Material * importMaterial(MaterialDefFragment *frag);
 
-    void draw(RenderState *state);
+    void draw(RenderState *state, double currentTime = 0.0);
 
 private:
     void importDefinition(ActorDefFragment *def);
@@ -51,10 +51,10 @@ class WLDModelPart : public QObject
 public:
     WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *parent = 0);
 
-    void draw(RenderState *state);
+    void draw(RenderState *state, double currentTime = 0.0);
 
 private:
-    void importMaterialGroups(Mesh *m);
+    void importMaterialGroups(Mesh *m, double currentTime);
 
     WLDModel *m_model;
     Mesh *m_mesh;

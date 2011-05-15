@@ -1,3 +1,4 @@
+#include <cmath>
 #include "WLDSkeleton.h"
 #include "Fragments.h"
 
@@ -16,9 +17,14 @@ WLDAnimation *WLDSkeleton::pose() const
     return m_pose;
 }
 
-const QVector<SkeletonNode> &WLDSkeleton::tree() const
+const QVector<SkeletonNode> & WLDSkeleton::tree() const
 {
     return m_def->m_tree;
+}
+
+const QMap<QString, WLDAnimation *> & WLDSkeleton::animations() const
+{
+    return m_animations;
 }
 
 void WLDSkeleton::addTrack(QString animName, TrackDefFragment *track)
@@ -67,6 +73,14 @@ void WLDAnimation::replaceTrack(TrackDefFragment *track)
 WLDAnimation * WLDAnimation::copy(QString newName, QObject *parent) const
 {
     return new WLDAnimation(newName, m_tracks, m_skel, parent);
+}
+
+QVector<BoneTransform> WLDAnimation::transformations(double t) const
+{
+    const double fps = 2.0;
+    double dur = m_frameCount / fps;
+    uint32_t frameIndex = qRound(fmod(t, dur) * fps) % m_frameCount;
+    return transformations(frameIndex);
 }
 
 QVector<BoneTransform> WLDAnimation::transformations(uint32_t frameIndex) const

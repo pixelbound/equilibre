@@ -53,6 +53,7 @@ public:
     WLDSkeleton(HierSpriteDefFragment *def, QObject *parent = 0);
 
     WLDAnimation *pose() const;
+    const QMap<QString, WLDAnimation *> & animations() const;
     const QVector<SkeletonNode> &tree() const;
 
     void addTrack(QString animName, TrackDefFragment *track);
@@ -76,6 +77,7 @@ public:
 
     void replaceTrack(TrackDefFragment *track);
     WLDAnimation * copy(QString newName, QObject *parent = 0) const;
+    QVector<BoneTransform> transformations(double t) const;
     QVector<BoneTransform> transformations(uint32_t frame = 0) const;
 
 private:

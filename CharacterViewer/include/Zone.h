@@ -11,6 +11,7 @@ class PFSArchive;
 class WLDData;
 class WLDModel;
 class WLDActor;
+class WLDSkeleton;
 class ActorDefFragment;
 class RenderState;
 
@@ -46,6 +47,7 @@ private:
     WLDData *m_objMeshWld, *m_objDefWld;
     WLDData *m_charWld;
     QMap<QString, WLDModel *> m_models;
+    QMap<QString, WLDSkeleton *> m_skeletons;
     QList<WLDActor *> m_actors;
 };
 
