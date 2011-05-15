@@ -27,6 +27,7 @@ int main(int argc, char **argv)
     // create viewport for rendering the scene
     CharacterViewerWindow v(&scene, &state);
     if(!v.loadZone(PATH, ZONE))
+    //if(!v.loadCharacters(QString("%1/%2").arg(PATH).arg("chequip.s3d"), "chequip.wld"))
     {
         QMessageBox::critical(0, "Error", "Could not load the zone.");
         return 1;

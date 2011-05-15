@@ -18,7 +18,10 @@ Scene::~Scene()
 
 const QMap<QString, WLDModel *> & Scene::models() const
 {
-    return m_zone->models();
+    if(m_mode == CharacterViewer)
+        return m_zone->charModels();
+    else
+        return m_zone->objectModels();
 }
 
 void Scene::init()
@@ -93,6 +96,11 @@ void Scene::draw()
 bool Scene::openZone(QString path, QString zoneName)
 {
     return m_zone->load(path, zoneName);
+}
+
+bool Scene::loadCharacters(QString archivePath, QString wldName)
+{
+    return m_zone->loadCharacters(archivePath, wldName);
 }
 
 void Scene::topView()

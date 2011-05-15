@@ -21,15 +21,18 @@ public:
     CharacterViewerWindow(Scene *scene, RenderState *state, QWidget *parent = 0);
 
     bool loadZone(QString path, QString name);
+    bool loadCharacters(QString archivePath, QString wldName);
 
 private slots:
     void loadActor(QString name);
+    void loadAnimation(QString animName);
 
 private:
     SceneViewport *m_viewport;
     Scene *m_scene;
     RenderState *m_state;
     QComboBox *m_actorText;
+    QComboBox *m_animationText;
 };
 
 #endif

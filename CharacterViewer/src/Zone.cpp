@@ -21,9 +21,14 @@ Zone::~Zone()
 {
 }
 
-const QMap<QString, WLDModel *> & Zone::models() const
+const QMap<QString, WLDModel *> & Zone::objectModels() const
 {
-    return m_models;
+    return m_objModels;
+}
+
+const QMap<QString, WLDModel *> & Zone::charModels() const
+{
+    return m_charModels;
 }
 
 const QList<WLDActor *> & Zone::actors() const
@@ -57,8 +62,19 @@ bool Zone::load(QString path, QString name)
         return false;
 
     // import geometry, objects, characters
-    //importGeometry();
-    //importObjects();
+    importGeometry();
+    importObjects();
+    importSkeletons();
+    importCharacters();
+    return true;
+}
+
+bool Zone::loadCharacters(QString archivePath, QString wldName)
+{
+    m_charArchive = new PFSArchive(archivePath, this);
+    m_charWld = WLDData::fromArchive(m_charArchive, wldName, this);
+    if(!m_charWld)
+        return false;
     importSkeletons();
     importCharacters();
     return true;
@@ -75,12 +91,12 @@ void Zone::importObjects()
 {
     // import models through ActorDef fragments
     foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
-        m_models.insert(actorDef->name(), new WLDModel(m_objMeshArchive, actorDef, 0, this));
+        m_objModels.insert(actorDef->name(), new WLDModel(m_objMeshArchive, actorDef, 0, this));
 
     // import actors through Actor fragments
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
-        WLDModel *model = m_models.value(actorFrag->m_def.name());
+        WLDModel *model = m_objModels.value(actorFrag->m_def.name());
         if(model)
         {
             WLDActor *actor = new WLDActor(actorFrag, model, this);
@@ -116,7 +132,7 @@ void Zone::importCharacters()
     {
         QString actorName = actorDef->name().left(3);
         WLDSkeleton *skel = m_skeletons.value(actorName);
-        m_models.insert(actorDef->name(), new WLDModel(m_charArchive, actorDef, skel, this));
+        m_charModels.insert(actorDef->name(), new WLDModel(m_charArchive, actorDef, skel, this));
     }
 }
 

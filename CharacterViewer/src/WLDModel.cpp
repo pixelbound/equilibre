@@ -9,6 +9,7 @@ WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, WLDSkeleton *skel
 {
     m_archive = archive;
     m_skel = skel;
+    m_animName = "POS";
     if(def)
         importDefinition(def);
 }
@@ -20,6 +21,16 @@ WLDModel::~WLDModel()
 WLDSkeleton * WLDModel::skeleton() const
 {
     return m_skel;
+}
+
+QString WLDModel::animName() const
+{
+    return m_animName;
+}
+
+void WLDModel::setAnimName(QString name)
+{
+    m_animName = name;
 }
 
 void WLDModel::importDefinition(ActorDefFragment *def)
@@ -161,7 +172,7 @@ void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
     WLDSkeleton *skel = m_model->skeleton();
     if(skel)
     {
-        WLDAnimation *anim = skel->animations().value("L02");
+        WLDAnimation *anim = skel->animations().value(m_model->animName());
         if(!anim)
             anim = skel->pose();
         QVector<BoneTransform> trans = anim->transformationsAtTime(currentTime);

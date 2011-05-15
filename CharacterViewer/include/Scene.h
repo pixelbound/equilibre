@@ -39,6 +39,7 @@ public:
     void reset();
 
     bool openZone(QString path, QString zoneName);
+    bool loadCharacters(QString archivePath, QString wldName);
 
     enum Mode
     {

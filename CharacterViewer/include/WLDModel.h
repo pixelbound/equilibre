@@ -27,6 +27,8 @@ public:
     virtual ~WLDModel();
 
     WLDSkeleton *skeleton() const;
+    QString animName() const;
+    void setAnimName(QString name);
 
     void importMesh(MeshDefFragment *frag);
     Material * importMaterial(MaterialDefFragment *frag);
@@ -39,6 +41,7 @@ private:
 
     QList<WLDModelPart *> m_parts;
     WLDSkeleton *m_skel;
+    QString m_animName;
     QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
 };

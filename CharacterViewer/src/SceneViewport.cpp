@@ -164,7 +164,7 @@ void SceneViewport::mouseMoveEvent(QMouseEvent *e)
         int dx = m_transState.x0 - x;
         int dy = m_transState.y0 - y;
         m_scene->delta().x = (m_transState.last.x - (dx / 100.0));
-        m_scene->delta().y = (m_transState.last.y + (dy / 100.0));
+        m_scene->delta().z = (m_transState.last.y + (dy / 100.0));
         update();
     }
     
@@ -173,7 +173,7 @@ void SceneViewport::mouseMoveEvent(QMouseEvent *e)
         int dx = m_rotState.x0 - x;
         int dy = m_rotState.y0 - y;
         m_scene->theta().x = (m_rotState.last.x + (dy * 2.0));
-        m_scene->theta().y = (m_rotState.last.y + (dx * 2.0));
+        m_scene->theta().z = (m_rotState.last.z + (dx * 2.0));
         update();
     }
 }
