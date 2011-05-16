@@ -78,8 +78,8 @@ void CharacterViewerWindow::loadActor(QString name)
                 m_animationText->addItem(animName);
             loadAnimation(charModel->animName());
         }
-        foreach(WLDMaterialPalette *pal, charModel->model()->palettes())
-            m_paletteText->addItem(pal->name());
+        foreach(WLDModelSkin *skin, charModel->model()->skins())
+            m_paletteText->addItem(skin->name());
         loadPalette(charModel->paletteName());
     }
 }

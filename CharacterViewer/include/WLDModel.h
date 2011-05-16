@@ -16,6 +16,7 @@ class Material;
 class PFSArchive;
 class RenderState;
 class WLDModelPart;
+class WLDModelSkin;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class WLDAnimation;
@@ -32,12 +33,12 @@ public:
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
 
-    QMap<QString, WLDMaterialPalette *> & palettes();
-    const QMap<QString, WLDMaterialPalette *> & palettes() const;
+    QMap<QString, WLDModelSkin *> & skins();
+    const QMap<QString, WLDModelSkin *> & skins() const;
 
     void addPart(MeshDefFragment *frag);
 
-    void draw(RenderState *state, WLDMaterialPalette *palette = 0, WLDAnimation *anim = 0,
+    void draw(RenderState *state, WLDModelSkin *skin = 0, WLDAnimation *anim = 0,
               double currentTime = 0.0);
 
 private:
@@ -46,7 +47,7 @@ private:
 
     QList<WLDModelPart *> m_parts;
     WLDSkeleton *m_skel;
-    QMap<QString, WLDMaterialPalette *> m_palettes;
+    QMap<QString, WLDModelSkin *> m_skins;
 };
 
 /*!
@@ -57,11 +58,11 @@ class WLDModelPart : public QObject
 public:
     WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
 
-    void draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
+    void draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
             double currentTime);
 
 private:
-    void importMaterialGroups(Mesh *m, WLDMaterialPalette *palette, WLDAnimation *anim,
+    void importMaterialGroups(Mesh *m, WLDModelSkin *skin, WLDAnimation *anim,
             double currentTime);
 
     Mesh *m_mesh;
@@ -75,9 +76,7 @@ private:
 class WLDMaterialPalette : public QObject
 {
 public:
-    WLDMaterialPalette(QString name, PFSArchive *archive, QObject *parent = 0);
-
-    QString name() const;
+    WLDMaterialPalette(PFSArchive *archive, QObject *parent = 0);
 
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
@@ -98,7 +97,6 @@ public:
 private:
     void importMaterial(QString key, MaterialDefFragment *frag);
 
-    QString m_name;
     QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
 };
@@ -110,7 +108,10 @@ private:
 class WLDModelSkin : public QObject
 {
 public:
-    WLDModelSkin(QObject *parent = 0);
+    WLDModelSkin(QString name, QObject *parent = 0);
+    WLDModelSkin(QString name, WLDMaterialPalette *palette, QObject *parent = 0);
+
+    QString name() const;
 
     WLDMaterialPalette *palette() const;
     void setPalette(WLDMaterialPalette *palette);
@@ -119,6 +120,7 @@ public:
     QList<WLDModelPart *> & parts();
 
 private:
+    QString m_name;
     WLDMaterialPalette *m_palette;
     QList<WLDModelPart *> m_parts;
 };

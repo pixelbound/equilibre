@@ -80,7 +80,7 @@ void WLDActor::setPaletteName(QString palName)
 
 void WLDActor::draw(RenderState *state)
 {
-    WLDMaterialPalette *pal = m_model->palettes().value(m_palName);
+    WLDModelSkin *skin = m_model->skins().value(m_palName);
     WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
     state->pushMatrix();
     state->translate(m_location);
@@ -88,6 +88,6 @@ void WLDActor::draw(RenderState *state)
     state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
     state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
     state->scale(m_scale);
-    m_model->draw(state, pal, anim, m_animTime);
+    m_model->draw(state, skin, anim, m_animTime);
     state->popMatrix();
 }

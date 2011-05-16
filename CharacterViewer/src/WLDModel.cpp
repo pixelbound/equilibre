@@ -27,14 +27,14 @@ void WLDModel::setSkeleton(WLDSkeleton *skeleton)
     m_skel = skeleton;
 }
 
-QMap<QString, WLDMaterialPalette *> & WLDModel::palettes()
+QMap<QString, WLDModelSkin *> & WLDModel::skins()
 {
-    return m_palettes;
+    return m_skins;
 }
 
-const QMap<QString, WLDMaterialPalette *> & WLDModel::palettes() const
+const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
 {
-    return m_palettes;
+    return m_skins;
 }
 
 void WLDModel::importDefinition(ActorDefFragment *def)
@@ -68,15 +68,15 @@ void WLDModel::addPart(MeshDefFragment *frag)
     m_parts.append(new WLDModelPart(frag, this));
 }
 
-void WLDModel::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
+void WLDModel::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
                     double currentTime)
 {
-    if(!palette && m_palettes.count() > 0)
-        palette = m_palettes[0];
+    if(!skin && m_skins.count() > 0)
+        skin = m_skins[0];
     if(!anim && m_skel)
         anim = m_skel->pose();
     foreach(WLDModelPart *part, m_parts)
-        part->draw(state, palette, anim, currentTime);
+        part->draw(state, skin, anim, currentTime);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,12 +87,12 @@ WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, QObject *parent) : QObject(
     m_mesh = 0;
 }
 
-void WLDModelPart::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
+void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
                         double currentTime)
 {
     // TODO: do the skinning in shaders so meshes are created only once
     Mesh *m = state->createMesh();
-    importMaterialGroups(m, palette, anim, currentTime);
+    importMaterialGroups(m, skin, anim, currentTime);
 
     state->pushMatrix();
     state->translate(m_meshDef->m_center);
@@ -102,7 +102,7 @@ void WLDModelPart::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnim
     delete m;
 }
 
-void WLDModelPart::importMaterialGroups(Mesh *m, WLDMaterialPalette *palette,
+void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin,
                                         WLDAnimation *anim, double currentTime)
 {
     // load vertices, texCoords, normals, faces
@@ -128,14 +128,14 @@ void WLDModelPart::importMaterialGroups(Mesh *m, WLDMaterialPalette *palette,
         mg.offset = pos;
         mg.count = vertexCount;
         // invisible groups have no material
-        if((matDef->m_param1 == 0) || !palette)
+        if((matDef->m_param1 == 0) || !skin || !skin->palette())
         {
             mg.palette = 0;
         }
         else
         {
-            mg.matName = palette->materialName(palDef->m_materials[g.second]);
-            mg.palette = palette;
+            mg.matName = skin->palette()->materialName(palDef->m_materials[g.second]);
+            mg.palette = skin->palette();
         }
         vg->matGroups.append(mg);
         pos += vertexCount;
@@ -162,15 +162,9 @@ void WLDModelPart::importMaterialGroups(Mesh *m, WLDMaterialPalette *palette,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDMaterialPalette::WLDMaterialPalette(QString paletteID, PFSArchive *archive, QObject *parent) : QObject(parent)
+WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive, QObject *parent) : QObject(parent)
 {
-    m_name = paletteID;
     m_archive = archive;
-}
-
-QString WLDMaterialPalette::name() const
-{
-    return m_name;
 }
 
 void WLDMaterialPalette::addPaletteDef(MaterialPaletteFragment *def)
@@ -272,9 +266,21 @@ void WLDMaterialPalette::importMaterial(QString key, MaterialDefFragment *frag)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelSkin::WLDModelSkin(QObject *parent) : QObject(parent)
+WLDModelSkin::WLDModelSkin(QString name, QObject *parent) : QObject(parent)
 {
+    m_name = name;
     m_palette = 0;
+}
+
+WLDModelSkin::WLDModelSkin(QString name, WLDMaterialPalette *palette, QObject *parent) : QObject(parent)
+{
+    m_name = name;
+    m_palette = palette;
+}
+
+QString WLDModelSkin::name() const
+{
+    return m_name;
 }
 
 WLDMaterialPalette *WLDModelSkin::palette() const

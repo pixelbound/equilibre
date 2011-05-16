@@ -90,10 +90,11 @@ void Zone::importGeometry()
     m_geometry = new WLDModel(0, this);
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
         m_geometry->addPart(meshDef);
-    WLDMaterialPalette *palette = new WLDMaterialPalette("00", m_mainArchive, this);
+    WLDMaterialPalette *palette = new WLDMaterialPalette(m_mainArchive, m_geometry);
+    WLDModelSkin *skin = new WLDModelSkin("00", palette, m_geometry);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         palette->addMaterialDef(matDef);
-    m_geometry->palettes().insert(palette->name(), palette);
+    m_geometry->skins().insert(skin->name(), skin);
 }
 
 void Zone::importObjects()
@@ -154,13 +155,16 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             WLDActor *actor = m_charModels.value(charName);
             if(!actor)
                 continue;
-            WLDMaterialPalette *pal = actor->model()->palettes().value(palName);
-            if(!pal)
+            WLDModel *model = actor->model();
+            WLDModelSkin *skin = model->skins().value(palName);
+            WLDMaterialPalette *pal;
+            if(!skin)
             {
-                pal = new WLDMaterialPalette(palName, archive, this);
-                actor->model()->palettes().insert(palName, pal);
+                pal = new WLDMaterialPalette(archive, model);
+                skin = new WLDModelSkin(palName, pal, model);
+                actor->model()->skins().insert(palName, skin);
             }
-            pal->addMaterialDef(matDef);
+            skin->palette()->addMaterialDef(matDef);
         }
     }
 }
