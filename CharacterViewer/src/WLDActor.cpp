@@ -88,6 +88,15 @@ void WLDActor::draw(RenderState *state)
     state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
     state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
     state->scale(m_scale);
-    m_model->draw(state, skin, anim, m_animTime);
+    if(skin)
+    {
+        WLDMaterialPalette *palette = skin->palette();
+        foreach(WLDModelPart *part, skin->parts())
+            part->draw(state, skin, anim, m_animTime);
+    }
+    else
+    {
+        m_model->draw(state, skin, anim, m_animTime);
+    }
     state->popMatrix();
 }

@@ -33,6 +33,8 @@ public:
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
 
+    const QList<WLDModelPart *> & parts() const;
+
     QMap<QString, WLDModelSkin *> & skins();
     const QMap<QString, WLDModelSkin *> & skins() const;
 
@@ -57,6 +59,8 @@ class WLDModelPart : public QObject
 {
 public:
     WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
+
+    QString name() const;
 
     void draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
             double currentTime);
@@ -108,8 +112,8 @@ private:
 class WLDModelSkin : public QObject
 {
 public:
-    WLDModelSkin(QString name, QObject *parent = 0);
-    WLDModelSkin(QString name, WLDMaterialPalette *palette, QObject *parent = 0);
+    WLDModelSkin(QString name, WLDModel *model, QObject *parent = 0);
+    WLDModelSkin(QString name, WLDModel *model, WLDMaterialPalette *palette, QObject *parent = 0);
 
     QString name() const;
 
@@ -119,8 +123,11 @@ public:
     const QList<WLDModelPart *> & parts() const;
     QList<WLDModelPart *> & parts();
 
+    void addPart(MeshDefFragment *frag);
+
 private:
     QString m_name;
+    WLDModel *m_model;
     WLDMaterialPalette *m_palette;
     QList<WLDModelPart *> m_parts;
 };

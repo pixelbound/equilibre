@@ -91,7 +91,7 @@ void Zone::importGeometry()
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
         m_geometry->addPart(meshDef);
     WLDMaterialPalette *palette = new WLDMaterialPalette(m_mainArchive, m_geometry);
-    WLDModelSkin *skin = new WLDModelSkin("00", palette, m_geometry);
+    WLDModelSkin *skin = new WLDModelSkin("00", m_geometry, palette, m_geometry);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         palette->addMaterialDef(matDef);
     m_geometry->skins().insert(skin->name(), skin);
@@ -161,10 +161,32 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             if(!skin)
             {
                 pal = new WLDMaterialPalette(archive, model);
-                skin = new WLDModelSkin(palName, pal, model);
-                actor->model()->skins().insert(palName, skin);
+                skin = new WLDModelSkin(palName, model, pal, model);
+                model->skins().insert(palName, skin);
             }
             skin->palette()->addMaterialDef(matDef);
+        }
+    }
+
+    // look for alternate meshes (e.g. heads)
+    foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
+    {
+        QString actorName = meshDef->name().left(3);
+        QString meshName = meshDef->name().mid(3).replace("_DMSPRITEDEF", "");
+        QString skinName = meshName.right(2);
+        meshName = meshName.left(meshName.length() - 2);
+        WLDActor *actor = m_charModels.value(actorName);
+        if(!actor || meshName.isEmpty())
+            continue;
+        meshName = actorName + meshName;
+        WLDModel *model = actor->model();
+        WLDModelSkin *skin = model->skins().value(skinName);
+        if(!skin)
+            continue;
+        foreach(WLDModelPart *part, model->parts())
+        {
+            if(part->name().startsWith(meshName))
+                skin->addPart(meshDef);
         }
     }
 }

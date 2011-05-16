@@ -17,6 +17,11 @@ WLDModel::~WLDModel()
 {
 }
 
+const QList<WLDModelPart *> & WLDModel::parts() const
+{
+    return m_parts;
+}
+
 WLDSkeleton * WLDModel::skeleton() const
 {
     return m_skel;
@@ -85,6 +90,11 @@ WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, QObject *parent) : QObject(
 {
     m_meshDef = meshDef;
     m_mesh = 0;
+}
+
+QString WLDModelPart::name() const
+{
+    return m_meshDef->name();
 }
 
 void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
@@ -169,12 +179,16 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive, QObject *parent) : Q
 
 void WLDMaterialPalette::addPaletteDef(MaterialPaletteFragment *def)
 {
+    if(!def)
+        return;
     foreach(MaterialDefFragment *matDef, def->m_materials)
         addMaterialDef(matDef);
 }
 
 QString WLDMaterialPalette::addMaterialDef(MaterialDefFragment *def)
 {
+    if(!def)
+        return QString::null;
     QString name = materialName(def);
     importMaterial(name, def);
     return name;
@@ -266,16 +280,20 @@ void WLDMaterialPalette::importMaterial(QString key, MaterialDefFragment *frag)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelSkin::WLDModelSkin(QString name, QObject *parent) : QObject(parent)
+WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, QObject *parent) : QObject(parent)
 {
     m_name = name;
+    m_model = model;
     m_palette = 0;
 }
 
-WLDModelSkin::WLDModelSkin(QString name, WLDMaterialPalette *palette, QObject *parent) : QObject(parent)
+WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, WLDMaterialPalette *palette, QObject *parent) : QObject(parent)
 {
     m_name = name;
+    m_model = model;
     m_palette = palette;
+    foreach(WLDModelPart *part, model->parts())
+        m_parts.append(part);
 }
 
 QString WLDModelSkin::name() const
@@ -301,4 +319,11 @@ const QList<WLDModelPart *> & WLDModelSkin::parts() const
 QList<WLDModelPart *> & WLDModelSkin::parts()
 {
     return m_parts;
+}
+
+void WLDModelSkin::addPart(MeshDefFragment *frag)
+{
+    if(m_palette)
+        m_palette->addPaletteDef(frag->m_palette);
+    m_parts.append(new WLDModelPart(frag, m_model));
 }
