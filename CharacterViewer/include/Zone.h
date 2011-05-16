@@ -26,11 +26,11 @@ public:
     virtual ~Zone();
 
     const QMap<QString, WLDModel *> & objectModels() const;
-    const QMap<QString, WLDModel *> & charModels() const;
+    const QMap<QString, WLDActor *> & charModels() const;
     const QList<WLDActor *> & actors() const;
 
     bool load(QString path, QString name);
-    bool loadCharacters(QString archivePath, QString wldName);
+    bool loadCharacters(QString archivePath, QString wldName = QString::null);
 
     void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
@@ -51,7 +51,7 @@ private:
     WLDData *m_objMeshWld, *m_objDefWld;
     WLDData *m_charWld;
     QMap<QString, WLDModel *> m_objModels;
-    QMap<QString, WLDModel *> m_charModels;
+    QMap<QString, WLDActor *> m_charModels;
     QMap<QString, WLDSkeleton *> m_skeletons;
     QMap<QString, QMap<QString, WLDMaterialPalette *> > m_charPalettes;
     QList<WLDActor *> m_actors;

@@ -7,6 +7,7 @@
 #include "Vertex.h"
 
 class WLDModel;
+class WLDActor;
 class Zone;
 
 class Scene : public QObject, StateObject
@@ -23,8 +24,11 @@ public:
     float & sigma();
     vec3 & delta();
 
-    const QMap<QString, WLDModel *> & models() const;
-    WLDModel * selectedModel() const;
+    Zone * zone() const;
+    const QMap<QString, WLDModel *> & objModels() const;
+    const QMap<QString, WLDActor *> & charModels() const;
+    WLDModel * selectedObject() const;
+    WLDActor * selectedCharacter() const;
     QString selectedModelName() const;
 
     void draw();
@@ -37,9 +41,6 @@ public:
     void frontView();
 
     void reset();
-
-    bool openZone(QString path, QString zoneName);
-    bool loadCharacters(QString archivePath, QString wldName);
 
     enum Mode
     {

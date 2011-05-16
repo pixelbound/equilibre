@@ -10,9 +10,6 @@ WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, WLDSkeleton *skel
 {
     m_archive = archive;
     m_skel = skel;
-    m_animName = "POS";
-    m_palName = "00";
-    addPalette(m_palName, new WLDMaterialPalette(m_palName, archive, this));
     if(def)
         importDefinition(def);
 }
@@ -26,35 +23,15 @@ WLDSkeleton * WLDModel::skeleton() const
     return m_skel;
 }
 
-QString WLDModel::animName() const
-{
-    return m_animName;
-}
-
-void WLDModel::setAnimName(QString name)
-{
-    m_animName = name;
-}
-
-WLDMaterialPalette * WLDModel::palette() const
-{
-    return m_palettes.value(m_palName);
-}
-
-void WLDModel::setPalette(QString palName)
-{
-    m_palName = palName;
-}
-
 const QMap<QString, WLDMaterialPalette *> & WLDModel::palettes() const
 {
     return m_palettes;
 }
 
-void WLDModel::addPalette(QString palName, WLDMaterialPalette *palette)
+void WLDModel::addPalette(WLDMaterialPalette *palette)
 {
     if(palette)
-        m_palettes.insert(palName, palette);
+        m_palettes.insert(palette->name(), palette);
 }
 
 void WLDModel::importDefinition(ActorDefFragment *def)
@@ -63,7 +40,7 @@ void WLDModel::importDefinition(ActorDefFragment *def)
     {
         MeshFragment *meshFrag = modelFrag->cast<MeshFragment>();
         if(meshFrag)
-            importMesh(meshFrag->m_def);
+            addPart(meshFrag->m_def);
         HierSpriteFragment *skelFrag = modelFrag->cast<HierSpriteFragment>();
         if(skelFrag)
             importHierMesh(skelFrag->m_def);
@@ -75,7 +52,7 @@ void WLDModel::importHierMesh(HierSpriteDefFragment *def)
     foreach(MeshFragment *meshFrag, def->m_meshes)
     {
         if(meshFrag->m_def)
-            importMesh(meshFrag->m_def);
+            addPart(meshFrag->m_def);
         else
         {
             qDebug("HierMesh without Mesh (%s)", def->name().toLatin1().constData());
@@ -83,19 +60,20 @@ void WLDModel::importHierMesh(HierSpriteDefFragment *def)
     }
 }
 
-void WLDModel::importMesh(MeshDefFragment *frag)
+void WLDModel::addPart(MeshDefFragment *frag)
 {
-    MaterialPaletteFragment *palDef = frag->m_palette;
-    WLDMaterialPalette *pal = palette();
-    if(palDef && pal)
-        pal->addPaletteDef(palDef);
     m_parts.append(new WLDModelPart(this, frag, this));
 }
 
-void WLDModel::draw(RenderState *state, double currentTime)
+void WLDModel::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
+                    double currentTime)
 {
+    if(!palette && m_palettes.count() > 0)
+        palette = m_palettes[0];
+    if(!anim && m_skel)
+        anim = m_skel->pose();
     foreach(WLDModelPart *part, m_parts)
-        part->draw(state, currentTime);
+        part->draw(state, palette, anim, currentTime);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,27 +85,23 @@ WLDModelPart::WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *p
     m_mesh = 0;
 }
 
-void WLDModelPart::draw(RenderState *state, double currentTime)
+void WLDModelPart::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
+                        double currentTime)
 {
-    // create the mesh on first use
-    if(!m_mesh)
-    {
-        m_mesh = state->createMesh();
-        importMaterialGroups(m_mesh, currentTime);
-    }
+    // TODO: do the skinning in shaders so meshes are created only once
+    Mesh *m = state->createMesh();
+    importMaterialGroups(m, palette, anim, currentTime);
 
-    // draw the mesh
     state->pushMatrix();
     state->translate(m_meshDef->m_center);
-    state->drawMesh(m_mesh);
+    state->drawMesh(m);
     state->popMatrix();
 
-    // HACK until skinning is implemented in shaders
-    delete m_mesh;
-    m_mesh = 0;
+    delete m;
 }
 
-void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
+void WLDModelPart::importMaterialGroups(Mesh *m, WLDMaterialPalette *palette,
+                                        WLDAnimation *anim, double currentTime)
 {
     // load vertices, texCoords, normals, faces
     VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
@@ -143,7 +117,6 @@ void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
 
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
-    WLDMaterialPalette *pal = m_model->palette();
     uint32_t pos = 0;
     foreach(vec2us g, m_meshDef->m_polygonsByTex)
     {
@@ -153,26 +126,22 @@ void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
         mg.offset = pos;
         mg.count = vertexCount;
         // invisible groups have no material
-        if((matDef->m_param1 == 0) || !pal)
+        if((matDef->m_param1 == 0) || !palette)
         {
             mg.palette = 0;
         }
         else
         {
-            mg.matName = pal->materialName(palDef->m_materials[g.second]);
-            mg.palette = pal;
+            mg.matName = palette->materialName(palDef->m_materials[g.second]);
+            mg.palette = palette;
         }
         vg->matGroups.append(mg);
         pos += vertexCount;
     }
 
     // skin mesh if there is a skeleton
-    WLDSkeleton *skel = m_model->skeleton();
-    if(skel)
+    if(anim)
     {
-        WLDAnimation *anim = skel->animations().value(m_model->animName());
-        if(!anim)
-            anim = skel->pose();
         QVector<BoneTransform> trans = anim->transformationsAtTime(currentTime);
         pos = 0;
         vd = vg->data;
@@ -193,13 +162,13 @@ void WLDModelPart::importMaterialGroups(Mesh *m, double currentTime)
 
 WLDMaterialPalette::WLDMaterialPalette(QString paletteID, PFSArchive *archive, QObject *parent) : QObject(parent)
 {
-    m_paletteID = paletteID;
+    m_name = paletteID;
     m_archive = archive;
 }
 
-QString WLDMaterialPalette::paletteID() const
+QString WLDMaterialPalette::name() const
 {
-    return m_paletteID;
+    return m_name;
 }
 
 void WLDMaterialPalette::addPaletteDef(MaterialPaletteFragment *def)

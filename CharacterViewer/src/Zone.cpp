@@ -1,3 +1,4 @@
+#include <QFileInfo>
 #include "Zone.h"
 #include "PFSArchive.h"
 #include "WLDData.h"
@@ -26,7 +27,7 @@ const QMap<QString, WLDModel *> & Zone::objectModels() const
     return m_objModels;
 }
 
-const QMap<QString, WLDModel *> & Zone::charModels() const
+const QMap<QString, WLDActor *> & Zone::charModels() const
 {
     return m_charModels;
 }
@@ -72,6 +73,8 @@ bool Zone::load(QString path, QString name)
 
 bool Zone::loadCharacters(QString archivePath, QString wldName)
 {
+    if(wldName.isNull())
+        wldName = QFileInfo(archivePath).baseName() + ".wld";
     m_charArchive = new PFSArchive(archivePath, this);
     m_charWld = WLDData::fromArchive(m_charArchive, wldName, this);
     if(!m_charWld)
@@ -86,7 +89,11 @@ void Zone::importGeometry()
 {
     m_geometry = new WLDModel(m_mainArchive, 0, 0, this);
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
-        m_geometry->importMesh(meshDef);
+        m_geometry->addPart(meshDef);
+    WLDMaterialPalette *palette = new WLDMaterialPalette("00", m_mainArchive, this);
+    foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
+        palette->addMaterialDef(matDef);
+    m_geometry->addPalette(palette);
 }
 
 void Zone::importObjects()
@@ -133,8 +140,7 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
     {
         QString charName, palName, partName;
-        if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName) &&
-                (palName != "00"))
+        if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
         {
             QMap<QString, WLDMaterialPalette *> &palettes = m_charPalettes[charName];
             WLDMaterialPalette *pal = palettes.value(palName);
@@ -155,10 +161,11 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
         QString actorName = actorDef->name().left(3);
         WLDSkeleton *skel = m_skeletons.value(actorName);
         WLDModel *model = new WLDModel(archive, actorDef, skel, this);
+        WLDActor *actor = new WLDActor(model, this);
         foreach(WLDMaterialPalette *pal, m_charPalettes[actorName])
-            model->addPalette(pal->paletteID(), pal);
+            model->addPalette(pal);
         m_charPalettes.remove(actorName);
-        m_charModels.insert(actorDef->name(), model);
+        m_charModels.insert(actorName, actor);
     }
 }
 

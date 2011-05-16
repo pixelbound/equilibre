@@ -21,7 +21,7 @@ public:
     CharacterViewerWindow(Scene *scene, RenderState *state, QWidget *parent = 0);
 
     bool loadZone(QString path, QString name);
-    bool loadCharacters(QString archivePath, QString wldName);
+    bool loadCharacters(QString archivePath);
 
 private slots:
     void loadActor(QString name);

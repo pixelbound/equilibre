@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "WLDModel.h"
+#include "WLDActor.h"
 #include "Zone.h"
 
 static double currentTime();
@@ -16,12 +17,14 @@ Scene::~Scene()
 {
 }
 
-const QMap<QString, WLDModel *> & Scene::models() const
+const QMap<QString, WLDModel *> & Scene::objModels() const
 {
-    if(m_mode == CharacterViewer)
-        return m_zone->charModels();
-    else
-        return m_zone->objectModels();
+    return m_zone->objectModels();
+}
+
+const QMap<QString, WLDActor *> & Scene::charModels() const
+{
+    return m_zone->charModels();
 }
 
 void Scene::init()
@@ -61,9 +64,19 @@ void Scene::setSelectedModelName(QString name)
     m_meshName = name;
 }
 
-WLDModel * Scene::selectedModel() const
+WLDModel * Scene::selectedObject() const
 {
-    return models().value(m_meshName);
+    return objModels().value(m_meshName);
+}
+
+WLDActor * Scene::selectedCharacter() const
+{
+    return charModels().value(m_meshName);
+}
+
+Zone * Scene::zone() const
+{
+    return m_zone;
 }
 
 void Scene::draw()
@@ -75,32 +88,26 @@ void Scene::draw()
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
 
-    WLDModel *model = selectedModel();
+    WLDModel *objModel = m_zone->objectModels().value(m_meshName);
+    WLDActor *charModel = m_zone->charModels().value(m_meshName);
     switch(m_mode)
     {
     case CharacterViewer:
-        if(model)
-            model->draw(m_state, currentTime());
+        if(charModel)
+        {
+            charModel->setAnimTime(currentTime());
+            charModel->draw(m_state);
+        }
         break;
     case ObjectViewer:
-        if(model)
-            model->draw(m_state);
+        if(objModel)
+            objModel->draw(m_state);
         break;
     case ZoneViewer:
         m_zone->drawGeometry(m_state);
         m_zone->drawObjects(m_state);
         break;
     }
-}
-
-bool Scene::openZone(QString path, QString zoneName)
-{
-    return m_zone->load(path, zoneName);
-}
-
-bool Scene::loadCharacters(QString archivePath, QString wldName)
-{
-    return m_zone->loadCharacters(archivePath, wldName);
 }
 
 void Scene::topView()

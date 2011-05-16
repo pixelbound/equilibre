@@ -5,7 +5,9 @@
 #include "SceneViewport.h"
 #include "Scene.h"
 #include "WLDModel.h"
+#include "WLDActor.h"
 #include "WLDSkeleton.h"
+#include "Zone.h"
 
 CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
                                              QWidget *parent) : QWidget(parent)
@@ -36,9 +38,9 @@ bool CharacterViewerWindow::loadZone(QString path, QString name)
 {
     m_actorText->clear();
     m_viewport->makeCurrent();
-    if(m_scene->openZone(path, name))
+    if(m_scene->zone()->load(path, name))
     {
-        foreach(QString name, m_scene->models().keys())
+        foreach(QString name, m_scene->charModels().keys())
             m_actorText->addItem(name);
         loadActor(m_actorText->itemText(0));
         return true;
@@ -46,13 +48,13 @@ bool CharacterViewerWindow::loadZone(QString path, QString name)
     return false;
 }
 
-bool CharacterViewerWindow::loadCharacters(QString archivePath, QString wldName)
+bool CharacterViewerWindow::loadCharacters(QString archivePath)
 {
     m_actorText->clear();
     m_viewport->makeCurrent();
-    if(m_scene->loadCharacters(archivePath, wldName))
+    if(m_scene->zone()->loadCharacters(archivePath))
     {
-        foreach(QString name, m_scene->models().keys())
+        foreach(QString name, m_scene->charModels().keys())
             m_actorText->addItem(name);
         loadActor(m_actorText->itemText(0));
         return true;
@@ -66,33 +68,34 @@ void CharacterViewerWindow::loadActor(QString name)
     m_scene->setSelectedModelName(name);
     m_paletteText->clear();
     m_animationText->clear();
-    WLDModel *model = m_scene->selectedModel();
-    if(model && model->skeleton())
+    WLDActor *charModel = m_scene->selectedCharacter();
+    if(charModel)
     {
-        if(model->skeleton())
+        WLDSkeleton *skel = charModel->model()->skeleton();
+        if(skel)
         {
-            foreach(QString animName, model->skeleton()->animations().keys())
+            foreach(QString animName, skel->animations().keys())
                 m_animationText->addItem(animName);
-            loadAnimation(model->animName());
+            loadAnimation(charModel->animName());
         }
-        foreach(WLDMaterialPalette *pal, model->palettes())
-            m_paletteText->addItem(pal->paletteID());
-        loadPalette(model->palette()->paletteID());
+        foreach(WLDMaterialPalette *pal, charModel->model()->palettes())
+            m_paletteText->addItem(pal->name());
+        loadPalette(charModel->paletteName());
     }
 }
 
 void CharacterViewerWindow::loadPalette(QString name)
 {
     m_paletteText->setCurrentIndex(m_paletteText->findText(name));
-    WLDModel *model = m_scene->selectedModel();
-    if(model)
-        model->setPalette(name);
+    WLDActor *charModel = m_scene->selectedCharacter();
+    if(charModel)
+        charModel->setPaletteName(name);
 }
 
 void CharacterViewerWindow::loadAnimation(QString animName)
 {
     m_animationText->setCurrentIndex(m_animationText->findText(animName));
-    WLDModel *model = m_scene->selectedModel();
-    if(model)
-        model->setAnimName(animName);
+    WLDActor *charModel = m_scene->selectedCharacter();
+    if(charModel)
+        charModel->setAnimName(animName);
 }

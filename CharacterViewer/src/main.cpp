@@ -13,19 +13,19 @@ bool loadGlobalChars(CharacterViewerWindow &v, bool veliousTextures)
 {
     if(veliousTextures)
     {
-        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global17_amr.s3d"), "global17_amr.wld");
-        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global18_amr.s3d"), "global18_amr.wld");
-        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global19_amr.s3d"), "global19_amr.wld");
-        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global20_amr.s3d"), "global20_amr.wld");
-        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global21_amr.s3d"), "global21_amr.wld");
-        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global22_amr.s3d"), "global22_amr.wld");
+        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global17_amr.s3d"));
+        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global18_amr.s3d"));
+        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global19_amr.s3d"));
+        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global20_amr.s3d"));
+        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global21_amr.s3d"));
+        v.loadCharacters(QString("%1/%2").arg(PATH).arg("global22_amr.s3d"));
     }
-    return v.loadCharacters(QString("%1/%2").arg(PATH).arg("global_chr.s3d"), "global_chr.wld");
+    return v.loadCharacters(QString("%1/%2").arg(PATH).arg("global_chr.s3d"));
 }
 
 bool loadOldChars(CharacterViewerWindow &v)
 {
-    return v.loadCharacters(QString("%1/%2").arg(PATH).arg("chequip.s3d"), "chequip.wld");
+    return v.loadCharacters(QString("%1/%2").arg(PATH).arg("chequip.s3d"));
 }
 
 bool loadZone(CharacterViewerWindow &v)

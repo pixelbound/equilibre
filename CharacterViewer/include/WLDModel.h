@@ -18,6 +18,7 @@ class RenderState;
 class WLDModelPart;
 class WLDSkeleton;
 class WLDMaterialPalette;
+class WLDAnimation;
 
 /*!
   \brief Describes a model (such as an object or a character) that can be rendered.
@@ -29,17 +30,13 @@ public:
     virtual ~WLDModel();
 
     WLDSkeleton *skeleton() const;
-    QString animName() const;
-    void setAnimName(QString name);
-
-    WLDMaterialPalette *palette() const;
-    void setPalette(QString palName);
     const QMap<QString, WLDMaterialPalette *> & palettes() const;
-    void addPalette(QString palName, WLDMaterialPalette *palette);
+    void addPalette(WLDMaterialPalette *palette);
 
-    void importMesh(MeshDefFragment *frag);
+    void addPart(MeshDefFragment *frag);
 
-    void draw(RenderState *state, double currentTime = 0.0);
+    void draw(RenderState *state, WLDMaterialPalette *palette = 0, WLDAnimation *anim = 0,
+              double currentTime = 0.0);
 
 private:
     void importDefinition(ActorDefFragment *def);
@@ -47,8 +44,6 @@ private:
 
     QList<WLDModelPart *> m_parts;
     WLDSkeleton *m_skel;
-    QString m_animName;
-    QString m_palName;
     QMap<QString, WLDMaterialPalette *> m_palettes;
     PFSArchive *m_archive;
 };
@@ -61,10 +56,12 @@ class WLDModelPart : public QObject
 public:
     WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *parent = 0);
 
-    void draw(RenderState *state, double currentTime = 0.0);
+    void draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
+            double currentTime);
 
 private:
-    void importMaterialGroups(Mesh *m, double currentTime);
+    void importMaterialGroups(Mesh *m, WLDMaterialPalette *palette, WLDAnimation *anim,
+            double currentTime);
 
     WLDModel *m_model;
     Mesh *m_mesh;
@@ -78,9 +75,9 @@ private:
 class WLDMaterialPalette : public QObject
 {
 public:
-    WLDMaterialPalette(QString paletteID, PFSArchive *archive, QObject *parent = 0);
+    WLDMaterialPalette(QString name, PFSArchive *archive, QObject *parent = 0);
 
-    QString paletteID() const;
+    QString name() const;
 
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
@@ -101,7 +98,7 @@ public:
 private:
     void importMaterial(QString key, MaterialDefFragment *frag);
 
-    QString m_paletteID;
+    QString m_name;
     QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
 };
