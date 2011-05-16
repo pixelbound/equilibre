@@ -11,7 +11,8 @@ const char *ZONE = "gfaydark";
 
 bool loadGlobalChars(CharacterViewerWindow &v, bool veliousTextures)
 {
-    if(veliousTextures)
+    bool ok = v.loadCharacters(QString("%1/%2").arg(PATH).arg("global_chr.s3d"));
+    if(ok && veliousTextures)
     {
         v.loadCharacters(QString("%1/%2").arg(PATH).arg("global17_amr.s3d"));
         v.loadCharacters(QString("%1/%2").arg(PATH).arg("global18_amr.s3d"));
@@ -20,7 +21,7 @@ bool loadGlobalChars(CharacterViewerWindow &v, bool veliousTextures)
         v.loadCharacters(QString("%1/%2").arg(PATH).arg("global21_amr.s3d"));
         v.loadCharacters(QString("%1/%2").arg(PATH).arg("global22_amr.s3d"));
     }
-    return v.loadCharacters(QString("%1/%2").arg(PATH).arg("global_chr.s3d"));
+    return ok;
 }
 
 bool loadOldChars(CharacterViewerWindow &v)

@@ -6,10 +6,9 @@
 #include "PFSArchive.h"
 #include "RenderState.h"
 
-WLDModel::WLDModel(PFSArchive *archive, ActorDefFragment *def, WLDSkeleton *skel, QObject *parent) : QObject(parent)
+WLDModel::WLDModel(ActorDefFragment *def, QObject *parent) : QObject(parent)
 {
-    m_archive = archive;
-    m_skel = skel;
+    m_skel = 0;
     if(def)
         importDefinition(def);
 }
@@ -23,15 +22,19 @@ WLDSkeleton * WLDModel::skeleton() const
     return m_skel;
 }
 
-const QMap<QString, WLDMaterialPalette *> & WLDModel::palettes() const
+void WLDModel::setSkeleton(WLDSkeleton *skeleton)
+{
+    m_skel = skeleton;
+}
+
+QMap<QString, WLDMaterialPalette *> & WLDModel::palettes()
 {
     return m_palettes;
 }
 
-void WLDModel::addPalette(WLDMaterialPalette *palette)
+const QMap<QString, WLDMaterialPalette *> & WLDModel::palettes() const
 {
-    if(palette)
-        m_palettes.insert(palette->name(), palette);
+    return m_palettes;
 }
 
 void WLDModel::importDefinition(ActorDefFragment *def)
@@ -62,7 +65,7 @@ void WLDModel::importHierMesh(HierSpriteDefFragment *def)
 
 void WLDModel::addPart(MeshDefFragment *frag)
 {
-    m_parts.append(new WLDModelPart(this, frag, this));
+    m_parts.append(new WLDModelPart(frag, this));
 }
 
 void WLDModel::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
@@ -78,9 +81,8 @@ void WLDModel::draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimatio
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelPart::WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *parent) : QObject(parent)
+WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, QObject *parent) : QObject(parent)
 {
-    m_model = model;
     m_meshDef = meshDef;
     m_mesh = 0;
 }
@@ -266,4 +268,31 @@ void WLDMaterialPalette::importMaterial(QString key, MaterialDefFragment *frag)
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
     mat->loadTexture(img);
     m_materials.insert(key, mat);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+WLDModelSkin::WLDModelSkin(QObject *parent) : QObject(parent)
+{
+    m_palette = 0;
+}
+
+WLDMaterialPalette *WLDModelSkin::palette() const
+{
+    return m_palette;
+}
+
+void WLDModelSkin::setPalette(WLDMaterialPalette *palette)
+{
+    m_palette = palette;
+}
+
+const QList<WLDModelPart *> & WLDModelSkin::parts() const
+{
+    return m_parts;
+}
+
+QList<WLDModelPart *> & WLDModelSkin::parts()
+{
+    return m_parts;
 }

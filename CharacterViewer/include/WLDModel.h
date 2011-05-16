@@ -26,12 +26,14 @@ class WLDAnimation;
 class WLDModel : public QObject
 {
 public:
-    WLDModel(PFSArchive *archive, ActorDefFragment *def = 0, WLDSkeleton *skel = 0, QObject *parent = 0);
+    WLDModel(ActorDefFragment *def = 0, QObject *parent = 0);
     virtual ~WLDModel();
 
     WLDSkeleton *skeleton() const;
+    void setSkeleton(WLDSkeleton *skeleton);
+
+    QMap<QString, WLDMaterialPalette *> & palettes();
     const QMap<QString, WLDMaterialPalette *> & palettes() const;
-    void addPalette(WLDMaterialPalette *palette);
 
     void addPart(MeshDefFragment *frag);
 
@@ -45,7 +47,6 @@ private:
     QList<WLDModelPart *> m_parts;
     WLDSkeleton *m_skel;
     QMap<QString, WLDMaterialPalette *> m_palettes;
-    PFSArchive *m_archive;
 };
 
 /*!
@@ -54,7 +55,7 @@ private:
 class WLDModelPart : public QObject
 {
 public:
-    WLDModelPart(WLDModel *model, MeshDefFragment *meshDef, QObject *parent = 0);
+    WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
 
     void draw(RenderState *state, WLDMaterialPalette *palette, WLDAnimation *anim,
             double currentTime);
@@ -63,7 +64,6 @@ private:
     void importMaterialGroups(Mesh *m, WLDMaterialPalette *palette, WLDAnimation *anim,
             double currentTime);
 
-    WLDModel *m_model;
     Mesh *m_mesh;
     MeshDefFragment *m_meshDef;
 };
@@ -101,6 +101,26 @@ private:
     QString m_name;
     QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
+};
+
+/*!
+  \brief Describes one way an actor can be rendered. A skin can include a texture
+  palette and alternative meshes (e.g. for a character's head).
+  */
+class WLDModelSkin : public QObject
+{
+public:
+    WLDModelSkin(QObject *parent = 0);
+
+    WLDMaterialPalette *palette() const;
+    void setPalette(WLDMaterialPalette *palette);
+
+    const QList<WLDModelPart *> & parts() const;
+    QList<WLDModelPart *> & parts();
+
+private:
+    WLDMaterialPalette *m_palette;
+    QList<WLDModelPart *> m_parts;
 };
 
 #endif

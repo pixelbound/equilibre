@@ -52,8 +52,6 @@ private:
     WLDData *m_charWld;
     QMap<QString, WLDModel *> m_objModels;
     QMap<QString, WLDActor *> m_charModels;
-    QMap<QString, WLDSkeleton *> m_skeletons;
-    QMap<QString, QMap<QString, WLDMaterialPalette *> > m_charPalettes;
     QList<WLDActor *> m_actors;
 };
 

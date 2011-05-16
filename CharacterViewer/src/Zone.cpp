@@ -65,9 +65,9 @@ bool Zone::load(QString path, QString name)
     // import geometry, objects, characters
     importGeometry();
     importObjects();
-    importSkeletons(m_charArchive, m_charWld);
-    importCharacterPalettes(m_charArchive, m_charWld);
     importCharacters(m_charArchive, m_charWld);
+    importCharacterPalettes(m_charArchive, m_charWld);
+    importSkeletons(m_charArchive, m_charWld);
     return true;
 }
 
@@ -79,28 +79,28 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
     m_charWld = WLDData::fromArchive(m_charArchive, wldName, this);
     if(!m_charWld)
         return false;
-    importSkeletons(m_charArchive, m_charWld);
-    importCharacterPalettes(m_charArchive, m_charWld);
     importCharacters(m_charArchive, m_charWld);
+    importCharacterPalettes(m_charArchive, m_charWld);
+    importSkeletons(m_charArchive, m_charWld);
     return true;
 }
 
 void Zone::importGeometry()
 {
-    m_geometry = new WLDModel(m_mainArchive, 0, 0, this);
+    m_geometry = new WLDModel(0, this);
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
         m_geometry->addPart(meshDef);
     WLDMaterialPalette *palette = new WLDMaterialPalette("00", m_mainArchive, this);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         palette->addMaterialDef(matDef);
-    m_geometry->addPalette(palette);
+    m_geometry->palettes().insert(palette->name(), palette);
 }
 
 void Zone::importObjects()
 {
     // import models through ActorDef fragments
     foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
-        m_objModels.insert(actorDef->name(), new WLDModel(m_objMeshArchive, actorDef, 0, this));
+        m_objModels.insert(actorDef->name(), new WLDModel(actorDef, this));
 
     // import actors through Actor fragments
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
@@ -122,14 +122,23 @@ void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
 {
     // import skeletons which contain the pose animation
     foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
-        m_skeletons.insert(skelDef->name().left(3), new WLDSkeleton(skelDef, this));
+    {
+        QString actorName = skelDef->name().left(3);
+        WLDActor *actor = m_charModels.value(actorName);
+        if(!actor)
+            continue;
+        actor->model()->setSkeleton(new WLDSkeleton(skelDef, this));
+    }
 
     // import other animations
     foreach(TrackFragment *track, wld->fragmentsByType<TrackFragment>())
     {
         QString animName = track->name().left(3);
-        QString skelName = track->name().mid(3, 3);
-        WLDSkeleton *skel = m_skeletons.value(skelName);
+        QString actorName = track->name().mid(3, 3);
+        WLDActor *actor = m_charModels.value(actorName);
+        if(!actor)
+            continue;
+        WLDSkeleton *skel = actor->model()->skeleton();
         if(skel && track->m_def)
             skel->addTrack(animName, track->m_def);
     }
@@ -142,12 +151,14 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         QString charName, palName, partName;
         if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
         {
-            QMap<QString, WLDMaterialPalette *> &palettes = m_charPalettes[charName];
-            WLDMaterialPalette *pal = palettes.value(palName);
+            WLDActor *actor = m_charModels.value(charName);
+            if(!actor)
+                continue;
+            WLDMaterialPalette *pal = actor->model()->palettes().value(palName);
             if(!pal)
             {
                 pal = new WLDMaterialPalette(palName, archive, this);
-                palettes[palName] = pal;
+                actor->model()->palettes().insert(palName, pal);
             }
             pal->addMaterialDef(matDef);
         }
@@ -159,12 +170,8 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
     foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
         QString actorName = actorDef->name().left(3);
-        WLDSkeleton *skel = m_skeletons.value(actorName);
-        WLDModel *model = new WLDModel(archive, actorDef, skel, this);
+        WLDModel *model = new WLDModel(actorDef, this);
         WLDActor *actor = new WLDActor(model, this);
-        foreach(WLDMaterialPalette *pal, m_charPalettes[actorName])
-            model->addPalette(pal);
-        m_charPalettes.remove(actorName);
         m_charModels.insert(actorName, actor);
     }
 }
