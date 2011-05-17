@@ -27,28 +27,23 @@ class WLDAnimation;
 class WLDModel : public QObject
 {
 public:
-    WLDModel(ActorDefFragment *def = 0, QObject *parent = 0);
+    WLDModel(PFSArchive *archive, QObject *parent = 0);
     virtual ~WLDModel();
+
+    static QList<MeshDefFragment *> listMeshes(ActorDefFragment *def);
 
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
 
-    const QList<WLDModelPart *> & parts() const;
-
+    WLDModelSkin *skin() const;
     QMap<QString, WLDModelSkin *> & skins();
     const QMap<QString, WLDModelSkin *> & skins() const;
 
-    void addPart(MeshDefFragment *frag);
-
-    void draw(RenderState *state, WLDModelSkin *skin = 0, WLDAnimation *anim = 0,
-              double currentTime = 0.0);
+    WLDModelSkin * newSkin(QString name, PFSArchive *archive);
 
 private:
-    void importDefinition(ActorDefFragment *def);
-    void importHierMesh(HierSpriteDefFragment *def);
-
-    QList<WLDModelPart *> m_parts;
     WLDSkeleton *m_skel;
+    WLDModelSkin *m_skin;
     QMap<QString, WLDModelSkin *> m_skins;
 };
 
@@ -60,7 +55,7 @@ class WLDModelPart : public QObject
 public:
     WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
 
-    QString name() const;
+    MeshDefFragment *def() const;
 
     void draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
             double currentTime);
@@ -96,11 +91,12 @@ public:
     static bool explodeName(MaterialDefFragment *def, QString &charName,
                             QString &palName, QString &partName);
 
-    Material * material(QString name) const;
+    Material * material(QString name);
 
 private:
-    void importMaterial(QString key, MaterialDefFragment *frag);
+    Material * loadMaterial(MaterialDefFragment *frag);
 
+    QMap<QString, MaterialDefFragment *> m_materialDefs;
     QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
 };
@@ -112,24 +108,25 @@ private:
 class WLDModelSkin : public QObject
 {
 public:
-    WLDModelSkin(QString name, WLDModel *model, QObject *parent = 0);
-    WLDModelSkin(QString name, WLDModel *model, WLDMaterialPalette *palette, QObject *parent = 0);
+    WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, QObject *parent = 0);
 
     QString name() const;
 
     WLDMaterialPalette *palette() const;
-    void setPalette(WLDMaterialPalette *palette);
+    const QMap<QString, WLDModelPart *> & parts() const;
 
-    const QList<WLDModelPart *> & parts() const;
-    QList<WLDModelPart *> & parts();
+    void addPart(MeshDefFragment *frag, bool importPalette = true);
 
-    void addPart(MeshDefFragment *frag);
+    static bool explodeMeshName(QString defName, QString &actorName,
+                                QString &meshName, QString &skinName);
+
+    void draw(RenderState *state, WLDAnimation *anim = 0, double currentTime = 0.0);
 
 private:
     QString m_name;
     WLDModel *m_model;
     WLDMaterialPalette *m_palette;
-    QList<WLDModelPart *> m_parts;
+    QMap<QString, WLDModelPart *> m_parts;
 };
 
 #endif

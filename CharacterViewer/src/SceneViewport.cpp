@@ -50,8 +50,8 @@ void SceneViewport::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
     paintGL();
     m_frames++;
-    //if(m_fpsTimer->isActive())
-    //    paintFPS(&painter, m_lastFPS);
+    if(m_fpsTimer->isActive())
+        paintFPS(&painter, m_lastFPS);
 }
 
 void SceneViewport::paintGL()

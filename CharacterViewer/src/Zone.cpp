@@ -87,21 +87,20 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
 
 void Zone::importGeometry()
 {
-    m_geometry = new WLDModel(0, this);
+    m_geometry = new WLDModel(m_mainArchive, this);
+    WLDModelSkin *skin = m_geometry->skin();
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
-        m_geometry->addPart(meshDef);
-    WLDMaterialPalette *palette = new WLDMaterialPalette(m_mainArchive, m_geometry);
-    WLDModelSkin *skin = new WLDModelSkin("00", m_geometry, palette, m_geometry);
+        skin->addPart(meshDef, false);
+    WLDMaterialPalette *palette = skin->palette();
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         palette->addMaterialDef(matDef);
-    m_geometry->skins().insert(skin->name(), skin);
 }
 
 void Zone::importObjects()
 {
     // import models through ActorDef fragments
     foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
-        m_objModels.insert(actorDef->name(), new WLDModel(actorDef, this));
+        m_objModels.insert(actorDef->name(), new WLDModel(m_objMeshArchive, this));
 
     // import actors through Actor fragments
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
@@ -157,13 +156,8 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
                 continue;
             WLDModel *model = actor->model();
             WLDModelSkin *skin = model->skins().value(palName);
-            WLDMaterialPalette *pal;
             if(!skin)
-            {
-                pal = new WLDMaterialPalette(archive, model);
-                skin = new WLDModelSkin(palName, model, pal, model);
-                model->skins().insert(palName, skin);
-            }
+                skin = model->newSkin(palName, archive);
             skin->palette()->addMaterialDef(matDef);
         }
     }
@@ -171,22 +165,21 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     // look for alternate meshes (e.g. heads)
     foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
     {
-        QString actorName = meshDef->name().left(3);
-        QString meshName = meshDef->name().mid(3).replace("_DMSPRITEDEF", "");
-        QString skinName = meshName.right(2);
-        meshName = meshName.left(meshName.length() - 2);
+        QString actorName, meshName, skinName;
+        WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
         WLDActor *actor = m_charModels.value(actorName);
         if(!actor || meshName.isEmpty())
             continue;
-        meshName = actorName + meshName;
         WLDModel *model = actor->model();
         WLDModelSkin *skin = model->skins().value(skinName);
         if(!skin)
             continue;
-        foreach(WLDModelPart *part, model->parts())
+        foreach(WLDModelPart *part, model->skin()->parts())
         {
-            if(part->name().startsWith(meshName))
-                skin->addPart(meshDef);
+            QString actorName2, meshName2, skinName2;
+            WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
+            if(meshName2 == meshName)
+                skin->addPart(meshDef, false);
         }
     }
 }
@@ -196,8 +189,11 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
     foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
         QString actorName = actorDef->name().left(3);
-        WLDModel *model = new WLDModel(actorDef, this);
+        WLDModel *model = new WLDModel(archive, this);
         WLDActor *actor = new WLDActor(model, this);
+        WLDModelSkin *skin = model->skin();
+        foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
+            skin->addPart(meshDef);
         m_charModels.insert(actorName, actor);
     }
 }
@@ -205,7 +201,7 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 void Zone::drawGeometry(RenderState *state)
 {
     if(m_geometry)
-        m_geometry->draw(state);
+        m_geometry->skin()->draw(state);
 }
 
 void Zone::drawObjects(RenderState *state)

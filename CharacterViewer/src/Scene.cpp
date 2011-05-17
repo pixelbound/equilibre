@@ -101,7 +101,7 @@ void Scene::draw()
         break;
     case ObjectViewer:
         if(objModel)
-            objModel->draw(m_state);
+            objModel->skin()->draw(m_state);
         break;
     case ZoneViewer:
         m_zone->drawGeometry(m_state);

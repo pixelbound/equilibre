@@ -82,6 +82,8 @@ void CharacterViewerWindow::loadActor(QString name)
             m_paletteText->addItem(skin->name());
         loadPalette(charModel->paletteName());
     }
+    m_animationText->setEnabled(m_animationText->count() > 1);
+    m_paletteText->setEnabled(m_paletteText->count() > 1);
 }
 
 void CharacterViewerWindow::loadPalette(QString name)

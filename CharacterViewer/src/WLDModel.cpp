@@ -6,25 +6,25 @@
 #include "PFSArchive.h"
 #include "RenderState.h"
 
-WLDModel::WLDModel(ActorDefFragment *def, QObject *parent) : QObject(parent)
+WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 {
     m_skel = 0;
-    if(def)
-        importDefinition(def);
+    m_skin = 0;
+    m_skin = newSkin("00", archive);
 }
 
 WLDModel::~WLDModel()
 {
 }
 
-const QList<WLDModelPart *> & WLDModel::parts() const
-{
-    return m_parts;
-}
-
 WLDSkeleton * WLDModel::skeleton() const
 {
     return m_skel;
+}
+
+WLDModelSkin *WLDModel::skin() const
+{
+    return m_skin;
 }
 
 void WLDModel::setSkeleton(WLDSkeleton *skeleton)
@@ -42,46 +42,34 @@ const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
     return m_skins;
 }
 
-void WLDModel::importDefinition(ActorDefFragment *def)
+WLDModelSkin * WLDModel::newSkin(QString name, PFSArchive *archive)
 {
+    WLDModelSkin *skin = new WLDModelSkin(name, this, archive, this);
+    m_skins.insert(name, skin);
+    return skin;
+}
+
+QList<MeshDefFragment *> WLDModel::listMeshes(ActorDefFragment *def)
+{
+    QList<MeshDefFragment *> meshes;
+    if(!def)
+        return meshes;
     foreach(WLDFragment *modelFrag, def->m_models)
     {
         MeshFragment *meshFrag = modelFrag->cast<MeshFragment>();
         if(meshFrag)
-            addPart(meshFrag->m_def);
+            meshes.append(meshFrag->m_def);
         HierSpriteFragment *skelFrag = modelFrag->cast<HierSpriteFragment>();
         if(skelFrag)
-            importHierMesh(skelFrag->m_def);
-    }
-}
-
-void WLDModel::importHierMesh(HierSpriteDefFragment *def)
-{
-    foreach(MeshFragment *meshFrag, def->m_meshes)
-    {
-        if(meshFrag->m_def)
-            addPart(meshFrag->m_def);
-        else
         {
-            qDebug("HierMesh without Mesh (%s)", def->name().toLatin1().constData());
+            foreach(MeshFragment *meshFrag2, skelFrag->m_def->m_meshes)
+            {
+                if(meshFrag2->m_def)
+                   meshes.append(meshFrag2->m_def);
+            }
         }
     }
-}
-
-void WLDModel::addPart(MeshDefFragment *frag)
-{
-    m_parts.append(new WLDModelPart(frag, this));
-}
-
-void WLDModel::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
-                    double currentTime)
-{
-    if(!skin && m_skins.count() > 0)
-        skin = m_skins[0];
-    if(!anim && m_skel)
-        anim = m_skel->pose();
-    foreach(WLDModelPart *part, m_parts)
-        part->draw(state, skin, anim, currentTime);
+    return meshes;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,9 +80,9 @@ WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, QObject *parent) : QObject(
     m_mesh = 0;
 }
 
-QString WLDModelPart::name() const
+MeshDefFragment * WLDModelPart::def() const
 {
-    return m_meshDef->name();
+    return m_meshDef;
 }
 
 void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
@@ -190,7 +178,7 @@ QString WLDMaterialPalette::addMaterialDef(MaterialDefFragment *def)
     if(!def)
         return QString::null;
     QString name = materialName(def);
-    importMaterial(name, def);
+    m_materialDefs.insert(name, def);
     return name;
 }
 
@@ -233,24 +221,33 @@ QString WLDMaterialPalette::materialName(MaterialDefFragment *def) const
     return materialName(def->name());
 }
 
-Material * WLDMaterialPalette::material(QString name) const
+Material * WLDMaterialPalette::material(QString name)
 {
-    return m_materials.value(materialName(name));
+    QString canName = materialName(name);
+    Material *mat = m_materials.value(canName);
+    if(mat)
+        return mat;
+    MaterialDefFragment *matDef = m_materialDefs.value(canName);
+    if(!matDef)
+        return 0;
+    mat = loadMaterial(matDef);
+    m_materials.insert(canName, mat);
+    return mat;
 }
 
-void WLDMaterialPalette::importMaterial(QString key, MaterialDefFragment *frag)
+Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
 {
-    if(!frag || m_materials.contains(key))
-        return;
+    if(!frag)
+        return 0;
     SpriteFragment *sprite = frag->m_sprite;
     if(!sprite)
-        return;
+        return 0;
     SpriteDefFragment *spriteDef = sprite->m_def;
     if(!spriteDef)
-        return;
+        return 0;
     BitmapNameFragment *bmp = spriteDef->m_bitmaps.value(0);
     if(!bmp)
-        return;
+        return 0;
 
     QImage img;
     // XXX case-insensitive lookup
@@ -275,25 +272,22 @@ void WLDMaterialPalette::importMaterial(QString key, MaterialDefFragment *frag)
     mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
     mat->loadTexture(img);
-    m_materials.insert(key, mat);
+    return mat;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, QObject *parent) : QObject(parent)
+WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, QObject *parent) : QObject(parent)
 {
     m_name = name;
     m_model = model;
-    m_palette = 0;
-}
-
-WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, WLDMaterialPalette *palette, QObject *parent) : QObject(parent)
-{
-    m_name = name;
-    m_model = model;
-    m_palette = palette;
-    foreach(WLDModelPart *part, model->parts())
-        m_parts.append(part);
+    m_palette = new WLDMaterialPalette(archive, this);
+    WLDModelSkin *defaultSkin = model->skin();
+    if(defaultSkin)
+    {
+        foreach(WLDModelPart *part, defaultSkin->parts())
+            addPart(part->def());
+    }
 }
 
 QString WLDModelSkin::name() const
@@ -306,24 +300,50 @@ WLDMaterialPalette *WLDModelSkin::palette() const
     return m_palette;
 }
 
-void WLDModelSkin::setPalette(WLDMaterialPalette *palette)
-{
-    m_palette = palette;
-}
-
-const QList<WLDModelPart *> & WLDModelSkin::parts() const
+const QMap<QString, WLDModelPart *> & WLDModelSkin::parts() const
 {
     return m_parts;
 }
 
-QList<WLDModelPart *> & WLDModelSkin::parts()
+void WLDModelSkin::addPart(MeshDefFragment *frag, bool importPalette)
 {
-    return m_parts;
-}
-
-void WLDModelSkin::addPart(MeshDefFragment *frag)
-{
-    if(m_palette)
+    QString actorName, meshName, skinName;
+    explodeMeshName(frag->name(), actorName, meshName, skinName);
+    if(importPalette)
         m_palette->addPaletteDef(frag->m_palette);
-    m_parts.append(new WLDModelPart(frag, m_model));
+    m_parts.insert(meshName, new WLDModelPart(frag, m_model));
+}
+
+bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
+                            QString &meshName, QString &skinName)
+{
+    // e.g. defName == 'ELEHE00_DMSPRITEDEF'
+    // 'ELE' : character
+    // 'HE' : mesh
+    // '00' : skin ID
+    static QRegExp r("^(\\w{3})(.*)(\\d{2})_DMSPRITEDEF$");
+    static QRegExp r2("^(\\w{3})(.*)_DMSPRITEDEF$");
+    if(r.exactMatch(defName))
+    {
+        actorName = r.cap(1);
+        meshName = r.cap(2);
+        skinName = r.cap(3);
+        return true;
+    }
+    else if(r2.exactMatch(defName))
+    {
+        actorName = r2.cap(1);
+        meshName = QString::null;
+        skinName = r2.cap(2);
+        return true;
+    }
+    return false;
+}
+
+void WLDModelSkin::draw(RenderState *state, WLDAnimation *anim, double currentTime)
+{
+    if(!anim && m_model->skeleton())
+        anim = m_model->skeleton()->pose();
+    foreach(WLDModelPart *part, m_parts)
+        part->draw(state, this, anim, currentTime);
 }
