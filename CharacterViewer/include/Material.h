@@ -28,12 +28,12 @@ public:
     void setTexture(uint32_t texture);
     void freeTexture();
 
-    void loadTexture(QImage &img, bool mipmaps = false);
-    void loadTexture(string path, bool mipmaps = false);
-    void loadTexture(const char *data, size_t size, bool mipmaps = false);
-    static uint32_t textureFromImage(QImage &img, bool mipmaps = false);
-    static uint32_t textureFromImage(string path, bool mipmaps = false);
-    static uint32_t textureFromImage(const char *data, size_t size, bool mipmaps = false);
+    void loadTexture(QImage &img, bool mipmaps = false, bool convertToGL = true);
+    void loadTexture(string path, bool mipmaps = false, bool convertToGL = true);
+    static uint32_t textureFromImage(QImage &img, bool mipmaps = false, bool convertToGL = true);
+    static uint32_t textureFromImage(string path, bool mipmaps = false, bool convertToGL = true);
+
+    static bool loadTextureDDS(const char *data, size_t size, QImage &img);
 
 private:
     vec4 m_ambient;

@@ -251,13 +251,27 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     if(!bmp)
         return 0;
 
+    bool dds = false;
     QImage img;
-    // XXX case-insensitive lookup
     if(m_archive)
-        img.loadFromData(m_archive->unpackFile(bmp->m_fileName.toLower()));
+    {
+        // XXX case-insensitive lookup
+        QByteArray data = m_archive->unpackFile(bmp->m_fileName.toLower());
+        if(!img.loadFromData(data))
+        {
+            Material::loadTextureDDS(data.constData(), data.length(), img);
+            dds = true;
+            /*float ambient = frag->m_scaledAmbient;
+            Material *mat = new Material();
+            mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
+            mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
+            mat->loadTextureDDS(data.constData(), data.length());
+            return mat;*/
+        }
+    }
 
     // masked bitmap?
-    if((frag->m_param1 & 0x3) == 0x3)
+    if(((frag->m_param1 & 0x3) == 0x3))
     {
         if(img.colorCount() > 0)
         {
@@ -273,7 +287,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     Material *mat = new Material();
     mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
-    mat->loadTexture(img);
+    mat->loadTexture(img, false, !dds);
     return mat;
 }
 
@@ -309,6 +323,8 @@ const QMap<QString, WLDModelPart *> & WLDModelSkin::parts() const
 
 void WLDModelSkin::addPart(MeshDefFragment *frag, bool importPalette)
 {
+    if(!frag)
+        return;
     QString actorName, meshName, skinName;
     explodeMeshName(frag->name(), actorName, meshName, skinName);
     if(importPalette)

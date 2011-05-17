@@ -13,7 +13,8 @@ HEADERS = include/SceneViewport.h \
     include/WLDActor.h \
     include/Zone.h \
     include/WLDSkeleton.h \
-    include/CharacterViewerWindow.h
+    include/CharacterViewerWindow.h \
+    include/imath.h include/dxt_tables.h include/dds.h include/dxt.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp \
@@ -28,7 +29,8 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/WLDActor.cpp \
     src/Zone.cpp \
     src/WLDSkeleton.cpp \
-    src/CharacterViewerWindow.cpp
+    src/CharacterViewerWindow.cpp \
+    src/dxt.c src/mipmap.c
 LIBS += -lm -lz
 
 TARGET = CharacterViewer

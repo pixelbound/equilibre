@@ -16,7 +16,6 @@ public:
 
     virtual Mesh * createMesh();
     virtual void drawMesh(Mesh *m);
-    virtual void freeTextures();
 
     virtual void setBoneTransforms(const BoneTransform *transforms, int count);
     virtual void clearBoneTransforms();

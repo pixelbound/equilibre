@@ -26,23 +26,10 @@ public:
 
     // mesh operations
     virtual void drawMesh(Mesh *m) = 0;
-    virtual void drawMesh(string name);
-
-    virtual map<string, Mesh *> & meshes();
-    virtual const map<string, Mesh *> & meshes() const;
-
     virtual Mesh * createMesh() = 0;
-    virtual void addMesh(string name, Mesh *m);
-    virtual Mesh * loadMeshFromGroup(string name, VertexGroup *vg);
-    virtual void freeMeshes();
 
     virtual void setBoneTransforms(const BoneTransform *transforms, int count) = 0;
     virtual void clearBoneTransforms() = 0;
-
-    virtual uint32_t loadTextureFromFile(string name, string path, bool mipmaps = false);
-    virtual uint32_t loadTextureFromData(string name, const char *data, size_t size, bool mipmaps = false);
-    virtual uint32_t texture(string name) const;
-    virtual void freeTextures() = 0;
 
     // matrix operations
 
@@ -82,9 +69,6 @@ protected:
     bool m_projection;
     bool m_wireframe;
     vec4 m_bgColor;
-    Mesh *m_meshOutput;
-    map<string, uint32_t> m_textures;
-    map<string, Mesh *> m_meshes;
 };
 
 class StateObject
@@ -101,7 +85,6 @@ public:
     void scale(float sx, float sy, float sz);
 
     void drawMesh(Mesh *m);
-    void drawMesh(string name);
 
     void pushMaterial(const Material &m);
     void popMaterial();

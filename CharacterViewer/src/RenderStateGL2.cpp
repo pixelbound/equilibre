@@ -52,14 +52,6 @@ void RenderStateGL2::drawMesh(Mesh *m)
     m->draw();
 }
 
-void RenderStateGL2::freeTextures()
-{
-    map<string, uint32_t>::iterator it;
-    for(it = m_textures.begin(); it != m_textures.end(); it++)
-        glDeleteTextures(1, &it->second);
-    m_textures.clear();
-}
-
 void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int count)
 {
     vec4 rotation, translation;

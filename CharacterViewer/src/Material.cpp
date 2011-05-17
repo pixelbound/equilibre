@@ -4,6 +4,8 @@
 #include <cstdio>
 #include "Platform.h"
 #include "Material.h"
+#include "dds.h"
+#include "dxt.h"
 
 Material::Material()
 {
@@ -93,24 +95,23 @@ void setTextureParams(uint32_t target, bool mipmaps)
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-void Material::loadTexture(QImage &img, bool mipmaps)
+void Material::loadTexture(QImage &img, bool mipmaps, bool convertToGL)
 {
-    m_texture = textureFromImage(img, mipmaps);
+    m_texture = textureFromImage(img, mipmaps, convertToGL);
 }
 
-void Material::loadTexture(string path, bool mipmaps)
+void Material::loadTexture(string path, bool mipmaps, bool convertToGL)
 {
-    m_texture = textureFromImage(path, mipmaps);
+    m_texture = textureFromImage(path, mipmaps, convertToGL);
 }
 
-void Material::loadTexture(const char *data, size_t size, bool mipmaps)
+uint32_t Material::textureFromImage(QImage &img, bool mipmaps, bool convertToGL)
 {
-    m_texture = textureFromImage(data, size, mipmaps);
-}
-
-uint32_t Material::textureFromImage(QImage &img, bool mipmaps)
-{
-    QImage img2 = QGLWidget::convertToGLFormat(img);
+    QImage img2;
+    if(convertToGL)
+        img2 = QGLWidget::convertToGLFormat(img);
+    else
+        img2 = img;
     uint32_t texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
@@ -121,13 +122,47 @@ uint32_t Material::textureFromImage(QImage &img, bool mipmaps)
     return texID;
 }
 
-uint32_t Material::textureFromImage(string path, bool mipmaps)
+uint32_t Material::textureFromImage(string path, bool mipmaps, bool convertToGL)
 {
     QImage img(QString::fromStdString(path));
-    return textureFromImage(img, mipmaps);
+    return textureFromImage(img, mipmaps, convertToGL);
 }
 
-uint32_t Material::textureFromImage(const char *data, size_t size, bool mipmaps)
+////////////////////////////////////////////////////////////////////////////////
+
+bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
 {
-    return 0;
+    dds_header_t hdr;
+    dds_pixel_format_t pf;
+    const char *d = data;
+    size_t left = size;
+    if(left < sizeof(hdr))
+        return false;
+    memcpy(&hdr, d, sizeof(hdr));
+    left -= sizeof(hdr);
+    d += sizeof(hdr);
+
+    if(memcmp(hdr.magic, "DDS ", 4) || (hdr.size != 124) ||
+        !(hdr.flags & DDSD_PIXELFORMAT) || !(hdr.flags & DDSD_CAPS) )
+        return false;
+    if((!hdr.flags & DDSD_LINEARSIZE) || (hdr.pitch_or_linsize > left))
+        return false;
+
+    pf = hdr.pixelfmt;
+    if((pf.flags & DDPF_FOURCC))
+    {
+        int format = DDS_COMPRESS_NONE;
+        if(memcmp(pf.fourcc, "DXT1", 4) == 0)
+            format = DDS_COMPRESS_BC1;
+        else if(memcmp(pf.fourcc, "DXT5", 4) == 0)
+            format = DDS_COMPRESS_BC3;
+        if(format != DDS_COMPRESS_NONE)
+        {
+            img = QImage(hdr.width, hdr.height, QImage::Format_ARGB32);
+            dxt_decompress(img.bits(), (unsigned char *)d, format, left, hdr.width, hdr.height, 4);
+            return true;
+        }
+    }
+    qDebug("DDS format not supported / not implemented");
+    return false;
 }
