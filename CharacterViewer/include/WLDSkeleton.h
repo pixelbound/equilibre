@@ -33,6 +33,8 @@ public:
 
     vec3 map(const vec3 &v);
     QVector3D map(const QVector3D &v);
+    void toDualQuaternion(vec4 &d0, vec4 &d1) const;
+
     static BoneTransform interpolate(BoneTransform a, BoneTransform b, double c);
 };
 

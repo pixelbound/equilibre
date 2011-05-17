@@ -74,7 +74,12 @@ bool Zone::load(QString path, QString name)
 bool Zone::loadCharacters(QString archivePath, QString wldName)
 {
     if(wldName.isNull())
-        wldName = QFileInfo(archivePath).baseName() + ".wld";
+    {
+        QString baseName = QFileInfo(archivePath).baseName();
+        if(baseName == "global_chr1")
+            baseName = "global_chr";
+        wldName = baseName + ".wld";
+    }
     m_charArchive = new PFSArchive(archivePath, this);
     m_charWld = WLDData::fromArchive(m_charArchive, wldName, this);
     if(!m_charWld)

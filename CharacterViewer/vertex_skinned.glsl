@@ -52,6 +52,15 @@ vec4 skin(vec3 pos)
     return vec4(rotate_by_quat(pos, rotation) + translation.xyz, 1.0);
 }
 
+vec4 skinDualQuaternion(vec3 pos)
+{
+    int boneIndex = int(a_boneIndex);
+    vec4 d0 = u_bone_rotation[boneIndex];
+    vec4 d1 = u_bone_translation[boneIndex];
+    vec3 pos2 = pos + 2.0 * cross(d0.xyz, cross(d0.xyz, pos.xyz) + d0.w * pos.xyz);
+    return vec4(pos2 + 2.0 * (d0.w * d1.xyz - d1.w * d0.xyz + cross(d0.xyz, d1.xyz)), 1.0);
+}
+
 void main()
 {
     gl_Position = u_projectionMatrix * u_modelViewMatrix * skin(a_position);

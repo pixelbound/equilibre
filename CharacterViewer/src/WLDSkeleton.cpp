@@ -22,6 +22,19 @@ BoneTransform BoneTransform::interpolate(BoneTransform a, BoneTransform b, doubl
     return c;
 }
 
+void BoneTransform::toDualQuaternion(vec4 &d0, vec4 &d1) const
+{
+    const QVector3D &tran(location);
+    d0.x = rotation.x();
+    d0.y = rotation.y();
+    d0.z = rotation.z();
+    d0.w = rotation.scalar();
+    d1.x = 0.5f * (tran.x() * d0.w + tran.y() * d0.z - tran.z() * d0.y);
+    d1.y = 0.5f * (-tran.x() * d0.z + tran.y() * d0.w + tran.z() * d0.x);
+    d1.z = 0.5f * (tran.x() * d0.y - tran.y() * d0.x + tran.z() * d0.w);
+    d1.w = -0.5f * (tran.x() * d0.x + tran.y() * d0.y + tran.z() * d0.z);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 WLDSkeleton::WLDSkeleton(HierSpriteDefFragment *def, QObject *parent) : QObject(parent)

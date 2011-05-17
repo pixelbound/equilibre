@@ -281,7 +281,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     }
     else if(renderMode == 0x17)
     {
-        // semi-transprent (e.g. the sleeper, wasp, bixie)
+        // semi-transparent (e.g. the sleeper, wasp, bixie)
         // depends on how dark/light the color is
         if(img.colorCount() > 0)
         {

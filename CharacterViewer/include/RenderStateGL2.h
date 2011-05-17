@@ -76,6 +76,7 @@ private:
     int m_normalAttr;
     int m_texCoordsAttr;
     int m_boneAttr;
+    bool m_useDualQuaternion;
 };
 
 #endif

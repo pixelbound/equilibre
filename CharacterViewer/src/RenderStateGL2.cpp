@@ -24,6 +24,8 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_positionAttr = -1;
     m_normalAttr = -1;
     m_texCoordsAttr = -1;
+    m_boneAttr = -1;
+    m_useDualQuaternion = false;
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -61,10 +63,17 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
         QString transName = QString("u_bone_translation[%1]").arg(i);
         if(i < count)
         {
-            QQuaternion q = transforms[i].rotation;
-            QVector3D v = transforms[i].location;
-            rotation = vec4(q.x(), q.y(), q.z(), q.scalar());
-            translation = vec4(v.x(), v.y(), v.z(), 1.0);
+            if(m_useDualQuaternion)
+            {
+                transforms[i].toDualQuaternion(rotation, translation);
+            }
+            else
+            {
+                QQuaternion q = transforms[i].rotation;
+                QVector3D v = transforms[i].location;
+                rotation = vec4(q.x(), q.y(), q.z(), q.scalar());
+                translation = vec4(v.x(), v.y(), v.z(), 1.0);
+            }
         }
         else
         {
