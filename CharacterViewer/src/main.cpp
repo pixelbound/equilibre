@@ -52,11 +52,11 @@ int main(int argc, char **argv)
     // create viewport for rendering the scene
     CharacterViewerWindow v(&scene, &state);
     //if(!loadGlobalChars(v, false))
-    if(!loadOldChars(v))
+    /*if(!loadOldChars(v))
     {
         QMessageBox::critical(0, "Error", "Could not load the zone.");
         return 1;
-    }
+    }*/
     v.setWindowState(Qt::WindowMaximized);
     v.show();
     

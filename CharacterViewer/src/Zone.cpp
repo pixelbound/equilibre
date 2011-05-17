@@ -85,6 +85,35 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
     return true;
 }
 
+void Zone::clear()
+{
+    foreach(WLDModel *model, m_objModels)
+        delete model;
+    foreach(WLDActor *actor, m_charModels)
+        delete actor;
+    foreach(WLDActor *actor, m_actors)
+        delete actor;
+    m_objModels.clear();
+    m_charModels.clear();
+    m_actors.clear();
+    delete m_geometry;
+    delete m_mainWld;
+    delete m_objMeshWld;
+    delete m_objDefWld;
+    delete m_charWld;
+    delete m_mainArchive;
+    delete m_objMeshArchive;
+    delete m_charArchive;
+    m_geometry = 0;
+    m_mainWld = 0;
+    m_objMeshWld = 0;
+    m_objDefWld = 0;
+    m_charWld = 0;
+    m_mainArchive = 0;
+    m_objMeshArchive = 0;
+    m_charArchive = 0;
+}
+
 void Zone::importGeometry()
 {
     m_geometry = new WLDModel(m_mainArchive, this);

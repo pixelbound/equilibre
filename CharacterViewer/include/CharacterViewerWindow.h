@@ -1,11 +1,7 @@
 #ifndef OPENEQ_CHARACTER_VIEWER_WINDOW_H
 #define OPENEQ_CHARACTER_VIEWER_WINDOW_H
 
-#include <QWidget>
-#include <QWidget>
-#include <QComboBox>
-#include <QVBoxLayout>
-#include "Vertex.h"
+#include <QMainWindow>
 
 class QComboBox;
 class QVBoxLayout;
@@ -13,7 +9,7 @@ class Scene;
 class RenderState;
 class SceneViewport;
 
-class CharacterViewerWindow : public QWidget
+class CharacterViewerWindow : public QMainWindow
 {
     Q_OBJECT
 
@@ -27,6 +23,7 @@ private slots:
     void loadActor(QString name);
     void loadPalette(QString name);
     void loadAnimation(QString animName);
+    void openArchive();
 
 private:
     SceneViewport *m_viewport;
@@ -35,6 +32,7 @@ private:
     QComboBox *m_actorText;
     QComboBox *m_paletteText;
     QComboBox *m_animationText;
+    QString m_lastDir;
 };
 
 #endif

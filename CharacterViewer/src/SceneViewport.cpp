@@ -28,8 +28,6 @@ SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) 
 
 SceneViewport::~SceneViewport()
 {
-    makeCurrent();
-    m_state->freeTextures();
 }
 
 void SceneViewport::initializeGL()
@@ -80,6 +78,12 @@ void SceneViewport::toggleAnimation()
         m_renderTimer->start();
     else
         m_renderTimer->stop();
+}
+
+void SceneViewport::setAnimation(bool enabled)
+{
+    m_animate = enabled;
+    updateAnimationState();
 }
 
 void SceneViewport::startFPS()

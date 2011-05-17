@@ -32,6 +32,8 @@ public:
     bool load(QString path, QString name);
     bool loadCharacters(QString archivePath, QString wldName = QString::null);
 
+    void clear();
+
     void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
 

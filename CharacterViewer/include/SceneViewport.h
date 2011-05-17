@@ -27,6 +27,8 @@ public:
     SceneViewport(Scene *scene, RenderState *state, QWidget *parent = 0);
     virtual ~SceneViewport();
 
+    void setAnimation(bool enabled);
+
 protected:
     virtual void initializeGL();
     virtual void resizeGL(int width, int height);
