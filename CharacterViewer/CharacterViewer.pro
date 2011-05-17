@@ -37,4 +37,4 @@ QT += opengl
 
 OTHER_FILES += \
     fragment.glsl \
-    vertex.glsl
+    vertex.glsl vertex_skinned.glsl

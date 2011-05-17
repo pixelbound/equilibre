@@ -88,20 +88,29 @@ MeshDefFragment * WLDModelPart::def() const
 void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
                         double currentTime)
 {
-    // TODO: do the skinning in shaders so meshes are created only once
-    Mesh *m = state->createMesh();
-    importMaterialGroups(m, skin, anim, currentTime);
+    if(!m_mesh)
+    {
+        m_mesh = state->createMesh();
+        importMaterialGroups(m_mesh, skin);
+    }
+
+    if(anim)
+    {
+        QVector<BoneTransform> transforms = anim->transformationsAtTime(currentTime);
+        state->setBoneTransforms(transforms.constData(), transforms.count());
+    }
+    else
+    {
+        state->clearBoneTransforms();
+    }
 
     state->pushMatrix();
     state->translate(m_meshDef->m_center);
-    state->drawMesh(m);
+    state->drawMesh(m_mesh);
     state->popMatrix();
-
-    delete m;
 }
 
-void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin,
-                                        WLDAnimation *anim, double currentTime)
+void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin)
 {
     // load vertices, texCoords, normals, faces
     VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
@@ -111,6 +120,7 @@ void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin,
         vd->position = m_meshDef->m_vertices.value(i);
         vd->normal = m_meshDef->m_normals.value(i);
         vd->texCoords = m_meshDef->m_texCoords.value(i);
+        vd->bone = 0;
     }
     for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
         vg->indices.push_back(m_meshDef->m_indices[i]);
@@ -139,21 +149,13 @@ void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin,
         pos += vertexCount;
     }
 
-    // skin mesh if there is a skeleton
-    if(anim)
+    // load bone indices
+    vd = vg->data;
+    foreach(vec2us g, m_meshDef->m_vertexPieces)
     {
-        QVector<BoneTransform> trans = anim->transformationsAtTime(currentTime);
-        pos = 0;
-        vd = vg->data;
-        foreach(vec2us g, m_meshDef->m_vertexPieces)
-        {
-            uint16_t count = g.first;
-            uint16_t pieceID = g.second;
-            BoneTransform pieceTrans = trans[pieceID];
-            for(uint32_t i = 0; i < count; i++, vd++)
-                vd->position = pieceTrans.map(vd->position);
-            pos += count;
-        }
+        uint16_t count = g.first, pieceID = g.second;
+        for(uint32_t i = 0; i < count; i++, vd++)
+            vd->bone = pieceID;
     }
     m->addGroup(vg);
 }

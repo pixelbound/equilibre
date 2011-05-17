@@ -18,6 +18,9 @@ public:
     virtual void drawMesh(Mesh *m);
     virtual void freeTextures();
 
+    virtual void setBoneTransforms(const BoneTransform *transforms, int count);
+    virtual void clearBoneTransforms();
+
     // matrix operations
     virtual void setMatrixMode(MatrixMode newMode);
 
@@ -44,6 +47,7 @@ public:
     int positionAttr() const;
     int normalAttr() const;
     int texCoordsAttr() const;
+    int boneAttr() const;
 
 private:
     void beginApplyMaterial(const Material &m);
@@ -52,9 +56,9 @@ private:
     uint32_t loadShader(string path, uint32_t type) const;
     bool loadShaders();
     void initShaders();
-    void setUniformValue(string name, const vec4 &v);
-    void setUniformValue(string name, float f);
-    void setUniformValue(string name, int i);
+    void setUniformValue(QString name, const vec4 &v);
+    void setUniformValue(QString name, float f);
+    void setUniformValue(QString name, int i);
 
     vec4 m_ambient0;
     vec4 m_diffuse0;
@@ -72,6 +76,7 @@ private:
     int m_positionAttr;
     int m_normalAttr;
     int m_texCoordsAttr;
+    int m_boneAttr;
 };
 
 #endif

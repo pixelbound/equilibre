@@ -61,8 +61,7 @@ public:
             double currentTime);
 
 private:
-    void importMaterialGroups(Mesh *m, WLDModelSkin *skin, WLDAnimation *anim,
-            double currentTime);
+    void importMaterialGroups(Mesh *m, WLDModelSkin *skin);
 
     Mesh *m_mesh;
     MeshDefFragment *m_meshDef;

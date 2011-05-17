@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstring>
+#include <stddef.h>
 #include "Platform.h"
 #include "MeshGL2.h"
 #include "Material.h"
@@ -7,7 +8,7 @@
 #include "RenderStateGL2.h"
 #include "WLDModel.h"
 
-#define BUFFER_OFFSET(i) ((char *)NULL + (i))
+#define BUFFER_OFFSET(type, field) ((char *)NULL + (offsetof(type, field)))
 
 MeshGL2::MeshGL2(RenderStateGL2 *state) : Mesh()
 {
@@ -68,23 +69,26 @@ void MeshGL2::draw()
     int position = m_state->positionAttr();
     int normal = m_state->normalAttr();
     int texCoords = m_state->texCoordsAttr();
+    int bone = m_state->boneAttr();
     glEnableVertexAttribArray(position);
     glEnableVertexAttribArray(normal);
     glEnableVertexAttribArray(texCoords);
+    glEnableVertexAttribArray(bone);
     for(uint32_t i = 0; i < m_groups.size(); i++)
     {
         VertexGroup *vg = m_groups[i];
         //if(vg->count > 100)
         //    drawVBO(vg, position, normal, texCoords);
         //else
-        drawArray(vg, position, normal, texCoords);
+        drawArray(vg, position, normal, texCoords, bone);
     }
     glDisableVertexAttribArray(position);
     glDisableVertexAttribArray(normal);
     glDisableVertexAttribArray(texCoords);
+    glDisableVertexAttribArray(bone);
 }
 
-void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords)
+void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords, int bone)
 {
     Material *mat = 0;
     glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE,
@@ -93,6 +97,8 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
         sizeof(VertexData), &vg->data->normal);
     glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), &vg->data->texCoords);
+    glVertexAttribPointer(bone, 1, GL_INT, GL_FALSE,
+        sizeof(VertexData), &vg->data->bone);
     if(vg->indices.count() > 0)
     {
         const uint16_t *indices = vg->indices.constData();
@@ -122,7 +128,7 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
     }
 }
 
-void MeshGL2::drawVBO(VertexGroup *vg, int position, int normal, int texCoords)
+void MeshGL2::drawVBO(VertexGroup *vg, int position, int normal, int texCoords, int bone)
 {
     if(vg->id == 0)
     {
@@ -136,11 +142,13 @@ void MeshGL2::drawVBO(VertexGroup *vg, int position, int normal, int texCoords)
         glBindBuffer(GL_ARRAY_BUFFER, vg->id);
     }
     glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), BUFFER_OFFSET(0));
+        sizeof(VertexData), BUFFER_OFFSET(VertexData, position));
     glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), BUFFER_OFFSET(sizeof(vec3)));
+        sizeof(VertexData), BUFFER_OFFSET(VertexData, normal));
     glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), BUFFER_OFFSET(2 * sizeof(vec3)));
+        sizeof(VertexData), BUFFER_OFFSET(VertexData, texCoords));
+    glVertexAttribPointer(bone, 1, GL_INT, GL_FALSE,
+        sizeof(VertexData), BUFFER_OFFSET(VertexData, bone));
     glDrawArrays(vg->mode, 0, vg->count);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

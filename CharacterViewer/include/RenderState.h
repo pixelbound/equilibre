@@ -9,6 +9,8 @@
 
 using namespace std;
 
+class BoneTransform;
+
 class RenderState
 {
 public:
@@ -33,6 +35,9 @@ public:
     virtual void addMesh(string name, Mesh *m);
     virtual Mesh * loadMeshFromGroup(string name, VertexGroup *vg);
     virtual void freeMeshes();
+
+    virtual void setBoneTransforms(const BoneTransform *transforms, int count) = 0;
+    virtual void clearBoneTransforms() = 0;
 
     virtual uint32_t loadTextureFromFile(string name, string path, bool mipmaps = false);
     virtual uint32_t loadTextureFromData(string name, const char *data, size_t size, bool mipmaps = false);

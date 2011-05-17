@@ -2,6 +2,9 @@
 #include "Platform.h"
 #include "RenderStateGL2.h"
 #include "MeshGL2.h"
+#include "WLDSkeleton.h"
+
+const int MAX_TRANSFORMS = 128;
 
 RenderStateGL2::RenderStateGL2() : RenderState()
 {
@@ -55,6 +58,43 @@ void RenderStateGL2::freeTextures()
     for(it = m_textures.begin(); it != m_textures.end(); it++)
         glDeleteTextures(1, &it->second);
     m_textures.clear();
+}
+
+void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int count)
+{
+    vec4 rotation, translation;
+    for(int i = 0; i < MAX_TRANSFORMS; i++)
+    {
+        QString rotName = QString("u_bone_rotation[%1]").arg(i);
+        QString transName = QString("u_bone_translation[%1]").arg(i);
+        if(i < count)
+        {
+            QQuaternion q = transforms[i].rotation;
+            QVector3D v = transforms[i].location;
+            rotation = vec4(q.x(), q.y(), q.z(), q.scalar());
+            translation = vec4(v.x(), v.y(), v.z(), 1.0);
+        }
+        else
+        {
+            rotation = vec4(0.0, 0.0, 0.0, 1.0);
+            translation = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        setUniformValue(rotName, rotation);
+        setUniformValue(transName, translation);
+    }
+}
+
+void RenderStateGL2::clearBoneTransforms()
+{
+    vec4 rotation(0.0, 0.0, 0.0, 1.0);
+    vec4 translation(0.0, 0.0, 0.0, 1.0);
+    for(int i = 0; i < MAX_TRANSFORMS; i++)
+    {
+        QString rotName = QString("u_bone_rotation[%1]").arg(i);
+        QString transName = QString("u_bone_translation[%1]").arg(i);
+        setUniformValue(rotName, rotation);
+        setUniformValue(transName, translation);
+    }
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
@@ -211,6 +251,11 @@ int RenderStateGL2::texCoordsAttr() const
     return m_texCoordsAttr;
 }
 
+int RenderStateGL2::boneAttr() const
+{
+    return m_boneAttr;
+}
+
 char * RenderStateGL2::loadShaderSource(string path) const
 {
     FILE *f = fopen(path.c_str(), "r");
@@ -270,8 +315,7 @@ uint32_t RenderStateGL2::loadShader(string path, uint32_t type) const
 
 bool RenderStateGL2::loadShaders()
 {
-    //TODO fallback to GL1 when in a pinch
-    uint32_t vertexShader = loadShader("vertex.glsl", GL_VERTEX_SHADER);
+    uint32_t vertexShader = loadShader("vertex_skinned.glsl", GL_VERTEX_SHADER);
     if(vertexShader == 0)
         return false;
     uint32_t pixelShader = loadShader("fragment.glsl", GL_FRAGMENT_SHADER);
@@ -320,6 +364,7 @@ bool RenderStateGL2::loadShaders()
     m_positionAttr = glGetAttribLocation(program, "a_position");
     m_normalAttr = glGetAttribLocation(program, "a_normal");
     m_texCoordsAttr = glGetAttribLocation(program, "a_texCoords");
+    m_boneAttr = glGetAttribLocation(program, "a_boneIndex");
     return true;
 }
 
@@ -327,20 +372,20 @@ void RenderStateGL2::initShaders()
 {
 }
 
-void RenderStateGL2::setUniformValue(string name, const vec4 &v)
+void RenderStateGL2::setUniformValue(QString name, const vec4 &v)
 {
-    int location = glGetUniformLocation(m_program, name.c_str());
+    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     glUniform4fv(location, 1, (GLfloat *)&v);
 }
 
-void RenderStateGL2::setUniformValue(string name, float f)
+void RenderStateGL2::setUniformValue(QString name, float f)
 {
-    int location = glGetUniformLocation(m_program, name.c_str());
+    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     glUniform1f(location, f);
 }
 
-void RenderStateGL2::setUniformValue(string name, int i)
+void RenderStateGL2::setUniformValue(QString name, int i)
 {
-    int location = glGetUniformLocation(m_program, name.c_str());
+    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     glUniform1i(location, i);
 }

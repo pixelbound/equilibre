@@ -23,8 +23,8 @@ public:
     virtual void draw();
 
 private:
-    void drawArray(VertexGroup *vg, int position, int normal, int texCoords);
-    void drawVBO(VertexGroup *vg, int position, int normal, int texCoords);
+    void drawArray(VertexGroup *vg, int position, int normal, int texCoords, int bone);
+    void drawVBO(VertexGroup *vg, int position, int normal, int texCoords, int bone);
 
     RenderStateGL2 *m_state;
     std::vector<VertexGroup *> m_groups;

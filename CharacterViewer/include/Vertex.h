@@ -105,6 +105,8 @@ public:
     vec3 position;
     vec3 normal;
     vec2 texCoords;
+    uint32_t bone;
+    uint32_t padding[3]; // align on 16-bytes boundaries
 };
 
 class MaterialGroup
