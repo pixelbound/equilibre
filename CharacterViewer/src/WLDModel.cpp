@@ -261,27 +261,56 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
         {
             Material::loadTextureDDS(data.constData(), data.length(), img);
             dds = true;
-            /*float ambient = frag->m_scaledAmbient;
-            Material *mat = new Material();
-            mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
-            mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
-            mat->loadTextureDDS(data.constData(), data.length());
-            return mat;*/
         }
     }
 
     // masked bitmap?
-    if(((frag->m_param1 & 0x3) == 0x3))
+    uint32_t renderMode = (frag->m_param1 & 0xff);
+    //qDebug("'%s' has param1 %02x", bmp->m_fileName.toLatin1().constData(), frag->m_param1 & 0xff);
+    if(renderMode == 0x13)
     {
+        // masked texture
         if(img.colorCount() > 0)
         {
-            // replace the color of the first pixel by a transparent color in the table
-            uchar index = *img.bits();
+            // replace the mask color by a transparent color in the table
             QVector<QRgb> colors = img.colorTable();
-            colors[index] = qRgba(0, 0, 0, 0);
+            uint8_t maskColor = 0;
+            colors[maskColor] = qRgba(0, 0, 0, 0);
             img.setColorTable(colors);
         }
     }
+    else if(renderMode == 0x17)
+    {
+        // semi-transprent (e.g. the sleeper, wasp, bixie)
+        // depends on how dark/light the color is
+        if(img.colorCount() > 0)
+        {
+            QVector<QRgb> colors = img.colorTable();
+            for(int i = 0; i < colors.count(); i++)
+            {
+                QRgb c = colors[i];
+                int alpha = (qRed(c) + qGreen(c) + qBlue(c)) / 3;
+                colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+            }
+            img.setColorTable(colors);
+        }
+    }
+    else if(renderMode == 0x05)
+    {
+        // semi-transparent (water elemental, air elemental, ghost wolf)
+        if(img.colorCount() > 0)
+        {
+            QVector<QRgb> colors = img.colorTable();
+            int alpha = 127; // arbitrary value XXX find the real value
+            for(int i = 0; i < colors.count(); i++)
+            {
+                QRgb c = colors[i];
+                colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+            }
+            img.setColorTable(colors);
+        }
+    }
+    // 0x53 == ?
 
     float ambient = frag->m_scaledAmbient;
     Material *mat = new Material();

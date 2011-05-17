@@ -16,8 +16,8 @@ uniform vec4 u_material_diffuse;
 uniform vec4 u_material_specular;
 uniform float u_material_shine;
 
-uniform vec4 u_bone_rotation[128];
-uniform vec4 u_bone_translation[128];
+uniform vec4 u_bone_rotation[256];
+uniform vec4 u_bone_translation[256];
 
 varying vec4 v_color;
 varying vec2 v_texCoords;

@@ -4,7 +4,7 @@
 #include "MeshGL2.h"
 #include "WLDSkeleton.h"
 
-const int MAX_TRANSFORMS = 128;
+const int MAX_TRANSFORMS = 256;
 
 RenderStateGL2::RenderStateGL2() : RenderState()
 {
