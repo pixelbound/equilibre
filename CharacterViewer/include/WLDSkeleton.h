@@ -51,6 +51,7 @@ public:
     const QVector<SkeletonNode> &tree() const;
 
     void addTrack(QString animName, TrackDefFragment *track);
+    WLDAnimation * copyFrom(WLDSkeleton *skel, QString animName);
 
 private:
     HierSpriteDefFragment *m_def;
@@ -68,6 +69,8 @@ public:
                  QObject *parent = 0);
 
     QString name() const;
+    const QVector<TrackDefFragment *> & tracks() const;
+    WLDSkeleton * skeleton() const;
 
     void replaceTrack(TrackDefFragment *track);
     WLDAnimation * copy(QString newName, QObject *parent = 0) const;

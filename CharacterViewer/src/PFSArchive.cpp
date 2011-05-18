@@ -103,7 +103,8 @@ void PFSArchive::openArchive(QString path)
 
     // map each file name to an entry
     qSort(entries.begin(), entries.end(), compareEntries);
-    for(int i = 0; i < m_fileNames.count(); i++)
+    int count = std::min(m_fileNames.count(), entries.count());
+    for(int i = 0; i < count; i++)
         m_entries.insert(m_fileNames[i], entries[i]);
 }
 

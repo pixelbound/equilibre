@@ -1,0 +1,84 @@
+BAM: ELM Barbarian Male
+BAF: ELF Barbarian Female
+DAF: ELF Dark Elf Female
+DAM: ELM Dark Elf Male
+ERF: ELF Erudite Female
+ERM: ELM Erudite Male
+GNF: DWF Gnome Female
+GNM: DWM Gnome Male
+HAF: ELF Half-Elf Female
+HAM: ELM Half-Elf Male
+HIF: ELF High-Elf Female
+HIM: ELM High-Elf Male
+HOF: DWF Halfling Female
+HOM: DWM Halfling Male
+HUF: ELF Human Female
+HUM: ELF Human Male
+IKF: IKM Iksar Female
+OGM: OGF Ogre Male
+TRF: OGF Troll Female
+TRM: OGF Troll Male
+
+ARM: RAT Armadilo
+BET: SPI Beetle
+BGM: ELM Beggar Male
+BRF: ELF Brownie Female
+BRM: ELM Brownie Male
+BTM: RHI <Some Velious Rhino>
+BWD: DR2 <Some Velious Dragon>
+CCD: TRK Clockwork Dragon
+CLF: DWF Clockwork Gnome Female*
+CLM: DWM Clockwork Gnome Male*
+CLN: DWM Clockwork Noble*
+CPF: CPM Kerran Female
+COF: DWF Coldain Dwarf Female
+COM: DWM Coldain Dwarf Male
+DR2: TRK Dragon 2
+EGM: ELM Erudin Guard Male
+ENA: ELM Enchanted Armor
+FEF: ELF Felwithe NPC Female
+FEM: ELM Felwithe NPC Male
+FPM: ELM Freeport NPC Male
+FRG: FRO Froglok
+GAM: GAR Ghost Gargoyle
+GOM: GIA Ghost Golem
+GDR: DRA <Some Dragon from Western Wastes>
+GFF: ELF Greater Faydark NPC Female
+GFM: ELM Greater Faydark NPC Male
+GHU: GOB Ghoul
+GOL: GIA Golem
+GRF: OGF Grobb NPC Female
+GRI: DRK Griffin
+GRM: OGF Grobb NPC Male
+HHM: ELM Highpass Hold NPC Male
+HLF: ELF Halas NPC Female
+HLM: ELM Halas NPC Male
+ICF: IKM Iksar NPC Female
+ICM: IKM Iksar NPC Male
+ICN: IKM Iksar Noble Male
+IKS: IKM Iksar Skeleton
+IMP: GAR Imp
+KAF: DWF Kaladim NPC Female
+KAM: DWM Kaladim NPC Male
+KAN: DWM Kaladim Noble Male (Missing head)
+KOB: WER Kobold
+LIF: LIM Lion Female
+MIN: GNN Minotaur
+NGM: ELM Neriak Guard Male
+OKF: OGF Oggok NPC Female
+OKM: OGF Oggok NPC Male
+PIF: FAF Pixie Female
+PRI: TRK Kerafyrm
+PUM: LIM Puma
+QCF: ELF Qeynos NPC Female
+QCM: ELM Qeynos NPC Male
+RIF: DWF Rivervale NPC Female
+RIM: DWM Rivervale NPC Male
+SPC: SPE <Some Velious Spectre>
+SPH: DRK Sphinx
+STG: FSG <Some Velious Guard from Kael>
+TIG: LIM Tiger
+WOZ: WOL Zombie Wolf
+WUR: DRA Wurm
+ZOF: ELF Zombie Female
+ZOM: ELM Zombie Male

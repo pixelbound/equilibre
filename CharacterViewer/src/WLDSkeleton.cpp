@@ -73,6 +73,20 @@ void WLDSkeleton::addTrack(QString animName, TrackDefFragment *track)
     anim->replaceTrack(track);
 }
 
+WLDAnimation * WLDSkeleton::copyFrom(WLDSkeleton *skel, QString animName)
+{
+    if(!skel || skel == this)
+        return 0;
+    WLDAnimation *anim = skel->animations().value(animName);
+    if(!anim)
+        return 0;
+    WLDAnimation *anim2 = m_pose->copy(animName, this);
+    foreach(TrackDefFragment *trackDef, anim->tracks())
+        anim2->replaceTrack(trackDef);
+    m_animations.insert(anim2->name(), anim2);
+    return anim2;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 WLDAnimation::WLDAnimation(QString name, QVector<TrackDefFragment *> tracks,
@@ -91,12 +105,24 @@ QString WLDAnimation::name() const
     return m_name;
 }
 
+const QVector<TrackDefFragment *> & WLDAnimation::tracks() const
+{
+    return m_tracks;
+}
+
+WLDSkeleton * WLDAnimation::skeleton() const
+{
+    return m_skel;
+}
+
 void WLDAnimation::replaceTrack(TrackDefFragment *track)
 {
-    QString trackName = track->name().mid(3);
+    // strip animation name and character name from track name
+    QString trackName = track->name().mid(6);
     for(int i = 0; i < m_tracks.count(); i++)
     {
-        if(m_tracks[i]->name() == trackName)
+        // strip character name from track name
+        if(m_tracks[i]->name().mid(3) == trackName)
         {
             m_tracks[i] = track;
             m_frameCount = std::max(m_frameCount, (uint32_t)track->m_frames.count());

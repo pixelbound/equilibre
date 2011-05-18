@@ -8,6 +8,7 @@ class QVBoxLayout;
 class Scene;
 class RenderState;
 class SceneViewport;
+class WLDSkeleton;
 
 class CharacterViewerWindow : public QMainWindow
 {
@@ -24,8 +25,12 @@ private slots:
     void loadPalette(QString name);
     void loadAnimation(QString animName);
     void openArchive();
+    void copyAnimations();
+    void clear();
 
 private:
+    void copyAnimations(WLDSkeleton *toSkel, QString fromChar);
+
     SceneViewport *m_viewport;
     Scene *m_scene;
     RenderState *m_state;

@@ -4,6 +4,8 @@
 #include <QAction>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include "CharacterViewerWindow.h"
@@ -31,10 +33,15 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
 
     QAction *openAction = new QAction("&Open S3D archive...", this);
     openAction->setShortcut(QKeySequence::Open);
+    QAction *copyAnimationsAction = new QAction("Copy Animations From Character...", this);
+    QAction *clearAction = new QAction("Clear", this);
+    clearAction->setShortcut(QKeySequence::Delete);
     QAction *quitAction = new QAction("&Quit", this);
     quitAction->setShortcut(QKeySequence::Quit);
 
     fileMenu->addAction(openAction);
+    fileMenu->addAction(copyAnimationsAction);
+    fileMenu->addAction(clearAction);
     fileMenu->addSeparator();
     fileMenu->addAction(quitAction);
     menuBar()->addMenu(fileMenu);
@@ -53,6 +60,8 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
     setCentralWidget(centralWidget);
 
     connect(openAction, SIGNAL(triggered()), this, SLOT(openArchive()));
+    connect(copyAnimationsAction, SIGNAL(triggered()), this, SLOT(copyAnimations()));
+    connect(clearAction, SIGNAL(triggered()), this, SLOT(clear()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
     connect(m_actorText, SIGNAL(activated(QString)), this, SLOT(loadActor(QString)));
@@ -70,7 +79,6 @@ void CharacterViewerWindow::openArchive()
     if(!filePath.isEmpty())
     {
         m_lastDir = QFileInfo(filePath).dir().absolutePath();
-        m_scene->zone()->clear();
         loadCharacters(filePath);
     }
     m_viewport->setAnimation(true);
@@ -99,6 +107,7 @@ bool CharacterViewerWindow::loadCharacters(QString archivePath)
         foreach(QString name, m_scene->charModels().keys())
             m_actorText->addItem(name);
         loadActor(m_actorText->itemText(0));
+        m_actorText->setEnabled(m_actorText->count() > 1);
         return true;
     }
     return false;
@@ -142,4 +151,67 @@ void CharacterViewerWindow::loadAnimation(QString animName)
     WLDActor *charModel = m_scene->selectedCharacter();
     if(charModel)
         charModel->setAnimName(animName);
+}
+
+void CharacterViewerWindow::copyAnimations()
+{
+    WLDActor *charModel = m_scene->selectedCharacter();
+    if(!charModel)
+        return;
+    WLDSkeleton *charSkel = charModel->model()->skeleton();
+    if(!charSkel)
+        return;
+    QDialog d;
+    d.setWindowTitle("Select a character to copy animations from");
+    QComboBox *charList = new QComboBox();
+    const QMap<QString, WLDActor *> &actors = m_scene->zone()->charModels();
+    foreach(QString charName, actors.keys())
+    {
+        WLDSkeleton *skel = actors.value(charName)->model()->skeleton();
+        if(skel)
+            charList->addItem(charName);
+    }
+    QDialogButtonBox *buttons = new QDialogButtonBox();
+    buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+    connect(buttons, SIGNAL(accepted()), &d, SLOT(accept()));
+    connect(buttons, SIGNAL(rejected()), &d, SLOT(reject()));
+
+    QVBoxLayout *vb = new QVBoxLayout(&d);
+    vb->addWidget(charList);
+    vb->addWidget(buttons);
+
+    if(d.exec() == QDialog::Accepted)
+        copyAnimations(charSkel, charList->currentText());
+}
+
+void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar)
+{
+    WLDActor *actor = m_scene->zone()->charModels().value(fromChar);
+    if(actor)
+    {
+        WLDSkeleton *fromSkel = actor->model()->skeleton();
+        if(!fromSkel)
+            return;
+        foreach(QString animName, fromSkel->animations().keys())
+        {
+            if(!toSkel->animations().contains(animName))
+                toSkel->copyFrom(fromSkel, animName);
+        }
+        m_animationText->clear();
+        foreach(QString animName, toSkel->animations().keys())
+            m_animationText->addItem(animName);
+        m_animationText->setEnabled(m_animationText->count() > 1);
+        loadAnimation(actor->animName());
+    }
+}
+
+void CharacterViewerWindow::clear()
+{
+    m_scene->zone()->clear();
+    m_actorText->clear();
+    m_paletteText->clear();
+    m_animationText->clear();
+    m_actorText->setEnabled(false);
+    m_paletteText->setEnabled(false);
+    m_animationText->setEnabled(false);
 }

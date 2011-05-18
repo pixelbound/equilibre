@@ -111,15 +111,19 @@ if __name__ == "__main__":
     def listFiles(path):
         with S3DArchive(path) as a:
             for fileName in a.files:
-                print(fileName)
+                print("%s: %s" % (path, fileName))
     
     def extractFiles(path, destPath):
         os.makedirs(destPath, exist_ok=True)
         with S3DArchive(path) as a:
             for fileName in a.files:
                 filePath = os.path.join(destPath, fileName)
-                with open(filePath, "wb") as f:
-                    f.write(a.unpackFile(fileName))
+                data = a.unpackFile(fileName)
+                if data:
+                    with open(filePath, "wb") as f:
+                        f.write(data)
+                else:
+                    print("Could not find data for file '%s'" % fileName)
                 
     if len(sys.argv) < 2:
         print("usage: %s <.S3D file>" % sys.argv[0])
