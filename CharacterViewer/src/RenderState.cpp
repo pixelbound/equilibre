@@ -1,4 +1,3 @@
-#include <sstream>
 #include "RenderState.h"
 
 RenderState::RenderState()

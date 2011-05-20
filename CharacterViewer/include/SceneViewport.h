@@ -1,6 +1,7 @@
 #ifndef OPENEQ_SCENE_VIEWPORT_H
 #define OPENEQ_SCENE_VIEWPORT_H
 
+#include "Platform.h"
 #include <QGLWidget>
 #include <QDateTime>
 #include "Vertex.h"

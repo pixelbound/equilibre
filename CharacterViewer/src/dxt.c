@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <malloc.h>
 
 #include "dds.h"
 #include "mipmap.h"
@@ -1085,7 +1086,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
    
    size = get_mipmapped_size(width, height, bpp, 0, mipmaps,
                              DDS_COMPRESS_NONE);
-   tmp = g_malloc(size);
+   tmp = malloc(size);
    generate_mipmaps(tmp, src, width, height, bpp, 0, mipmaps, filter,
                     gamma_correct, gamma);
    
@@ -1098,7 +1099,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
       
       size = get_mipmapped_size(width, height, 4, 0, mipmaps,
                                 DDS_COMPRESS_NONE);
-      tmp2 = g_malloc(size);
+      tmp2 = malloc(size);
       
       for(i = j = 0; j < size; ++i, j += 4)
       {
@@ -1108,7 +1109,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
          tmp2[j + 3] = 255;
       }
       
-      g_free(tmp);
+      free(tmp);
       tmp = tmp2;
       bpp = 4;
    }
@@ -1118,7 +1119,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
       
       size = get_mipmapped_size(width, height, 4, 0, mipmaps,
                                 DDS_COMPRESS_NONE);
-      tmp2 = g_malloc(size);
+      tmp2 = malloc(size);
       
       for(i = j = 0; j < size; i += 2, j += 4)
       {
@@ -1128,7 +1129,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
          tmp2[j + 3] = tmp[i + 1];
       }
       
-      g_free(tmp);
+      free(tmp);
       tmp = tmp2;
       bpp = 4;
    }
@@ -1136,7 +1137,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
    {
       size = get_mipmapped_size(width, height, 4, 0, mipmaps,
                                 DDS_COMPRESS_NONE);
-      tmp2 = g_malloc(size);
+      tmp2 = malloc(size);
       
       for(i = j = 0; j < size; i += 3, j += 4)
       {
@@ -1146,7 +1147,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
          tmp2[j + 3] = 255;
       }
       
-      g_free(tmp);
+      free(tmp);
       tmp = tmp2;
       bpp = 4;
    }
@@ -1188,7 +1189,7 @@ int dxt_compress(unsigned char *dst, unsigned char *src, int format,
       h = MAX(1, h >> 1);
    }
 
-   g_free(tmp);
+   free(tmp);
    
    return(1);
 }

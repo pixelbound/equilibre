@@ -31,7 +31,7 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/WLDSkeleton.cpp \
     src/CharacterViewerWindow.cpp \
     src/dxt.c src/mipmap.c
-LIBS += -lm -lz
+LIBS += -lm -lz -lGLEW
 
 TARGET = CharacterViewer
 CONFIG += qt warn_on debug thread

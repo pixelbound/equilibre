@@ -1,8 +1,8 @@
 #include <QImage>
-#include <QGLWidget>
 #include <cstring>
 #include <cstdio>
 #include "Platform.h"
+#include <QGLWidget>
 #include "Material.h"
 #include "dds.h"
 #include "dxt.h"
