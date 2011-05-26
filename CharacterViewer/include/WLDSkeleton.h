@@ -51,6 +51,7 @@ public:
     const QVector<SkeletonNode> &tree() const;
 
     void addTrack(QString animName, TrackDefFragment *track);
+    void copyAnimationsFrom(WLDSkeleton *skel);
     WLDAnimation * copyFrom(WLDSkeleton *skel, QString animName);
 
 private:
@@ -72,6 +73,7 @@ public:
     const QVector<TrackDefFragment *> & tracks() const;
     WLDSkeleton * skeleton() const;
 
+    int findTrack(QString name) const;
     void replaceTrack(TrackDefFragment *track);
     WLDAnimation * copy(QString newName, QObject *parent = 0) const;
     QVector<BoneTransform> transformationsAtTime(double t) const;

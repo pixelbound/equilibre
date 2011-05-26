@@ -9,6 +9,8 @@
 
 using namespace std;
 
+class QVector3D;
+class QQuaternion;
 class BoneTransform;
 
 class RenderState
@@ -29,7 +31,6 @@ public:
     virtual Mesh * createMesh() = 0;
 
     virtual void setBoneTransforms(const BoneTransform *transforms, int count) = 0;
-    virtual void clearBoneTransforms() = 0;
 
     // matrix operations
 
@@ -47,7 +48,9 @@ public:
     virtual void pushMatrix() = 0;
     virtual void popMatrix() = 0;
 
+    void translate(const QVector3D &v);
     void translate(const vec3 &v);
+    void rotate(const QQuaternion &q);
     void scale(const vec3 &v);
     virtual void translate(float dx, float dy, float dz) = 0;
     virtual void rotate(float angle, float rx, float ry, float rz) = 0;

@@ -59,6 +59,8 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
 
     setCentralWidget(centralWidget);
 
+    updateLists();
+
     connect(openAction, SIGNAL(triggered()), this, SLOT(openArchive()));
     connect(copyAnimationsAction, SIGNAL(triggered()), this, SLOT(copyAnimations()));
     connect(clearAction, SIGNAL(triggered()), this, SLOT(clear()));
@@ -86,13 +88,10 @@ void CharacterViewerWindow::openArchive()
 
 bool CharacterViewerWindow::loadZone(QString path, QString name)
 {
-    m_actorText->clear();
     m_viewport->makeCurrent();
     if(m_scene->zone()->load(path, name))
     {
-        foreach(QString name, m_scene->charModels().keys())
-            m_actorText->addItem(name);
-        loadActor(m_actorText->itemText(0));
+        updateLists();
         return true;
     }
     return false;
@@ -100,14 +99,10 @@ bool CharacterViewerWindow::loadZone(QString path, QString name)
 
 bool CharacterViewerWindow::loadCharacters(QString archivePath)
 {
-    m_actorText->clear();
     m_viewport->makeCurrent();
     if(m_scene->zone()->loadCharacters(archivePath))
     {
-        foreach(QString name, m_scene->charModels().keys())
-            m_actorText->addItem(name);
-        loadActor(m_actorText->itemText(0));
-        m_actorText->setEnabled(m_actorText->count() > 1);
+        updateLists();
         return true;
     }
     return false;
@@ -115,42 +110,28 @@ bool CharacterViewerWindow::loadCharacters(QString archivePath)
 
 void CharacterViewerWindow::loadActor(QString name)
 {
-    m_actorText->setCurrentIndex(m_actorText->findText(name));
     m_scene->setSelectedModelName(name);
-    m_paletteText->clear();
-    m_animationText->clear();
-    WLDActor *charModel = m_scene->selectedCharacter();
-    if(charModel)
-    {
-        WLDSkeleton *skel = charModel->model()->skeleton();
-        if(skel)
-        {
-            foreach(QString animName, skel->animations().keys())
-                m_animationText->addItem(animName);
-            loadAnimation(charModel->animName());
-        }
-        foreach(WLDModelSkin *skin, charModel->model()->skins())
-            m_paletteText->addItem(skin->name());
-        loadPalette(charModel->paletteName());
-    }
-    m_animationText->setEnabled(m_animationText->count() > 1);
-    m_paletteText->setEnabled(m_paletteText->count() > 1);
+    updateLists();
 }
 
 void CharacterViewerWindow::loadPalette(QString name)
 {
-    m_paletteText->setCurrentIndex(m_paletteText->findText(name));
     WLDActor *charModel = m_scene->selectedCharacter();
     if(charModel)
+    {
         charModel->setPaletteName(name);
+        updateLists();
+    }
 }
 
 void CharacterViewerWindow::loadAnimation(QString animName)
 {
-    m_animationText->setCurrentIndex(m_animationText->findText(animName));
     WLDActor *charModel = m_scene->selectedCharacter();
     if(charModel)
+    {
         charModel->setAnimName(animName);
+        updateLists();
+    }
 }
 
 void CharacterViewerWindow::copyAnimations()
@@ -190,28 +171,47 @@ void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar
     if(actor)
     {
         WLDSkeleton *fromSkel = actor->model()->skeleton();
-        if(!fromSkel)
-            return;
-        foreach(QString animName, fromSkel->animations().keys())
+        if(fromSkel)
         {
-            if(!toSkel->animations().contains(animName))
-                toSkel->copyFrom(fromSkel, animName);
+            toSkel->copyAnimationsFrom(fromSkel);
+            updateLists();
         }
-        m_animationText->clear();
-        foreach(QString animName, toSkel->animations().keys())
-            m_animationText->addItem(animName);
-        m_animationText->setEnabled(m_animationText->count() > 1);
-        loadAnimation(actor->animName());
     }
+}
+
+void CharacterViewerWindow::updateLists()
+{
+    m_actorText->clear();
+    m_paletteText->clear();
+    m_animationText->clear();
+    foreach(QString name, m_scene->charModels().keys())
+        m_actorText->addItem(name);
+
+    if(m_scene->selectedModelName().isEmpty() && m_actorText->count() > 0)
+        m_scene->setSelectedModelName(m_actorText->itemText(0));
+
+    WLDActor *charModel = m_scene->selectedCharacter();
+    if(charModel)
+    {
+        WLDSkeleton *skel = charModel->model()->skeleton();
+        if(skel)
+        {
+            foreach(QString animName, skel->animations().keys())
+                m_animationText->addItem(animName);
+        }
+        foreach(WLDModelSkin *skin, charModel->model()->skins())
+            m_paletteText->addItem(skin->name());
+        m_actorText->setCurrentIndex(m_actorText->findText(m_scene->selectedModelName()));
+        m_paletteText->setCurrentIndex(m_paletteText->findText(charModel->paletteName()));
+        m_animationText->setCurrentIndex(m_animationText->findText(charModel->animName()));
+    }
+    m_actorText->setEnabled(m_actorText->count() > 1);
+    m_animationText->setEnabled(m_animationText->count() > 1);
+    m_paletteText->setEnabled(m_paletteText->count() > 1);
 }
 
 void CharacterViewerWindow::clear()
 {
     m_scene->zone()->clear();
-    m_actorText->clear();
-    m_paletteText->clear();
-    m_animationText->clear();
-    m_actorText->setEnabled(false);
-    m_paletteText->setEnabled(false);
-    m_animationText->setEnabled(false);
+    updateLists();
 }

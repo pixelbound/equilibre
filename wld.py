@@ -236,8 +236,7 @@ class Fragment10(Fragment):
 
     def dumpTree(self, pieceID=0, indent=0):
         piece = self.tree[pieceID]
-        transform = ""
-        print("%s%s%s" % (" " * (indent * 2), piece.name, transform))
+        print("%s%s" % (" " * (indent * 2), piece.name))
         for childID in piece.children:
             self.dumpTree(childID, indent + 1) 
 

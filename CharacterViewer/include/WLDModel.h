@@ -18,6 +18,7 @@ class RenderState;
 class WLDModelPart;
 class WLDModelSkin;
 class WLDSkeleton;
+class BoneTransform;
 class WLDMaterialPalette;
 class WLDAnimation;
 
@@ -57,8 +58,7 @@ public:
 
     MeshDefFragment *def() const;
 
-    void draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
-            double currentTime);
+    void draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
     void importMaterialGroups(Mesh *m, WLDModelSkin *skin);
@@ -119,7 +119,7 @@ public:
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
 
-    void draw(RenderState *state, WLDAnimation *anim = 0, double currentTime = 0.0);
+    void draw(RenderState *state, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
     QString m_name;

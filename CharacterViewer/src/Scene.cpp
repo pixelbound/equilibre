@@ -17,11 +17,6 @@ Scene::~Scene()
 {
 }
 
-const QMap<QString, WLDModel *> & Scene::objModels() const
-{
-    return m_zone->objectModels();
-}
-
 const QMap<QString, WLDActor *> & Scene::charModels() const
 {
     return m_zone->charModels();
@@ -64,11 +59,6 @@ void Scene::setSelectedModelName(QString name)
     m_meshName = name;
 }
 
-WLDModel * Scene::selectedObject() const
-{
-    return objModels().value(m_meshName);
-}
-
 WLDActor * Scene::selectedCharacter() const
 {
     return charModels().value(m_meshName);
@@ -98,7 +88,6 @@ void Scene::draw()
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
 
-    WLDModel *objModel = selectedObject();
     WLDActor *charModel = selectedCharacter();
     switch(m_mode)
     {
@@ -107,16 +96,6 @@ void Scene::draw()
         {
             charModel->setAnimTime(currentTime());
             charModel->draw(m_state);
-        }
-        break;
-    case ObjectViewer:
-        if(objModel)
-        {
-            //WLDActor *actor = new WLDActor(objModel, this);
-            //actor->setAnimTime(currentTime());
-            objModel->skin()->draw(m_state);
-            //actor->draw(m_state);
-            //delete actor;
         }
         break;
     case ZoneViewer:

@@ -16,5 +16,8 @@ else:
     wldName = sys.argv[2]
 with S3DArchive(s3dPath) as a:
     wld = WLDData.fromArchive(a, wldName)
-    for frag in wld.fragments.values():
-        print("%04x 0x%02x %s %s" % (frag.ID, frag.type, frag.name or '', stringhex(frag.data)))
+    for frag in wld.fragmentsByType(0x10):
+        #print(frag.name.replace("_HS_DEF", ""))
+        frag.dumpTree()
+        #for node in frag.tree:
+        #    print(node)

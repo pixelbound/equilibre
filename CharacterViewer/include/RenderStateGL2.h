@@ -18,7 +18,6 @@ public:
     virtual void drawMesh(Mesh *m);
 
     virtual void setBoneTransforms(const BoneTransform *transforms, int count);
-    virtual void clearBoneTransforms();
 
     // matrix operations
     virtual void setMatrixMode(MatrixMode newMode);

@@ -61,7 +61,7 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
     {
         QString rotName = QString("u_bone_rotation[%1]").arg(i);
         QString transName = QString("u_bone_translation[%1]").arg(i);
-        if(i < count)
+        if(transforms && (i < count))
         {
             if(m_useDualQuaternion)
             {
@@ -80,19 +80,6 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
             rotation = vec4(0.0, 0.0, 0.0, 1.0);
             translation = vec4(0.0, 0.0, 0.0, 1.0);
         }
-        setUniformValue(rotName, rotation);
-        setUniformValue(transName, translation);
-    }
-}
-
-void RenderStateGL2::clearBoneTransforms()
-{
-    vec4 rotation(0.0, 0.0, 0.0, 1.0);
-    vec4 translation(0.0, 0.0, 0.0, 1.0);
-    for(int i = 0; i < MAX_TRANSFORMS; i++)
-    {
-        QString rotName = QString("u_bone_rotation[%1]").arg(i);
-        QString transName = QString("u_bone_translation[%1]").arg(i);
         setUniformValue(rotName, rotation);
         setUniformValue(transName, translation);
     }

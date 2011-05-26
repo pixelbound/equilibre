@@ -30,6 +30,7 @@ private slots:
 
 private:
     void copyAnimations(WLDSkeleton *toSkel, QString fromChar);
+    void updateLists();
 
     SceneViewport *m_viewport;
     Scene *m_scene;

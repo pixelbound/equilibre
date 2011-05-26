@@ -85,25 +85,14 @@ MeshDefFragment * WLDModelPart::def() const
     return m_meshDef;
 }
 
-void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, WLDAnimation *anim,
-                        double currentTime)
+void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones, uint32_t boneCount)
 {
     if(!m_mesh)
     {
         m_mesh = state->createMesh();
         importMaterialGroups(m_mesh, skin);
     }
-
-    if(anim)
-    {
-        QVector<BoneTransform> transforms = anim->transformationsAtTime(currentTime);
-        state->setBoneTransforms(transforms.constData(), transforms.count());
-    }
-    else
-    {
-        state->clearBoneTransforms();
-    }
-
+    state->setBoneTransforms(bones, boneCount);
     state->pushMatrix();
     state->translate(m_meshDef->m_center);
     state->drawMesh(m_mesh);
@@ -387,10 +376,8 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
     return false;
 }
 
-void WLDModelSkin::draw(RenderState *state, WLDAnimation *anim, double currentTime)
+void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
-    if(!anim && m_model->skeleton())
-        anim = m_model->skeleton()->pose();
     foreach(WLDModelPart *part, m_parts)
-        part->draw(state, this, anim, currentTime);
+        part->draw(state, this, bones, boneCount);
 }

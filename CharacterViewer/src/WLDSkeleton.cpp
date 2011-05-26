@@ -73,6 +73,15 @@ void WLDSkeleton::addTrack(QString animName, TrackDefFragment *track)
     anim->replaceTrack(track);
 }
 
+void WLDSkeleton::copyAnimationsFrom(WLDSkeleton *skel)
+{
+    foreach(QString animName, skel->animations().keys())
+    {
+        if(!animations().contains(animName))
+            copyFrom(skel, animName);
+    }
+}
+
 WLDAnimation * WLDSkeleton::copyFrom(WLDSkeleton *skel, QString animName)
 {
     if(!skel || skel == this)
@@ -113,6 +122,17 @@ const QVector<TrackDefFragment *> & WLDAnimation::tracks() const
 WLDSkeleton * WLDAnimation::skeleton() const
 {
     return m_skel;
+}
+
+int WLDAnimation::findTrack(QString name) const
+{
+    for(int i = 0; i < m_tracks.count(); i++)
+    {
+        QString trackName = m_tracks[i]->name();
+        if(trackName.contains(name))
+            return i;
+    }
+    return -1;
 }
 
 void WLDAnimation::replaceTrack(TrackDefFragment *track)

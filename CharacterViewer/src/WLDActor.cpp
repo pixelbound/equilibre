@@ -78,20 +78,65 @@ void WLDActor::setPaletteName(QString palName)
     m_palName = palName;
 }
 
+bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDActor *actor)
+{
+    QString name = slotName(slot);
+    if(name.isEmpty() || !m_model->skeleton())
+        return false;
+    WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
+    if(!anim)
+        return false;
+    int trackIndex = anim->findTrack(name);
+    if(trackIndex < 0)
+        return false;
+    m_equip[slot] = QPair<int, WLDActor *>(trackIndex, actor);
+    return true;
+}
+
+QString WLDActor::slotName(EquipSlot slot)
+{
+    switch(slot)
+    {
+    case Head:
+        return "HEAD_POINT";
+    case Guild:
+        return "GUILD_POINT";
+    case Left:
+        return "L_POINT";
+    case Right:
+        return "R_POINT";
+    case Shield:
+        return "SHIELD_POINT";
+    }
+}
+
 void WLDActor::draw(RenderState *state)
 {
     WLDModelSkin *skin = m_model->skins().value(m_palName);
     if(!skin)
         return;
-    WLDAnimation *anim = 0;
+    QVector<BoneTransform> bones;
     if(m_model->skeleton())
-        anim = m_model->skeleton()->animations().value(m_animName);
+    {
+        WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
+        if(anim)
+            bones = anim->transformationsAtTime(m_animTime);
+    }
     state->pushMatrix();
     state->translate(m_location);
     state->rotate(m_rotation.x, 1.0, 0.0, 0.0);
     state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
     state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
     state->scale(m_scale);
-    skin->draw(state, anim, m_animTime);
+    skin->draw(state, bones.constData(), (uint32_t)bones.count());
+    foreach(ActorEquip eq, m_equip)
+    {
+        BoneTransform bone = bones.value(eq.first);
+        state->pushMatrix();
+        state->translate(bone.location);
+        state->rotate(bone.rotation);
+        eq.second->draw(state);
+        state->popMatrix();
+    }
     state->popMatrix();
 }

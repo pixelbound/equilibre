@@ -25,9 +25,7 @@ public:
     vec3 & delta();
 
     Zone * zone() const;
-    const QMap<QString, WLDModel *> & objModels() const;
     const QMap<QString, WLDActor *> & charModels() const;
-    WLDModel * selectedObject() const;
     WLDActor * selectedCharacter() const;
     QString selectedModelName() const;
 
@@ -45,7 +43,6 @@ public:
     enum Mode
     {
         CharacterViewer,
-        ObjectViewer,
         ZoneViewer
     };
 
