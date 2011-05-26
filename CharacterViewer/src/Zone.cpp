@@ -132,9 +132,7 @@ void Zone::importGeometry()
 
 void Zone::importObjects()
 {
-    // import models through ActorDef fragments
-    foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
-        m_objModels.insert(actorDef->name(), new WLDModel(m_objMeshArchive, this));
+    importObjectsMeshes(m_objMeshArchive, m_objMeshWld);
 
     // import actors through Actor fragments
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
@@ -152,12 +150,25 @@ void Zone::importObjects()
     }
 }
 
+void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
+{
+    // import models through ActorDef fragments
+    foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
+    {
+        WLDModel *model = new WLDModel(archive, this);
+        WLDModelSkin *skin = model->skin();
+        foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
+            skin->addPart(meshDef, true);
+        m_objModels.insert(actorDef->name(), model);
+    }
+}
+
 void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
 {
     // import skeletons which contain the pose animation
     foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
     {
-        QString actorName = skelDef->name().left(3);
+        QString actorName = skelDef->name().replace("_HS_DEF", "");
         WLDActor *actor = m_charModels.value(actorName);
         if(!actor)
             continue;
@@ -222,12 +233,26 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 {
     foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
-        QString actorName = actorDef->name().left(3);
+        QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDModel *model = new WLDModel(archive, this);
         WLDActor *actor = new WLDActor(model, this);
         WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
             skin->addPart(meshDef);
+        foreach(WLDFragment *frag, actorDef->m_models)
+        {
+            switch(frag->kind())
+            {
+            case HierSpriteFragment::ID:
+            case MeshFragment::ID:
+                break;
+            default:
+                qDebug("Unknown model fragment kind (0x%02x) %s",
+                       frag->kind(), actorName.toLatin1().constData());
+                break;
+            }
+        }
+
         m_charModels.insert(actorName, actor);
     }
 }

@@ -40,6 +40,7 @@ public:
 private:
     void importGeometry();
     void importObjects();
+    void importObjectsMeshes(PFSArchive *archive, WLDData *wld);
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);

@@ -79,6 +79,16 @@ Zone * Scene::zone() const
     return m_zone;
 }
 
+Scene::Mode Scene::mode() const
+{
+    return m_mode;
+}
+
+void Scene::setMode(Scene::Mode mode)
+{
+    m_mode = mode;
+}
+
 void Scene::draw()
 {
     vec3 rot = m_theta;
@@ -88,8 +98,8 @@ void Scene::draw()
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
 
-    WLDModel *objModel = m_zone->objectModels().value(m_meshName);
-    WLDActor *charModel = m_zone->charModels().value(m_meshName);
+    WLDModel *objModel = selectedObject();
+    WLDActor *charModel = selectedCharacter();
     switch(m_mode)
     {
     case CharacterViewer:
@@ -101,7 +111,13 @@ void Scene::draw()
         break;
     case ObjectViewer:
         if(objModel)
+        {
+            //WLDActor *actor = new WLDActor(objModel, this);
+            //actor->setAnimTime(currentTime());
             objModel->skin()->draw(m_state);
+            //actor->draw(m_state);
+            //delete actor;
+        }
         break;
     case ZoneViewer:
         m_zone->drawGeometry(m_state);

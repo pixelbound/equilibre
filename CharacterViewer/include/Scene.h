@@ -49,6 +49,9 @@ public:
         ZoneViewer
     };
 
+    Mode mode() const;
+    void setMode(Mode mode);
+
 public slots:
     void setSelectedModelName(QString name);
 

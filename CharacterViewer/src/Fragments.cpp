@@ -221,6 +221,49 @@ bool ActorFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+SpellParticleDefFragment::SpellParticleDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool SpellParticleDefFragment::unpack(WLDReader *s)
+{
+    s->unpackField('I', &m_flags);
+    s->unpackReference(&m_sprite);
+    // render mode + flag? common values: 80000017, 80000018, 80000019
+    s->unpackField('I', &m_param1);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+SpellParticleFragment::SpellParticleFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool SpellParticleFragment::unpack(WLDReader *s)
+{
+    //<0x26 fragment> flags
+    s->unpackReference(&m_def);
+    s->unpackField('I', &m_flags);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Fragment34::Fragment34(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool Fragment34::unpack(WLDReader *s)
+{
+    s->unpackFields("IIII", &m_param0, &m_param1, &m_param2, &m_flags);
+    s->unpackStruct("IIIIIIffIffffIff", &m_data3);
+    s->unpackReference(&m_particle);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 MaterialDefFragment::MaterialDefFragment(QString name) : WLDFragment(ID, name)
 {
 }

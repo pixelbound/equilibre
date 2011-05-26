@@ -159,6 +159,61 @@ public:
 };
 
 /*!
+  \brief This type of fragment (0x26) defines spell particle bolts.
+  */
+class SpellParticleDefFragment : public WLDFragment
+{
+public:
+    SpellParticleDefFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x26;
+    uint32_t m_flags;
+    SpriteFragment *m_sprite;
+    uint32_t m_param1;
+};
+
+/*!
+  \brief This type of fragment (0x27) defines instances of spell particle bolts.
+  */
+class SpellParticleFragment : public WLDFragment
+{
+public:
+    SpellParticleFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x27;
+    SpellParticleDefFragment *m_def;
+    uint32_t m_flags;
+};
+
+class Fragment34Data
+{
+public:
+    uint32_t param1, param2, param3, param4, param5, param6;
+    float param7, param8;
+    uint32_t param9;
+    float param10, param11, param12, param13;
+    uint32_t param14;
+    float param15, param16;
+};
+
+/*!
+  \brief This type of fragment (0x34) has something to do with weapon particles.
+  */
+class Fragment34 : public WLDFragment
+{
+public:
+    Fragment34(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x34;
+    uint32_t m_param0, m_param1, m_param2, m_flags;
+    Fragment34Data m_data3;
+    SpellParticleDefFragment *m_particle;
+};
+
+/*!
   \brief This type of fragment (0x30) defines materials (i.e. how to render part of a mesh).
   */
 class MaterialDefFragment : public WLDFragment

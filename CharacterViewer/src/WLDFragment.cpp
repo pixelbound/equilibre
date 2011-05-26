@@ -70,6 +70,12 @@ WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
         return new ActorDefFragment(name);
     case ActorFragment::ID:
         return new ActorFragment(name);
+    case SpellParticleDefFragment::ID:
+        return new SpellParticleDefFragment(name);
+    case SpellParticleFragment::ID:
+        return new SpellParticleFragment(name);
+    case Fragment34::ID:
+        return new Fragment34(name);
     case MaterialDefFragment::ID:
         return new MaterialDefFragment(name);
     case MaterialPaletteFragment::ID:

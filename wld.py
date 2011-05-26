@@ -135,6 +135,14 @@ class Fragment:
         self.pos += size
         return value
     
+    def unpackStruct(self, name, pattern):
+        size = struct.calcsize(pattern)
+        value = struct.unpack(pattern, self.data[self.pos: self.pos + size])
+        if name:
+            setattr(self, name, value)
+        self.pos += size
+        return value
+    
     def unpackFields(self, fields):
         patterns = "".join(pattern for (name, pattern) in fields)
         size = struct.calcsize(patterns)
@@ -408,6 +416,19 @@ class Fragment22(Fragment):
                 break
         return regions
 
+class Fragment26(Fragment):
+    """ This type of fragment (0x26) defines spell particle bolts. """
+    def unpack(self, wld):
+        self.unpackField("Flags", "I")
+        self.unpackReference(wld, "Sprite")
+        self.unpackField("Param1", "I")
+
+class Fragment27(Fragment):
+    """ This type of fragment (0x27) defines spell particle bolt instances. """
+    def unpack(self, wld):
+        self.unpackReference(wld)
+        self.unpackField("Flags", "I")
+
 class Fragment29(Fragment):
     """ This type of fragment describes the properties of a list of regions. """
     def unpack(self, wld):
@@ -459,6 +480,16 @@ class Fragment33(Fragment):
     def unpack(self, wld):
         self.unpackReference(wld)
         self.unpackField("Flags", "I")
+
+class Fragment34(Fragment):
+    """ This type of fragment (0x34) has something to do with weapon particles. """
+    def unpack(self, wld):
+        self.unpackField("Param0", "I")
+        self.unpackField("Param1", "I")
+        self.unpackField("Param2", "I")
+        self.unpackField("Flags", "I")
+        self.unpackStruct("Data3", "IIIIIIffIffffIff")
+        self.unpackReference(wld)
 
 class Fragment36(Fragment):
     """ This type of fragment describes a mesh. """
