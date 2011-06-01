@@ -272,12 +272,12 @@ char * RenderStateGL2::loadShaderSource(string path) const
 
 uint32_t RenderStateGL2::loadShader(string path, uint32_t type) const
 {
-    char *code = loadShaderSource(path.c_str());
+    char *code = loadFileData(path);
     if(!code)
         return 0;
     uint32_t shader = glCreateShader(type);
     glShaderSource(shader, 1, (const GLchar **)&code, 0);
-    delete [] code;
+    freeFileData(code);
     glCompileShader(shader);
     GLint status;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);

@@ -3,6 +3,10 @@
 
 #include <GL/glew.h>
 #include <cstdio>
+#include <string>
 #include <inttypes.h>
+
+char *loadFileData(std::string path);
+void freeFileData(char *data);
 
 #endif

@@ -30,7 +30,8 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/Zone.cpp \
     src/WLDSkeleton.cpp \
     src/CharacterViewerWindow.cpp \
-    src/dxt.c src/mipmap.c
+    src/dxt.c src/mipmap.c \
+    src/Platform.cpp
 LIBS += -lm -lz -lGLEW
 
 TARGET = CharacterViewer
@@ -40,3 +41,6 @@ QT += opengl
 OTHER_FILES += \
     fragment.glsl \
     vertex.glsl vertex_skinned.glsl
+
+RESOURCES += \
+    resources.qrc
