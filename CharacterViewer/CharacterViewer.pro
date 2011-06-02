@@ -32,10 +32,17 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/CharacterViewerWindow.cpp \
     src/dxt.c src/mipmap.c \
     src/Platform.cpp
-LIBS += -lm -lz -lGLEW
+
+win32 {
+    INCLUDEPATH += ../glew-1.5.4-mingw32/include ../zlib125-dll/include
+    LIBS += -L../glew-1.5.4-mingw32/lib -lglew32 -L../zlib125-dll/lib -lzdll
+}
+else {
+    LIBS += -lm -lz -lGLEW
+}
 
 TARGET = CharacterViewer
-CONFIG += qt warn_on debug thread
+CONFIG += qt warn_on debug thread console
 QT += opengl
 
 OTHER_FILES += \

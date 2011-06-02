@@ -510,7 +510,7 @@ static void scale_image_lanczos(unsigned char *dst, int dw, int dh,
    /* resample in Y direction first to temporary buffer */
    unsigned char *tmp;
    
-   tmp = g_malloc(sw * dh * bpp);
+   tmp = malloc(sw * dh * bpp);
    d = tmp;
 
    if(gc)
@@ -668,7 +668,7 @@ static void scale_image_lanczos(unsigned char *dst, int dw, int dh,
       }
    }
    
-   g_free(tmp);
+   free(tmp);
 }
 
 int generate_mipmaps(unsigned char *dst, unsigned char *src,
