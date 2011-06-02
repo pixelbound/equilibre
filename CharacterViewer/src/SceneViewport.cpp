@@ -54,8 +54,8 @@ void SceneViewport::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
     paintGL();
     m_frames++;
-    //if(m_fpsTimer->isActive())
-    //    paintFPS(&painter, m_lastFPS);
+    if(m_fpsTimer->isActive())
+        paintFPS(&painter, m_lastFPS);
 }
 
 void SceneViewport::paintGL()
@@ -113,7 +113,7 @@ void SceneViewport::paintFPS(QPainter *p, float fps)
     p->setFont(f);
     QString text = QString("%1 FPS").arg(fps, 0, 'g', 4);
     p->setPen(QPen(Qt::white));
-    p->drawText(QRectF(QPointF(10, 5), QSizeF(100, 100)), text);
+    p->drawText(QRectF(QPointF(10, 5), QSizeF(200, 100)), text);
 }
 
 void SceneViewport::updateAnimationState()
