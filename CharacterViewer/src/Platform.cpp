@@ -30,3 +30,19 @@ void freeFileData(char *data)
 {
     delete [] data;
 }
+
+#ifdef WIN32
+#include <windows.h>
+double currentTime()
+{
+    return (double)GetTickCount() * 10e-4;
+}
+#else
+#include <sys/time.h>
+double currentTime()
+{
+    timeval tv;
+    gettimeofday(&tv, 0);
+    return (double)tv.tv_sec + ((double)tv.tv_usec * 10e-7);
+}
+#endif

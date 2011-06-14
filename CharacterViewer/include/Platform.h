@@ -34,5 +34,6 @@
 
 char *loadFileData(std::string path);
 void freeFileData(char *data);
+double currentTime();
 
 #endif

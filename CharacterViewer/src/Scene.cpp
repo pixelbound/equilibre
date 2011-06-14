@@ -3,8 +3,6 @@
 #include "WLDActor.h"
 #include "Zone.h"
 
-static double currentTime();
-
 Scene::Scene(RenderState *state) : StateObject(state)
 {
     m_sigma = 1.0;
@@ -119,19 +117,3 @@ void Scene::frontView()
 {
     m_theta = vec3(-90.0, 0.0, 0.0);
 }
-
-#ifdef WIN32
-#include <windows.h>
-double currentTime()
-{
-    return (double)GetTickCount() * 10e-3;
-}
-#else
-#include <sys/time.h>
-double currentTime()
-{
-    timeval tv;
-    gettimeofday(&tv, 0);
-    return (double)tv.tv_sec + ((double)tv.tv_usec * 10e-7);
-}
-#endif
