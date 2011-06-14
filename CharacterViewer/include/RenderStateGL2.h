@@ -15,9 +15,12 @@ public:
     virtual void init();
 
     virtual Mesh * createMesh();
-    virtual void drawMesh(Mesh *m);
+    virtual void drawMesh(Mesh *m, const BoneTransform *bones, int boneCount);
 
     virtual void setBoneTransforms(const BoneTransform *transforms, int count);
+
+    virtual SkinningMode skinningMode() const;
+    virtual void setSkinningMode(SkinningMode newMode);
 
     // matrix operations
     virtual void setMatrixMode(MatrixMode newMode);
@@ -34,7 +37,7 @@ public:
     virtual matrix4 currentMatrix() const;
 
     // general state operations
-    virtual void beginFrame(int width, int heigth);
+    virtual bool beginFrame(int width, int heigth);
     virtual void setupViewport(int width, int heigth);
     virtual void endFrame();
 
@@ -66,6 +69,7 @@ private:
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];
+    bool m_shaderLoaded;
     uint32_t m_vertexShader;
     uint32_t m_pixelShader;
     uint32_t m_program;
@@ -75,7 +79,7 @@ private:
     int m_normalAttr;
     int m_texCoordsAttr;
     int m_boneAttr;
-    bool m_useDualQuaternion;
+    SkinningMode m_skinningMode;
 };
 
 #endif

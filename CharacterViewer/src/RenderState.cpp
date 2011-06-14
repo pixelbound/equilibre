@@ -96,11 +96,6 @@ void StateObject::scale(float sx, float sy, float sz)
     m_state->scale(sx, sy, sz);
 }
 
-void StateObject::drawMesh(Mesh *m)
-{
-    m_state->drawMesh(m);
-}
-
 void StateObject::pushMaterial(const Material &m)
 {
     m_state->pushMaterial(m);

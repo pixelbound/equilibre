@@ -15,19 +15,15 @@ public:
     MeshGL2(RenderStateGL2 *state);
     virtual ~MeshGL2();
 
-    virtual int groupCount() const;
-    virtual uint32_t groupMode(int index) const;
-    virtual uint32_t groupSize(int index) const;
-    virtual void addGroup(VertexGroup *vg);
-    virtual bool copyGroupTo(int index, VertexGroup *vg) const;
-    virtual void draw();
+    virtual VertexGroup *group() const;
+    virtual void setGroup(VertexGroup *vg);
+    virtual void draw(const BoneTransform *bones, int boneCount);
 
 private:
     void drawArray(VertexGroup *vg, int position, int normal, int texCoords, int bone);
-    void drawVBO(VertexGroup *vg, int position, int normal, int texCoords, int bone);
 
     RenderStateGL2 *m_state;
-    std::vector<VertexGroup *> m_groups;
+    VertexGroup * m_vg;
 };
 
 #endif

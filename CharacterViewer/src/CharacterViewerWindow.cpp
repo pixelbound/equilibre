@@ -2,6 +2,7 @@
 #include <QMenuBar>
 #include <QMenu>
 #include <QAction>
+#include <QActionGroup>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QDialog>
@@ -28,6 +29,29 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
     m_paletteText = new QComboBox();
     m_animationText = new QComboBox();
 
+    QWidget *centralWidget = new QWidget();
+
+    QHBoxLayout *hbox = new QHBoxLayout();
+    hbox->addWidget(m_actorText);
+    hbox->addWidget(m_paletteText);
+    hbox->addWidget(m_animationText);
+
+    QVBoxLayout *l = new QVBoxLayout(centralWidget);
+    l->addLayout(hbox);
+    l->addWidget(m_viewport);
+
+    setCentralWidget(centralWidget);
+
+    initMenus();
+    updateLists();
+
+    connect(m_actorText, SIGNAL(activated(QString)), this, SLOT(loadActor(QString)));
+    connect(m_paletteText, SIGNAL(activated(QString)), this, SLOT(loadPalette(QString)));
+    connect(m_animationText, SIGNAL(activated(QString)), this, SLOT(loadAnimation(QString)));
+}
+
+void CharacterViewerWindow::initMenus()
+{
     QMenu *fileMenu = new QMenu();
     fileMenu->setTitle("&File");
 
@@ -44,31 +68,38 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
     fileMenu->addAction(clearAction);
     fileMenu->addSeparator();
     fileMenu->addAction(quitAction);
+
+    QMenu *renderMenu = new QMenu();
+    renderMenu->setTitle("&Render");
+
+    m_softwareSkinningAction = new QAction("Software Skinning", this);
+    m_hardwareSkinningAction = new QAction("Hardware Skinning", this);
+    m_hardwareSkinningDQAction = new QAction("Hardware Skinning (Dual Quaternion)", this);
+    m_softwareSkinningAction->setCheckable(true);
+    m_hardwareSkinningAction->setCheckable(true);
+    m_hardwareSkinningDQAction->setCheckable(true);
+    QActionGroup *skinningActions = new QActionGroup(this);
+    skinningActions->addAction(m_softwareSkinningAction);
+    skinningActions->addAction(m_hardwareSkinningAction);
+    skinningActions->addAction(m_hardwareSkinningDQAction);
+
+    renderMenu->addAction(m_softwareSkinningAction);
+    renderMenu->addAction(m_hardwareSkinningAction);
+    renderMenu->addAction(m_hardwareSkinningDQAction);
+
     menuBar()->addMenu(fileMenu);
+    menuBar()->addMenu(renderMenu);
 
-    QWidget *centralWidget = new QWidget();
-
-    QHBoxLayout *hbox = new QHBoxLayout();
-    hbox->addWidget(m_actorText);
-    hbox->addWidget(m_paletteText);
-    hbox->addWidget(m_animationText);
-
-    QVBoxLayout *l = new QVBoxLayout(centralWidget);
-    l->addLayout(hbox);
-    l->addWidget(m_viewport);
-
-    setCentralWidget(centralWidget);
-
-    updateLists();
+    updateMenus();
 
     connect(openAction, SIGNAL(triggered()), this, SLOT(openArchive()));
     connect(copyAnimationsAction, SIGNAL(triggered()), this, SLOT(copyAnimations()));
     connect(clearAction, SIGNAL(triggered()), this, SLOT(clear()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
-    connect(m_actorText, SIGNAL(activated(QString)), this, SLOT(loadActor(QString)));
-    connect(m_paletteText, SIGNAL(activated(QString)), this, SLOT(loadPalette(QString)));
-    connect(m_animationText, SIGNAL(activated(QString)), this, SLOT(loadAnimation(QString)));
+    connect(m_softwareSkinningAction, SIGNAL(triggered()), this, SLOT(setSoftwareSkinning()));
+    connect(m_hardwareSkinningAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinning()));
+    connect(m_hardwareSkinningDQAction, SIGNAL(triggered()), this, SLOT(setHardwareDQSkinning()));
 }
 
 void CharacterViewerWindow::openArchive()
@@ -210,8 +241,43 @@ void CharacterViewerWindow::updateLists()
     m_paletteText->setEnabled(m_paletteText->count() > 1);
 }
 
+void CharacterViewerWindow::updateMenus()
+{
+    switch(m_state->skinningMode())
+    {
+    default:
+    case RenderState::SoftwareSingleQuaternion:
+        m_softwareSkinningAction->setChecked(true);
+        break;
+    case RenderState::HardwareSingleQuaternion:
+        m_hardwareSkinningAction->setChecked(true);
+        break;
+    case RenderState::HardwareDualQuaternion:
+        m_hardwareSkinningDQAction->setChecked(true);
+        break;
+    }
+}
+
 void CharacterViewerWindow::clear()
 {
     m_scene->zone()->clear();
     updateLists();
+}
+
+void CharacterViewerWindow::setSoftwareSkinning()
+{
+    m_state->setSkinningMode(RenderState::SoftwareSingleQuaternion);
+    updateMenus();
+}
+
+void CharacterViewerWindow::setHardwareSkinning()
+{
+    m_state->setSkinningMode(RenderState::HardwareSingleQuaternion);
+    updateMenus();
+}
+
+void CharacterViewerWindow::setHardwareDQSkinning()
+{
+    m_state->setSkinningMode(RenderState::HardwareDualQuaternion);
+    updateMenus();
 }

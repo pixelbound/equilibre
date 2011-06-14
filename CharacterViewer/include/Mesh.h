@@ -10,6 +10,7 @@
 using namespace std;
 
 class RenderState;
+class BoneTransform;
 
 class Mesh
 {
@@ -17,13 +18,9 @@ public:
     Mesh();
     virtual ~Mesh();
 
-    virtual int groupCount() const = 0;
-    virtual uint32_t groupMode(int index) const = 0;
-    virtual uint32_t groupSize(int index) const = 0;
-    virtual void addGroup(VertexGroup *vg) = 0;
-    virtual bool copyGroupTo(int index, VertexGroup *vg) const = 0;
-
-    virtual void draw() = 0;
+    virtual VertexGroup *group() const = 0;
+    virtual void setGroup(VertexGroup *vg) = 0;
+    virtual void draw(const BoneTransform *bone, int boneCount) = 0;
 };
 
 #endif

@@ -231,7 +231,6 @@ VertexGroup::VertexGroup(uint32_t mode, uint32_t count)
     this->mode = mode;
     this->count = count;
     this->data = new VertexData[count];
-    this->id = 0;
     memset(this->data, 0, sizeof(VertexData) * count);
 }
 
@@ -240,7 +239,6 @@ VertexGroup::VertexGroup(uint32_t mode, const vector<VertexData> &data)
     this->mode = mode;
     this->count = data.size();
     this->data = new VertexData[this->count];
-    this->id = 0;
     for(uint32_t i = 0; i < this->count; i++)
         this->data[i] = data[i];
 }

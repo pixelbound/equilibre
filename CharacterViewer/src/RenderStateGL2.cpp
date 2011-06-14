@@ -16,6 +16,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_diffuse0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
+    m_shaderLoaded = false;
     m_vertexShader = 0;
     m_pixelShader = 0;
     m_program = 0;
@@ -25,7 +26,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_normalAttr = -1;
     m_texCoordsAttr = -1;
     m_boneAttr = -1;
-    m_useDualQuaternion = false;
+    m_skinningMode = SoftwareSingleQuaternion;
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -43,7 +44,7 @@ Mesh * RenderStateGL2::createMesh()
     return new MeshGL2(this);
 }
 
-void RenderStateGL2::drawMesh(Mesh *m)
+void RenderStateGL2::drawMesh(Mesh *m, const BoneTransform *bones, int boneCount)
 {
     if(!m)
         return;
@@ -51,7 +52,18 @@ void RenderStateGL2::drawMesh(Mesh *m)
                        (const GLfloat *)m_matrix[(int)ModelView].d);
     glUniformMatrix4fv(m_projMatrixLoc, 1, GL_FALSE,
                        (const GLfloat *)m_matrix[(int)Projection].d);
-    m->draw();
+    setUniformValue("u_skinningMode", (int)m_skinningMode);
+    m->draw(bones, boneCount);
+}
+
+RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
+{
+    return m_skinningMode;
+}
+
+void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
+{
+    m_skinningMode = newMode;
 }
 
 void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int count)
@@ -63,7 +75,7 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
         QString transName = QString("u_bone_translation[%1]").arg(i);
         if(transforms && (i < count))
         {
-            if(m_useDualQuaternion)
+            if(m_skinningMode == HardwareDualQuaternion)
             {
                 transforms[i].toDualQuaternion(rotation, translation);
             }
@@ -153,9 +165,9 @@ void RenderStateGL2::popMaterial()
 void RenderStateGL2::beginApplyMaterial(const Material &m)
 {
     setUniformValue("u_material_ambient", m.ambient());
-    setUniformValue("u_material_diffuse", m.diffuse());
-    setUniformValue("u_material_specular", m.specular());
-    setUniformValue("u_material_shine", m.shine());
+    //setUniformValue("u_material_diffuse", m.diffuse());
+    //setUniformValue("u_material_specular", m.specular());
+    //setUniformValue("u_material_shine", m.shine());
     if(m.texture() != 0)
     {
         glActiveTexture(GL_TEXTURE_2D);
@@ -175,24 +187,27 @@ void RenderStateGL2::endApplyMaterial(const Material &m)
         glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void RenderStateGL2::beginFrame(int w, int h)
+bool RenderStateGL2::beginFrame(int w, int h)
 {
     glPushAttrib(GL_ENABLE_BIT);
-    glUseProgram(m_program);
-    initShaders();
+    if(m_shaderLoaded)
+    {
+        glUseProgram(m_program);
+        initShaders();
+    }
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    setUniformValue("u_light_ambient", m_ambient0);
-    setUniformValue("u_light_diffuse", m_diffuse0);
-    setUniformValue("u_light_specular", m_specular0);
-    setUniformValue("u_light_pos", m_light0_pos);
     setupViewport(w, h);
     setMatrixMode(ModelView);
     pushMatrix();
     loadIdentity();
-    glClearColor(m_bgColor.x, m_bgColor.y, m_bgColor.z, m_bgColor.w);
+    if(m_shaderLoaded)
+        glClearColor(m_bgColor.x, m_bgColor.y, m_bgColor.z, m_bgColor.w);
+    else
+        glClearColor(1.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    return m_shaderLoaded;
 }
 
 void RenderStateGL2::endFrame()
@@ -221,7 +236,7 @@ void RenderStateGL2::setupViewport(int w, int h)
 
 void RenderStateGL2::init()
 {
-    loadShaders();
+    m_shaderLoaded = loadShaders();
 }
 
 int RenderStateGL2::positionAttr() const
@@ -342,7 +357,7 @@ bool RenderStateGL2::loadShaders()
         glDeleteProgram(program);
         glDeleteShader(vertexShader);
         glDeleteShader(pixelShader);
-        return 0;
+        return false;
     }
     m_program = program;
     m_vertexShader = vertexShader;

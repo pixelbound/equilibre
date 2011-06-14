@@ -5,6 +5,7 @@
 
 class QComboBox;
 class QVBoxLayout;
+class QAction;
 class Scene;
 class RenderState;
 class SceneViewport;
@@ -27,10 +28,15 @@ private slots:
     void openArchive();
     void copyAnimations();
     void clear();
+    void setSoftwareSkinning();
+    void setHardwareSkinning();
+    void setHardwareDQSkinning();
 
 private:
+    void initMenus();
     void copyAnimations(WLDSkeleton *toSkel, QString fromChar);
     void updateLists();
+    void updateMenus();
 
     SceneViewport *m_viewport;
     Scene *m_scene;
@@ -39,6 +45,9 @@ private:
     QComboBox *m_paletteText;
     QComboBox *m_animationText;
     QString m_lastDir;
+    QAction *m_softwareSkinningAction;
+    QAction *m_hardwareSkinningAction;
+    QAction *m_hardwareSkinningDQAction;
 };
 
 #endif

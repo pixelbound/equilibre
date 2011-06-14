@@ -92,10 +92,9 @@ void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, const BoneTransf
         m_mesh = state->createMesh();
         importMaterialGroups(m_mesh, skin);
     }
-    state->setBoneTransforms(bones, boneCount);
     state->pushMatrix();
     state->translate(m_meshDef->m_center);
-    state->drawMesh(m_mesh);
+    state->drawMesh(m_mesh, bones, boneCount);
     state->popMatrix();
 }
 
@@ -146,7 +145,7 @@ void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin)
         for(uint32_t i = 0; i < count; i++, vd++)
             vd->bone = pieceID;
     }
-    m->addGroup(vg);
+    m->setGroup(vg);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

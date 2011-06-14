@@ -66,9 +66,11 @@ void SceneViewport::paintEvent(QPaintEvent *)
 
 void SceneViewport::paintGL()
 {
-    m_state->beginFrame(width(), height());
-    m_scene->draw();
-    m_state->endFrame();
+    if(m_state->beginFrame(width(), height()))
+    {
+        m_scene->draw();
+        m_state->endFrame();
+    }
 }
 
 void SceneViewport::resetCamera()

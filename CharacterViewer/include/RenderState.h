@@ -27,10 +27,20 @@ public:
     virtual void reset();
 
     // mesh operations
-    virtual void drawMesh(Mesh *m) = 0;
+    virtual void drawMesh(Mesh *m, const BoneTransform *bones = 0, int boneCount = 0) = 0;
     virtual Mesh * createMesh() = 0;
 
     virtual void setBoneTransforms(const BoneTransform *transforms, int count) = 0;
+
+    enum SkinningMode
+    {
+        SoftwareSingleQuaternion = 0,
+        HardwareSingleQuaternion = 1,
+        HardwareDualQuaternion = 2
+    };
+
+    virtual SkinningMode skinningMode() const = 0;
+    virtual void setSkinningMode(SkinningMode newMode) = 0;
 
     // matrix operations
 
@@ -59,7 +69,7 @@ public:
     virtual matrix4 currentMatrix() const = 0;
 
     // general state operations
-    virtual void beginFrame(int width, int heigth) = 0;
+    virtual bool beginFrame(int width, int heigth) = 0;
     virtual void setupViewport(int width, int heigth) = 0;
     virtual void endFrame() = 0;
 
@@ -86,8 +96,6 @@ public:
     void translate(float dx, float dy, float dz);
     void rotate(float angle, float rx, float ry, float rz);
     void scale(float sx, float sy, float sz);
-
-    void drawMesh(Mesh *m);
 
     void pushMaterial(const Material &m);
     void popMaterial();
