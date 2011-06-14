@@ -362,18 +362,36 @@ void RenderStateGL2::initShaders()
 
 void RenderStateGL2::setUniformValue(QString name, const vec4 &v)
 {
-    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
+    const char *nameStr = name.toLatin1().constData();
+    int location = glGetUniformLocation(m_program, nameStr);
+    if(location < 0)
+    {
+        fprintf(stderr, "Uniform '%s' is not active\n", nameStr);
+        return;
+    }
     glUniform4fv(location, 1, (GLfloat *)&v);
 }
 
 void RenderStateGL2::setUniformValue(QString name, float f)
 {
-    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
+    const char *nameStr = name.toLatin1().constData();
+    int location = glGetUniformLocation(m_program, nameStr);
+    if(location < 0)
+    {
+        fprintf(stderr, "Uniform '%s' is not active\n", nameStr);
+        return;
+    }
     glUniform1f(location, f);
 }
 
 void RenderStateGL2::setUniformValue(QString name, int i)
 {
-    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
+    const char *nameStr = name.toLatin1().constData();
+    int location = glGetUniformLocation(m_program, nameStr);
+    if(location < 0)
+    {
+        fprintf(stderr, "Uniform '%s' is not active\n", nameStr);
+        return;
+    }
     glUniform1i(location, i);
 }

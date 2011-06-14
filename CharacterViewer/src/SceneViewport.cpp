@@ -38,6 +38,12 @@ void SceneViewport::initializeGL()
         fprintf(stderr, "GLEW Error: %s", glewGetErrorString(err));
         return;
     }
+    else if(!GLEW_VERSION_2_0)
+    {
+        fprintf(stderr, "OpenGL 2.0 features not available");
+        return;
+    }
+
     m_state->init();
     m_scene->init();
     resetCamera();
