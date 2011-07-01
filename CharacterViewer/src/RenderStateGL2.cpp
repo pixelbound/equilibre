@@ -72,7 +72,6 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
     for(int i = 0; i < MAX_TRANSFORMS; i++)
     {
         QString rotName = QString("u_bone_rotation[%1]").arg(i);
-        QString transName = QString("u_bone_translation[%1]").arg(i);
         if(transforms && (i < count))
         {
             if(m_skinningMode == HardwareDualQuaternion)
@@ -82,17 +81,34 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
             else
             {
                 QQuaternion q = transforms[i].rotation;
-                QVector3D v = transforms[i].location;
                 rotation = vec4(q.x(), q.y(), q.z(), q.scalar());
-                translation = vec4(v.x(), v.y(), v.z(), 1.0);
             }
         }
         else
         {
             rotation = vec4(0.0, 0.0, 0.0, 1.0);
-            translation = vec4(0.0, 0.0, 0.0, 1.0);
         }
         setUniformValue(rotName, rotation);
+    }
+    for(int i = 0; i < MAX_TRANSFORMS; i++)
+    {
+        QString transName = QString("u_bone_translation[%1]").arg(i);
+        if(transforms && (i < count))
+        {
+            if(m_skinningMode == HardwareDualQuaternion)
+            {
+                transforms[i].toDualQuaternion(rotation, translation);
+            }
+            else
+            {
+                QVector3D v = transforms[i].location;
+                translation = vec4(v.x(), v.y(), v.z(), 1.0);
+            }
+        }
+        else
+        {
+            translation = vec4(0.0, 0.0, 0.0, 1.0);
+        }
         setUniformValue(transName, translation);
     }
 }
@@ -170,7 +186,7 @@ void RenderStateGL2::beginApplyMaterial(const Material &m)
     //setUniformValue("u_material_shine", m.shine());
     if(m.texture() != 0)
     {
-        glActiveTexture(GL_TEXTURE_2D);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m.texture());
         setUniformValue("u_material_texture", 0);
         setUniformValue("u_has_texture", 1);

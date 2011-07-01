@@ -42,9 +42,12 @@ void MeshGL2::draw(const BoneTransform *bones, int boneCount)
     int texCoords = m_state->texCoordsAttr();
     int bone = m_state->boneAttr();
     glEnableVertexAttribArray(position);
-    glEnableVertexAttribArray(normal);
-    glEnableVertexAttribArray(texCoords);
-    glEnableVertexAttribArray(bone);
+    if(normal >= 0)
+        glEnableVertexAttribArray(normal);
+    if(texCoords >= 0)
+        glEnableVertexAttribArray(texCoords);
+    if(bone >= 0)
+        glEnableVertexAttribArray(bone);
 
     if(m_state->skinningMode() == RenderState::SoftwareSingleQuaternion)
     {
@@ -72,9 +75,12 @@ void MeshGL2::draw(const BoneTransform *bones, int boneCount)
     }
 
     glDisableVertexAttribArray(position);
-    glDisableVertexAttribArray(normal);
-    glDisableVertexAttribArray(texCoords);
-    glDisableVertexAttribArray(bone);
+    if(normal >= 0)
+        glDisableVertexAttribArray(normal);
+    if(texCoords >= 0)
+        glDisableVertexAttribArray(texCoords);
+    if(bone >= 0)
+        glDisableVertexAttribArray(bone);
 }
 
 void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords, int bone)
@@ -82,12 +88,15 @@ void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords
     Material *mat = 0;
     glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), &vg->data->position);
-    glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), &vg->data->normal);
-    glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), &vg->data->texCoords);
-    glVertexAttribPointer(bone, 1, GL_INT, GL_FALSE,
-        sizeof(VertexData), &vg->data->bone);
+    if(normal >= 0)
+        glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE,
+            sizeof(VertexData), &vg->data->normal);
+    if(texCoords >= 0)
+        glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
+            sizeof(VertexData), &vg->data->texCoords);
+    if(bone >= 0)
+        glVertexAttribPointer(bone, 1, GL_INT, GL_FALSE,
+            sizeof(VertexData), &vg->data->bone);
     if(vg->indices.count() > 0)
     {
         const uint16_t *indices = vg->indices.constData();
