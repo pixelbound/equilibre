@@ -46,6 +46,7 @@ private:
     QString m_lastDir;
     QAction *m_softwareSkinningAction;
     QAction *m_hardwareSkinningAction;
+    QAction *m_showFpsAction;
 };
 
 #endif

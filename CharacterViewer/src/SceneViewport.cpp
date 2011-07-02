@@ -43,6 +43,11 @@ void SceneViewport::initializeGL()
         fprintf(stderr, "OpenGL 2.0 features not available");
         return;
     }
+    else if(!GLEW_ARB_texture_rectangle)
+    {
+        fprintf(stderr, "Extension 'ARB_texture_rectangle' not available");
+        return;
+    }
 
     m_state->init();
     m_scene->init();
@@ -100,6 +105,24 @@ void SceneViewport::setAnimation(bool enabled)
     updateAnimationState();
 }
 
+bool SceneViewport::showFps() const
+{
+    return m_fpsTimer->isActive();
+}
+
+void SceneViewport::setShowFps(bool show)
+{
+    if(show)
+    {
+        startFPS();
+        m_fpsTimer->start();
+    }
+    else
+    {
+        m_fpsTimer->stop();
+    }
+}
+
 void SceneViewport::startFPS()
 {
     m_start = QDateTime::currentDateTime();
@@ -128,14 +151,11 @@ void SceneViewport::updateAnimationState()
 {
     if(m_animate)
     {
-        startFPS();
         m_renderTimer->start();
-        m_fpsTimer->start();
     }
     else
     {
         m_renderTimer->stop();
-        m_fpsTimer->stop();
     }
 }
 

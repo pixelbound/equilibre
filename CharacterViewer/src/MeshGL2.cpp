@@ -36,19 +36,9 @@ void MeshGL2::draw(const BoneTransform *bones, int boneCount)
 {
     if(!m_vg)
         return;
-
-    int position = m_state->positionAttr();
-    int normal = m_state->normalAttr();
-    int texCoords = m_state->texCoordsAttr();
-    int bone = m_state->boneAttr();
-    glEnableVertexAttribArray(position);
-    if(normal >= 0)
-        glEnableVertexAttribArray(normal);
-    if(texCoords >= 0)
-        glEnableVertexAttribArray(texCoords);
-    if(bone >= 0)
-        glEnableVertexAttribArray(bone);
-    //m_state->setBoneTransforms(bones, boneCount);
+    ShaderProgramGL2 *prog = m_state->program();
+    prog->enableVertexAttributes();
+    m_state->setBoneTransforms(bones, boneCount);
     m_state->startSkinning();
     if(m_state->skinningMode() == RenderState::SoftwareSkinning)
     {
@@ -67,37 +57,20 @@ void MeshGL2::draw(const BoneTransform *bones, int boneCount)
             dst->bone = src->bone;
             dst->texCoords = src->texCoords;
         }
-        drawArray(&skinnedVg, position, normal, texCoords, bone);
+        drawArray(&skinnedVg, prog);
     }
     else
     {
-        drawArray(m_vg, position, normal, texCoords, bone);
+        drawArray(m_vg, prog);
     }
     m_state->stopSkinning();
-
-    glDisableVertexAttribArray(position);
-    if(normal >= 0)
-        glDisableVertexAttribArray(normal);
-    if(texCoords >= 0)
-        glDisableVertexAttribArray(texCoords);
-    if(bone >= 0)
-        glDisableVertexAttribArray(bone);
+    prog->disableVertexAttributes();
 }
 
-void MeshGL2::drawArray(VertexGroup *vg, int position, int normal, int texCoords, int bone)
+void MeshGL2::drawArray(VertexGroup *vg, ShaderProgramGL2 *prog)
 {
     Material *mat = 0;
-    glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), &vg->data->position);
-    if(normal >= 0)
-        glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE,
-            sizeof(VertexData), &vg->data->normal);
-    if(texCoords >= 0)
-        glVertexAttribPointer(texCoords, 2, GL_FLOAT, GL_FALSE,
-            sizeof(VertexData), &vg->data->texCoords);
-    if(bone >= 0)
-        glVertexAttribPointer(bone, 1, GL_INT, GL_FALSE,
-            sizeof(VertexData), &vg->data->bone);
+    prog->uploadVertexAttributes(vg);
     if(vg->indices.count() > 0)
     {
         const uint16_t *indices = vg->indices.constData();

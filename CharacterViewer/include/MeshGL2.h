@@ -8,6 +8,7 @@
 
 class RenderState;
 class RenderStateGL2;
+class ShaderProgramGL2;
 
 class MeshGL2 : public Mesh
 {
@@ -20,7 +21,7 @@ public:
     virtual void draw(const BoneTransform *bones, int boneCount);
 
 private:
-    void drawArray(VertexGroup *vg, int position, int normal, int texCoords, int bone);
+    void drawArray(VertexGroup *vg, ShaderProgramGL2 *prog);
 
     RenderStateGL2 *m_state;
     VertexGroup * m_vg;

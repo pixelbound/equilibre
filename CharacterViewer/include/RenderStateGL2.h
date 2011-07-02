@@ -6,6 +6,8 @@
 #include <inttypes.h>
 #include "RenderState.h"
 
+class ShaderProgramGL2;
+
 class RenderStateGL2 : public RenderState
 {
 public:
@@ -13,6 +15,8 @@ public:
     virtual ~RenderStateGL2();
 
     virtual void init();
+
+    ShaderProgramGL2 *program() const;
 
     virtual Mesh * createMesh();
     virtual void drawMesh(Mesh *m, const BoneTransform *bones, int boneCount);
@@ -47,21 +51,10 @@ public:
     virtual void pushMaterial(const Material &m);
     virtual void popMaterial();
 
-    int positionAttr() const;
-    int normalAttr() const;
-    int texCoordsAttr() const;
-    int boneAttr() const;
-
 private:
     void beginApplyMaterial(const Material &m);
     void endApplyMaterial(const Material &m);
-    char * loadShaderSource(string path) const;
-    uint32_t loadShader(string path, uint32_t type) const;
     bool loadShaders();
-    void initShaders();
-    void setUniformValue(QString name, const vec4 &v);
-    void setUniformValue(QString name, float f);
-    void setUniformValue(QString name, int i);
     void uploadBoneTransformsUniform();
     void uploadBoneTransformsTexture();
 
@@ -74,8 +67,41 @@ private:
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];
     bool m_shaderLoaded;
+    ShaderProgramGL2 *m_program;
+    SkinningMode m_skinningMode;
+    uint32_t m_boneTexture;
+    vec4 *m_bones;
+};
+
+class ShaderProgramGL2
+{
+public:
+    ShaderProgramGL2();
+    virtual ~ShaderProgramGL2();
+
+    bool loaded() const;
+
+    bool load(QString vertexFile, QString fragmentFile);
+
+    void beginFrame();
+    void endFrame();
+
+    void setUniformValue(QString name, const vec4 &v);
+    void setUniformValue(QString name, float f);
+    void setUniformValue(QString name, int i);
+
+    void setMatrices(const matrix4 &modelView, const matrix4 &projection);
+
+    void enableVertexAttributes();
+    void uploadVertexAttributes(VertexGroup *vg);
+    void disableVertexAttributes();
+
+private:
+    bool compileProgram(QString vertexFile, QString fragmentFile);
+    uint32_t loadShader(QString path, uint32_t type) const;
+
     uint32_t m_vertexShader;
-    uint32_t m_pixelShader;
+    uint32_t m_fragmentShader;
     uint32_t m_program;
     int m_modelViewMatrixLoc;
     int m_projMatrixLoc;
@@ -83,9 +109,6 @@ private:
     int m_normalAttr;
     int m_texCoordsAttr;
     int m_boneAttr;
-    SkinningMode m_skinningMode;
-    uint32_t m_boneTexture;
-    vec4 *m_bones;
 };
 
 #endif

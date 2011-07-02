@@ -80,8 +80,12 @@ void CharacterViewerWindow::initMenus()
     skinningActions->addAction(m_softwareSkinningAction);
     skinningActions->addAction(m_hardwareSkinningAction);
 
+    m_showFpsAction = new QAction("Show FPS", this);
+    m_showFpsAction->setCheckable(true);
+
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningAction);
+    renderMenu->addAction(m_showFpsAction);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(renderMenu);
@@ -95,6 +99,7 @@ void CharacterViewerWindow::initMenus()
 
     connect(m_softwareSkinningAction, SIGNAL(triggered()), this, SLOT(setSoftwareSkinning()));
     connect(m_hardwareSkinningAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinning()));
+    connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowFps(bool)));
 }
 
 void CharacterViewerWindow::openArchive()
@@ -248,6 +253,7 @@ void CharacterViewerWindow::updateMenus()
         m_hardwareSkinningAction->setChecked(true);
         break;
     }
+    m_showFpsAction->setChecked(m_viewport->showFps());
 }
 
 void CharacterViewerWindow::clear()

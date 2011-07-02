@@ -29,6 +29,10 @@ public:
     virtual ~SceneViewport();
 
     void setAnimation(bool enabled);
+    bool showFps() const;
+
+public slots:
+    void setShowFps(bool show);
 
 protected:
     virtual void initializeGL();

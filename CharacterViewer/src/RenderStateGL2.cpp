@@ -17,15 +17,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
     m_shaderLoaded = false;
-    m_vertexShader = 0;
-    m_pixelShader = 0;
-    m_program = 0;
-    m_modelViewMatrixLoc = -1;
-    m_projMatrixLoc = -1;
-    m_positionAttr = -1;
-    m_normalAttr = -1;
-    m_texCoordsAttr = -1;
-    m_boneAttr = -1;
+    m_program = new ShaderProgramGL2();
     m_skinningMode = SoftwareSkinning;
     m_boneTexture = 0;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
@@ -33,15 +25,15 @@ RenderStateGL2::RenderStateGL2() : RenderState()
 
 RenderStateGL2::~RenderStateGL2()
 {
+    delete m_program;
     delete [] m_bones;
     if(m_boneTexture != 0)
         glDeleteTextures(1, &m_boneTexture);
-    if(m_vertexShader != 0)
-        glDeleteShader(m_vertexShader);
-    if(m_pixelShader != 0)
-        glDeleteShader(m_pixelShader);
-    if(m_program != 0)
-        glDeleteProgram(m_program);
+}
+
+ShaderProgramGL2 * RenderStateGL2::program() const
+{
+    return m_program;
 }
 
 Mesh * RenderStateGL2::createMesh()
@@ -53,11 +45,8 @@ void RenderStateGL2::drawMesh(Mesh *m, const BoneTransform *bones, int boneCount
 {
     if(!m)
         return;
-    glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE,
-                       (const GLfloat *)m_matrix[(int)ModelView].d);
-    glUniformMatrix4fv(m_projMatrixLoc, 1, GL_FALSE,
-                       (const GLfloat *)m_matrix[(int)Projection].d);
-    setUniformValue("u_skinningMode", (int)m_skinningMode);
+    m_program->setMatrices(m_matrix[(int)ModelView], m_matrix[(int)Projection]);
+    m_program->setUniformValue("u_skinningMode", (int)m_skinningMode);
     m->draw(bones, boneCount);
 }
 
@@ -92,10 +81,10 @@ void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int coun
 
 void RenderStateGL2::uploadBoneTransformsUniform()
 {
-    for(int i = 0; i < MAX_TRANSFORMS; i++)
-        setUniformValue(QString("u_bone_translation[%1]").arg(i), m_bones[i * 2 + 0]);
-    for(int i = 0; i < MAX_TRANSFORMS; i++)
-        setUniformValue(QString("u_bone_rotation[%1]").arg(i), m_bones[i * 2 + 1]);
+//    for(int i = 0; i < MAX_TRANSFORMS; i++)
+//        setUniformValue(QString("u_bone_translation[%1]").arg(i), m_bones[i * 2 + 0]);
+//    for(int i = 0; i < MAX_TRANSFORMS; i++)
+//        setUniformValue(QString("u_bone_rotation[%1]").arg(i), m_bones[i * 2 + 1]);
 }
 
 void RenderStateGL2::uploadBoneTransformsTexture()
@@ -113,7 +102,7 @@ void RenderStateGL2::uploadBoneTransformsTexture()
 void RenderStateGL2::startSkinning()
 {
     uploadBoneTransformsTexture();
-    setUniformValue("u_bones", 1);
+    m_program->setUniformValue("u_bones", 1);
 }
 
 void RenderStateGL2::stopSkinning()
@@ -190,7 +179,7 @@ void RenderStateGL2::popMaterial()
 
 void RenderStateGL2::beginApplyMaterial(const Material &m)
 {
-    setUniformValue("u_material_ambient", m.ambient());
+    m_program->setUniformValue("u_material_ambient", m.ambient());
     //setUniformValue("u_material_diffuse", m.diffuse());
     //setUniformValue("u_material_specular", m.specular());
     //setUniformValue("u_material_shine", m.shine());
@@ -198,12 +187,12 @@ void RenderStateGL2::beginApplyMaterial(const Material &m)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m.texture());
-        setUniformValue("u_material_texture", 0);
-        setUniformValue("u_has_texture", 1);
+        m_program->setUniformValue("u_material_texture", 0);
+        m_program->setUniformValue("u_has_texture", 1);
     }
     else
     {
-        setUniformValue("u_has_texture", 0);
+        m_program->setUniformValue("u_has_texture", 0);
     }
 }
 
@@ -217,10 +206,7 @@ bool RenderStateGL2::beginFrame(int w, int h)
 {
     glPushAttrib(GL_ENABLE_BIT);
     if(m_shaderLoaded)
-    {
-        glUseProgram(m_program);
-        initShaders();
-    }
+        m_program->beginFrame();
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -238,11 +224,12 @@ bool RenderStateGL2::beginFrame(int w, int h)
 
 void RenderStateGL2::endFrame()
 {
-    glFlush();
     setMatrixMode(ModelView);
     popMatrix();
-    glUseProgram(0);
+    if(m_shaderLoaded)
+        m_program->endFrame();
     glPopAttrib();
+    glFlush();
 }
 
 void RenderStateGL2::setupViewport(int w, int h)
@@ -271,55 +258,116 @@ void RenderStateGL2::init()
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
-int RenderStateGL2::positionAttr() const
+bool RenderStateGL2::loadShaders()
 {
-    return m_positionAttr;
+    return m_program->load("vertex.glsl", "fragment.glsl");
 }
 
-int RenderStateGL2::normalAttr() const
+////////////////////////////////////////////////////////////////////////////////
+
+ShaderProgramGL2::ShaderProgramGL2()
 {
-    return m_normalAttr;
+    m_program = 0;
+    m_vertexShader = 0;
+    m_fragmentShader = 0;
+    m_modelViewMatrixLoc = -1;
+    m_projMatrixLoc = -1;
+    m_positionAttr = -1;
+    m_normalAttr = -1;
+    m_texCoordsAttr = -1;
+    m_boneAttr = -1;
 }
 
-int RenderStateGL2::texCoordsAttr() const
+ShaderProgramGL2::~ShaderProgramGL2()
 {
-    return m_texCoordsAttr;
+    if(m_vertexShader != 0)
+        glDeleteShader(m_vertexShader);
+    if(m_fragmentShader != 0)
+        glDeleteShader(m_fragmentShader);
+    if(m_program != 0)
+        glDeleteProgram(m_program);
 }
 
-int RenderStateGL2::boneAttr() const
+bool ShaderProgramGL2::loaded() const
 {
-    return m_boneAttr;
+    return m_program != 0;
 }
 
-char * RenderStateGL2::loadShaderSource(string path) const
+bool ShaderProgramGL2::load(QString vertexFile, QString fragmentFile)
 {
-    FILE *f = fopen(path.c_str(), "r");
-    if(!f)
-        return 0;
-    fseek(f, 0, SEEK_END);
-    long size = ftell(f);
-    char *code = 0;
-    if(size >= 0)
+    if(loaded())
+        return false;
+    return compileProgram(vertexFile, fragmentFile);
+}
+
+void ShaderProgramGL2::beginFrame()
+{
+    glUseProgram(m_program);
+}
+
+void ShaderProgramGL2::endFrame()
+{
+    glUseProgram(0);
+}
+
+bool ShaderProgramGL2::compileProgram(QString vertexFile, QString fragmentFile)
+{
+    uint32_t vertexShader = loadShader(vertexFile, GL_VERTEX_SHADER);
+    if(vertexShader == 0)
+        return false;
+    uint32_t fragmentShader = loadShader(fragmentFile, GL_FRAGMENT_SHADER);
+    if(fragmentShader == 0)
     {
-        fseek(f, 0, SEEK_SET);
-        code = new char[(size_t)size + 1];
-        if((size_t)size > fread(code, 1, (size_t)size, f))
+        glDeleteShader(vertexShader);
+        return false;
+    }
+    uint32_t program = glCreateProgram();
+    if(program == 0)
+    {
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return false;
+    }
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
+    glLinkProgram(program);
+    GLint status;
+    glGetProgramiv(program, GL_LINK_STATUS, &status);
+    if(!status)
+    {
+        GLint log_size;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_size);
+        if(log_size)
         {
-            delete [] code;
-            code = 0;
+            GLchar *log = new GLchar[log_size];
+            glGetProgramInfoLog(program, log_size, 0, log);
+            fprintf(stderr, "Error linking program: %s\n", log);
+            delete [] log;
         }
         else
         {
-            code[size] = '\0';
+            fprintf(stderr, "Error linking program.\n");
         }
+        glDeleteProgram(program);
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+        return false;
     }
-    fclose(f);
-    return code;
+    m_vertexShader = vertexShader;
+    m_fragmentShader = fragmentShader;
+    m_program = program;
+    m_modelViewMatrixLoc = glGetUniformLocation(program, "u_modelViewMatrix");
+    m_projMatrixLoc = glGetUniformLocation(program, "u_projectionMatrix");
+    m_positionAttr = glGetAttribLocation(program, "a_position");
+    m_normalAttr = glGetAttribLocation(program, "a_normal");
+    m_texCoordsAttr = glGetAttribLocation(program, "a_texCoords");
+    m_boneAttr = glGetAttribLocation(program, "a_boneIndex");
+    return true;
 }
 
-uint32_t RenderStateGL2::loadShader(string path, uint32_t type) const
+uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type) const
 {
-    char *code = loadFileData(path);
+    char *code = loadFileData(path.toStdString());
     if(!code)
         return 0;
     uint32_t shader = glCreateShader(type);
@@ -348,66 +396,7 @@ uint32_t RenderStateGL2::loadShader(string path, uint32_t type) const
     return shader;
 }
 
-bool RenderStateGL2::loadShaders()
-{
-    uint32_t vertexShader = loadShader("vertex_skinned.glsl", GL_VERTEX_SHADER);
-    if(vertexShader == 0)
-        return false;
-    uint32_t pixelShader = loadShader("fragment.glsl", GL_FRAGMENT_SHADER);
-    if(pixelShader == 0)
-    {
-        glDeleteShader(vertexShader);
-        return false;
-    }
-    uint32_t program = glCreateProgram();
-    if(program == 0)
-    {
-        glDeleteShader(vertexShader);
-        glDeleteShader(pixelShader);
-        return false;
-    }
-    glAttachShader(program, vertexShader);
-    glAttachShader(program, pixelShader);
-    glLinkProgram(program);
-    GLint status;
-    glGetProgramiv(program, GL_LINK_STATUS, &status);
-    if(!status)
-    {
-        GLint log_size;
-        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_size);
-        if(log_size)
-        {
-            GLchar *log = new GLchar[log_size];
-            glGetProgramInfoLog(program, log_size, 0, log);
-            fprintf(stderr, "Error linking program: %s\n", log);
-            delete [] log;
-        }
-        else
-        {
-            fprintf(stderr, "Error linking program.\n");
-        }
-        glDeleteProgram(program);
-        glDeleteShader(vertexShader);
-        glDeleteShader(pixelShader);
-        return false;
-    }
-    m_program = program;
-    m_vertexShader = vertexShader;
-    m_pixelShader = pixelShader;
-    m_modelViewMatrixLoc = glGetUniformLocation(program, "u_modelViewMatrix");
-    m_projMatrixLoc = glGetUniformLocation(program, "u_projectionMatrix");
-    m_positionAttr = glGetAttribLocation(program, "a_position");
-    m_normalAttr = glGetAttribLocation(program, "a_normal");
-    m_texCoordsAttr = glGetAttribLocation(program, "a_texCoords");
-    m_boneAttr = glGetAttribLocation(program, "a_boneIndex");
-    return true;
-}
-
-void RenderStateGL2::initShaders()
-{
-}
-
-void RenderStateGL2::setUniformValue(QString name, const vec4 &v)
+void ShaderProgramGL2::setUniformValue(QString name, const vec4 &v)
 {
     int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     if(location < 0)
@@ -418,7 +407,7 @@ void RenderStateGL2::setUniformValue(QString name, const vec4 &v)
     glUniform4fv(location, 1, (GLfloat *)&v);
 }
 
-void RenderStateGL2::setUniformValue(QString name, float f)
+void ShaderProgramGL2::setUniformValue(QString name, float f)
 {
     int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     if(location < 0)
@@ -429,7 +418,7 @@ void RenderStateGL2::setUniformValue(QString name, float f)
     glUniform1f(location, f);
 }
 
-void RenderStateGL2::setUniformValue(QString name, int i)
+void ShaderProgramGL2::setUniformValue(QString name, int i)
 {
     int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     if(location < 0)
@@ -438,4 +427,47 @@ void RenderStateGL2::setUniformValue(QString name, int i)
         return;
     }
     glUniform1i(location, i);
+}
+
+void ShaderProgramGL2::setMatrices(const matrix4 &modelView, const matrix4 &projection)
+{
+    glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, (const GLfloat *)modelView.d);
+    glUniformMatrix4fv(m_projMatrixLoc, 1, GL_FALSE, (const GLfloat *)projection.d);
+}
+
+void ShaderProgramGL2::enableVertexAttributes()
+{
+    glEnableVertexAttribArray(m_positionAttr);
+    if(m_normalAttr >= 0)
+        glEnableVertexAttribArray(m_normalAttr);
+    if(m_texCoordsAttr >= 0)
+        glEnableVertexAttribArray(m_texCoordsAttr);
+    if(m_boneAttr >= 0)
+        glEnableVertexAttribArray(m_boneAttr);
+}
+
+void ShaderProgramGL2::disableVertexAttributes()
+{
+    glDisableVertexAttribArray(m_positionAttr);
+    if(m_normalAttr >= 0)
+        glDisableVertexAttribArray(m_normalAttr);
+    if(m_texCoordsAttr >= 0)
+        glDisableVertexAttribArray(m_texCoordsAttr);
+    if(m_boneAttr >= 0)
+        glDisableVertexAttribArray(m_boneAttr);
+}
+
+void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
+{
+    glVertexAttribPointer(m_positionAttr, 3, GL_FLOAT, GL_FALSE,
+        sizeof(VertexData), &vg->data->position);
+    if(m_normalAttr >= 0)
+        glVertexAttribPointer(m_normalAttr, 3, GL_FLOAT, GL_FALSE,
+            sizeof(VertexData), &vg->data->normal);
+    if(m_texCoordsAttr >= 0)
+        glVertexAttribPointer(m_texCoordsAttr, 2, GL_FLOAT, GL_FALSE,
+            sizeof(VertexData), &vg->data->texCoords);
+    if(m_boneAttr >= 0)
+        glVertexAttribPointer(m_boneAttr, 1, GL_INT, GL_FALSE,
+            sizeof(VertexData), &vg->data->bone);
 }
