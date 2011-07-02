@@ -28,7 +28,8 @@ public:
     enum SkinningMode
     {
         SoftwareSkinning = 0,
-        HardwareSkinning = 1
+        HardwareSkinningUniform = 1,
+        HardwareSkinningTexture = 2
     };
 
     virtual SkinningMode skinningMode() const = 0;

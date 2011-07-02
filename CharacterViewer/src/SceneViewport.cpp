@@ -43,11 +43,6 @@ void SceneViewport::initializeGL()
         fprintf(stderr, "OpenGL 2.0 features not available");
         return;
     }
-    else if(!GLEW_ARB_texture_rectangle)
-    {
-        fprintf(stderr, "Extension 'ARB_texture_rectangle' not available");
-        return;
-    }
 
     m_state->init();
     m_scene->init();

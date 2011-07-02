@@ -28,14 +28,14 @@ int main(int argc, char **argv)
     z->loadCharacters("../Data/global_chr.s3d");
     z->loadCharacters("../Data/gequip.s3d");
 
-//    WLDActor *weaponActor = z->charModels().value("IT106");
-//    WLDActor *weaponActor2 = z->charModels().value("IT113");
+    WLDActor *weaponActor = z->charModels().value("IT106");
+    WLDActor *weaponActor2 = z->charModels().value("IT113");
     WLDActor *charActor = z->charModels().value("BAF");
     WLDActor *skelActor = z->charModels().value("ELF");
-//    if(charActor && weaponActor)
-//        charActor->addEquip(WLDActor::Right, weaponActor);
-//    if(charActor && weaponActor2)
-//        charActor->addEquip(WLDActor::Left, weaponActor2);
+    if(charActor && weaponActor)
+        charActor->addEquip(WLDActor::Right, weaponActor);
+    if(charActor && weaponActor2)
+        charActor->addEquip(WLDActor::Left, weaponActor2);
     if(charActor && skelActor)
     {
         charActor->model()->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());

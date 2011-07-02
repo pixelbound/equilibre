@@ -14,25 +14,35 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_diffuse0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
-    m_shaderLoaded = false;
-    //m_program = new ShaderProgramGL2(this);
-    m_program = new UniformSkinningProgram(this);
-    //m_program = new TextureSkinningProgram(this);
+    m_programs[(int)SoftwareSkinning] = new ShaderProgramGL2(this);
+    m_programs[(int)HardwareSkinningUniform] = new UniformSkinningProgram(this);
+    m_programs[(int)HardwareSkinningTexture] = new TextureSkinningProgram(this);
     m_skinningMode = SoftwareSkinning;
 }
 
 RenderStateGL2::~RenderStateGL2()
 {
-    delete m_program;
+    delete m_programs[(int)SoftwareSkinning];
+    delete m_programs[(int)HardwareSkinningUniform];
+    delete m_programs[(int)HardwareSkinningTexture];
+}
+
+ShaderProgramGL2 * RenderStateGL2::program() const
+{
+    if((m_skinningMode >= SoftwareSkinning) && (m_skinningMode <= HardwareSkinningTexture))
+        return m_programs[(int)m_skinningMode];
+    else
+        return 0;
 }
 
 void RenderStateGL2::drawMesh(VertexGroup *vg, const BoneTransform *bones, int boneCount)
 {
-    if(!vg)
+    ShaderProgramGL2 *prog = program();
+    if(!vg || !prog || !prog->loaded())
         return;
-    m_program->setMatrices(m_matrix[(int)ModelView], m_matrix[(int)Projection]);
-    m_program->setBoneTransforms(bones, boneCount);
-    m_program->drawSkinned(vg);
+    prog->setMatrices(m_matrix[(int)ModelView], m_matrix[(int)Projection]);
+    prog->setBoneTransforms(bones, boneCount);
+    prog->drawSkinned(vg);
 }
 
 RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
@@ -42,7 +52,9 @@ RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
 
 void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 {
-    m_skinningMode = newMode;
+    ShaderProgramGL2 *newProg = m_programs[(int)newMode];
+    if((m_skinningMode != newMode) && newProg->loaded())
+        m_skinningMode = newMode;
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
@@ -98,23 +110,30 @@ matrix4 RenderStateGL2::currentMatrix() const
 void RenderStateGL2::pushMaterial(const Material &m)
 {
     m_materialStack.push_back(m);
-    m_program->beginApplyMaterial(m);
+    ShaderProgramGL2 *prog = program();
+    if(prog && prog->loaded())
+        prog->beginApplyMaterial(m);
 }
 
 void RenderStateGL2::popMaterial()
 {
     Material m = m_materialStack.back();
     m_materialStack.pop_back();
-    m_program->endApplyMaterial(m);
+    ShaderProgramGL2 *prog = program();
+    if(!prog || !prog->loaded())
+        return;
+    prog->endApplyMaterial(m);
     if(m_materialStack.size() > 0)
-        m_program->beginApplyMaterial(m_materialStack.back());
+        prog->beginApplyMaterial(m_materialStack.back());
 }
 
 bool RenderStateGL2::beginFrame(int w, int h)
 {
+    ShaderProgramGL2 *prog = program();
+    bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
-    if(m_shaderLoaded)
-        m_program->beginFrame();
+    if(shaderLoaded)
+        prog->beginFrame();
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -122,20 +141,21 @@ bool RenderStateGL2::beginFrame(int w, int h)
     setMatrixMode(ModelView);
     pushMatrix();
     loadIdentity();
-    if(m_shaderLoaded)
+    if(shaderLoaded)
         glClearColor(m_bgColor.x, m_bgColor.y, m_bgColor.z, m_bgColor.w);
     else
         glClearColor(1.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    return m_shaderLoaded;
+    return shaderLoaded;
 }
 
 void RenderStateGL2::endFrame()
 {
     setMatrixMode(ModelView);
-    popMatrix();
-    if(m_shaderLoaded)
-        m_program->endFrame();
+    popMatrix();ShaderProgramGL2 *prog = program();
+    glPushAttrib(GL_ENABLE_BIT);
+    if(prog && prog->loaded())
+        prog->endFrame();
     glPopAttrib();
     glFlush();
 }
@@ -157,12 +177,7 @@ void RenderStateGL2::setupViewport(int w, int h)
 
 void RenderStateGL2::init()
 {
-    m_shaderLoaded = loadShaders();
-}
-
-bool RenderStateGL2::loadShaders()
-{
-    //return m_program->load("vertex.glsl", "fragment.glsl");
-    return m_program->load("vertex_skinned_uniform.glsl", "fragment.glsl");
-    //return m_program->load("vertex_skinned_texture.glsl", "fragment.glsl");
+    m_programs[(int)SoftwareSkinning]->load("vertex.glsl", "fragment.glsl");
+    m_programs[(int)HardwareSkinningUniform]->load("vertex_skinned_uniform.glsl", "fragment.glsl");
+    m_programs[(int)HardwareSkinningTexture]->load("vertex_skinned_texture.glsl", "fragment.glsl");
 }

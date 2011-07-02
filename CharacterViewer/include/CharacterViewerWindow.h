@@ -29,7 +29,8 @@ private slots:
     void copyAnimations();
     void clear();
     void setSoftwareSkinning();
-    void setHardwareSkinning();
+    void setHardwareSkinningUniform();
+    void setHardwareSkinningTexture();
 
 private:
     void initMenus();
@@ -45,7 +46,8 @@ private:
     QComboBox *m_animationText;
     QString m_lastDir;
     QAction *m_softwareSkinningAction;
-    QAction *m_hardwareSkinningAction;
+    QAction *m_hardwareSkinningUniformAction;
+    QAction *m_hardwareSkinningTextureAction;
     QAction *m_showFpsAction;
 };
 

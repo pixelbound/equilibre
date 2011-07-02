@@ -17,6 +17,7 @@ public:
     virtual void init();
 
     virtual void drawMesh(VertexGroup *m, const BoneTransform *bones, int boneCount);
+    ShaderProgramGL2 * program() const;
 
     virtual SkinningMode skinningMode() const;
     virtual void setSkinningMode(SkinningMode newMode);
@@ -55,8 +56,7 @@ private:
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];
-    bool m_shaderLoaded;
-    ShaderProgramGL2 *m_program;
+    ShaderProgramGL2 *m_programs[3];
     SkinningMode m_skinningMode;
 };
 
