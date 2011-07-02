@@ -15,8 +15,8 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
     m_shaderLoaded = false;
-    m_program = new ShaderProgramGL2(this);
-    //m_program = new UniformSkinningProgram(this);
+    //m_program = new ShaderProgramGL2(this);
+    m_program = new UniformSkinningProgram(this);
     //m_program = new TextureSkinningProgram(this);
     m_skinningMode = SoftwareSkinning;
 }
@@ -162,7 +162,7 @@ void RenderStateGL2::init()
 
 bool RenderStateGL2::loadShaders()
 {
-    return m_program->load("vertex.glsl", "fragment.glsl");
-    //return m_program->load("vertex_skinned_uniform.glsl", "fragment.glsl");
+    //return m_program->load("vertex.glsl", "fragment.glsl");
+    return m_program->load("vertex_skinned_uniform.glsl", "fragment.glsl");
     //return m_program->load("vertex_skinned_texture.glsl", "fragment.glsl");
 }

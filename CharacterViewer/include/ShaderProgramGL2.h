@@ -64,8 +64,7 @@ public:
     virtual void drawSkinned(VertexGroup *m);
 
 private:
-    int m_boneLocationLoc;
-    int m_boneRotationLoc;
+    int m_bonesLoc;
 };
 
 class TextureSkinningProgram : public ShaderProgramGL2

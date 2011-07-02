@@ -308,15 +308,13 @@ void ShaderProgramGL2::drawArray(VertexGroup *vg)
 
 UniformSkinningProgram::UniformSkinningProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
 {
-    m_boneLocationLoc = -1;
-    m_boneRotationLoc = -1;
+    m_bonesLoc = -1;
 }
 
 bool UniformSkinningProgram::init()
 {
-    m_boneLocationLoc = glGetUniformLocation(m_program, "u_bone_translation");
-    m_boneRotationLoc = glGetUniformLocation(m_program, "u_bone_rotation");
-    return (m_boneLocationLoc >= 0) &&  (m_boneRotationLoc >= 0);
+    m_bonesLoc = glGetUniformLocation(m_program, "u_bones");
+    return m_bonesLoc >= 0;
 }
 
 void UniformSkinningProgram::drawSkinned(VertexGroup *vg)
@@ -324,10 +322,7 @@ void UniformSkinningProgram::drawSkinned(VertexGroup *vg)
     if(!vg)
         return;
     enableVertexAttributes();
-    for(int i = 0; i < MAX_TRANSFORMS; i++)
-        glUniform4fv(m_boneLocationLoc + i, 1, (const GLfloat *)&m_bones[i * 2 + 0]);
-    for(int i = 0; i < MAX_TRANSFORMS; i++)
-        glUniform4fv(m_boneRotationLoc + i, 1, (const GLfloat *)&m_bones[i * 2 + 1]);
+    glUniform4fv(m_bonesLoc, MAX_TRANSFORMS * 2, (const GLfloat *)m_bones);
     drawArray(vg);
     disableVertexAttributes();
 }
@@ -369,6 +364,10 @@ bool TextureSkinningProgram::init()
     glGenTextures(1, &m_boneTexture);
     setBoneTransforms(0, 0);
     glBindTexture(GL_TEXTURE_RECTANGLE, m_boneTexture);
+    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, 2, MAX_TRANSFORMS, 0,
         GL_RGBA, GL_FLOAT, m_bones);
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
