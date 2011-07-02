@@ -34,9 +34,8 @@ public:
 
     enum SkinningMode
     {
-        SoftwareSingleQuaternion = 0,
-        HardwareSingleQuaternion = 1,
-        HardwareDualQuaternion = 2
+        SoftwareSkinning = 0,
+        HardwareSkinning = 1
     };
 
     virtual SkinningMode skinningMode() const = 0;

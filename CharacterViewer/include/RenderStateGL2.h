@@ -17,6 +17,8 @@ public:
     virtual Mesh * createMesh();
     virtual void drawMesh(Mesh *m, const BoneTransform *bones, int boneCount);
 
+    virtual void startSkinning();
+    virtual void stopSkinning();
     virtual void setBoneTransforms(const BoneTransform *transforms, int count);
 
     virtual SkinningMode skinningMode() const;
@@ -60,6 +62,8 @@ private:
     void setUniformValue(QString name, const vec4 &v);
     void setUniformValue(QString name, float f);
     void setUniformValue(QString name, int i);
+    void uploadBoneTransformsUniform();
+    void uploadBoneTransformsTexture();
 
     vec4 m_ambient0;
     vec4 m_diffuse0;
@@ -80,6 +84,8 @@ private:
     int m_texCoordsAttr;
     int m_boneAttr;
     SkinningMode m_skinningMode;
+    uint32_t m_boneTexture;
+    vec4 *m_bones;
 };
 
 #endif

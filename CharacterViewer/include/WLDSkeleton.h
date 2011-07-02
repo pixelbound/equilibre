@@ -28,11 +28,11 @@ public:
 class BoneTransform
 {
 public:
-    QVector3D location;
+    QVector4D location;
     QQuaternion rotation;
 
     vec3 map(const vec3 &v);
-    QVector3D map(const QVector3D &v);
+    QVector4D map(const QVector4D &v);
     void toDualQuaternion(vec4 &d0, vec4 &d1) const;
 
     static BoneTransform interpolate(BoneTransform a, BoneTransform b, double c);

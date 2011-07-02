@@ -32,6 +32,7 @@ protected:
     bool readUint32(uint32_t *dest);
     bool readInt32(int32_t *dest);
     bool readFloat32(float *dest);
+    bool readRaw(char *dest, size_t n);
 
     QIODevice *m_stream;
 };

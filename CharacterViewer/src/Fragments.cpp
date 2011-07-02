@@ -288,7 +288,7 @@ bool MaterialPaletteFragment::unpack(WLDReader *s)
     s->unpackFields("II", &m_flags, &materialCount);
     for(uint32_t i = 0; i < materialCount; i++)
     {
-        MaterialDefFragment *frag;
+        MaterialDefFragment *frag = 0;
         s->unpackReference(&frag);
         if(frag)
             m_materials.append(frag);

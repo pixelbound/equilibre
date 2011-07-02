@@ -5,13 +5,13 @@
 vec3 BoneTransform::map(const vec3 &v)
 {
     QVector3D v2(v.x, v.y, v.z);
-    v2 = rotation.rotatedVector(v2) + location;
+    v2 = rotation.rotatedVector(v2) + location.toVector3D();
     return vec3(v2.x(), v2.y(), v2.z());
 }
 
-QVector3D BoneTransform::map(const QVector3D &v)
+QVector4D BoneTransform::map(const QVector4D &v)
 {
-    return rotation.rotatedVector(v) + location;
+    return QVector4D(rotation.rotatedVector(v.toVector3D()) + location.toVector3D(), 1.0);
 }
 
 BoneTransform BoneTransform::interpolate(BoneTransform a, BoneTransform b, double f)
@@ -24,7 +24,7 @@ BoneTransform BoneTransform::interpolate(BoneTransform a, BoneTransform b, doubl
 
 void BoneTransform::toDualQuaternion(vec4 &d0, vec4 &d1) const
 {
-    const QVector3D &tran(location);
+    const QVector4D &tran(location);
     d0.x = rotation.x();
     d0.y = rotation.y();
     d0.z = rotation.z();

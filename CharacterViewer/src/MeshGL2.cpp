@@ -48,8 +48,9 @@ void MeshGL2::draw(const BoneTransform *bones, int boneCount)
         glEnableVertexAttribArray(texCoords);
     if(bone >= 0)
         glEnableVertexAttribArray(bone);
-
-    if(m_state->skinningMode() == RenderState::SoftwareSingleQuaternion)
+    //m_state->setBoneTransforms(bones, boneCount);
+    m_state->startSkinning();
+    if(m_state->skinningMode() == RenderState::SoftwareSkinning)
     {
         VertexGroup skinnedVg(m_vg->mode, m_vg->count);
         skinnedVg.indices = m_vg->indices;
@@ -70,9 +71,9 @@ void MeshGL2::draw(const BoneTransform *bones, int boneCount)
     }
     else
     {
-        m_state->setBoneTransforms(bones, boneCount);
         drawArray(m_vg, position, normal, texCoords, bone);
     }
+    m_state->stopSkinning();
 
     glDisableVertexAttribArray(position);
     if(normal >= 0)

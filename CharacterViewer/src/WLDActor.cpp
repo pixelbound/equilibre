@@ -133,7 +133,7 @@ void WLDActor::draw(RenderState *state)
     {
         BoneTransform bone = bones.value(eq.first);
         state->pushMatrix();
-        state->translate(bone.location);
+        state->translate(bone.location.toVector3D());
         state->rotate(bone.rotation);
         eq.second->draw(state);
         state->popMatrix();

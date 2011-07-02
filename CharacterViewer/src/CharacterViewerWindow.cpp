@@ -74,18 +74,14 @@ void CharacterViewerWindow::initMenus()
 
     m_softwareSkinningAction = new QAction("Software Skinning", this);
     m_hardwareSkinningAction = new QAction("Hardware Skinning", this);
-    m_hardwareSkinningDQAction = new QAction("Hardware Skinning (Dual Quaternion)", this);
     m_softwareSkinningAction->setCheckable(true);
     m_hardwareSkinningAction->setCheckable(true);
-    m_hardwareSkinningDQAction->setCheckable(true);
     QActionGroup *skinningActions = new QActionGroup(this);
     skinningActions->addAction(m_softwareSkinningAction);
     skinningActions->addAction(m_hardwareSkinningAction);
-    skinningActions->addAction(m_hardwareSkinningDQAction);
 
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningAction);
-    renderMenu->addAction(m_hardwareSkinningDQAction);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(renderMenu);
@@ -99,7 +95,6 @@ void CharacterViewerWindow::initMenus()
 
     connect(m_softwareSkinningAction, SIGNAL(triggered()), this, SLOT(setSoftwareSkinning()));
     connect(m_hardwareSkinningAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinning()));
-    connect(m_hardwareSkinningDQAction, SIGNAL(triggered()), this, SLOT(setHardwareDQSkinning()));
 }
 
 void CharacterViewerWindow::openArchive()
@@ -246,14 +241,11 @@ void CharacterViewerWindow::updateMenus()
     switch(m_state->skinningMode())
     {
     default:
-    case RenderState::SoftwareSingleQuaternion:
+    case RenderState::SoftwareSkinning:
         m_softwareSkinningAction->setChecked(true);
         break;
-    case RenderState::HardwareSingleQuaternion:
+    case RenderState::HardwareSkinning:
         m_hardwareSkinningAction->setChecked(true);
-        break;
-    case RenderState::HardwareDualQuaternion:
-        m_hardwareSkinningDQAction->setChecked(true);
         break;
     }
 }
@@ -266,18 +258,12 @@ void CharacterViewerWindow::clear()
 
 void CharacterViewerWindow::setSoftwareSkinning()
 {
-    m_state->setSkinningMode(RenderState::SoftwareSingleQuaternion);
+    m_state->setSkinningMode(RenderState::SoftwareSkinning);
     updateMenus();
 }
 
 void CharacterViewerWindow::setHardwareSkinning()
 {
-    m_state->setSkinningMode(RenderState::HardwareSingleQuaternion);
-    updateMenus();
-}
-
-void CharacterViewerWindow::setHardwareDQSkinning()
-{
-    m_state->setSkinningMode(RenderState::HardwareDualQuaternion);
+    m_state->setSkinningMode(RenderState::HardwareSkinning);
     updateMenus();
 }

@@ -30,7 +30,6 @@ private slots:
     void clear();
     void setSoftwareSkinning();
     void setHardwareSkinning();
-    void setHardwareDQSkinning();
 
 private:
     void initMenus();
@@ -47,7 +46,6 @@ private:
     QString m_lastDir;
     QAction *m_softwareSkinningAction;
     QAction *m_hardwareSkinningAction;
-    QAction *m_hardwareSkinningDQAction;
 };
 
 #endif

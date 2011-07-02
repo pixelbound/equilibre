@@ -26,11 +26,16 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_normalAttr = -1;
     m_texCoordsAttr = -1;
     m_boneAttr = -1;
-    m_skinningMode = SoftwareSingleQuaternion;
+    m_skinningMode = SoftwareSkinning;
+    m_boneTexture = 0;
+    m_bones = new vec4[MAX_TRANSFORMS * 2];
 }
 
 RenderStateGL2::~RenderStateGL2()
 {
+    delete [] m_bones;
+    if(m_boneTexture != 0)
+        glDeleteTextures(1, &m_boneTexture);
     if(m_vertexShader != 0)
         glDeleteShader(m_vertexShader);
     if(m_pixelShader != 0)
@@ -68,49 +73,54 @@ void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 
 void RenderStateGL2::setBoneTransforms(const BoneTransform *transforms, int count)
 {
-    vec4 rotation, translation;
     for(int i = 0; i < MAX_TRANSFORMS; i++)
     {
-        QString rotName = QString("u_bone_rotation[%1]").arg(i);
         if(transforms && (i < count))
         {
-            if(m_skinningMode == HardwareDualQuaternion)
-            {
-                transforms[i].toDualQuaternion(rotation, translation);
-            }
-            else
-            {
-                QQuaternion q = transforms[i].rotation;
-                rotation = vec4(q.x(), q.y(), q.z(), q.scalar());
-            }
+            QVector4D loc = transforms[i].location;
+            QQuaternion rot = transforms[i].rotation;
+            m_bones[i * 2 + 0] = vec4(loc.x(), loc.y(), loc.z(), 1.0);
+            m_bones[i * 2 + 1] = vec4(rot.x(), rot.y(), rot.z(), rot.scalar());
         }
         else
         {
-            rotation = vec4(0.0, 0.0, 0.0, 1.0);
+            m_bones[i * 2 + 0] = vec4(0.0, 0.0, 0.0, 1.0);
+            m_bones[i * 2 + 1] = vec4(0.0, 0.0, 0.0, 1.0);
         }
-        setUniformValue(rotName, rotation);
     }
+}
+
+void RenderStateGL2::uploadBoneTransformsUniform()
+{
     for(int i = 0; i < MAX_TRANSFORMS; i++)
+        setUniformValue(QString("u_bone_translation[%1]").arg(i), m_bones[i * 2 + 0]);
+    for(int i = 0; i < MAX_TRANSFORMS; i++)
+        setUniformValue(QString("u_bone_rotation[%1]").arg(i), m_bones[i * 2 + 1]);
+}
+
+void RenderStateGL2::uploadBoneTransformsTexture()
+{
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_boneTexture);
+    if(m_skinningMode == HardwareSkinning)
     {
-        QString transName = QString("u_bone_translation[%1]").arg(i);
-        if(transforms && (i < count))
-        {
-            if(m_skinningMode == HardwareDualQuaternion)
-            {
-                transforms[i].toDualQuaternion(rotation, translation);
-            }
-            else
-            {
-                QVector3D v = transforms[i].location;
-                translation = vec4(v.x(), v.y(), v.z(), 1.0);
-            }
-        }
-        else
-        {
-            translation = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-        setUniformValue(transName, translation);
+        glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, 2, MAX_TRANSFORMS,
+            GL_RGBA, GL_FLOAT, m_bones);
     }
+    glActiveTexture(GL_TEXTURE0);
+}
+
+void RenderStateGL2::startSkinning()
+{
+    uploadBoneTransformsTexture();
+    setUniformValue("u_bones", 1);
+}
+
+void RenderStateGL2::stopSkinning()
+{
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+    glActiveTexture(GL_TEXTURE0);
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
@@ -253,6 +263,12 @@ void RenderStateGL2::setupViewport(int w, int h)
 void RenderStateGL2::init()
 {
     m_shaderLoaded = loadShaders();
+    glGenTextures(1, &m_boneTexture);
+    setBoneTransforms(0, 0);
+    glBindTexture(GL_TEXTURE_RECTANGLE, m_boneTexture);
+    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, 2, MAX_TRANSFORMS, 0,
+                GL_RGBA, GL_FLOAT, m_bones);
+    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
 }
 
 int RenderStateGL2::positionAttr() const
@@ -393,11 +409,10 @@ void RenderStateGL2::initShaders()
 
 void RenderStateGL2::setUniformValue(QString name, const vec4 &v)
 {
-    const char *nameStr = name.toLatin1().constData();
-    int location = glGetUniformLocation(m_program, nameStr);
+    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     if(location < 0)
     {
-        fprintf(stderr, "Uniform '%s' is not active\n", nameStr);
+        //fprintf(stderr, "Uniform '%s' is not active\n", name.toLatin1().constData());
         return;
     }
     glUniform4fv(location, 1, (GLfloat *)&v);
@@ -405,11 +420,10 @@ void RenderStateGL2::setUniformValue(QString name, const vec4 &v)
 
 void RenderStateGL2::setUniformValue(QString name, float f)
 {
-    const char *nameStr = name.toLatin1().constData();
-    int location = glGetUniformLocation(m_program, nameStr);
+    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     if(location < 0)
     {
-        fprintf(stderr, "Uniform '%s' is not active\n", nameStr);
+        //fprintf(stderr, "Uniform '%s' is not active\n", name.toLatin1().constData());
         return;
     }
     glUniform1f(location, f);
@@ -417,11 +431,10 @@ void RenderStateGL2::setUniformValue(QString name, float f)
 
 void RenderStateGL2::setUniformValue(QString name, int i)
 {
-    const char *nameStr = name.toLatin1().constData();
-    int location = glGetUniformLocation(m_program, nameStr);
+    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
     if(location < 0)
     {
-        fprintf(stderr, "Uniform '%s' is not active\n", nameStr);
+        //fprintf(stderr, "Uniform '%s' is not active\n", name.toLatin1().constData());
         return;
     }
     glUniform1i(location, i);

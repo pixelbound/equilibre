@@ -87,10 +87,24 @@ uint32_t StreamReader::structSize(const char *types) const
     return s;
 }
 
+bool StreamReader::readRaw(char *dest, size_t n)
+{
+    size_t left = n;
+    while(left > 0)
+    {
+        qint64 read = m_stream->read(dest, left);
+        if(read < 1)
+            return false;
+        left -= (size_t)read;
+        dest += read;
+    }
+    return true;
+}
+
 bool StreamReader::readInt8(int8_t *dest)
 {
     uint8_t data;
-    if(m_stream->read((char *)&data, 1) < 1)
+    if(!readRaw((char *)&data, 1))
         return false;
     *dest = (int8_t)data;
     return true;
@@ -99,7 +113,7 @@ bool StreamReader::readInt8(int8_t *dest)
 bool StreamReader::readUint8(uint8_t *dest)
 {
     uint8_t data;
-    if(m_stream->read((char *)&data, 1) < 1)
+    if(!readRaw((char *)&data, 1))
         return false;
     *dest = data;
     return true;
@@ -108,7 +122,7 @@ bool StreamReader::readUint8(uint8_t *dest)
 bool StreamReader::readInt16(int16_t *dest)
 {
     uint8_t data[2];
-    if(m_stream->read((char *)data, 2) < 2)
+    if(!readRaw((char *)&data, 2))
         return false;
     *dest = (data[1] << 8) | data[0];
     return true;
@@ -117,7 +131,7 @@ bool StreamReader::readInt16(int16_t *dest)
 bool StreamReader::readUint16(uint16_t *dest)
 {
     uint8_t data[2];
-    if(m_stream->read((char *)data, 2) < 2)
+    if(!readRaw((char *)&data, 2))
         return false;
     *dest = (data[1] << 8) | data[0];
     return true;
@@ -126,7 +140,7 @@ bool StreamReader::readUint16(uint16_t *dest)
 bool StreamReader::readInt32(int32_t *dest)
 {
     uint8_t data[4];
-    if(m_stream->read((char *)data, 4) < 4)
+    if(!readRaw((char *)&data, 4))
         return false;
     *dest = (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0];
     return true;
@@ -135,7 +149,7 @@ bool StreamReader::readInt32(int32_t *dest)
 bool StreamReader::readUint32(uint32_t *dest)
 {
     uint8_t data[4];
-    if(m_stream->read((char *)data, 4) < 4)
+    if(!readRaw((char *)&data, 4))
         return false;
     *dest = (data[3] << 24) | (data[2] << 16) | (data[1] << 8) | data[0];
     return true;
@@ -144,7 +158,7 @@ bool StreamReader::readUint32(uint32_t *dest)
 bool StreamReader::readFloat32(float *dest)
 {
     uint8_t data[4];
-    if(m_stream->read((char *)data, 4) < 4)
+    if(!readRaw((char *)&data, 4))
         return false;
     *dest = *((float *)data);
     return true;
