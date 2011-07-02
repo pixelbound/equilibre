@@ -25,9 +25,6 @@ public:
 
     virtual void drawSkinned(VertexGroup *m);
 
-    void setUniformValue(QString name, const vec4 &v);
-    void setUniformValue(QString name, float f);
-    void setUniformValue(QString name, int i);
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
 

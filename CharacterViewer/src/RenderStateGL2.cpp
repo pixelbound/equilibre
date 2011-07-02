@@ -26,11 +26,6 @@ RenderStateGL2::~RenderStateGL2()
     delete m_program;
 }
 
-ShaderProgramGL2 * RenderStateGL2::program() const
-{
-    return m_program;
-}
-
 void RenderStateGL2::drawMesh(VertexGroup *vg, const BoneTransform *bones, int boneCount)
 {
     if(!vg)

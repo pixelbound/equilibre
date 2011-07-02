@@ -161,39 +161,6 @@ uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type)
     return shader;
 }
 
-void ShaderProgramGL2::setUniformValue(QString name, const vec4 &v)
-{
-    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
-    if(location < 0)
-    {
-        //fprintf(stderr, "Uniform '%s' is not active\n", name.toLatin1().constData());
-        return;
-    }
-    glUniform4fv(location, 1, (GLfloat *)&v);
-}
-
-void ShaderProgramGL2::setUniformValue(QString name, float f)
-{
-    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
-    if(location < 0)
-    {
-        //fprintf(stderr, "Uniform '%s' is not active\n", name.toLatin1().constData());
-        return;
-    }
-    glUniform1f(location, f);
-}
-
-void ShaderProgramGL2::setUniformValue(QString name, int i)
-{
-    int location = glGetUniformLocation(m_program, name.toLatin1().constData());
-    if(location < 0)
-    {
-        //fprintf(stderr, "Uniform '%s' is not active\n", name.toLatin1().constData());
-        return;
-    }
-    glUniform1i(location, i);
-}
-
 void ShaderProgramGL2::setMatrices(const matrix4 &modelView, const matrix4 &projection)
 {
     glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, (const GLfloat *)modelView.d);
@@ -358,10 +325,9 @@ void UniformSkinningProgram::drawSkinned(VertexGroup *vg)
         return;
     enableVertexAttributes();
     for(int i = 0; i < MAX_TRANSFORMS; i++)
-    {
         glUniform4fv(m_boneLocationLoc + i, 1, (const GLfloat *)&m_bones[i * 2 + 0]);
+    for(int i = 0; i < MAX_TRANSFORMS; i++)
         glUniform4fv(m_boneRotationLoc + i, 1, (const GLfloat *)&m_bones[i * 2 + 1]);
-    }
     drawArray(vg);
     disableVertexAttributes();
 }
