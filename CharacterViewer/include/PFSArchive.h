@@ -26,6 +26,7 @@ class PFSArchive : public QObject
 public:
     PFSArchive(QString path, QObject *parent = 0);
     virtual ~PFSArchive();
+    bool isOpen() const;
     void close();
 
     const QList<QString> & files() const;

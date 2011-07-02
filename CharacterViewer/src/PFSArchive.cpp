@@ -37,6 +37,11 @@ PFSArchive::~PFSArchive()
     close();
 }
 
+bool PFSArchive::isOpen() const
+{
+    return m_file && m_file->isOpen();
+}
+
 void PFSArchive::close()
 {
     if(m_reader)

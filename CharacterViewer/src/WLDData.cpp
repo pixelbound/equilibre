@@ -44,7 +44,7 @@ WLDData *WLDData::fromFile(QString path, QObject *parent)
 
 WLDData *WLDData::fromArchive(PFSArchive *a, QString name, QObject *parent)
 {
-    if(!a)
+    if(!a || !a->isOpen())
         return 0;
     QByteArray data = a->unpackFile(name);
     QBuffer buffer(&data);

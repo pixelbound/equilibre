@@ -153,7 +153,6 @@ void RenderStateGL2::endFrame()
 {
     setMatrixMode(ModelView);
     popMatrix();ShaderProgramGL2 *prog = program();
-    glPushAttrib(GL_ENABLE_BIT);
     if(prog && prog->loaded())
         prog->endFrame();
     glPopAttrib();
