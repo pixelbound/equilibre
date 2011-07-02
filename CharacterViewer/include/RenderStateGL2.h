@@ -18,12 +18,7 @@ public:
 
     ShaderProgramGL2 *program() const;
 
-    virtual Mesh * createMesh();
-    virtual void drawMesh(Mesh *m, const BoneTransform *bones, int boneCount);
-
-    virtual void startSkinning();
-    virtual void stopSkinning();
-    virtual void setBoneTransforms(const BoneTransform *transforms, int count);
+    virtual void drawMesh(VertexGroup *m, const BoneTransform *bones, int boneCount);
 
     virtual SkinningMode skinningMode() const;
     virtual void setSkinningMode(SkinningMode newMode);
@@ -52,11 +47,7 @@ public:
     virtual void popMaterial();
 
 private:
-    void beginApplyMaterial(const Material &m);
-    void endApplyMaterial(const Material &m);
     bool loadShaders();
-    void uploadBoneTransformsUniform();
-    void uploadBoneTransformsTexture();
 
     vec4 m_ambient0;
     vec4 m_diffuse0;
@@ -69,46 +60,6 @@ private:
     bool m_shaderLoaded;
     ShaderProgramGL2 *m_program;
     SkinningMode m_skinningMode;
-    uint32_t m_boneTexture;
-    vec4 *m_bones;
-};
-
-class ShaderProgramGL2
-{
-public:
-    ShaderProgramGL2();
-    virtual ~ShaderProgramGL2();
-
-    bool loaded() const;
-
-    bool load(QString vertexFile, QString fragmentFile);
-
-    void beginFrame();
-    void endFrame();
-
-    void setUniformValue(QString name, const vec4 &v);
-    void setUniformValue(QString name, float f);
-    void setUniformValue(QString name, int i);
-
-    void setMatrices(const matrix4 &modelView, const matrix4 &projection);
-
-    void enableVertexAttributes();
-    void uploadVertexAttributes(VertexGroup *vg);
-    void disableVertexAttributes();
-
-private:
-    bool compileProgram(QString vertexFile, QString fragmentFile);
-    uint32_t loadShader(QString path, uint32_t type) const;
-
-    uint32_t m_vertexShader;
-    uint32_t m_fragmentShader;
-    uint32_t m_program;
-    int m_modelViewMatrixLoc;
-    int m_projMatrixLoc;
-    int m_positionAttr;
-    int m_normalAttr;
-    int m_texCoordsAttr;
-    int m_boneAttr;
 };
 
 #endif

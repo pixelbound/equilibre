@@ -3,14 +3,14 @@
 
 #include <QObject>
 #include <QMap>
-#include "RenderState.h"
 #include "Vertex.h"
 
 class WLDModel;
 class WLDActor;
 class Zone;
+class RenderState;
 
-class Scene : public QObject, StateObject
+class Scene : public QObject
 {
     Q_OBJECT
 
@@ -53,6 +53,7 @@ public slots:
     void setSelectedModelName(QString name);
 
 private:
+    RenderState *m_state;
     double m_started;
     int m_selected;
     vec3 m_delta;

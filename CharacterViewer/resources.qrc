@@ -1,9 +1,8 @@
 <RCC>
     <qresource prefix="/">
         <file>fragment.glsl</file>
-        <file>fragment_smooth_shading.glsl</file>
         <file>vertex.glsl</file>
-        <file>vertex_skinned.glsl</file>
-        <file>vertex_smooth_shading.glsl</file>
+        <file>vertex_skinned_texture.glsl</file>
+        <file>vertex_skinned_uniform.glsl</file>
     </qresource>
 </RCC>

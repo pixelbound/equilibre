@@ -1,8 +1,8 @@
 INCLUDEPATH += include
 HEADERS = include/SceneViewport.h \
-    include/RenderState.h include/RenderStateGL2.h \
-    include/Mesh.h include/Material.h include/Vertex.h \
-    include/Scene.h include/MeshGL2.h \
+    include/RenderState.h include/RenderStateGL2.h include/ShaderProgramGL2.h \
+    include/Material.h include/Vertex.h \
+    include/Scene.h \
     include/Platform.h \
     include/WLDData.h \
     include/WLDFragment.h \
@@ -17,9 +17,9 @@ HEADERS = include/SceneViewport.h \
     include/imath.h include/dxt_tables.h include/dds.h include/dxt.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
-    src/RenderState.cpp src/RenderStateGL2.cpp \
-    src/Mesh.cpp src/Material.cpp src/Vertex.cpp \
-    src/Scene.cpp src/MeshGL2.cpp \
+    src/RenderState.cpp src/RenderStateGL2.cpp src/ShaderProgramGL2.cpp \
+    src/Material.cpp src/Vertex.cpp \
+    src/Scene.cpp \
     src/WLDData.cpp \
     src/WLDFragment.cpp \
     src/Fragments.cpp \
@@ -47,7 +47,7 @@ QT += opengl
 
 OTHER_FILES += \
     fragment.glsl \
-    vertex.glsl vertex_skinned.glsl
+    vertex.glsl vertex_skinned_uniform.glsl vertex_skinned_texture.glsl
 
 RESOURCES += \
     resources.qrc

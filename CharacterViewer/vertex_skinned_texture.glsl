@@ -6,11 +6,7 @@ attribute float a_boneIndex; // to be compatible with OpenGL < 3.0
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
-uniform int u_skinningMode;
-
 uniform sampler2DRect u_bones;
-//uniform vec4 u_bone_rotation[256];
-//uniform vec4 u_bone_translation[256];
 
 varying vec2 v_texCoords;
 
@@ -38,11 +34,8 @@ vec3 rotate_by_quat(vec3 v, vec4 q)
 
 vec4 skin(vec3 pos)
 {
-    //int boneIndex = int(a_boneIndex);
     vec4 rotation = texture2DRect(u_bones, vec2(0, a_boneIndex));
     vec4 translation = texture2DRect(u_bones, vec2(1, a_boneIndex));
-    //vec4 rotation = u_bone_rotation[boneIndex];
-    //vec4 translation = u_bone_translation[boneIndex];
     //vec4 rotation = vec4(0.0, 0.0, 0.0, 1.0);
     //vec4 translation = vec4(0.0, 0.0, 0.0, 1.0);
     return vec4(rotate_by_quat(pos, rotation) + translation.xyz, 1.0);
@@ -50,11 +43,6 @@ vec4 skin(vec3 pos)
 
 void main()
 {
-    vec4 skinnedPos;
-    if(u_skinningMode == 1)
-        skinnedPos = skin(a_position);
-    else
-        skinnedPos = vec4(a_position, 1.0);
-    gl_Position = u_projectionMatrix * u_modelViewMatrix * skinnedPos;
+    gl_Position = u_projectionMatrix * u_modelViewMatrix * skin(a_position);
     v_texCoords = a_texCoords;
 }

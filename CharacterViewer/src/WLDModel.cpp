@@ -5,6 +5,7 @@
 #include "WLDSkeleton.h"
 #include "PFSArchive.h"
 #include "RenderState.h"
+#include "Material.h"
 
 WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 {
@@ -80,6 +81,11 @@ WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, QObject *parent) : QObject(
     m_mesh = 0;
 }
 
+WLDModelPart::~WLDModelPart()
+{
+    delete m_mesh;
+}
+
 MeshDefFragment * WLDModelPart::def() const
 {
     return m_meshDef;
@@ -88,17 +94,14 @@ MeshDefFragment * WLDModelPart::def() const
 void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones, uint32_t boneCount)
 {
     if(!m_mesh)
-    {
-        m_mesh = state->createMesh();
-        importMaterialGroups(m_mesh, skin);
-    }
+        m_mesh = importMaterialGroups(skin);
     state->pushMatrix();
     state->translate(m_meshDef->m_center);
     state->drawMesh(m_mesh, bones, boneCount);
     state->popMatrix();
 }
 
-void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin)
+VertexGroup * WLDModelPart::importMaterialGroups(WLDModelSkin *skin)
 {
     // load vertices, texCoords, normals, faces
     VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
@@ -145,7 +148,7 @@ void WLDModelPart::importMaterialGroups(Mesh *m, WLDModelSkin *skin)
         for(uint32_t i = 0; i < count; i++, vd++)
             vd->bone = pieceID;
     }
-    m->setGroup(vg);
+    return vg;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

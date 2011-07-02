@@ -31,6 +31,9 @@ public:
     QVector4D location;
     QQuaternion rotation;
 
+    BoneTransform();
+    BoneTransform(const vec4 &loc, const vec4 &rot);
+
     vec3 map(const vec3 &v);
     QVector4D map(const QVector4D &v);
     void toDualQuaternion(vec4 &d0, vec4 &d1) const;

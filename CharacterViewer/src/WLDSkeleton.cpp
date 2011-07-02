@@ -2,6 +2,16 @@
 #include "WLDSkeleton.h"
 #include "Fragments.h"
 
+BoneTransform::BoneTransform()
+{
+}
+
+BoneTransform::BoneTransform(const vec4 &loc, const vec4 &rot)
+{
+    location = QVector4D(loc.x, loc.y, loc.z, loc.w);
+    rotation = QQuaternion(rot.w, rot.x, rot.y, rot.z);
+}
+
 vec3 BoneTransform::map(const vec3 &v)
 {
     QVector3D v2(v.x, v.y, v.z);

@@ -1,17 +1,13 @@
 #ifndef OPENEQ_RENDER_STATE_H
 #define OPENEQ_RENDER_STATE_H
 
-#include <map>
-#include <string>
 #include "Mesh.h"
-#include "Material.h"
 #include "Vertex.h"
-
-using namespace std;
 
 class QVector3D;
 class QQuaternion;
 class BoneTransform;
+class Material;
 
 class RenderState
 {
@@ -27,10 +23,7 @@ public:
     virtual void reset();
 
     // mesh operations
-    virtual void drawMesh(Mesh *m, const BoneTransform *bones = 0, int boneCount = 0) = 0;
-    virtual Mesh * createMesh() = 0;
-
-    virtual void setBoneTransforms(const BoneTransform *transforms, int count) = 0;
+    virtual void drawMesh(VertexGroup *m, const BoneTransform *bones = 0, int boneCount = 0) = 0;
 
     enum SkinningMode
     {
@@ -81,26 +74,6 @@ protected:
     bool m_projection;
     bool m_wireframe;
     vec4 m_bgColor;
-};
-
-class StateObject
-{
-public:
-    StateObject(RenderState *s);
-
-    void loadIdentity();
-    void pushMatrix();
-    void popMatrix();
-
-    void translate(float dx, float dy, float dz);
-    void rotate(float angle, float rx, float ry, float rz);
-    void scale(float sx, float sy, float sz);
-
-    void pushMaterial(const Material &m);
-    void popMaterial();
-
-protected:
-    RenderState *m_state;
 };
 
 #endif

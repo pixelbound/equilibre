@@ -11,6 +11,7 @@
 #include <QHBoxLayout>
 #include "CharacterViewerWindow.h"
 #include "SceneViewport.h"
+#include "RenderState.h"
 #include "Scene.h"
 #include "WLDModel.h"
 #include "WLDActor.h"

@@ -1,10 +1,12 @@
 #include "Scene.h"
+#include "RenderState.h"
 #include "WLDModel.h"
 #include "WLDActor.h"
 #include "Zone.h"
 
-Scene::Scene(RenderState *state) : StateObject(state)
+Scene::Scene(RenderState *state)
 {
+    m_state = state;
     m_sigma = 1.0;
     m_zone = new Zone(this);
     m_mode = CharacterViewer;

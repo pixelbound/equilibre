@@ -15,6 +15,7 @@ class ActorDefFragment;
 class Material;
 class PFSArchive;
 class RenderState;
+class VertexGroup;
 class WLDModelPart;
 class WLDModelSkin;
 class WLDSkeleton;
@@ -55,15 +56,16 @@ class WLDModelPart : public QObject
 {
 public:
     WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
+    virtual ~WLDModelPart();
 
     MeshDefFragment *def() const;
 
     void draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
-    void importMaterialGroups(Mesh *m, WLDModelSkin *skin);
+    VertexGroup * importMaterialGroups(WLDModelSkin *skin);
 
-    Mesh *m_mesh;
+    VertexGroup *m_mesh;
     MeshDefFragment *m_meshDef;
 };
 
