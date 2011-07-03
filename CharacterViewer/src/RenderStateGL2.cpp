@@ -35,7 +35,8 @@ ShaderProgramGL2 * RenderStateGL2::program() const
         return 0;
 }
 
-void RenderStateGL2::drawMesh(VertexGroup *vg, const BoneTransform *bones, int boneCount)
+void RenderStateGL2::drawMesh(VertexGroup *vg, WLDMaterialPalette *palette,
+    const BoneTransform *bones, int boneCount)
 {
     ShaderProgramGL2 *prog = program();
     if(!vg || !prog || !prog->loaded())
@@ -44,11 +45,11 @@ void RenderStateGL2::drawMesh(VertexGroup *vg, const BoneTransform *bones, int b
     if(bones && boneCount > 0)
     {
         prog->setBoneTransforms(bones, boneCount);
-        prog->drawSkinned(vg);
+        prog->drawSkinned(vg, palette);
     }
     else
     {
-        prog->draw(vg);
+        prog->draw(vg, palette);
     }
 }
 

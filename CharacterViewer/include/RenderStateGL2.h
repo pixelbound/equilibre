@@ -16,7 +16,8 @@ public:
 
     virtual void init();
 
-    virtual void drawMesh(VertexGroup *m, const BoneTransform *bones, int boneCount);
+    virtual void drawMesh(VertexGroup *m, WLDMaterialPalette *palette,
+        const BoneTransform *bones, int boneCount);
     ShaderProgramGL2 * program() const;
 
     virtual SkinningMode skinningMode() const;

@@ -108,6 +108,7 @@ QString WLDActor::slotName(EquipSlot slot)
     case Shield:
         return "SHIELD_POINT";
     }
+    return QString::null;
 }
 
 void WLDActor::draw(RenderState *state)

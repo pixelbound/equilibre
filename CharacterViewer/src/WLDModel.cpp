@@ -108,7 +108,7 @@ void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, const BoneTransf
         for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
             m_mesh->indices.push_back(m_meshDef->m_indices[i]);
     }
-    state->drawMesh(m_mesh, bones, boneCount);
+    state->drawMesh(m_mesh, skin->palette(), bones, boneCount);
 }
 
 void WLDModelPart::importVertexData(VertexGroup *vg, uint32_t offset)
@@ -147,14 +147,9 @@ void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMod
         mg.count = vertexCount;
         // invisible groups have no material
         if((matDef->m_param1 == 0) || !skin || !skin->palette())
-        {
-            mg.palette = 0;
-        }
+            mg.matName = QString::null;
         else
-        {
             mg.matName = skin->palette()->materialName(palDef->m_materials[g.second]);
-            mg.palette = skin->palette();
-        }
         vg->matGroups.append(mg);
         pos += vertexCount;
     }
@@ -457,7 +452,7 @@ void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t
 {
     if(m_aggregMesh)
     {
-        state->drawMesh(m_aggregMesh, bones, boneCount);
+        state->drawMesh(m_aggregMesh, m_palette, bones, boneCount);
     }
     else
     {

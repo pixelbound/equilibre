@@ -116,7 +116,6 @@ public:
     uint32_t offset;
     uint32_t count;
     QString matName;
-    WLDMaterialPalette *palette;
 };
 
 class VertexGroup

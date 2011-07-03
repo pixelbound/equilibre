@@ -8,6 +8,7 @@ class QVector3D;
 class QQuaternion;
 class BoneTransform;
 class Material;
+class WLDMaterialPalette;
 
 class RenderState
 {
@@ -23,7 +24,8 @@ public:
     virtual void reset();
 
     // mesh operations
-    virtual void drawMesh(VertexGroup *m, const BoneTransform *bones = 0, int boneCount = 0) = 0;
+    virtual void drawMesh(VertexGroup *m, WLDMaterialPalette *palette,
+        const BoneTransform *bones = 0, int boneCount = 0) = 0;
 
     enum SkinningMode
     {
