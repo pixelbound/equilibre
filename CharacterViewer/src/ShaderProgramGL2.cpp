@@ -243,17 +243,28 @@ void ShaderProgramGL2::disableVertexAttributes()
 
 void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
 {
+    uint8_t *posPointer = (uint8_t *)&vg->data->position;
+    uint8_t *normalPointer = (uint8_t *)&vg->data->normal;
+    uint8_t *texCoordsPointer = (uint8_t *)&vg->data->texCoords;
+    uint8_t *bonePointer = (uint8_t *)&vg->data->bone;
+    if(vg->buffer != 0)
+    {
+        posPointer = 0;
+        normalPointer = posPointer + sizeof(vec3);
+        texCoordsPointer = normalPointer + sizeof(vec3);
+        bonePointer = texCoordsPointer + sizeof(vec2);
+    }
     glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), &vg->data->position);
+        sizeof(VertexData), posPointer);
     if(m_attr[A_NORMAL] >= 0)
         glVertexAttribPointer(m_attr[A_NORMAL], 3, GL_FLOAT, GL_FALSE,
-            sizeof(VertexData), &vg->data->normal);
+            sizeof(VertexData), normalPointer);
     if(m_attr[A_TEX_COORDS] >= 0)
         glVertexAttribPointer(m_attr[A_TEX_COORDS], 2, GL_FLOAT, GL_FALSE,
-            sizeof(VertexData), &vg->data->texCoords);
+            sizeof(VertexData), texCoordsPointer);
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
-            sizeof(VertexData), &vg->data->bone);
+            sizeof(VertexData), bonePointer);
 }
 
 void ShaderProgramGL2::drawSkinned(VertexGroup *vg)
@@ -281,9 +292,10 @@ void ShaderProgramGL2::drawSkinned(VertexGroup *vg)
 
 void ShaderProgramGL2::drawArray(VertexGroup *vg)
 {
-    Material *mat = 0;
+    if(vg->buffer != 0)
+        glBindBuffer(GL_ARRAY_BUFFER, vg->buffer);
     uploadVertexAttributes(vg);
-    const uint16_t *indices = 0;
+    const uint32_t *indices = 0;
     if(vg->indices.count() > 0)
         indices = vg->indices.constData();
     foreach(MaterialGroup mg, vg->matGroups)
@@ -291,7 +303,7 @@ void ShaderProgramGL2::drawArray(VertexGroup *vg)
         // skip meshes that don't have a palette of materials
         if(!mg.palette)
             continue;
-        mat = mg.palette->material(mg.matName);
+        Material *mat = mg.palette->material(mg.matName);
         if(mat)
         {
             // XXX fix rendering non-opaque polygons
@@ -300,12 +312,14 @@ void ShaderProgramGL2::drawArray(VertexGroup *vg)
             m_state->pushMaterial(*mat);
         }
         if(indices)
-            glDrawElements(vg->mode, mg.count, GL_UNSIGNED_SHORT, indices + mg.offset);
+            glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
         else
             glDrawArrays(vg->mode, mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
     }
+    if(vg->buffer != 0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

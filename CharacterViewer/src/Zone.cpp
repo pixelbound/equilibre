@@ -128,6 +128,7 @@ void Zone::importGeometry()
     WLDMaterialPalette *palette = skin->palette();
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         palette->addMaterialDef(matDef);
+    skin->combineParts();
 }
 
 void Zone::importObjects()

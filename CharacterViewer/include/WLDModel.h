@@ -58,13 +58,15 @@ public:
     WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
     virtual ~WLDModelPart();
 
+    VertexGroup * mesh() const;
     MeshDefFragment *def() const;
+
+    void importMaterialGroups(VertexGroup *vg, uint32_t dataOffset,
+        uint32_t indiceOffset, WLDModelSkin *skin);
 
     void draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
-    VertexGroup * importMaterialGroups(WLDModelSkin *skin);
-
     VertexGroup *m_mesh;
     MeshDefFragment *m_meshDef;
 };
@@ -110,6 +112,7 @@ class WLDModelSkin : public QObject
 {
 public:
     WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, QObject *parent = 0);
+    virtual ~WLDModelSkin();
 
     QString name() const;
 
@@ -121,6 +124,8 @@ public:
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
 
+    void combineParts();
+
     void draw(RenderState *state, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
@@ -128,6 +133,7 @@ private:
     WLDModel *m_model;
     WLDMaterialPalette *m_palette;
     QMap<QString, WLDModelPart *> m_parts;
+    VertexGroup *m_aggregMesh;
 };
 
 #endif

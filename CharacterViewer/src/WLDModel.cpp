@@ -86,6 +86,11 @@ WLDModelPart::~WLDModelPart()
     delete m_mesh;
 }
 
+VertexGroup * WLDModelPart::mesh() const
+{
+    return m_mesh;
+}
+
 MeshDefFragment * WLDModelPart::def() const
 {
     return m_meshDef;
@@ -94,31 +99,31 @@ MeshDefFragment * WLDModelPart::def() const
 void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones, uint32_t boneCount)
 {
     if(!m_mesh)
-        m_mesh = importMaterialGroups(skin);
-    state->pushMatrix();
-    state->translate(m_meshDef->m_center);
+    {
+        m_mesh = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
+        importMaterialGroups(m_mesh, 0, 0, skin);
+    }
     state->drawMesh(m_mesh, bones, boneCount);
-    state->popMatrix();
 }
 
-VertexGroup * WLDModelPart::importMaterialGroups(WLDModelSkin *skin)
+void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t dataOffset,
+    uint32_t indiceOffset, WLDModelSkin *skin)
 {
     // load vertices, texCoords, normals, faces
-    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
-    VertexData *vd = vg->data;
-    for(uint32_t i = 0; i < vg->count; i++, vd++)
+    VertexData *vd = vg->data + dataOffset;
+    for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_vertices.count(); i++, vd++)
     {
-        vd->position = m_meshDef->m_vertices.value(i);
+        vd->position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
         vd->normal = m_meshDef->m_normals.value(i);
         vd->texCoords = m_meshDef->m_texCoords.value(i);
         vd->bone = 0;
     }
     for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
-        vg->indices.push_back(m_meshDef->m_indices[i]);
+        vg->indices.push_back(m_meshDef->m_indices[i] + dataOffset);
 
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
-    uint32_t pos = 0;
+    uint32_t pos = indiceOffset;
     foreach(vec2us g, m_meshDef->m_polygonsByTex)
     {
         MaterialDefFragment *matDef = palDef->m_materials[g.second];
@@ -141,14 +146,13 @@ VertexGroup * WLDModelPart::importMaterialGroups(WLDModelSkin *skin)
     }
 
     // load bone indices
-    vd = vg->data;
+    vd = vg->data + dataOffset;
     foreach(vec2us g, m_meshDef->m_vertexPieces)
     {
         uint16_t count = g.first, pieceID = g.second;
         for(uint32_t i = 0; i < count; i++, vd++)
             vd->bone = pieceID;
     }
-    return vg;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -331,12 +335,18 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
     m_name = name;
     m_model = model;
     m_palette = new WLDMaterialPalette(archive, this);
+    m_aggregMesh = 0;
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
     {
         foreach(WLDModelPart *part, defaultSkin->parts())
             addPart(part->def());
     }
+}
+
+WLDModelSkin::~WLDModelSkin()
+{
+    delete m_aggregMesh;
 }
 
 QString WLDModelSkin::name() const
@@ -382,8 +392,41 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
     return false;
 }
 
+void WLDModelSkin::combineParts()
+{
+    // sum the vertice count for each part
+    uint32_t totalVertices = 0;
+    foreach(WLDModelPart *part, m_parts)
+        totalVertices += part->def()->m_vertices.count();
+
+    // import each part into a single vertex group
+    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, totalVertices);
+    uint32_t offset = 0;
+    foreach(WLDModelPart *part, m_parts)
+    {
+        part->importMaterialGroups(vg, offset, vg->indices.count(), this);
+        offset += part->def()->m_vertices.count();
+    }
+
+    // copy the vertex group to the GPU
+    uint32_t size = totalVertices * sizeof(VertexData);
+    glGenBuffers(1, &vg->buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vg->buffer);
+    glBufferData(GL_ARRAY_BUFFER, size, vg->data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    m_aggregMesh = vg;
+}
+
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
-    foreach(WLDModelPart *part, m_parts)
-        part->draw(state, this, bones, boneCount);
+    if(m_aggregMesh)
+    {
+        state->drawMesh(m_aggregMesh, bones, boneCount);
+    }
+    else
+    {
+        foreach(WLDModelPart *part, m_parts)
+            part->draw(state, this, bones, boneCount);
+    }
 }

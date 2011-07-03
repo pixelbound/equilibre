@@ -128,8 +128,9 @@ public:
     uint32_t mode;
     uint32_t count;
     VertexData *data;
-    QVector<uint16_t> indices;
+    QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;
+    uint32_t buffer;
 };
 
 #endif
