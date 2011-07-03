@@ -267,31 +267,11 @@ void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
             sizeof(VertexData), bonePointer);
 }
 
-void ShaderProgramGL2::drawSkinned(VertexGroup *vg)
+void ShaderProgramGL2::draw(VertexGroup *vg)
 {
     if(!vg)
         return;
     enableVertexAttributes();
-    VertexGroup skinnedVg(vg->mode, vg->count);
-    skinnedVg.indices = vg->indices;
-    skinnedVg.matGroups = vg->matGroups;
-    VertexData *src = vg->data, *dst = skinnedVg.data;
-    for(uint32_t i = 0; i < vg->count; i++, src++, dst++)
-    {
-        BoneTransform transform;
-        if((int)src->bone < MAX_TRANSFORMS)
-            transform = BoneTransform(m_bones[src->bone * 2], m_bones[src->bone * 2 + 1]);
-        dst->position = transform.map(src->position);
-        dst->normal = src->normal;
-        dst->bone = src->bone;
-        dst->texCoords = src->texCoords;
-    }
-    drawArray(&skinnedVg);
-    disableVertexAttributes();
-}
-
-void ShaderProgramGL2::drawArray(VertexGroup *vg)
-{
     if(vg->buffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, vg->buffer);
     uploadVertexAttributes(vg);
@@ -302,7 +282,7 @@ void ShaderProgramGL2::drawArray(VertexGroup *vg)
     {
         // skip meshes that don't have a palette of materials
         if(!mg.palette)
-            continue;
+           continue;
         Material *mat = mg.palette->material(mg.matName);
         if(mat)
         {
@@ -320,6 +300,28 @@ void ShaderProgramGL2::drawArray(VertexGroup *vg)
     }
     if(vg->buffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+    disableVertexAttributes();
+}
+
+void ShaderProgramGL2::drawSkinned(VertexGroup *vg)
+{
+    if(!vg)
+        return;
+    VertexGroup skinnedVg(vg->mode, vg->count);
+    skinnedVg.indices = vg->indices;
+    skinnedVg.matGroups = vg->matGroups;
+    VertexData *src = vg->data, *dst = skinnedVg.data;
+    for(uint32_t i = 0; i < vg->count; i++, src++, dst++)
+    {
+        BoneTransform transform;
+        if((int)src->bone < MAX_TRANSFORMS)
+            transform = BoneTransform(m_bones[src->bone * 2], m_bones[src->bone * 2 + 1]);
+        dst->position = transform.map(src->position);
+        dst->normal = src->normal;
+        dst->bone = src->bone;
+        dst->texCoords = src->texCoords;
+    }
+    draw(&skinnedVg);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -339,10 +341,8 @@ void UniformSkinningProgram::drawSkinned(VertexGroup *vg)
 {
     if(!vg)
         return;
-    enableVertexAttributes();
     glUniform4fv(m_bonesLoc, MAX_TRANSFORMS * 2, (const GLfloat *)m_bones);
-    drawArray(vg);
-    disableVertexAttributes();
+    draw(vg);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -396,7 +396,6 @@ void TextureSkinningProgram::drawSkinned(VertexGroup *vg)
 {
     if(!vg)
         return;
-    enableVertexAttributes();
     // upload bone transforms to the transform texture
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_RECTANGLE, m_boneTexture);
@@ -405,10 +404,9 @@ void TextureSkinningProgram::drawSkinned(VertexGroup *vg)
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(m_bonesLoc, 1);
     // draw the mesh and let the shader do the skinning
-    drawArray(vg);
+    draw(vg);
     // restore state
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glActiveTexture(GL_TEXTURE0);
-    disableVertexAttributes();
 }

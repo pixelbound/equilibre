@@ -23,6 +23,7 @@ public:
     virtual void beginFrame();
     virtual void endFrame();
 
+    virtual void draw(VertexGroup *m);
     virtual void drawSkinned(VertexGroup *m);
 
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
@@ -38,7 +39,6 @@ public:
 protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
-    void drawArray(VertexGroup *vg);
 
     RenderStateGL2 *m_state;
     uint32_t m_vertexShader;

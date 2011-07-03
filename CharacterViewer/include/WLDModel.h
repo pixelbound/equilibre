@@ -55,18 +55,19 @@ private:
 class WLDModelPart : public QObject
 {
 public:
-    WLDModelPart(MeshDefFragment *meshDef, QObject *parent = 0);
+    WLDModelPart(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
     virtual ~WLDModelPart();
 
     VertexGroup * mesh() const;
     MeshDefFragment *def() const;
 
-    void importMaterialGroups(VertexGroup *vg, uint32_t dataOffset,
-        uint32_t indiceOffset, WLDModelSkin *skin);
+    void importVertexData(VertexGroup *vg, uint32_t offset);
+    void importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDModelSkin *skin);
 
     void draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
+    uint32_t m_partID;
     VertexGroup *m_mesh;
     MeshDefFragment *m_meshDef;
 };
@@ -117,7 +118,7 @@ public:
     QString name() const;
 
     WLDMaterialPalette *palette() const;
-    const QMap<QString, WLDModelPart *> & parts() const;
+    const QList<WLDModelPart *> & parts() const;
 
     void addPart(MeshDefFragment *frag, bool importPalette = true);
 
@@ -132,7 +133,7 @@ private:
     QString m_name;
     WLDModel *m_model;
     WLDMaterialPalette *m_palette;
-    QMap<QString, WLDModelPart *> m_parts;
+    QList<WLDModelPart *> m_parts;
     VertexGroup *m_aggregMesh;
 };
 

@@ -112,6 +112,7 @@ public:
 class MaterialGroup
 {
 public:
+    uint32_t id;
     uint32_t offset;
     uint32_t count;
     QString matName;

@@ -41,8 +41,15 @@ void RenderStateGL2::drawMesh(VertexGroup *vg, const BoneTransform *bones, int b
     if(!vg || !prog || !prog->loaded())
         return;
     prog->setMatrices(m_matrix[(int)ModelView], m_matrix[(int)Projection]);
-    prog->setBoneTransforms(bones, boneCount);
-    prog->drawSkinned(vg);
+    if(bones && boneCount > 0)
+    {
+        prog->setBoneTransforms(bones, boneCount);
+        prog->drawSkinned(vg);
+    }
+    else
+    {
+        prog->draw(vg);
+    }
 }
 
 RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
