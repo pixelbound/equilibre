@@ -242,6 +242,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     if(!bmp)
         return 0;
 
+    bool opaque = true;
     bool dds = false;
     QImage img;
     if(m_archive)
@@ -258,7 +259,11 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     // masked bitmap?
     uint32_t renderMode = (frag->m_param1 & 0xff);
     //qDebug("'%s' has param1 %02x", bmp->m_fileName.toLatin1().constData(), frag->m_param1 & 0xff);
-    if(renderMode == 0x13)
+    if(renderMode == 0x01)
+    {
+        // normal rendering
+    }
+    else if(renderMode == 0x13)
     {
         // masked texture
         if(img.colorCount() > 0)
@@ -269,6 +274,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
             colors[maskColor] = qRgba(0, 0, 0, 0);
             img.setColorTable(colors);
         }
+        opaque = false;
     }
     else if(renderMode == 0x17)
     {
@@ -285,6 +291,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
             }
             img.setColorTable(colors);
         }
+        opaque = false;
     }
     else if(renderMode == 0x05)
     {
@@ -300,6 +307,11 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
             }
             img.setColorTable(colors);
         }
+        opaque = false;
+    }
+    else
+    {
+        qDebug("Unknown render mode %x", renderMode);
     }
     // 0x53 == ?
 
@@ -307,7 +319,8 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     Material *mat = new Material();
     mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
-    mat->loadTexture(img, false, !dds);
+    mat->setOpaque(opaque);
+    mat->loadTexture(img, true, !dds);
     return mat;
 }
 
@@ -345,8 +358,7 @@ void WLDModelSkin::addPart(MeshDefFragment *frag, bool importPalette)
 {
     if(!frag)
         return;
-    QString actorName, meshName, skinName;
-    explodeMeshName(frag->name(), actorName, meshName, skinName);
+    QString meshName = frag->name().replace("_DMSPRITEDEF", "");
     if(importPalette)
         m_palette->addPaletteDef(frag->m_palette);
     m_parts.insert(meshName, new WLDModelPart(frag, m_model));
@@ -360,19 +372,11 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
     // 'HE' : mesh
     // '00' : skin ID
     static QRegExp r("^(\\w{3})(.*)(\\d{2})_DMSPRITEDEF$");
-    static QRegExp r2("^(\\w{3})(.*)_DMSPRITEDEF$");
     if(r.exactMatch(defName))
     {
         actorName = r.cap(1);
         meshName = r.cap(2);
         skinName = r.cap(3);
-        return true;
-    }
-    else if(r2.exactMatch(defName))
-    {
-        actorName = r2.cap(1);
-        meshName = QString::null;
-        skinName = r2.cap(2);
         return true;
     }
     return false;

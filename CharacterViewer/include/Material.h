@@ -24,6 +24,9 @@ public:
     void setSpecular(const vec4 &specular);
     void setShine(float shine);
 
+    bool isOpaque() const;
+    void setOpaque(bool opaque);
+
     uint32_t texture() const;
     void setTexture(uint32_t texture);
     void freeTexture();
@@ -41,6 +44,7 @@ private:
     vec4 m_specular;
     float m_shine;
     uint32_t m_texture;
+    bool m_opaque;
 };
 
 #endif

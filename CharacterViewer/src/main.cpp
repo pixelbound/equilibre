@@ -9,22 +9,11 @@
 #include "WLDSkeleton.h"
 #include "RenderStateGL2.h"
 #include "CharacterViewerWindow.h"
+#include "ZoneViewerWindow.h"
 
-int main(int argc, char **argv)
+QWidget * showCharViewer(Scene *scene, RenderState *state)
 {
-    QApplication app(argc, argv);
-    
-    // define OpenGL options
-    QGLFormat f;
-    f.setAlpha(true);
-    f.setSampleBuffers(true);
-    f.setSwapInterval(0);
-    QGLFormat::setDefaultFormat(f);
-
-    // create the scene
-    RenderStateGL2 state;
-    Scene scene(&state);
-    Zone *z = scene.zone();
+    Zone *z = scene->zone();
     z->loadCharacters("../Data/global_chr.s3d");
     z->loadCharacters("../Data/gequip.s3d");
 
@@ -44,11 +33,36 @@ int main(int argc, char **argv)
     }
 
     // create viewport for rendering the scene
-    CharacterViewerWindow v(&scene, &state);
-    v.setWindowState(Qt::WindowMaximized);
-    v.show();
+    CharacterViewerWindow *v = new CharacterViewerWindow(scene, state);
+    return v;
+}
+
+QWidget * showZoneViewer(Scene *scene, RenderState *state)
+{
+    scene->setMode(Scene::ZoneViewer);
+    return new ZoneViewerWindow(scene, state);
+}
+
+int main(int argc, char **argv)
+{
+    QApplication app(argc, argv);
     
+    // define OpenGL options
+    QGLFormat f;
+    f.setAlpha(true);
+    f.setSampleBuffers(true);
+    f.setSwapInterval(0);
+    QGLFormat::setDefaultFormat(f);
+
+    // create the scene
+    RenderStateGL2 state;
+    Scene scene(&state);
+
     // main window loop
+    //QWidget *v = showCharViewer(&scene, &state);
+    QWidget *v = showZoneViewer(&scene, &state);
+    v->setWindowState(Qt::WindowMaximized);
+    v->show();
     app.exec();
     return 0;
 }

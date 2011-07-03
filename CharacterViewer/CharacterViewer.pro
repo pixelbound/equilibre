@@ -14,7 +14,8 @@ HEADERS = include/SceneViewport.h \
     include/Zone.h \
     include/WLDSkeleton.h \
     include/CharacterViewerWindow.h \
-    include/imath.h include/dxt_tables.h include/dds.h include/dxt.h
+    include/imath.h include/dxt_tables.h include/dds.h include/dxt.h \
+    include/ZoneViewerWindow.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp src/ShaderProgramGL2.cpp \
@@ -31,7 +32,8 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/WLDSkeleton.cpp \
     src/CharacterViewerWindow.cpp \
     src/dxt.c src/mipmap.c \
-    src/Platform.cpp
+    src/Platform.cpp \
+    src/ZoneViewerWindow.cpp
 
 win32 {
     INCLUDEPATH += ../glew-1.5.4-mingw32/include ../zlib125-dll/include

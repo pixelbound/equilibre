@@ -44,15 +44,8 @@ protected:
     uint32_t m_vertexShader;
     uint32_t m_fragmentShader;
     uint32_t m_program;
-    int m_modelViewMatrixLoc;
-    int m_projMatrixLoc;
-    int m_matAmbientLoc;
-    int m_matHasTextureLoc;
-    int m_matTextureLoc;
-    int m_positionAttr;
-    int m_normalAttr;
-    int m_texCoordsAttr;
-    int m_boneAttr;
+    int m_attr[4];
+    int m_uniform[6];
     vec4 *m_bones;
 };
 

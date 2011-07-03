@@ -100,7 +100,7 @@ void Scene::draw()
         break;
     case ZoneViewer:
         m_zone->drawGeometry(m_state);
-        m_zone->drawObjects(m_state);
+        //m_zone->drawObjects(m_state);
         break;
     }
 }

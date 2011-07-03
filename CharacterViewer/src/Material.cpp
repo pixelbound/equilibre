@@ -14,6 +14,7 @@ Material::Material()
     m_specular = vec4(0.0, 0.0, 0.0, 0.0);
     m_shine = 0.0;
     m_texture = 0;
+    m_opaque = true;
 }
 
 Material::Material(vec4 ambient, vec4 diffuse, vec4 specular, float shine)
@@ -23,6 +24,7 @@ Material::Material(vec4 ambient, vec4 diffuse, vec4 specular, float shine)
     m_specular = specular;
     m_shine = shine;
     m_texture = 0;
+    m_opaque = true;
 }
 
 const vec4 & Material::ambient() const
@@ -63,6 +65,16 @@ void Material::setSpecular(const vec4 &specular)
 void Material::setShine(float shine)
 {
     m_shine = shine;
+}
+
+bool Material::isOpaque() const
+{
+    return m_opaque;
+}
+
+void Material::setOpaque(bool opaque)
+{
+    m_opaque = opaque;
 }
 
 uint32_t Material::texture() const
@@ -115,8 +127,16 @@ uint32_t Material::textureFromImage(QImage &img, bool mipmaps, bool convertToGL)
     uint32_t texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img2.width(), img2.height(), 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
+    if(mipmaps)
+    {
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img2.width(), img2.height(),
+            GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img2.width(), img2.height(), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
+    }
     setTextureParams(GL_TEXTURE_2D, false);
     glBindTexture(GL_TEXTURE_2D, 0);
     return texID;

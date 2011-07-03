@@ -5,6 +5,19 @@
 #include "WLDModel.h"
 
 const int MAX_TRANSFORMS = 256;
+const int A_POSITION = 0;
+const int A_NORMAL = 1;
+const int A_TEX_COORDS = 2;
+const int A_BONE_INDEX = 3;
+const int A_MAX = A_BONE_INDEX;
+
+const int U_MODELVIEW_MATRIX = 0;
+const int U_PROJECTION_MATRIX = 1;
+const int U_MAT_AMBIENT = 2;
+const int U_MAT_DIFFUSE = 3;
+const int U_MAT_HAS_TEXTURE = 4;
+const int U_MAT_TEXTURE = 5;
+const int U_MAX = U_MAT_TEXTURE;
 
 ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
 {
@@ -12,15 +25,10 @@ ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
     m_program = 0;
     m_vertexShader = 0;
     m_fragmentShader = 0;
-    m_modelViewMatrixLoc = -1;
-    m_projMatrixLoc = -1;
-    m_matAmbientLoc = -1;
-    m_matHasTextureLoc = -1;
-    m_matTextureLoc = -1;
-    m_positionAttr = -1;
-    m_normalAttr = -1;
-    m_texCoordsAttr = -1;
-    m_boneAttr = -1;
+    for(int i = 0; i <= A_MAX; i++)
+        m_attr[i] = -1;
+    for(int i = 0; i <= U_MAX; i++)
+        m_uniform[i] = -1;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
 }
 
@@ -118,15 +126,16 @@ bool ShaderProgramGL2::compileProgram(QString vertexFile, QString fragmentFile)
     m_vertexShader = vertexShader;
     m_fragmentShader = fragmentShader;
     m_program = program;
-    m_modelViewMatrixLoc = glGetUniformLocation(program, "u_modelViewMatrix");
-    m_projMatrixLoc = glGetUniformLocation(program, "u_projectionMatrix");
-    m_matAmbientLoc = glGetUniformLocation(program, "u_material_ambient");
-    m_matTextureLoc = glGetUniformLocation(program, "u_material_texture");
-    m_matHasTextureLoc = glGetUniformLocation(program, "u_has_texture");
-    m_positionAttr = glGetAttribLocation(program, "a_position");
-    m_normalAttr = glGetAttribLocation(program, "a_normal");
-    m_texCoordsAttr = glGetAttribLocation(program, "a_texCoords");
-    m_boneAttr = glGetAttribLocation(program, "a_boneIndex");
+    m_uniform[U_MODELVIEW_MATRIX] = glGetUniformLocation(program, "u_modelViewMatrix");
+    m_uniform[U_PROJECTION_MATRIX] = glGetUniformLocation(program, "u_projectionMatrix");
+    m_uniform[U_MAT_AMBIENT] = glGetUniformLocation(program, "u_material_ambient");
+    m_uniform[U_MAT_DIFFUSE] = glGetUniformLocation(program, "u_material_diffuse");
+    m_uniform[U_MAT_TEXTURE] = glGetUniformLocation(program, "u_material_texture");
+    m_uniform[U_MAT_HAS_TEXTURE] = glGetUniformLocation(program, "u_has_texture");
+    m_attr[A_POSITION] = glGetAttribLocation(program, "a_position");
+    m_attr[A_NORMAL] = glGetAttribLocation(program, "a_normal");
+    m_attr[A_TEX_COORDS] = glGetAttribLocation(program, "a_texCoords");
+    m_attr[A_BONE_INDEX] = glGetAttribLocation(program, "a_boneIndex");
     return true;
 }
 
@@ -163,8 +172,10 @@ uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type)
 
 void ShaderProgramGL2::setMatrices(const matrix4 &modelView, const matrix4 &projection)
 {
-    glUniformMatrix4fv(m_modelViewMatrixLoc, 1, GL_FALSE, (const GLfloat *)modelView.d);
-    glUniformMatrix4fv(m_projMatrixLoc, 1, GL_FALSE, (const GLfloat *)projection.d);
+    glUniformMatrix4fv(m_uniform[U_MODELVIEW_MATRIX],
+        1, GL_FALSE, (const GLfloat *)modelView.d);
+    glUniformMatrix4fv(m_uniform[U_PROJECTION_MATRIX],
+        1, GL_FALSE, (const GLfloat *)projection.d);
 }
 
 void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int count)
@@ -188,17 +199,18 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
 
 void ShaderProgramGL2::beginApplyMaterial(const Material &m)
 {
-    glUniform4fv(m_matAmbientLoc, 1, (const GLfloat *)&m.ambient());
+    glUniform4fv(m_uniform[U_MAT_AMBIENT], 1, (const GLfloat *)&m.ambient());
+    glUniform4fv(m_uniform[U_MAT_DIFFUSE], 1, (const GLfloat *)&m.diffuse());
     if(m.texture() != 0)
     {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m.texture());
-        glUniform1i(m_matTextureLoc, 0);
-        glUniform1i(m_matHasTextureLoc, 1);
+        glUniform1i(m_uniform[U_MAT_TEXTURE], 0);
+        glUniform1i(m_uniform[U_MAT_HAS_TEXTURE], 1);
     }
     else
     {
-        glUniform1i(m_matHasTextureLoc, 0);
+        glUniform1i(m_uniform[U_MAT_HAS_TEXTURE], 0);
     }
 }
 
@@ -213,38 +225,34 @@ void ShaderProgramGL2::endApplyMaterial(const Material &m)
 
 void ShaderProgramGL2::enableVertexAttributes()
 {
-    glEnableVertexAttribArray(m_positionAttr);
-    if(m_normalAttr >= 0)
-        glEnableVertexAttribArray(m_normalAttr);
-    if(m_texCoordsAttr >= 0)
-        glEnableVertexAttribArray(m_texCoordsAttr);
-    if(m_boneAttr >= 0)
-        glEnableVertexAttribArray(m_boneAttr);
+    for(int i = 0; i <= A_MAX; i++)
+    {
+        if(m_attr[i] >= 0)
+            glEnableVertexAttribArray(m_attr[i]);
+    }
 }
 
 void ShaderProgramGL2::disableVertexAttributes()
 {
-    glDisableVertexAttribArray(m_positionAttr);
-    if(m_normalAttr >= 0)
-        glDisableVertexAttribArray(m_normalAttr);
-    if(m_texCoordsAttr >= 0)
-        glDisableVertexAttribArray(m_texCoordsAttr);
-    if(m_boneAttr >= 0)
-        glDisableVertexAttribArray(m_boneAttr);
+    for(int i = 0; i <= A_MAX; i++)
+    {
+        if(m_attr[i] >= 0)
+            glDisableVertexAttribArray(m_attr[i]);
+    }
 }
 
 void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
 {
-    glVertexAttribPointer(m_positionAttr, 3, GL_FLOAT, GL_FALSE,
+    glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), &vg->data->position);
-    if(m_normalAttr >= 0)
-        glVertexAttribPointer(m_normalAttr, 3, GL_FLOAT, GL_FALSE,
+    if(m_attr[A_NORMAL] >= 0)
+        glVertexAttribPointer(m_attr[A_NORMAL], 3, GL_FLOAT, GL_FALSE,
             sizeof(VertexData), &vg->data->normal);
-    if(m_texCoordsAttr >= 0)
-        glVertexAttribPointer(m_texCoordsAttr, 2, GL_FLOAT, GL_FALSE,
+    if(m_attr[A_TEX_COORDS] >= 0)
+        glVertexAttribPointer(m_attr[A_TEX_COORDS], 2, GL_FLOAT, GL_FALSE,
             sizeof(VertexData), &vg->data->texCoords);
-    if(m_boneAttr >= 0)
-        glVertexAttribPointer(m_boneAttr, 1, GL_INT, GL_FALSE,
+    if(m_attr[A_BONE_INDEX] >= 0)
+        glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
             sizeof(VertexData), &vg->data->bone);
 }
 
@@ -275,32 +283,28 @@ void ShaderProgramGL2::drawArray(VertexGroup *vg)
 {
     Material *mat = 0;
     uploadVertexAttributes(vg);
+    const uint16_t *indices = 0;
     if(vg->indices.count() > 0)
+        indices = vg->indices.constData();
+    foreach(MaterialGroup mg, vg->matGroups)
     {
-        const uint16_t *indices = vg->indices.constData();
-        foreach(MaterialGroup mg, vg->matGroups)
+        // skip meshes that don't have a palette of materials
+        if(!mg.palette)
+            continue;
+        mat = mg.palette->material(mg.matName);
+        if(mat)
         {
-            if(mg.palette)
-                mat = mg.palette->material(mg.matName);
-            if(mat)
-                m_state->pushMaterial(*mat);
+            // XXX fix rendering non-opaque polygons
+            if(!mat->isOpaque())
+                continue;
+            m_state->pushMaterial(*mat);
+        }
+        if(indices)
             glDrawElements(vg->mode, mg.count, GL_UNSIGNED_SHORT, indices + mg.offset);
-            if(mat)
-                m_state->popMaterial();
-        }
-    }
-    else
-    {
-        foreach(MaterialGroup mg, vg->matGroups)
-        {
-            if(mg.palette)
-                mat = mg.palette->material(mg.matName);
-            if(mat)
-                m_state->pushMaterial(*mat);
+        else
             glDrawArrays(vg->mode, mg.offset, mg.count);
-            if(mat)
-                m_state->popMaterial();
-        }
+        if(mat)
+            m_state->popMaterial();
     }
 }
 
