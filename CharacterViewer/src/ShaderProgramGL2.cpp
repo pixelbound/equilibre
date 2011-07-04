@@ -271,13 +271,22 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
 {
     if(!vg || !palette)
         return;
+    bool haveIndices = false;
+    const uint32_t *indices = 0;
     enableVertexAttributes();
     if(vg->dataBuffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, vg->dataBuffer);
-    uploadVertexAttributes(vg);
-    const uint32_t *indices = 0;
-    if(vg->indices.count() > 0)
+    if(vg->indicesBuffer != 0)
+    {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indicesBuffer);
+        haveIndices = true;
+    }
+    else if(vg->indices.count() > 0)
+    {
         indices = vg->indices.constData();
+        haveIndices = true;
+    }
+    uploadVertexAttributes(vg);
     foreach(MaterialGroup mg, vg->matGroups)
     {
         // skip meshes that don't have a palette of materials
@@ -291,24 +300,15 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
                 continue;
             m_state->pushMaterial(*mat);
         }
-        if(indices)
-        {
-            if(vg->indicesBuffer != 0)
-            {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indicesBuffer);
-                glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, (char *)0 + mg.offset);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            }
-            else
-            {
-                glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
-            }
-        }
+        if(haveIndices)
+            glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
         else
             glDrawArrays(vg->mode, mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
     }
+    if(vg->indicesBuffer != 0)
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     if(vg->dataBuffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     disableVertexAttributes();
