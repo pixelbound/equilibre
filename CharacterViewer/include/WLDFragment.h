@@ -35,6 +35,7 @@ class WLDFragment
 {
 public:
     WLDFragment(uint32_t kind, QString name);
+    virtual ~WLDFragment();
     static WLDFragment *fromStream(WLDReader *s);
 
     uint32_t kind() const;

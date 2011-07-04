@@ -1,3 +1,4 @@
+#include <QSettings>
 #include "Scene.h"
 #include "RenderState.h"
 #include "WLDModel.h"
@@ -10,6 +11,9 @@ Scene::Scene(RenderState *state)
     m_sigma = 1.0;
     m_zone = new Zone(this);
     m_mode = CharacterViewer;
+    m_showZoneObjects = false;
+    m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
+        "OpenEQ", QString(), this);
     reset();
 }
 
@@ -20,6 +24,16 @@ Scene::~Scene()
 const QMap<QString, WLDActor *> & Scene::charModels() const
 {
     return m_zone->charModels();
+}
+
+QString Scene::assetPath() const
+{
+    return m_settings->value("assetPath", ".").toString();
+}
+
+void Scene::setAssetPath(QString path)
+{
+     m_settings->setValue("assetPath", path);
 }
 
 void Scene::init()
@@ -100,9 +114,15 @@ void Scene::draw()
         break;
     case ZoneViewer:
         m_zone->drawGeometry(m_state);
-        //m_zone->drawObjects(m_state);
+        if(m_showZoneObjects)
+            m_zone->drawObjects(m_state);
         break;
     }
+}
+
+void Scene::showZoneObjects(bool show)
+{
+    m_showZoneObjects = show;
 }
 
 void Scene::topView()

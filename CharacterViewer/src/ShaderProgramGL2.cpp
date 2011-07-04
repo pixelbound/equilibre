@@ -36,7 +36,7 @@ ShaderProgramGL2::~ShaderProgramGL2()
 {
     delete [] m_bones;
 
-    uint32_t currentProg;
+    uint32_t currentProg = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, (int32_t *)&currentProg);
     if(currentProg == m_program)
         glUseProgram(0);

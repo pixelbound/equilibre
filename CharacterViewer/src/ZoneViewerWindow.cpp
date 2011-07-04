@@ -23,7 +23,6 @@ ZoneViewerWindow::ZoneViewerWindow(Scene *scene, RenderState *state,
 {
     m_scene = scene;
     m_state = state;
-    m_lastDir = "../Data";
     setWindowTitle("OpenEQ Zone Viewer");
     m_viewport = new SceneViewport(scene, state);
     setCentralWidget(m_viewport);
@@ -32,15 +31,18 @@ ZoneViewerWindow::ZoneViewerWindow(Scene *scene, RenderState *state,
 
 void ZoneViewerWindow::initMenus()
 {
-    QMenu *fileMenu = new QMenu();
+    QMenu *fileMenu = new QMenu(this);
     fileMenu->setTitle("&File");
 
     QAction *openAction = new QAction("&Open S3D archive...", this);
     openAction->setShortcut(QKeySequence::Open);
+    QAction *selectDirAction = new QAction("Select Asset Directory...", this);
+
     QAction *quitAction = new QAction("&Quit", this);
     quitAction->setShortcut(QKeySequence::Quit);
 
     fileMenu->addAction(openAction);
+    fileMenu->addAction(selectDirAction);
     fileMenu->addSeparator();
     fileMenu->addAction(quitAction);
 
@@ -60,11 +62,14 @@ void ZoneViewerWindow::initMenus()
 
     m_showFpsAction = new QAction("Show FPS", this);
     m_showFpsAction->setCheckable(true);
+    m_showZoneObjectsAction = new QAction("Show Zone Objects", this);
+    m_showZoneObjectsAction->setCheckable(true);
 
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningUniformAction);
     renderMenu->addAction(m_hardwareSkinningTextureAction);
     renderMenu->addAction(m_showFpsAction);
+    renderMenu->addAction(m_showZoneObjectsAction);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(renderMenu);
@@ -72,12 +77,14 @@ void ZoneViewerWindow::initMenus()
     updateMenus();
 
     connect(openAction, SIGNAL(triggered()), this, SLOT(openArchive()));
+    connect(selectDirAction, SIGNAL(triggered()), this, SLOT(selectAssetDir()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
     connect(m_softwareSkinningAction, SIGNAL(triggered()), this, SLOT(setSoftwareSkinning()));
     connect(m_hardwareSkinningUniformAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningUniform()));
     connect(m_hardwareSkinningTextureAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningTexture()));
     connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowFps(bool)));
+    connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
 }
 
 void ZoneViewerWindow::openArchive()
@@ -86,13 +93,25 @@ void ZoneViewerWindow::openArchive()
     // OpenGL rendering interferes wtih QFileDialog
     m_viewport->setAnimation(false);
     filePath = QFileDialog::getOpenFileName(0, "Select a S3D file to open",
-        m_lastDir, "S3D Archive (*.s3d)");
+        m_scene->assetPath(), "S3D Archive (*.s3d)");
     if(!filePath.isEmpty())
     {
         QFileInfo info(filePath);
-        m_lastDir = info.dir().absolutePath();
         loadZone(info.absolutePath(), info.baseName());
     }
+    m_viewport->setAnimation(true);
+}
+
+void ZoneViewerWindow::selectAssetDir()
+{
+    QFileDialog fd;
+    fd.setFileMode(QFileDialog::Directory);
+    fd.setDirectory(m_scene->assetPath());
+    fd.setWindowTitle("Select an asset directory");
+    // OpenGL rendering interferes wtih QFileDialog
+    m_viewport->setAnimation(false);
+    if((fd.exec() == QDialog::Accepted) && (fd.selectedFiles().count() > 0))
+        m_scene->setAssetPath(fd.selectedFiles().value(0));
     m_viewport->setAnimation(true);
 }
 

@@ -23,6 +23,7 @@ public:
 
 private slots:
     void openArchive();
+    void selectAssetDir();
     void setSoftwareSkinning();
     void setHardwareSkinningUniform();
     void setHardwareSkinningTexture();
@@ -34,11 +35,11 @@ private:
     SceneViewport *m_viewport;
     Scene *m_scene;
     RenderState *m_state;
-    QString m_lastDir;
     QAction *m_softwareSkinningAction;
     QAction *m_hardwareSkinningUniformAction;
     QAction *m_hardwareSkinningTextureAction;
     QAction *m_showFpsAction;
+    QAction *m_showZoneObjectsAction;
 };
 
 #endif

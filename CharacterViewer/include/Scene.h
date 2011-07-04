@@ -9,6 +9,7 @@ class WLDModel;
 class WLDActor;
 class Zone;
 class RenderState;
+class QSettings;
 
 class Scene : public QObject
 {
@@ -28,6 +29,9 @@ public:
     const QMap<QString, WLDActor *> & charModels() const;
     WLDActor * selectedCharacter() const;
     QString selectedModelName() const;
+
+    QString assetPath() const;
+    void setAssetPath(QString path);
 
     void draw();
 
@@ -51,6 +55,7 @@ public:
 
 public slots:
     void setSelectedModelName(QString name);
+    void showZoneObjects(bool show);
 
 private:
     RenderState *m_state;
@@ -62,6 +67,8 @@ private:
     QString m_meshName;
     Zone *m_zone;
     Mode m_mode;
+    bool m_showZoneObjects;
+    QSettings *m_settings;
 };
 
 #endif

@@ -8,6 +8,10 @@ WLDFragment::WLDFragment(uint32_t kind, QString name)
     m_name = name;
 }
 
+WLDFragment::~WLDFragment()
+{
+}
+
 uint32_t WLDFragment::kind() const
 {
     return m_kind;

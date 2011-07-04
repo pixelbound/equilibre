@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <QApplication>
 #include <QGLFormat>
+#include <QDir>
 #include <QMessageBox>
 #include "Scene.h"
 #include "Zone.h"
@@ -14,8 +15,9 @@
 QWidget * showCharViewer(Scene *scene, RenderState *state)
 {
     Zone *z = scene->zone();
-    z->loadCharacters("../Data/global_chr.s3d");
-    z->loadCharacters("../Data/gequip.s3d");
+    QDir assetDir(scene->assetPath());
+    z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
+    z->loadCharacters(assetDir.absoluteFilePath("gequip.s3d"));
 
     WLDActor *weaponActor = z->charModels().value("IT106");
     WLDActor *weaponActor2 = z->charModels().value("IT113");

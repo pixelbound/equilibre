@@ -20,6 +20,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
 
 Zone::~Zone()
 {
+    clear();
 }
 
 const QMap<QString, WLDModel *> & Zone::objectModels() const
@@ -60,14 +61,20 @@ bool Zone::load(QString path, QString name)
     m_charArchive = new PFSArchive(charPath, this);
     m_charWld = WLDData::fromArchive(m_charArchive, charFile, this);
     if(!m_charWld)
-        return false;
+    {
+        delete m_charArchive;
+        m_charArchive = 0;
+    }
 
     // import geometry, objects, characters
     importGeometry();
     importObjects();
-    importCharacters(m_charArchive, m_charWld);
-    importCharacterPalettes(m_charArchive, m_charWld);
-    importSkeletons(m_charArchive, m_charWld);
+    if(m_charWld)
+    {
+        importCharacters(m_charArchive, m_charWld);
+        importCharacterPalettes(m_charArchive, m_charWld);
+        importSkeletons(m_charArchive, m_charWld);
+    }
     return true;
 }
 
