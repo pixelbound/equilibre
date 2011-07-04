@@ -247,7 +247,7 @@ void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
     uint8_t *normalPointer = (uint8_t *)&vg->data->normal;
     uint8_t *texCoordsPointer = (uint8_t *)&vg->data->texCoords;
     uint8_t *bonePointer = (uint8_t *)&vg->data->bone;
-    if(vg->buffer != 0)
+    if(vg->dataBuffer != 0)
     {
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
@@ -272,8 +272,8 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
     if(!vg || !palette)
         return;
     enableVertexAttributes();
-    if(vg->buffer != 0)
-        glBindBuffer(GL_ARRAY_BUFFER, vg->buffer);
+    if(vg->dataBuffer != 0)
+        glBindBuffer(GL_ARRAY_BUFFER, vg->dataBuffer);
     uploadVertexAttributes(vg);
     const uint32_t *indices = 0;
     if(vg->indices.count() > 0)
@@ -292,13 +292,24 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
             m_state->pushMaterial(*mat);
         }
         if(indices)
-            glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
+        {
+            if(vg->indicesBuffer != 0)
+            {
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indicesBuffer);
+                glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, (char *)0 + mg.offset);
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            }
+            else
+            {
+                glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
+            }
+        }
         else
             glDrawArrays(vg->mode, mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
     }
-    if(vg->buffer != 0)
+    if(vg->dataBuffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     disableVertexAttributes();
 }

@@ -438,12 +438,46 @@ void WLDModelSkin::combineParts()
         indiceOffset += mg.count;
     }
 
+    // merge material groups with common material
+    QVector<MaterialGroup> newGroups;
+    MaterialGroup group;
+    group.id = vg->matGroups[0].id;
+    group.offset = 0;
+    group.count = 0;
+    group.matName = vg->matGroups[0].matName;
+    for(int i = 0; i < vg->matGroups.count(); i++)
+    {
+        MaterialGroup &mg(vg->matGroups[i]);
+        if(mg.matName != group.matName)
+        {
+            // new material - output the current group
+            newGroups.append(group);
+            group.id = mg.id;
+            group.offset += group.count;
+            group.count = 0;
+            group.matName = mg.matName;
+        }
+        group.count += mg.count;
+    }
+    newGroups.append(group);
+    vg->matGroups = newGroups;
+
     // copy the vertex group to the GPU
-    uint32_t size = totalVertices * sizeof(VertexData);
-    glGenBuffers(1, &vg->buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vg->buffer);
-    glBufferData(GL_ARRAY_BUFFER, size, vg->data, GL_STATIC_DRAW);
+    uint32_t dataSize = totalVertices * sizeof(VertexData);
+    glGenBuffers(1, &vg->dataBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vg->dataBuffer);
+    glBufferData(GL_ARRAY_BUFFER, dataSize, vg->data, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //uint32_t indicesSize = vg->indices.count() * sizeof(uint32_t);
+    //uint32_t buffers[2];
+    //glGenBuffers(2, buffers);
+    //glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    //glBufferData(GL_ARRAY_BUFFER, dataSize, vg->data, GL_STATIC_DRAW);
+    //glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+    //glBufferData(GL_ARRAY_BUFFER, indicesSize, vg->indices.data(), GL_STATIC_DRAW);
+    //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //vg->dataBuffer = buffers[0];
+    //vg->indicesBuffer = buffers[1];
 
     m_aggregMesh = vg;
 }

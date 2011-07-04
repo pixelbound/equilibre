@@ -130,7 +130,8 @@ public:
     VertexData *data;
     QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;
-    uint32_t buffer;
+    uint32_t dataBuffer;
+    uint32_t indicesBuffer;
 };
 
 #endif
