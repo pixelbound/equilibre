@@ -59,14 +59,20 @@ public:
     virtual void init();
     virtual void draw();
 
+    virtual void keyReleaseEvent(QKeyEvent *e);
+
 public slots:
     void showZoneObjects(bool show);
 
 private:
+    void step(double distance);
+
     double m_started;
-    vec3 m_delta;
-    vec3 m_theta;
-    float m_sigma;
+    // xyz position of the player in the world
+    vec3 m_playerPos;
+    // z angle that describes where the player is facing
+    float m_playerOrient;
+    float m_zoneScale;
     Zone *m_zone;
     bool m_showZoneObjects;
     // viewer settings

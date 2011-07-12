@@ -68,10 +68,6 @@ public:
     WLDActor * selectedCharacter() const;
     QString selectedModelName() const;
 
-    void topView();
-    void sideView();
-    void frontView();
-
     virtual void draw();
 
     virtual void keyReleaseEvent(QKeyEvent *e);

@@ -13,7 +13,6 @@
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QWheelEvent>
-#include <QPaintEvent>
 #include "CharacterViewerWindow.h"
 #include "SceneViewport.h"
 #include "RenderState.h"
@@ -361,21 +360,6 @@ void CharacterScene::draw()
     }
 }
 
-void CharacterScene::topView()
-{
-    m_theta = vec3(0.0, 0.0, 0.0);
-}
-
-void CharacterScene::sideView()
-{
-    m_theta = vec3(-90.0, 0.0, -90.0);
-}
-
-void CharacterScene::frontView()
-{
-    m_theta = vec3(-90.0, 0.0, 0.0);
-}
-
 void CharacterScene::keyReleaseEvent(QKeyEvent *e)
 {
     int key = e->key();
@@ -391,12 +375,6 @@ void CharacterScene::keyReleaseEvent(QKeyEvent *e)
         m_theta.z += 5.0;
     else if(key == Qt::Key_6)
         m_theta.z -= 5.0;
-    else if(key == Qt::Key_7)
-        topView();
-    else if(key == Qt::Key_3)
-        sideView();
-    else if(key == Qt::Key_1)
-        frontView();
 }
 
 void CharacterScene::mouseMoveEvent(QMouseEvent *e)

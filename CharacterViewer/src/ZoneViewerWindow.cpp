@@ -9,6 +9,7 @@
 #include <QDialogButtonBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QKeyEvent>
 #include "ZoneViewerWindow.h"
 #include "SceneViewport.h"
 #include "RenderState.h"
@@ -102,6 +103,7 @@ void ZoneViewerWindow::openArchive()
     {
         QFileInfo info(filePath);
         loadZone(info.absolutePath(), info.baseName());
+        m_viewport->setFocus();
     }
     m_viewport->setAnimation(true);
 }
@@ -172,16 +174,15 @@ void ZoneViewerWindow::setHardwareSkinningTexture()
 
 ZoneScene::ZoneScene(RenderState *state) : Scene(state)
 {
-    m_sigma = 1.0;
     m_zone = new Zone(this);
     m_showZoneObjects = false;
     m_transState.last = vec3();
     m_rotState.last = vec3();
     m_transState.active = false;
     m_rotState.active = false;
-    m_delta = vec3(-0.0, -0.0, -5.0);
-    m_theta = vec3(-90.0, 00.0, 270.0);
-    m_sigma = 0.5;
+    m_playerPos = vec3(0.0, 0.0, 0.0);
+    m_playerOrient = 0.0;
+    m_zoneScale = 0.5;
 }
 
 Zone * ZoneScene::zone() const
@@ -201,11 +202,38 @@ void ZoneScene::init()
 
 void ZoneScene::draw()
 {
-    vec3 rot = m_theta;
-    m_state->translate(m_delta.x, m_delta.y, m_delta.z);
+    vec3 rot = vec3(-90.0, 00.0, m_playerOrient);
+    m_state->pushMatrix();
     m_state->rotate(rot.x, 1.0, 0.0, 0.0);
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
-    m_state->scale(m_sigma, m_sigma, m_sigma);
+    m_state->translate(m_playerPos.x, m_playerPos.y, m_playerPos.z);
+    m_state->scale(m_zoneScale, m_zoneScale, m_zoneScale);
     m_zone->drawGeometry(m_state);
+    if(m_showZoneObjects)
+        m_zone->drawObjects(m_state);
+    m_state->popMatrix();
+}
+
+void ZoneScene::step(double distance)
+{
+    matrix4 m = matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
+    m_playerPos = m_playerPos + m.map(vec3(0.0, -distance, 0.0));
+}
+
+void ZoneScene::keyReleaseEvent(QKeyEvent *e)
+{
+    int key = e->key();
+    if(key == Qt::Key_Q)
+        m_playerOrient -= 5.0;
+    else if(key == Qt::Key_D)
+        m_playerOrient += 5.0;
+    else if(key == Qt::Key_Z)
+        step(5.0);
+    else if(key == Qt::Key_S)
+        step(-5.0);
+    else if(key == Qt::Key_E)
+        m_playerPos.z -= 5.0;
+    else if(key == Qt::Key_A)
+        m_playerPos.z += 5.0;
 }
