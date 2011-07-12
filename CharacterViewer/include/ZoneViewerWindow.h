@@ -60,23 +60,29 @@ public:
     virtual void draw();
 
     virtual void keyReleaseEvent(QKeyEvent *e);
+    virtual void mouseMoveEvent(QMouseEvent *e);
+    virtual void mousePressEvent(QMouseEvent *e);
+    virtual void mouseReleaseEvent(QMouseEvent *e);
 
 public slots:
     void showZoneObjects(bool show);
 
 private:
-    void step(double distance);
+    void step(double distForward, double distSideways);
 
     double m_started;
     // xyz position of the player in the world
     vec3 m_playerPos;
     // z angle that describes where the player is facing
     float m_playerOrient;
+    // xyz angles that describe how the camera is oriented rel. to the player
+    vec3 m_cameraOrient;
+    // xyz position of the camera is rel. to the player
+    vec3 m_cameraPos;
     float m_zoneScale;
     Zone *m_zone;
     bool m_showZoneObjects;
     // viewer settings
-    MouseState m_transState;
     MouseState m_rotState;
 };
 

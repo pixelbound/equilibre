@@ -176,12 +176,12 @@ ZoneScene::ZoneScene(RenderState *state) : Scene(state)
 {
     m_zone = new Zone(this);
     m_showZoneObjects = false;
-    m_transState.last = vec3();
     m_rotState.last = vec3();
-    m_transState.active = false;
     m_rotState.active = false;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
+    m_cameraPos = vec3(0.0, 0.0, 0.0);
+    m_cameraOrient = vec3(0.0, 0.0, 0.0);
     m_zoneScale = 0.5;
 }
 
@@ -202,12 +202,13 @@ void ZoneScene::init()
 
 void ZoneScene::draw()
 {
-    vec3 rot = vec3(-90.0, 00.0, m_playerOrient);
+    vec3 rot = vec3(-90.0, 00.0, m_playerOrient) + m_cameraOrient;
     m_state->pushMatrix();
+    m_state->translate(m_cameraPos);
     m_state->rotate(rot.x, 1.0, 0.0, 0.0);
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
-    m_state->translate(m_playerPos.x, m_playerPos.y, m_playerPos.z);
+    m_state->translate(m_playerPos);
     m_state->scale(m_zoneScale, m_zoneScale, m_zoneScale);
     m_zone->drawGeometry(m_state);
     if(m_showZoneObjects)
@@ -215,25 +216,53 @@ void ZoneScene::draw()
     m_state->popMatrix();
 }
 
-void ZoneScene::step(double distance)
+void ZoneScene::step(double distForward, double distSideways)
 {
     matrix4 m = matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
-    m_playerPos = m_playerPos + m.map(vec3(0.0, -distance, 0.0));
+    m_playerPos = m_playerPos + m.map(vec3(distSideways, -distForward, 0.0));
 }
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)
 {
     int key = e->key();
     if(key == Qt::Key_Q)
-        m_playerOrient -= 5.0;
+        step(0.0, 5.0);
     else if(key == Qt::Key_D)
-        m_playerOrient += 5.0;
+        step(0.0, -5.0);
     else if(key == Qt::Key_Z)
-        step(5.0);
+        step(5.0, 0.0);
     else if(key == Qt::Key_S)
-        step(-5.0);
+        step(-5.0, 0.0);
     else if(key == Qt::Key_E)
         m_playerPos.z -= 5.0;
     else if(key == Qt::Key_A)
         m_playerPos.z += 5.0;
+}
+
+void ZoneScene::mouseMoveEvent(QMouseEvent *e)
+{
+    if(m_rotState.active)
+    {
+        int dx = m_rotState.x0 - e->x();
+        int dy = m_rotState.y0 - e->y();
+        m_cameraOrient.x = (m_rotState.last.x - (dy * 1.0));
+        m_playerOrient = (m_rotState.last.z - (dx * 1.0));
+    }
+}
+
+void ZoneScene::mousePressEvent(QMouseEvent *e)
+{
+    if(e->button() & Qt::RightButton)
+    {
+        m_rotState.active = true;
+        m_rotState.x0 = e->x();
+        m_rotState.y0 = e->y();
+        m_rotState.last = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
+    }
+}
+
+void ZoneScene::mouseReleaseEvent(QMouseEvent *e)
+{
+    if(e->button() & Qt::RightButton)
+        m_rotState.active = false;
 }
