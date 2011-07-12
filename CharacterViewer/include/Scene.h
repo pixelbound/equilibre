@@ -10,6 +10,17 @@ class WLDActor;
 class Zone;
 class RenderState;
 class QSettings;
+class QKeyEvent;
+class QMouseEvent;
+class QWheelEvent;
+
+struct MouseState
+{
+    bool active;
+    int x0;
+    int y0;
+    vec3 last;        // value of delta/theta when the user last clicked
+};
 
 class Scene : public QObject
 {
@@ -21,10 +32,6 @@ public:
 
     void init();
 
-    vec3 & theta();
-    float & sigma();
-    vec3 & delta();
-
     Zone * zone() const;
     const QMap<QString, WLDActor *> & charModels() const;
     WLDActor * selectedCharacter() const;
@@ -35,14 +42,15 @@ public:
 
     void draw();
 
-    void selectNext();
-    void selectPrevious();
-
     void topView();
     void sideView();
     void frontView();
 
-    void reset();
+    virtual void keyReleaseEvent(QKeyEvent *e);
+    virtual void mouseMoveEvent(QMouseEvent *e);
+    virtual void mousePressEvent(QMouseEvent *e);
+    virtual void mouseReleaseEvent(QMouseEvent *e);
+    virtual void wheelEvent(QWheelEvent *e);
 
     enum Mode
     {
@@ -60,7 +68,6 @@ public slots:
 private:
     RenderState *m_state;
     double m_started;
-    int m_selected;
     vec3 m_delta;
     vec3 m_theta;
     float m_sigma;
@@ -69,6 +76,9 @@ private:
     Mode m_mode;
     bool m_showZoneObjects;
     QSettings *m_settings;
+    // viewer settings
+    MouseState m_transState;
+    MouseState m_rotState;
 };
 
 #endif

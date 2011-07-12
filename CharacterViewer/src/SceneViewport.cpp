@@ -46,7 +46,6 @@ void SceneViewport::initializeGL()
 
     m_state->init();
     m_scene->init();
-    resetCamera();
 }
 
 void SceneViewport::resizeGL(int w, int h)
@@ -71,18 +70,6 @@ void SceneViewport::paintGL()
         m_scene->draw();
         m_state->endFrame();
     }
-}
-
-void SceneViewport::resetCamera()
-{
-    m_transState.last = vec3();
-    m_rotState.last = vec3();
-    m_transState.active = false;
-    m_rotState.active = false;
-    m_animate = true;
-    m_state->reset();
-    m_scene->reset();
-    updateAnimationState();
 }
 
 void SceneViewport::toggleAnimation()
@@ -156,108 +143,57 @@ void SceneViewport::updateAnimationState()
 
 void SceneViewport::keyReleaseEvent(QKeyEvent *e)
 {
-    int key = e->key();
-    if(key == Qt::Key_R)
-        resetCamera();
-    else if(key == Qt::Key_Q)
-        m_scene->theta().y += 5.0;
-    else if(key == Qt::Key_D)
-        m_scene->theta().y -= 5.0;
-    else if(key == Qt::Key_2)
-        m_scene->theta().x += 5.0;
-    else if(key == Qt::Key_8)
-        m_scene->theta().x -= 5.0;
-    else if(key == Qt::Key_4)
-        m_scene->theta().z += 5.0;
-    else if(key == Qt::Key_6)
-        m_scene->theta().z -= 5.0;
-    else if(key == Qt::Key_7)
-        m_scene->topView();
-    else if(key == Qt::Key_3)
-        m_scene->sideView();
-    else if(key == Qt::Key_1)
-        m_scene->frontView();
-    else if(key == Qt::Key_Z)
-        m_state->toggleWireframe();
-    else if(key == Qt::Key_P)
-        m_state->toggleProjection();
-    else if(key == Qt::Key_Space)
-        toggleAnimation();
-    QGLWidget::keyReleaseEvent(e);
+    m_scene->keyReleaseEvent(e);
+    //if(!e->isAccepted())
+    {
+        QGLWidget::keyReleaseEvent(e);
+        //return;
+    }
     update();
 }
 
 void SceneViewport::mouseMoveEvent(QMouseEvent *e)
 {
-    int x = e->x();
-    int y = e->y();
-    
-    if(m_transState.active)
+    m_scene->mouseMoveEvent(e);
+    //if(!e->isAccepted())
     {
-        int dx = m_transState.x0 - x;
-        int dy = m_transState.y0 - y;
-        m_scene->delta().x = (m_transState.last.x - (dx / 100.0));
-        m_scene->delta().z = (m_transState.last.y + (dy / 100.0));
-        update();
+        QGLWidget::mouseMoveEvent(e);
+        //return;
     }
-    
-    if(m_rotState.active)
-    {
-        int dx = m_rotState.x0 - x;
-        int dy = m_rotState.y0 - y;
-        m_scene->theta().x = (m_rotState.last.x + (dy * 2.0));
-        m_scene->theta().z = (m_rotState.last.z + (dx * 2.0));
-        update();
-    }
+    update();
 }
 
 void SceneViewport::mousePressEvent(QMouseEvent *e)
 {
-    int x = e->x();
-    int y = e->y();
-    if(e->button() & Qt::MiddleButton)       // middle button pans the scene
+    m_scene->mousePressEvent(e);
+    if(e->button() & Qt::LeftButton)
+        setFocus();
+    //if(!e->isAccepted())
     {
-        m_transState.active = true;
-        m_transState.x0 = x;
-        m_transState.y0 = y;
-        m_transState.last = m_scene->delta();
-    }
-    else if(e->button() & Qt::LeftButton)   // left button rotates the scene
-    {
-        m_rotState.active = true;
-        m_rotState.x0 = x;
-        m_rotState.y0 = y;
-        m_rotState.last = m_scene->theta();
-		setFocus();
-    }
-    else
-    {
-        e->ignore();
         QGLWidget::mousePressEvent(e);
-        return;
+        //return;
     }
     update();
 }
 
 void SceneViewport::mouseReleaseEvent(QMouseEvent *e)
 {
-    if(e->button() & Qt::MiddleButton)
-        m_transState.active = false;
-    else if(e->button() & Qt::LeftButton)
-        m_rotState.active = false;
-    else
+    m_scene->mouseReleaseEvent(e);
+    //if(!e->isAccepted())
     {
-        e->ignore();
         QGLWidget::mouseReleaseEvent(e);
-        return;
+        //return;
     }
     update();
 }
 
 void SceneViewport::wheelEvent(QWheelEvent *e)
 {
-    // mouse wheel up zooms towards the scene
-    // mouse wheel down zooms away from scene
-    m_scene->sigma() *= pow(1.01, e->delta() / 8);
+    m_scene->wheelEvent(e);
+    //if(!e->isAccepted())
+    {
+        QGLWidget::wheelEvent(e);
+        //return;
+    }
     update();
 }

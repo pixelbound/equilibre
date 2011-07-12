@@ -12,14 +12,6 @@ class QGLFormat;
 class Scene;
 class RenderState;
 
-typedef struct
-{
-    bool active;
-    int x0;
-    int y0;
-    vec3 last;        // value of delta/theta when the user last clicked
-} MouseState;
-
 class SceneViewport : public QGLWidget
 {
     Q_OBJECT
@@ -53,15 +45,10 @@ private:
     void startFPS();
     void updateAnimationState();
     void toggleAnimation();
-    void resetCamera();
 
     Scene *m_scene;
     RenderState *m_state;
     QTimer *m_renderTimer;
-
-    // viewer settings
-    MouseState m_transState;
-    MouseState m_rotState;
     bool m_animate;
 
     // FPS settings

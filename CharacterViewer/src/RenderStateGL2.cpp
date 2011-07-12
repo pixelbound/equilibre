@@ -173,12 +173,11 @@ void RenderStateGL2::setupViewport(int w, int h)
     setMatrixMode(Projection);
     loadIdentity();
     float r = (float)w / (float)h;
-    if(m_projection)
-        multiplyMatrix(matrix4::perspective(45.0f, r, 0.1f, 100.0f));
-    else if (w <= h)
-        multiplyMatrix(matrix4::ortho(-1.0, 1.0, -1.0 / r, 1.0 / r, -10.0, 10.0));
-    else
-        multiplyMatrix(matrix4::ortho(-1.0 * r, 1.0 * r, -1.0, 1.0, -10.0, 10.0));
+    multiplyMatrix(matrix4::perspective(45.0f, r, 0.1f, 100.0f));
+//    if (w <= h)
+//        multiplyMatrix(matrix4::ortho(-1.0, 1.0, -1.0 / r, 1.0 / r, -100.0, 100.0));
+//    else
+//        multiplyMatrix(matrix4::ortho(-1.0 * r, 1.0 * r, -1.0, 1.0, -100.0, 100.0));
     setMatrixMode(ModelView);
 }
 

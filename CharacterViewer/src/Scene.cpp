@@ -1,4 +1,9 @@
 #include <QSettings>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QWheelEvent>
+#include <QPaintEvent>
+#include <cmath>
 #include "Scene.h"
 #include "RenderState.h"
 #include "WLDModel.h"
@@ -14,7 +19,13 @@ Scene::Scene(RenderState *state)
     m_showZoneObjects = false;
     m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
         "OpenEQ", QString(), this);
-    reset();
+    m_transState.last = vec3();
+    m_rotState.last = vec3();
+    m_transState.active = false;
+    m_rotState.active = false;
+    m_delta = vec3(-0.0, -0.0, -5.0);
+    m_theta = vec3(-90.0, 00.0, 270.0);
+    m_sigma = 0.5;
 }
 
 Scene::~Scene()
@@ -38,29 +49,7 @@ void Scene::setAssetPath(QString path)
 
 void Scene::init()
 {
-}
-
-void Scene::reset()
-{
-    m_delta = vec3(-0.0, -0.0, -5.0);
-    m_theta = vec3(-90.0, 00.0, 270.0);
-    m_sigma = 0.5;
     m_started = currentTime();
-}
-
-vec3 & Scene::theta()
-{
-    return m_theta;
-}
-
-float & Scene::sigma()
-{
-    return m_sigma;
-}
-
-vec3 & Scene::delta()
-{
-    return m_delta;
 }
 
 QString Scene::selectedModelName() const
@@ -138,4 +127,85 @@ void Scene::sideView()
 void Scene::frontView()
 {
     m_theta = vec3(-90.0, 0.0, 0.0);
+}
+
+void Scene::keyReleaseEvent(QKeyEvent *e)
+{
+    int key = e->key();
+    if(key == Qt::Key_Q)
+        m_theta.y += 5.0;
+    else if(key == Qt::Key_D)
+        m_theta.y -= 5.0;
+    else if(key == Qt::Key_2)
+        m_theta.x += 5.0;
+    else if(key == Qt::Key_8)
+        m_theta.x -= 5.0;
+    else if(key == Qt::Key_4)
+        m_theta.z += 5.0;
+    else if(key == Qt::Key_6)
+        m_theta.z -= 5.0;
+    else if(key == Qt::Key_7)
+        topView();
+    else if(key == Qt::Key_3)
+        sideView();
+    else if(key == Qt::Key_1)
+        frontView();
+}
+
+void Scene::mouseMoveEvent(QMouseEvent *e)
+{
+    int x = e->x();
+    int y = e->y();
+
+    if(m_transState.active)
+    {
+        int dx = m_transState.x0 - x;
+        int dy = m_transState.y0 - y;
+        m_delta.x = (m_transState.last.x - (dx / 100.0));
+        m_delta.z = (m_transState.last.y + (dy / 100.0));
+    }
+
+    if(m_rotState.active)
+    {
+        int dx = m_rotState.x0 - x;
+        int dy = m_rotState.y0 - y;
+        m_theta.x = (m_rotState.last.x + (dy * 2.0));
+        m_theta.z = (m_rotState.last.z + (dx * 2.0));
+    }
+}
+
+void Scene::mousePressEvent(QMouseEvent *e)
+{
+    int x = e->x();
+    int y = e->y();
+    if(e->button() & Qt::MiddleButton)       // middle button pans the scene
+    {
+        m_transState.active = true;
+        m_transState.x0 = x;
+        m_transState.y0 = y;
+        m_transState.last = m_delta;
+    }
+    else if(e->button() & Qt::LeftButton)   // left button rotates the scene
+    {
+        m_rotState.active = true;
+        m_rotState.x0 = x;
+        m_rotState.y0 = y;
+        m_rotState.last = m_theta;
+        //setFocus();
+    }
+}
+
+void Scene::mouseReleaseEvent(QMouseEvent *e)
+{
+    if(e->button() & Qt::MiddleButton)
+        m_transState.active = false;
+    else if(e->button() & Qt::LeftButton)
+        m_rotState.active = false;
+}
+
+void Scene::wheelEvent(QWheelEvent *e)
+{
+    // mouse wheel up zooms towards the scene
+    // mouse wheel down zooms away from scene
+    m_sigma *= pow(1.01, e->delta() / 8);
 }

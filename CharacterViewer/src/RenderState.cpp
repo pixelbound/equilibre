@@ -6,27 +6,10 @@
 RenderState::RenderState()
 {
     m_bgColor = vec4(0.6, 0.6, 1.0, 1.0);
-    reset();
 }
 
 RenderState::~RenderState()
 {
-}
-
-void RenderState::toggleWireframe()
-{
-    m_wireframe = !m_wireframe;
-}
-
-void RenderState::toggleProjection()
-{
-    m_projection = !m_projection;
-}
-
-void RenderState::reset()
-{
-    m_projection = true;
-    m_wireframe = false;
 }
 
 void RenderState::init()

@@ -18,11 +18,6 @@ public:
 
     virtual void init();
 
-    virtual void toggleWireframe();
-    virtual void toggleProjection();
-
-    virtual void reset();
-
     // mesh operations
     virtual void drawMesh(VertexGroup *m, WLDMaterialPalette *palette,
         const BoneTransform *bones = 0, int boneCount = 0) = 0;
@@ -74,8 +69,6 @@ public:
     virtual void popMaterial() = 0;
 
 protected:
-    bool m_projection;
-    bool m_wireframe;
     vec4 m_bgColor;
 };
 
