@@ -12,8 +12,11 @@
 #include "CharacterViewerWindow.h"
 #include "ZoneViewerWindow.h"
 
-QWidget * showCharViewer(Scene *scene, RenderState *state)
+QWidget * showCharViewer(RenderState *state)
 {
+    // create viewport for rendering the scene
+    CharacterViewerWindow *v = new CharacterViewerWindow(state);
+    CharacterScene *scene = v->scene();
     Zone *z = scene->zone();
     QDir assetDir(scene->assetPath());
     z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
@@ -33,16 +36,12 @@ QWidget * showCharViewer(Scene *scene, RenderState *state)
         charActor->setAnimName("P01");
         charActor->setPaletteName("03");
     }
-
-    // create viewport for rendering the scene
-    CharacterViewerWindow *v = new CharacterViewerWindow(scene, state);
     return v;
 }
 
-QWidget * showZoneViewer(Scene *scene, RenderState *state)
+QWidget * showZoneViewer(RenderState *state)
 {
-    scene->setMode(Scene::ZoneViewer);
-    return new ZoneViewerWindow(scene, state);
+    return new ZoneViewerWindow(state);
 }
 
 int main(int argc, char **argv)
@@ -55,14 +54,11 @@ int main(int argc, char **argv)
     f.setSampleBuffers(true);
     f.setSwapInterval(0);
     QGLFormat::setDefaultFormat(f);
-
-    // create the scene
     RenderStateGL2 state;
-    Scene scene(&state);
 
     // main window loop
-    //QWidget *v = showCharViewer(&scene, &state);
-    QWidget *v = showZoneViewer(&scene, &state);
+    //QWidget *v = showCharViewer(&state);
+    QWidget *v = showZoneViewer(&state);
     v->setWindowState(Qt::WindowMaximized);
     v->show();
     app.exec();

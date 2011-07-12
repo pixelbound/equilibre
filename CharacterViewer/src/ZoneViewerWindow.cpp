@@ -18,15 +18,19 @@
 #include "WLDSkeleton.h"
 #include "Zone.h"
 
-ZoneViewerWindow::ZoneViewerWindow(Scene *scene, RenderState *state,
-                                             QWidget *parent) : QMainWindow(parent)
+ZoneViewerWindow::ZoneViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
 {
-    m_scene = scene;
+    m_scene = new ZoneScene(state);
     m_state = state;
     setWindowTitle("OpenEQ Zone Viewer");
-    m_viewport = new SceneViewport(scene, state);
+    m_viewport = new SceneViewport(m_scene, state);
     setCentralWidget(m_viewport);
     initMenus();
+}
+
+ZoneScene * ZoneViewerWindow::scene() const
+{
+    return m_scene;
 }
 
 void ZoneViewerWindow::initMenus()
@@ -162,4 +166,46 @@ void ZoneViewerWindow::setHardwareSkinningTexture()
 {
     m_state->setSkinningMode(RenderState::HardwareSkinningTexture);
     updateMenus();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ZoneScene::ZoneScene(RenderState *state) : Scene(state)
+{
+    m_sigma = 1.0;
+    m_zone = new Zone(this);
+    m_showZoneObjects = false;
+    m_transState.last = vec3();
+    m_rotState.last = vec3();
+    m_transState.active = false;
+    m_rotState.active = false;
+    m_delta = vec3(-0.0, -0.0, -5.0);
+    m_theta = vec3(-90.0, 00.0, 270.0);
+    m_sigma = 0.5;
+}
+
+Zone * ZoneScene::zone() const
+{
+    return m_zone;
+}
+
+void ZoneScene::showZoneObjects(bool show)
+{
+    m_showZoneObjects = show;
+}
+
+void ZoneScene::init()
+{
+    m_started = currentTime();
+}
+
+void ZoneScene::draw()
+{
+    vec3 rot = m_theta;
+    m_state->translate(m_delta.x, m_delta.y, m_delta.z);
+    m_state->rotate(rot.x, 1.0, 0.0, 0.0);
+    m_state->rotate(rot.y, 0.0, 1.0, 0.0);
+    m_state->rotate(rot.z, 0.0, 0.0, 1.0);
+    m_state->scale(m_sigma, m_sigma, m_sigma);
+    m_zone->drawGeometry(m_state);
 }

@@ -30,21 +30,11 @@ public:
     Scene(RenderState *state);
     virtual ~Scene();
 
-    void init();
-
-    Zone * zone() const;
-    const QMap<QString, WLDActor *> & charModels() const;
-    WLDActor * selectedCharacter() const;
-    QString selectedModelName() const;
-
     QString assetPath() const;
     void setAssetPath(QString path);
 
-    void draw();
-
-    void topView();
-    void sideView();
-    void frontView();
+    virtual void init();
+    virtual void draw() = 0;
 
     virtual void keyReleaseEvent(QKeyEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *e);
@@ -52,33 +42,9 @@ public:
     virtual void mouseReleaseEvent(QMouseEvent *e);
     virtual void wheelEvent(QWheelEvent *e);
 
-    enum Mode
-    {
-        CharacterViewer,
-        ZoneViewer
-    };
-
-    Mode mode() const;
-    void setMode(Mode mode);
-
-public slots:
-    void setSelectedModelName(QString name);
-    void showZoneObjects(bool show);
-
-private:
+protected:
     RenderState *m_state;
-    double m_started;
-    vec3 m_delta;
-    vec3 m_theta;
-    float m_sigma;
-    QString m_meshName;
-    Zone *m_zone;
-    Mode m_mode;
-    bool m_showZoneObjects;
     QSettings *m_settings;
-    // viewer settings
-    MouseState m_transState;
-    MouseState m_rotState;
 };
 
 #endif

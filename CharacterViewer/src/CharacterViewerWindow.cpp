@@ -1,3 +1,4 @@
+#include <cmath>
 #include <QComboBox>
 #include <QMenuBar>
 #include <QMenu>
@@ -9,6 +10,10 @@
 #include <QDialogButtonBox>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QWheelEvent>
+#include <QPaintEvent>
 #include "CharacterViewerWindow.h"
 #include "SceneViewport.h"
 #include "RenderState.h"
@@ -18,14 +23,13 @@
 #include "WLDSkeleton.h"
 #include "Zone.h"
 
-CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
-                                             QWidget *parent) : QMainWindow(parent)
+CharacterViewerWindow::CharacterViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
 {
-    m_scene = scene;
+    m_scene = new CharacterScene(state);
     m_state = state;
     m_lastDir = "../Data";
     setWindowTitle("OpenEQ Character Viewer");
-    m_viewport = new SceneViewport(scene, state);
+    m_viewport = new SceneViewport(m_scene, state);
     m_actorText = new QComboBox();
     m_paletteText = new QComboBox();
     m_animationText = new QComboBox();
@@ -49,6 +53,11 @@ CharacterViewerWindow::CharacterViewerWindow(Scene *scene, RenderState *state,
     connect(m_actorText, SIGNAL(activated(QString)), this, SLOT(loadActor(QString)));
     connect(m_paletteText, SIGNAL(activated(QString)), this, SLOT(loadPalette(QString)));
     connect(m_animationText, SIGNAL(activated(QString)), this, SLOT(loadAnimation(QString)));
+}
+
+CharacterScene * CharacterViewerWindow::scene() const
+{
+    return m_scene;
 }
 
 void CharacterViewerWindow::initMenus()
@@ -287,4 +296,162 @@ void CharacterViewerWindow::setHardwareSkinningTexture()
 {
     m_state->setSkinningMode(RenderState::HardwareSkinningTexture);
     updateMenus();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+CharacterScene::CharacterScene(RenderState *state) : Scene(state)
+{
+    m_state = state;
+    m_sigma = 1.0;
+    m_zone = new Zone(this);
+    m_transState.last = vec3();
+    m_rotState.last = vec3();
+    m_transState.active = false;
+    m_rotState.active = false;
+    m_delta = vec3(-0.0, -0.0, -5.0);
+    m_theta = vec3(-90.0, 00.0, 270.0);
+    m_sigma = 0.5;
+}
+
+Zone * CharacterScene::zone() const
+{
+    return m_zone;
+}
+
+const QMap<QString, WLDActor *> & CharacterScene::charModels() const
+{
+    return m_zone->charModels();
+}
+
+QString CharacterScene::selectedModelName() const
+{
+    return m_meshName;
+}
+
+void CharacterScene::setSelectedModelName(QString name)
+{
+    m_meshName = name;
+}
+
+WLDActor * CharacterScene::selectedCharacter() const
+{
+    return charModels().value(m_meshName);
+}
+
+void CharacterScene::init()
+{
+    m_started = currentTime();
+}
+
+void CharacterScene::draw()
+{
+    vec3 rot = m_theta;
+    m_state->translate(m_delta.x, m_delta.y, m_delta.z);
+    m_state->rotate(rot.x, 1.0, 0.0, 0.0);
+    m_state->rotate(rot.y, 0.0, 1.0, 0.0);
+    m_state->rotate(rot.z, 0.0, 0.0, 1.0);
+    m_state->scale(m_sigma, m_sigma, m_sigma);
+
+    WLDActor *charModel = selectedCharacter();
+    if(charModel)
+    {
+        charModel->setAnimTime(currentTime());
+        charModel->draw(m_state);
+    }
+}
+
+void CharacterScene::topView()
+{
+    m_theta = vec3(0.0, 0.0, 0.0);
+}
+
+void CharacterScene::sideView()
+{
+    m_theta = vec3(-90.0, 0.0, -90.0);
+}
+
+void CharacterScene::frontView()
+{
+    m_theta = vec3(-90.0, 0.0, 0.0);
+}
+
+void CharacterScene::keyReleaseEvent(QKeyEvent *e)
+{
+    int key = e->key();
+    if(key == Qt::Key_Q)
+        m_theta.y += 5.0;
+    else if(key == Qt::Key_D)
+        m_theta.y -= 5.0;
+    else if(key == Qt::Key_2)
+        m_theta.x += 5.0;
+    else if(key == Qt::Key_8)
+        m_theta.x -= 5.0;
+    else if(key == Qt::Key_4)
+        m_theta.z += 5.0;
+    else if(key == Qt::Key_6)
+        m_theta.z -= 5.0;
+    else if(key == Qt::Key_7)
+        topView();
+    else if(key == Qt::Key_3)
+        sideView();
+    else if(key == Qt::Key_1)
+        frontView();
+}
+
+void CharacterScene::mouseMoveEvent(QMouseEvent *e)
+{
+    int x = e->x();
+    int y = e->y();
+
+    if(m_transState.active)
+    {
+        int dx = m_transState.x0 - x;
+        int dy = m_transState.y0 - y;
+        m_delta.x = (m_transState.last.x - (dx / 100.0));
+        m_delta.z = (m_transState.last.y + (dy / 100.0));
+    }
+
+    if(m_rotState.active)
+    {
+        int dx = m_rotState.x0 - x;
+        int dy = m_rotState.y0 - y;
+        m_theta.x = (m_rotState.last.x + (dy * 2.0));
+        m_theta.z = (m_rotState.last.z + (dx * 2.0));
+    }
+}
+
+void CharacterScene::mousePressEvent(QMouseEvent *e)
+{
+    int x = e->x();
+    int y = e->y();
+    if(e->button() & Qt::MiddleButton)       // middle button pans the scene
+    {
+        m_transState.active = true;
+        m_transState.x0 = x;
+        m_transState.y0 = y;
+        m_transState.last = m_delta;
+    }
+    else if(e->button() & Qt::LeftButton)   // left button rotates the scene
+    {
+        m_rotState.active = true;
+        m_rotState.x0 = x;
+        m_rotState.y0 = y;
+        m_rotState.last = m_theta;
+    }
+}
+
+void CharacterScene::mouseReleaseEvent(QMouseEvent *e)
+{
+    if(e->button() & Qt::MiddleButton)
+        m_transState.active = false;
+    else if(e->button() & Qt::LeftButton)
+        m_rotState.active = false;
+}
+
+void CharacterScene::wheelEvent(QWheelEvent *e)
+{
+    // mouse wheel up zooms towards the scene
+    // mouse wheel down zooms away from scene
+    m_sigma *= pow(1.01, e->delta() / 8);
 }
