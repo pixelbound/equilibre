@@ -25,6 +25,8 @@ public:
     WLDActor(ActorFragment *frag, WLDModel *model, QObject *parent = 0);
     virtual ~WLDActor();
 
+    const vec3 & location() const;
+
     WLDModel *model() const;
     void setModel(WLDModel *newModel);
 
@@ -60,6 +62,38 @@ private:
     double m_animTime;
     QString m_palName;
     QMap<EquipSlot, ActorEquip> m_equip;
+};
+
+class ActorIndexNode
+{
+public:
+    ActorIndexNode(const vec3 &low, const vec3 &high);
+    ~ActorIndexNode();
+
+    QVector<WLDActor *> actors();
+    void add(WLDActor *actor);
+    bool contains(const vec3 &pos) const;
+
+private:
+    int locate(const vec3 &pos) const;
+
+    //TODO optimize to: int count, union { ActorIndexNode *, WLDActor * }
+    bool m_leaf;
+    ActorIndexNode *m_children[8];
+    QVector<WLDActor *> m_actors;
+    vec3 m_low, m_high;
+};
+
+class ActorIndex
+{
+public:
+    ActorIndex();
+    virtual ~ActorIndex();
+
+    void add(WLDActor *actor);
+
+private:
+    ActorIndexNode *m_root;
 };
 
 #endif

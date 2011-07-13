@@ -45,6 +45,15 @@ vec3 operator-(const vec3 &a, const vec3 &b)
     return u;
 }
 
+vec3 operator*(const vec3 &a, float scalar)
+{
+    vec3 u;
+    u.x = a.x * scalar;
+    u.y = a.y * scalar;
+    u.z = a.z * scalar;
+    return u;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 matrix4::matrix4()

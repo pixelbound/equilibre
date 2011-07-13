@@ -178,11 +178,6 @@ ZoneScene::ZoneScene(RenderState *state) : Scene(state)
     m_showZoneObjects = false;
     m_rotState.last = vec3();
     m_rotState.active = false;
-    m_playerPos = vec3(0.0, 0.0, 0.0);
-    m_playerOrient = 0.0;
-    m_cameraPos = vec3(0.0, 0.0, 0.0);
-    m_cameraOrient = vec3(0.0, 0.0, 0.0);
-    m_zoneScale = 0.5;
 }
 
 Zone * ZoneScene::zone() const
@@ -202,41 +197,28 @@ void ZoneScene::init()
 
 void ZoneScene::draw()
 {
-    vec3 rot = vec3(-90.0, 00.0, m_playerOrient) + m_cameraOrient;
+    // in the world Z is up, unlike OpenGL's Y up
     m_state->pushMatrix();
-    m_state->translate(m_cameraPos);
-    m_state->rotate(rot.x, 1.0, 0.0, 0.0);
-    m_state->rotate(rot.y, 0.0, 1.0, 0.0);
-    m_state->rotate(rot.z, 0.0, 0.0, 1.0);
-    m_state->translate(m_playerPos);
-    m_state->scale(m_zoneScale, m_zoneScale, m_zoneScale);
-    m_zone->drawGeometry(m_state);
-    if(m_showZoneObjects)
-        m_zone->drawObjects(m_state);
+    m_state->rotate(-90.0, 1.0, 0.0, 0.0);
+    m_zone->draw(m_state);
     m_state->popMatrix();
-}
-
-void ZoneScene::step(double distForward, double distSideways)
-{
-    matrix4 m = matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
-    m_playerPos = m_playerPos + m.map(vec3(distSideways, -distForward, 0.0));
 }
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)
 {
     int key = e->key();
     if(key == Qt::Key_Q)
-        step(0.0, 5.0);
+        m_zone->step(0.0, 5.0, 0.0);
     else if(key == Qt::Key_D)
-        step(0.0, -5.0);
+        m_zone->step(0.0, -5.0, 0.0);
     else if(key == Qt::Key_Z)
-        step(5.0, 0.0);
+        m_zone->step(5.0, 0.0, 0.0);
     else if(key == Qt::Key_S)
-        step(-5.0, 0.0);
+        m_zone->step(-5.0, 0.0, 0.0);
     else if(key == Qt::Key_E)
-        m_playerPos.z -= 5.0;
+        m_zone->step(0.0, 0.0, -5.0);
     else if(key == Qt::Key_A)
-        m_playerPos.z += 5.0;
+        m_zone->step(0.0, 0.0, 5.0);
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)
@@ -245,8 +227,10 @@ void ZoneScene::mouseMoveEvent(QMouseEvent *e)
     {
         int dx = m_rotState.x0 - e->x();
         int dy = m_rotState.y0 - e->y();
-        m_cameraOrient.x = (m_rotState.last.x - (dy * 1.0));
-        m_playerOrient = (m_rotState.last.z - (dx * 1.0));
+        vec3 camOrient = m_zone->cameraOrient();
+        camOrient.x = (m_rotState.last.x - (dy * 1.0));
+        m_zone->setCameraOrient(camOrient);
+        m_zone->setPlayerOrient(m_rotState.last.z - (dx * 1.0));
     }
 }
 
@@ -257,7 +241,7 @@ void ZoneScene::mousePressEvent(QMouseEvent *e)
         m_rotState.active = true;
         m_rotState.x0 = e->x();
         m_rotState.y0 = e->y();
-        m_rotState.last = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
+        m_rotState.last = vec3(0.0, 0.0, m_zone->playerOrient()) + m_zone->cameraOrient();
     }
 }
 

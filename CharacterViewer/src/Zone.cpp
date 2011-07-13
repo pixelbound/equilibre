@@ -6,6 +6,7 @@
 #include "WLDActor.h"
 #include "WLDSkeleton.h"
 #include "Fragments.h"
+#include "RenderState.h"
 
 Zone::Zone(QObject *parent) : QObject(parent)
 {
@@ -16,6 +17,10 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_objMeshWld = m_objDefWld = 0;
     m_charWld = 0;
     m_geometry = 0;
+    m_playerPos = vec3(0.0, 0.0, 0.0);
+    m_playerOrient = 0.0;
+    m_cameraPos = vec3(0.0, 0.0, 0.0);
+    m_cameraOrient = vec3(0.0, 0.0, 0.0);
 }
 
 Zone::~Zone()
@@ -265,14 +270,71 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
     }
 }
 
+void Zone::draw(RenderState *state)
+{
+    vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
+    state->pushMatrix();
+    state->translate(m_cameraPos);
+    state->rotate(rot.x, 1.0, 0.0, 0.0);
+    state->rotate(rot.y, 0.0, 1.0, 0.0);
+    state->rotate(rot.z, 0.0, 0.0, 1.0);
+    state->translate(m_playerPos);
+    drawGeometry(state);
+    if(false)//m_showZoneObjects)
+        drawObjects(state);
+    state->popMatrix();
+}
+
 void Zone::drawGeometry(RenderState *state)
 {
     if(m_geometry)
+    {
+        state->pushMatrix();
+        //FIXME use the zone actor values
+        state->scale(0.5, 0.5, 0.5);
         m_geometry->skin()->draw(state);
+        state->popMatrix();
+    }
 }
 
 void Zone::drawObjects(RenderState *state)
 {
     foreach(WLDActor *actor, m_actors)
         actor->draw(state);
+}
+
+const vec3 & Zone::playerPos() const
+{
+    return m_playerPos;
+}
+
+float Zone::playerOrient() const
+{
+    return m_playerOrient;
+}
+
+void Zone::setPlayerOrient(float rot)
+{
+    m_playerOrient = rot;
+}
+
+const vec3 & Zone::cameraOrient() const
+{
+    return m_cameraOrient;
+}
+
+void Zone::setCameraOrient(const vec3 &rot)
+{
+    m_cameraOrient = rot;
+}
+
+const vec3 & Zone::cameraPos() const
+{
+    return m_cameraPos;
+}
+
+void Zone::step(float distForward, float distSideways, float distUpDown)
+{
+    matrix4 m = matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
+    m_playerPos = m_playerPos + m.map(vec3(distSideways, -distForward, distUpDown));
 }

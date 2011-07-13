@@ -52,6 +52,7 @@ public:
 
 vec3 operator+(const vec3 &a, const vec3 &b);
 vec3 operator-(const vec3 &a, const vec3 &b);
+vec3 operator*(const vec3 &a, float scalar);
 
 class vec4
 {

@@ -5,6 +5,7 @@
 #include <QList>
 #include <QMap>
 #include "Platform.h"
+#include "Vertex.h"
 
 class Mesh;
 class PFSArchive;
@@ -34,8 +35,22 @@ public:
 
     void clear();
 
+    void draw(RenderState *state);
     void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
+
+    // xyz position of the player in the zone
+    const vec3 & playerPos() const;
+    // z angle that describes where the player is facing
+    float playerOrient() const;
+    // xyz angles that describe how the camera is oriented rel. to the player
+    const vec3 & cameraOrient() const;
+    // xyz position of the camera is rel. to the player
+    const vec3 & cameraPos() const;
+
+    void setPlayerOrient(float rot);
+    void setCameraOrient(const vec3 &rot);
+    void step(float x, float y, float z);
 
 private:
     void importGeometry();
@@ -45,6 +60,7 @@ private:
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
 
+    //TODO refactor this into data container classes
     QString m_name;
     WLDModel *m_geometry;
     PFSArchive *m_mainArchive;
@@ -56,6 +72,11 @@ private:
     QMap<QString, WLDModel *> m_objModels;
     QMap<QString, WLDActor *> m_charModels;
     QList<WLDActor *> m_actors;
+    // player and camera settings
+    vec3 m_playerPos;
+    float m_playerOrient;
+    vec3 m_cameraOrient;
+    vec3 m_cameraPos;
 };
 
 #endif
