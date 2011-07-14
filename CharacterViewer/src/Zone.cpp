@@ -273,12 +273,15 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 void Zone::draw(RenderState *state)
 {
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
+    matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
+        matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
+        matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
+    Frustum &frustum = state->viewFrustum();
+    frustum.setEye(-m_playerPos);
+    frustum.setFocus(-m_playerPos + viewMat.map(vec3(0.0, 1.0, 0.0)));
+    frustum.setUp(vec3(0.0, 0.0, 1.0));
     state->pushMatrix();
-    state->translate(m_cameraPos);
-    state->rotate(rot.x, 1.0, 0.0, 0.0);
-    state->rotate(rot.y, 0.0, 1.0, 0.0);
-    state->rotate(rot.z, 0.0, 0.0, 1.0);
-    state->translate(m_playerPos);
+    state->multiplyMatrix(frustum.camera());
     drawGeometry(state);
     if(false)//m_showZoneObjects)
         drawObjects(state);

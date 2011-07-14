@@ -65,7 +65,7 @@ void SceneViewport::paintEvent(QPaintEvent *)
 
 void SceneViewport::paintGL()
 {
-    if(m_state->beginFrame(width(), height()))
+    if(m_state->beginFrame())
     {
         m_scene->draw();
         m_state->endFrame();

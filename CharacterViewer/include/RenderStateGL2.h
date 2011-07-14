@@ -38,8 +38,9 @@ public:
     virtual matrix4 currentMatrix() const;
 
     // general state operations
-    virtual bool beginFrame(int width, int heigth);
+    virtual Frustum & viewFrustum();
     virtual void setupViewport(int width, int heigth);
+    virtual bool beginFrame();
     virtual void endFrame();
 
     // material operations
@@ -53,6 +54,7 @@ private:
     vec4 m_diffuse0;
     vec4 m_specular0;
     vec4 m_light0_pos;
+    Frustum m_frustum;
     std::vector<Material> m_materialStack;
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];

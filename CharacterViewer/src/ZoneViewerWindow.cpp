@@ -197,11 +197,7 @@ void ZoneScene::init()
 
 void ZoneScene::draw()
 {
-    // in the world Z is up, unlike OpenGL's Y up
-    m_state->pushMatrix();
-    m_state->rotate(-90.0, 1.0, 0.0, 0.0);
     m_zone->draw(m_state);
-    m_state->popMatrix();
 }
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)

@@ -135,7 +135,7 @@ void RenderStateGL2::popMaterial()
         prog->beginApplyMaterial(m_materialStack.back());
 }
 
-bool RenderStateGL2::beginFrame(int w, int h)
+bool RenderStateGL2::beginFrame()
 {
     ShaderProgramGL2 *prog = program();
     bool shaderLoaded = prog && prog->loaded();
@@ -145,7 +145,6 @@ bool RenderStateGL2::beginFrame(int w, int h)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    setupViewport(w, h);
     setMatrixMode(ModelView);
     pushMatrix();
     loadIdentity();
@@ -167,13 +166,19 @@ void RenderStateGL2::endFrame()
     glFlush();
 }
 
+Frustum & RenderStateGL2::viewFrustum()
+{
+    return m_frustum;
+}
+
 void RenderStateGL2::setupViewport(int w, int h)
 {
+    float r = (float)w / (float)h;
+    m_frustum.setAspect(r);
     glViewport(0, 0, w, h);
     setMatrixMode(Projection);
     loadIdentity();
-    float r = (float)w / (float)h;
-    multiplyMatrix(matrix4::perspective(45.0f, r, 0.1f, 1000.0f));
+    multiplyMatrix(m_frustum.projection());
     setMatrixMode(ModelView);
 }
 

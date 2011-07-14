@@ -47,9 +47,13 @@ public:
         this->z = z;
     }
 
+    vec3 normalized() const;
+
+    static vec3 cross(const vec3 &a, const vec3 &b);
     static vec3 normal(const vec3 &a, const vec3 &b, const vec3 &c);
 };
 
+vec3 operator-(const vec3 &a);
 vec3 operator+(const vec3 &a, const vec3 &b);
 vec3 operator-(const vec3 &a, const vec3 &b);
 vec3 operator*(const vec3 &a, float scalar);
@@ -96,6 +100,32 @@ public:
     static matrix4 scale(float sx, float sy, float sz);
     static matrix4 perspective(float angle, float aspect, float nearPlane, float farPlane);
     static matrix4 ortho(float left, float right, float bottom, float top, float nearPlane, float farPlane);
+    static matrix4 lookAt(vec3 eye, vec3 center, vec3 up);
+};
+
+class Frustum
+{
+public:
+    Frustum();
+
+    float aspect() const;
+    void setAspect(float aspect);
+
+    const vec3 & eye() const;
+    void setEye(vec3 eye);
+
+    const vec3 & focus() const;
+    void setFocus(vec3 focus);
+
+    const vec3 & up() const;
+    void setUp(vec3 up);
+
+    matrix4 projection() const;
+    matrix4 camera() const;
+
+private:
+    float m_angle, m_aspect, m_nearPlane, m_farPlane;
+    vec3 m_eye, m_focus, m_up;
 };
 
 matrix4 operator*(const matrix4 &a, const matrix4 &b);

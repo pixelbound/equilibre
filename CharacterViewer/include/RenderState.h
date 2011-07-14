@@ -59,8 +59,10 @@ public:
     virtual matrix4 currentMatrix() const = 0;
 
     // general state operations
-    virtual bool beginFrame(int width, int heigth) = 0;
+
+    virtual Frustum & viewFrustum() = 0;
     virtual void setupViewport(int width, int heigth) = 0;
+    virtual bool beginFrame() = 0;
     virtual void endFrame() = 0;
 
     // material operations

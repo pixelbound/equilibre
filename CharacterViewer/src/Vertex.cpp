@@ -11,20 +11,30 @@ bool fequal(double a, double b)
     return fabs(a - b) < 1e-16;
 }
 
-vec3 vec3::normal(const vec3 &a, const vec3 &b, const vec3 &c)
+vec3 vec3::normalized() const
 {
-    // calculate the cross-product of AB and AC
-    vec3 n, u = b - a, v = c - a;
+    float w = (float)sqrt(x * x + y * y + z * z);
+    return vec3(x / w, y / w, z / w);
+}
+
+vec3 vec3::cross(const vec3 &u, const vec3 &v)
+{
+    vec3 n;
     n.x = (u.y * v.z - u.z * v.y);
     n.y = (u.z * v.x - u.x * v.z);
     n.z = (u.x * v.y - u.y * v.x);
-
-    // normalize it
-    float w = (float)sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
-    n.x = (n.x / w);
-    n.y = (n.y / w);
-    n.z = (n.z / w);
     return n;
+}
+
+vec3 vec3::normal(const vec3 &a, const vec3 &b, const vec3 &c)
+{
+    // the cross-product of AB and AC is the normal of ABC
+    return cross(b - a, c - a).normalized();
+}
+
+vec3 operator-(const vec3 &a)
+{
+    return vec3(-a.x, -a.y, -a.z);
 }
 
 vec3 operator+(const vec3 &a, const vec3 &b)
@@ -225,6 +235,26 @@ matrix4 operator*(const matrix4 &a, const matrix4 &b)
     return m;
 }
 
+matrix4 matrix4::lookAt(vec3 eye, vec3 center, vec3 up)
+{
+    vec3 forward = (center - eye).normalized();
+    vec3 side = vec3::cross(forward, up).normalized();
+    up = vec3::cross(side, forward);
+
+    matrix4 m;
+    m.setIdentity();
+    m.d[0] = side.x;
+    m.d[4] = side.y;
+    m.d[8] = side.z;
+    m.d[1] = up.x;
+    m.d[5] = up.y;
+    m.d[9] = up.z;
+    m.d[2] = -forward.x;
+    m.d[6] = -forward.y;
+    m.d[10] = -forward.z;
+    return m * matrix4::translate(-eye.x, -eye.y, -eye.z);
+}
+
 void matrix4::dump() const
 {
     cout << d[0] << d[1] << d[2] << d[3] << endl;
@@ -232,6 +262,67 @@ void matrix4::dump() const
     cout << d[8] << d[9] << d[10] << d[11] << endl;
     cout << d[12] << d[13] << d[14] << d[15] << endl;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+
+Frustum::Frustum()
+{
+    m_angle = 45.0;
+    m_aspect = 1.0;
+    m_nearPlane = 0.1;
+    m_farPlane = 1000.0;
+}
+
+float Frustum::aspect() const
+{
+    return m_aspect;
+}
+
+void Frustum::setAspect(float aspect)
+{
+    m_aspect = aspect;
+}
+
+const vec3 & Frustum::eye() const
+{
+    return m_eye;
+}
+
+void Frustum::setEye(vec3 eye)
+{
+    m_eye = eye;
+}
+
+const vec3 & Frustum::focus() const
+{
+    return m_focus;
+}
+
+void Frustum::setFocus(vec3 focus)
+{
+    m_focus = focus;
+}
+
+const vec3 & Frustum::up() const
+{
+    return m_up;
+}
+
+void Frustum::setUp(vec3 up)
+{
+    m_up = up;
+}
+
+matrix4 Frustum::projection() const
+{
+    return matrix4::perspective(m_angle, m_aspect, m_nearPlane, m_farPlane);
+}
+
+matrix4 Frustum::camera() const
+{
+    return matrix4::lookAt(m_eye, m_focus, m_up);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
