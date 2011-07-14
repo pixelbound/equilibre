@@ -17,6 +17,11 @@ vec3 vec3::normalized() const
     return vec3(x / w, y / w, z / w);
 }
 
+float vec3::dot(const vec3 &a, const vec3 &b)
+{
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 vec3 vec3::cross(const vec3 &u, const vec3 &v)
 {
     vec3 n;
@@ -265,12 +270,20 @@ void matrix4::dump() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+float Plane::distance(vec3 v) const
+{
+    return vec3::dot(n, v) + vec3::dot(-n, p);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Frustum::Frustum()
 {
     m_angle = 45.0;
     m_aspect = 1.0;
     m_nearPlane = 0.1;
     m_farPlane = 1000.0;
+    m_dirty = true;
 }
 
 float Frustum::aspect() const
@@ -281,6 +294,7 @@ float Frustum::aspect() const
 void Frustum::setAspect(float aspect)
 {
     m_aspect = aspect;
+    m_dirty = true;
 }
 
 const vec3 & Frustum::eye() const
@@ -291,6 +305,7 @@ const vec3 & Frustum::eye() const
 void Frustum::setEye(vec3 eye)
 {
     m_eye = eye;
+    m_dirty = true;
 }
 
 const vec3 & Frustum::focus() const
@@ -301,6 +316,7 @@ const vec3 & Frustum::focus() const
 void Frustum::setFocus(vec3 focus)
 {
     m_focus = focus;
+    m_dirty = true;
 }
 
 const vec3 & Frustum::up() const
@@ -311,6 +327,7 @@ const vec3 & Frustum::up() const
 void Frustum::setUp(vec3 up)
 {
     m_up = up;
+    m_dirty = true;
 }
 
 matrix4 Frustum::projection() const
@@ -323,6 +340,58 @@ matrix4 Frustum::camera() const
     return matrix4::lookAt(m_eye, m_focus, m_up);
 }
 
+void Frustum::computePlanes()
+{
+    float nearHeight = m_nearPlane * (float)tan(m_angle * 0.5 * M_PI / 180.0);
+    float nearWidth = nearHeight * m_aspect;
+
+    // compute the three axes
+    vec3 zAxis = (m_eye - m_focus).normalized();
+    vec3 xAxis = vec3::cross(m_up, zAxis).normalized();
+    vec3 yAxis = vec3::cross(zAxis, xAxis);
+
+    // compute the centers of the near and far planes
+    vec3 nearCenter = m_eye - zAxis * m_nearPlane;
+    vec3 farCenter = m_eye - zAxis * m_farPlane;
+
+    // compute the plane "positions" and normals
+    m_planes[NEAR].p = nearCenter;
+    m_planes[NEAR].n = -zAxis;
+
+    m_planes[FAR].p = farCenter;
+    m_planes[FAR].n = zAxis;
+
+    m_planes[TOP].p = nearCenter + (yAxis * nearHeight);
+    m_planes[TOP].n = vec3::cross(
+        ((nearCenter + (yAxis * nearHeight)) - m_eye).normalized(), xAxis);
+
+    m_planes[BOTTOM].p = nearCenter - (yAxis * nearHeight);
+    m_planes[BOTTOM].n = vec3::cross(xAxis,
+        ((nearCenter - (yAxis * nearHeight)) - m_eye).normalized());
+
+    m_planes[LEFT].p = nearCenter - (xAxis * nearWidth);
+    m_planes[LEFT].n = vec3::cross(
+        ((nearCenter - (xAxis * nearWidth)) - m_eye).normalized(), yAxis);
+
+    m_planes[RIGHT].p = nearCenter + (xAxis * nearWidth);
+    m_planes[RIGHT].n = vec3::cross(yAxis,
+        ((nearCenter + (xAxis * nearWidth)) - m_eye).normalized());
+}
+
+Frustum::TestResult Frustum::contains(vec3 v)
+{
+    if(m_dirty)
+    {
+        computePlanes();
+        m_dirty = false;
+    }
+    for(int i = 0; i < 6; i++)
+    {
+        if(m_planes[i].distance(v) < 0)
+            return OUTSIDE;
+    }
+    return INSIDE;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

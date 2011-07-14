@@ -49,6 +49,7 @@ public:
 
     vec3 normalized() const;
 
+    static float dot(const vec3 &a, const vec3 &b);
     static vec3 cross(const vec3 &a, const vec3 &b);
     static vec3 normal(const vec3 &a, const vec3 &b, const vec3 &c);
 };
@@ -103,9 +104,34 @@ public:
     static matrix4 lookAt(vec3 eye, vec3 center, vec3 up);
 };
 
+struct Plane
+{
+    vec3 p; // point on the plane
+    vec3 n; // normal of the plane
+
+    float distance(vec3 v) const;
+};
+
 class Frustum
 {
 public:
+    enum PlaneIndex
+    {
+        TOP,
+        BOTTOM,
+        LEFT,
+        RIGHT,
+        NEAR,
+        FAR
+    };
+
+    enum TestResult
+    {
+        INSIDE,
+        INTERSECTING,
+        OUTSIDE
+    };
+
     Frustum();
 
     float aspect() const;
@@ -123,9 +149,15 @@ public:
     matrix4 projection() const;
     matrix4 camera() const;
 
+    TestResult contains(vec3 v);
+
 private:
+    void computePlanes();
+
     float m_angle, m_aspect, m_nearPlane, m_farPlane;
     vec3 m_eye, m_focus, m_up;
+    Plane m_planes[6];
+    bool m_dirty;
 };
 
 matrix4 operator*(const matrix4 &a, const matrix4 &b);

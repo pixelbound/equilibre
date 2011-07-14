@@ -36,8 +36,6 @@ public:
     void clear();
 
     void draw(RenderState *state);
-    void drawGeometry(RenderState *state);
-    void drawObjects(RenderState *state);
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;
@@ -51,6 +49,8 @@ public:
     void setPlayerOrient(float rot);
     void setCameraOrient(const vec3 &rot);
     void step(float x, float y, float z);
+
+    void showObjects(bool show);
 
 private:
     void importGeometry();
@@ -72,6 +72,7 @@ private:
     QMap<QString, WLDModel *> m_objModels;
     QMap<QString, WLDActor *> m_charModels;
     QList<WLDActor *> m_actors;
+    bool m_showObjects;
     // player and camera settings
     vec3 m_playerPos;
     float m_playerOrient;

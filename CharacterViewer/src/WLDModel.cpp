@@ -462,7 +462,7 @@ void WLDModelSkin::combineParts()
     newGroups.append(group);
     vg->matGroups = newGroups;
 
-    // copy the vertex group to the GPU
+    // copy the vertex group to the GPU (FIXME move to RenderStateGL2)
     uint32_t dataSize = totalVertices * sizeof(VertexData);
     uint32_t indicesSize = vg->indices.count() * sizeof(uint32_t);
     uint32_t buffers[2];

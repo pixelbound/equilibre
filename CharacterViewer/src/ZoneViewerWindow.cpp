@@ -175,7 +175,6 @@ void ZoneViewerWindow::setHardwareSkinningTexture()
 ZoneScene::ZoneScene(RenderState *state) : Scene(state)
 {
     m_zone = new Zone(this);
-    m_showZoneObjects = false;
     m_rotState.last = vec3();
     m_rotState.active = false;
 }
@@ -187,7 +186,7 @@ Zone * ZoneScene::zone() const
 
 void ZoneScene::showZoneObjects(bool show)
 {
-    m_showZoneObjects = show;
+    m_zone->showObjects(show);
 }
 
 void ZoneScene::init()

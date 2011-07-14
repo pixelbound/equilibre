@@ -21,6 +21,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_playerOrient = 0.0;
     m_cameraPos = vec3(0.0, 0.0, 0.0);
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
+    m_showObjects = true;
 }
 
 Zone::~Zone()
@@ -282,14 +283,8 @@ void Zone::draw(RenderState *state)
     frustum.setUp(vec3(0.0, 0.0, 1.0));
     state->pushMatrix();
     state->multiplyMatrix(frustum.camera());
-    drawGeometry(state);
-    if(false)//m_showZoneObjects)
-        drawObjects(state);
-    state->popMatrix();
-}
 
-void Zone::drawGeometry(RenderState *state)
-{
+    // draw geometry
     if(m_geometry)
     {
         state->pushMatrix();
@@ -298,12 +293,17 @@ void Zone::drawGeometry(RenderState *state)
         m_geometry->skin()->draw(state);
         state->popMatrix();
     }
-}
 
-void Zone::drawObjects(RenderState *state)
-{
-    foreach(WLDActor *actor, m_actors)
-        actor->draw(state);
+    // draw objects
+    if(m_showObjects)
+    {
+        foreach(WLDActor *actor, m_actors)
+        {
+            if(frustum.contains(actor->location()) == Frustum::INSIDE)
+                actor->draw(state);
+        }
+    }
+    state->popMatrix();
 }
 
 const vec3 & Zone::playerPos() const
@@ -334,6 +334,11 @@ void Zone::setCameraOrient(const vec3 &rot)
 const vec3 & Zone::cameraPos() const
 {
     return m_cameraPos;
+}
+
+void Zone::showObjects(bool show)
+{
+    m_showObjects = show;
 }
 
 void Zone::step(float distForward, float distSideways, float distUpDown)

@@ -70,8 +70,6 @@ public slots:
 private:
     double m_started;
     Zone *m_zone;
-    bool m_showZoneObjects;
-    // viewer settings
     MouseState m_rotState;
 };
 

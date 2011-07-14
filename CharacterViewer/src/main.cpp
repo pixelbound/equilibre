@@ -41,6 +41,8 @@ QWidget * showCharViewer(RenderState *state)
 
 QWidget * showZoneViewer(RenderState *state)
 {
+    //ZoneViewerWindow *v = new ZoneViewerWindow(state);
+    //v->scene()->zone()->load(v->scene()->assetPath(), "gfaydark");
     return new ZoneViewerWindow(state);
 }
 
