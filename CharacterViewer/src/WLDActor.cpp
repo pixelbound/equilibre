@@ -149,11 +149,11 @@ void WLDActor::draw(RenderState *state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-bool boxContains(const vec3 &p, const vec3 &low, const vec3 &high)
+bool boxContains(const vec3 &p, const AABox &b)
 {
-    return (low.x <= p.x) && (p.x <= high.x)
-        && (low.y <= p.y) && (p.y <= high.y)
-        && (low.z <= p.z) && (p.z <= high.z);
+    return (b.low.x <= p.x) && (p.x <= b.high.x)
+        && (b.low.y <= p.y) && (p.y <= b.high.y)
+        && (b.low.z <= p.z) && (p.z <= b.high.z);
 }
 
 ActorIndex::ActorIndex()
@@ -166,25 +166,30 @@ ActorIndex::~ActorIndex()
     delete m_root;
 }
 
+ActorIndexNode *ActorIndex::root() const
+{
+    return m_root;
+}
+
 void ActorIndex::add(WLDActor *actor)
 {
     if(!m_root)
     {
         //TODO provide boundaries somewhere
         vec3 low(-1e4, -1e4, -1e4), high(1e4, 1e4, 1e4);
-        m_root = new ActorIndexNode(low, high);
+        m_root = new ActorIndexNode(AABox(low, high));
     }
     m_root->add(actor);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ActorIndexNode::ActorIndexNode(const vec3 &low, const vec3 &high)
+ActorIndexNode::ActorIndexNode(const AABox &bounds)
 {
     for(int i = 0; i < 8; i++)
         m_children[i] = 0;
     m_leaf = true;
-    m_low = low, m_high = high;
+    m_bounds = bounds;
 }
 
 ActorIndexNode::~ActorIndexNode()
@@ -196,9 +201,19 @@ ActorIndexNode::~ActorIndexNode()
     }
 }
 
-QVector<WLDActor *> ActorIndexNode::actors()
+QVector<WLDActor *> & ActorIndexNode::actors()
 {
     return m_actors;
+}
+
+ActorIndexNode ** ActorIndexNode::children()
+{
+    return m_children;
+}
+
+const AABox & ActorIndexNode::bounds() const
+{
+    return m_bounds;
 }
 
 void ActorIndexNode::add(WLDActor *actor)
@@ -217,15 +232,15 @@ void ActorIndexNode::add(WLDActor *actor)
     else
     {
         // split node into 8 children
-        vec3 l = m_low, c = m_low + (m_high - m_low) * 0.5, h = m_high;
-        m_children[0] = new ActorIndexNode(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z));
-        m_children[1] = new ActorIndexNode(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z));
-        m_children[2] = new ActorIndexNode(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z));
-        m_children[3] = new ActorIndexNode(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z));
-        m_children[4] = new ActorIndexNode(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z));
-        m_children[5] = new ActorIndexNode(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z));
-        m_children[6] = new ActorIndexNode(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z));
-        m_children[7] = new ActorIndexNode(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z));
+        vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
+        m_children[0] = new ActorIndexNode(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)));
+        m_children[1] = new ActorIndexNode(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)));
+        m_children[2] = new ActorIndexNode(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)));
+        m_children[3] = new ActorIndexNode(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)));
+        m_children[4] = new ActorIndexNode(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)));
+        m_children[5] = new ActorIndexNode(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)));
+        m_children[6] = new ActorIndexNode(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)));
+        m_children[7] = new ActorIndexNode(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)));
         m_leaf = false;
 
         // add actors to the children nodes
@@ -241,7 +256,7 @@ void ActorIndexNode::add(WLDActor *actor)
 
 int ActorIndexNode::locate(const vec3 &pos) const
 {
-    vec3 center = m_low + (m_high - m_low) * 0.5;
+    vec3 center = m_bounds.center();
     if(pos.x < center.x)
     {
         if(pos.y < center.y)
@@ -260,5 +275,5 @@ int ActorIndexNode::locate(const vec3 &pos) const
 
 bool ActorIndexNode::contains(const vec3 &pos) const
 {
-    return boxContains(pos, m_low, m_high);
+    return boxContains(pos, m_bounds);
 }

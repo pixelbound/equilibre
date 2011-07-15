@@ -67,10 +67,12 @@ private:
 class ActorIndexNode
 {
 public:
-    ActorIndexNode(const vec3 &low, const vec3 &high);
+    ActorIndexNode(const AABox &bounds);
     ~ActorIndexNode();
 
-    QVector<WLDActor *> actors();
+    QVector<WLDActor *> & actors();
+    ActorIndexNode ** children();
+    const AABox & bounds() const;
     void add(WLDActor *actor);
     bool contains(const vec3 &pos) const;
 
@@ -81,7 +83,7 @@ private:
     bool m_leaf;
     ActorIndexNode *m_children[8];
     QVector<WLDActor *> m_actors;
-    vec3 m_low, m_high;
+    AABox m_bounds;
 };
 
 class ActorIndex
@@ -89,6 +91,8 @@ class ActorIndex
 public:
     ActorIndex();
     virtual ~ActorIndex();
+
+    ActorIndexNode *root() const;
 
     void add(WLDActor *actor);
 

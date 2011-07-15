@@ -277,6 +277,47 @@ float Plane::distance(vec3 v) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+AABox::AABox()
+{
+}
+
+AABox::AABox(const vec3 &low, const vec3 &high)
+{
+    this->low = low;
+    this->high = high;
+}
+
+vec3 AABox::center() const
+{
+    return low + (high - low) * 0.5;
+}
+
+vec3 AABox::posVertex(const vec3 &normal) const
+{
+    vec3 res = low;
+    if(normal.x > 0)
+        res.x += high.x;
+    if(normal.y > 0)
+        res.y += high.y;
+    if(normal.z > 0)
+        res.z += high.z;
+    return res;
+}
+
+vec3 AABox::negVertex(const vec3 &normal) const
+{
+    vec3 res = low;
+    if(normal.x < 0)
+        res.x += high.x;
+    if(normal.y < 0)
+        res.y += high.y;
+    if(normal.z < 0)
+        res.z += high.z;
+    return res;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Frustum::Frustum()
 {
     m_angle = 45.0;
@@ -391,6 +432,27 @@ Frustum::TestResult Frustum::contains(vec3 v)
             return OUTSIDE;
     }
     return INSIDE;
+}
+
+Frustum::TestResult Frustum::contains(const AABox &b)
+{
+    if(m_dirty)
+    {
+        computePlanes();
+        m_dirty = false;
+    }
+    TestResult result = INSIDE;
+    for(int i = 0; i < 6; i++)
+    {
+        Plane &plane = m_planes[i];
+        // is the positive vertex outside?
+        if(plane.distance(b.posVertex(plane.n)) < 0)
+            return OUTSIDE;
+        // is the negative vertex outside?
+        else if(plane.distance(b.negVertex(plane.n)) < 0)
+            result = INTERSECTING;
+    }
+    return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

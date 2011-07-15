@@ -22,11 +22,13 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cameraPos = vec3(0.0, 0.0, 0.0);
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
     m_showObjects = true;
+    m_index = new ActorIndex();
 }
 
 Zone::~Zone()
 {
     clear();
+    delete m_index;
 }
 
 const QMap<QString, WLDModel *> & Zone::objectModels() const
@@ -156,6 +158,7 @@ void Zone::importObjects()
         {
             WLDActor *actor = new WLDActor(actorFrag, model, this);
             m_actors.append(actor);
+            m_index->add(actor);
         }
         else
         {
@@ -297,6 +300,7 @@ void Zone::draw(RenderState *state)
     // draw objects
     if(m_showObjects)
     {
+//        drawVisibleObjects(state, m_index->root(), frustum);
         foreach(WLDActor *actor, m_actors)
         {
             if(frustum.contains(actor->location()) == Frustum::INSIDE)
@@ -304,6 +308,28 @@ void Zone::draw(RenderState *state)
         }
     }
     state->popMatrix();
+}
+
+void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node, Frustum &f)
+{
+    if(!node)
+        return;
+    Frustum::TestResult r = f.contains(node->bounds());
+    if(r == Frustum::OUTSIDE)
+        return;
+    if(r == Frustum::INSIDE)
+    {
+        drawObjects(state, node);
+        return;
+    }
+    for(int i = 0; i < 8; i++)
+        drawVisibleObjects(state, node->children()[i], f);
+}
+
+void Zone::drawObjects(RenderState *state, ActorIndexNode *node)
+{
+    foreach(WLDActor *actor, node->actors())
+        actor->draw(state);
 }
 
 const vec3 & Zone::playerPos() const

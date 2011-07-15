@@ -112,6 +112,17 @@ struct Plane
     float distance(vec3 v) const;
 };
 
+struct AABox
+{
+    vec3 low, high;
+
+    AABox();
+    AABox(const vec3 &low, const vec3 &high);
+    vec3 center() const;
+    vec3 posVertex(const vec3 &normal) const;
+    vec3 negVertex(const vec3 &normal) const;
+};
+
 class Frustum
 {
 public:
@@ -150,6 +161,7 @@ public:
     matrix4 camera() const;
 
     TestResult contains(vec3 v);
+    TestResult contains(const AABox &b);
 
 private:
     void computePlanes();

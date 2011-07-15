@@ -12,6 +12,8 @@ class PFSArchive;
 class WLDData;
 class WLDModel;
 class WLDActor;
+class ActorIndex;
+class ActorIndexNode;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class ActorDefFragment;
@@ -59,6 +61,8 @@ private:
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
+    void drawVisibleObjects(RenderState *state, ActorIndexNode *node, Frustum &f);
+    void drawObjects(RenderState *state, ActorIndexNode *node);
 
     //TODO refactor this into data container classes
     QString m_name;
@@ -72,6 +76,7 @@ private:
     QMap<QString, WLDModel *> m_objModels;
     QMap<QString, WLDActor *> m_charModels;
     QList<WLDActor *> m_actors;
+    ActorIndex *m_index;
     bool m_showObjects;
     // player and camera settings
     vec3 m_playerPos;
