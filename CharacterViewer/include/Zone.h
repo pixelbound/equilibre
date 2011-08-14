@@ -68,7 +68,8 @@ private:
 
     //TODO refactor this into data container classes
     QString m_name;
-    WLDModel *m_geometry;
+    VertexGroup *m_zoneGeometry;
+    WLDMaterialPalette *m_zonePalette;
     PFSArchive *m_mainArchive;
     PFSArchive *m_objMeshArchive;
     PFSArchive *m_charArchive;

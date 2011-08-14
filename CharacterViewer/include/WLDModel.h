@@ -67,6 +67,8 @@ public:
     void draw(RenderState *state, WLDMaterialPalette *pal,
               const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
+    static VertexGroup * combine(const QList<WLDModelPart *> &parts, WLDMaterialPalette *palette);
+
 private:
     uint32_t m_partID;
     VertexGroup *m_mesh;

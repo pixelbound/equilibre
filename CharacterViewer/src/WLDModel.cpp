@@ -156,6 +156,92 @@ void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMat
     }
 }
 
+static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b)
+{
+    return a.matName < b.matName;
+}
+
+VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMaterialPalette *palette)
+{
+    // sum the vertice count for each part
+    uint32_t totalVertices = 0;
+    foreach(WLDModelPart *part, parts)
+        totalVertices += part->def()->m_vertices.count();
+
+    // import each part (vertices and material groups) into a single vertex group
+    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, totalVertices);
+    uint32_t dataOffset = 0, indiceOffset = 0;
+    QVector<uint32_t> partDataOffsets, partIndiceOffsets;
+    foreach(WLDModelPart *part, parts)
+    {
+        part->importMaterialGroups(vg, indiceOffset, palette);
+        part->importVertexData(vg, dataOffset);
+        partDataOffsets.append(dataOffset);
+        partIndiceOffsets.append(indiceOffset);
+        dataOffset += part->def()->m_vertices.count();
+        indiceOffset += part->def()->m_indices.count();
+    }
+
+    // sort the polygons per material and reorder indices
+    qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
+    indiceOffset = 0;
+    for(int i = 0; i < vg->matGroups.count(); i++)
+    {
+        MaterialGroup &mg(vg->matGroups[i]);
+        WLDModelPart *part = parts[mg.id];
+        uint32_t partDataOffset = partDataOffsets[mg.id];
+        uint32_t partIndiceOffset = partIndiceOffsets[mg.id];
+        uint32_t groupOffset = mg.offset - partIndiceOffset;
+        const QVector<uint16_t> &indices(part->def()->m_indices);
+        for(uint32_t i = 0; i < mg.count; i++)
+        {
+            uint32_t indice = indices[groupOffset + i] + partDataOffset;
+            vg->indices.append(indice);
+        }
+        mg.offset = indiceOffset;
+        indiceOffset += mg.count;
+    }
+
+    // merge material groups with common material
+    QVector<MaterialGroup> newGroups;
+    MaterialGroup group;
+    group.id = vg->matGroups[0].id;
+    group.offset = 0;
+    group.count = 0;
+    group.matName = vg->matGroups[0].matName;
+    for(int i = 0; i < vg->matGroups.count(); i++)
+    {
+        MaterialGroup &mg(vg->matGroups[i]);
+        if(mg.matName != group.matName)
+        {
+            // new material - output the current group
+            newGroups.append(group);
+            group.id = mg.id;
+            group.offset += group.count;
+            group.count = 0;
+            group.matName = mg.matName;
+        }
+        group.count += mg.count;
+    }
+    newGroups.append(group);
+    vg->matGroups = newGroups;
+
+    // copy the vertex group to the GPU (FIXME move to RenderStateGL2)
+    uint32_t dataSize = totalVertices * sizeof(VertexData);
+    uint32_t indicesSize = vg->indices.count() * sizeof(uint32_t);
+    uint32_t buffers[2];
+    glGenBuffers(2, buffers);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, dataSize, vg->data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    vg->dataBuffer = buffers[0];
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, vg->indices.constData(), GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    vg->indicesBuffer = buffers[1];
+    return vg;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive, QObject *parent) : QObject(parent)
@@ -336,7 +422,6 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
     m_name = name;
     m_model = model;
     m_palette = new WLDMaterialPalette(archive, this);
-    m_aggregMesh = 0;
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
     {
@@ -347,7 +432,6 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
 
 WLDModelSkin::~WLDModelSkin()
 {
-    delete m_aggregMesh;
 }
 
 QString WLDModelSkin::name() const
@@ -393,102 +477,8 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
     return false;
 }
 
-static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b)
-{
-    return a.matName < b.matName;
-}
-
-void WLDModelSkin::combineParts()
-{
-    // sum the vertice count for each part
-    uint32_t totalVertices = 0;
-    foreach(WLDModelPart *part, m_parts)
-        totalVertices += part->def()->m_vertices.count();
-
-    // import each part (vertices and material groups) into a single vertex group
-    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, totalVertices);
-    uint32_t dataOffset = 0, indiceOffset = 0;
-    QVector<uint32_t> partDataOffsets, partIndiceOffsets;
-    foreach(WLDModelPart *part, m_parts)
-    {
-        part->importMaterialGroups(vg, indiceOffset, this->palette());
-        part->importVertexData(vg, dataOffset);
-        partDataOffsets.append(dataOffset);
-        partIndiceOffsets.append(indiceOffset);
-        dataOffset += part->def()->m_vertices.count();
-        indiceOffset += part->def()->m_indices.count();
-    }
-
-    // sort the polygons per material and reorder indices
-    qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
-    indiceOffset = 0;
-    for(int i = 0; i < vg->matGroups.count(); i++)
-    {
-        MaterialGroup &mg(vg->matGroups[i]);
-        WLDModelPart *part = m_parts[mg.id];
-        uint32_t partDataOffset = partDataOffsets[mg.id];
-        uint32_t partIndiceOffset = partIndiceOffsets[mg.id];
-        uint32_t groupOffset = mg.offset - partIndiceOffset;
-        const QVector<uint16_t> &indices(part->def()->m_indices);
-        for(uint32_t i = 0; i < mg.count; i++)
-        {
-            uint32_t indice = indices[groupOffset + i] + partDataOffset;
-            vg->indices.append(indice);
-        }
-        mg.offset = indiceOffset;
-        indiceOffset += mg.count;
-    }
-
-    // merge material groups with common material
-    QVector<MaterialGroup> newGroups;
-    MaterialGroup group;
-    group.id = vg->matGroups[0].id;
-    group.offset = 0;
-    group.count = 0;
-    group.matName = vg->matGroups[0].matName;
-    for(int i = 0; i < vg->matGroups.count(); i++)
-    {
-        MaterialGroup &mg(vg->matGroups[i]);
-        if(mg.matName != group.matName)
-        {
-            // new material - output the current group
-            newGroups.append(group);
-            group.id = mg.id;
-            group.offset += group.count;
-            group.count = 0;
-            group.matName = mg.matName;
-        }
-        group.count += mg.count;
-    }
-    newGroups.append(group);
-    vg->matGroups = newGroups;
-
-    // copy the vertex group to the GPU (FIXME move to RenderStateGL2)
-    uint32_t dataSize = totalVertices * sizeof(VertexData);
-    uint32_t indicesSize = vg->indices.count() * sizeof(uint32_t);
-    uint32_t buffers[2];
-    glGenBuffers(2, buffers);
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, dataSize, vg->data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    vg->dataBuffer = buffers[0];
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, vg->indices.constData(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    vg->indicesBuffer = buffers[1];
-
-    m_aggregMesh = vg;
-}
-
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
-    if(m_aggregMesh)
-    {
-        state->drawMesh(m_aggregMesh, m_palette, bones, boneCount);
-    }
-    else
-    {
-        foreach(WLDModelPart *part, m_parts)
-            part->draw(state, this->palette(), bones, boneCount);
-    }
+    foreach(WLDModelPart *part, m_parts)
+        part->draw(state, this->palette(), bones, boneCount);
 }

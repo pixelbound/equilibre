@@ -20,7 +20,7 @@ SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) 
     m_frames = 0;
     m_lastFPS = 0;
     m_fpsTimer = new QTimer(this);
-    m_fpsTimer->setInterval(1000 / 10);
+    m_fpsTimer->setInterval(1000);
     setAutoFillBackground(false);
     connect(m_fpsTimer, SIGNAL(timeout()), this, SLOT(updateFPS()));
     connect(m_renderTimer, SIGNAL(timeout()), this, SLOT(update()));

@@ -16,7 +16,8 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_mainWld = 0;
     m_objMeshWld = m_objDefWld = 0;
     m_charWld = 0;
-    m_geometry = 0;
+    m_zoneGeometry = 0;
+    m_zonePalette = 0;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
     m_cameraPos = vec3(0.0, 0.0, 0.0);
@@ -116,7 +117,8 @@ void Zone::clear()
         delete actor;
     m_objModels.clear();
     m_charModels.clear();
-    delete m_geometry;
+    delete m_zoneGeometry;
+    delete m_zonePalette;
     delete m_mainWld;
     delete m_objMeshWld;
     delete m_objDefWld;
@@ -124,7 +126,8 @@ void Zone::clear()
     delete m_mainArchive;
     delete m_objMeshArchive;
     delete m_charArchive;
-    m_geometry = 0;
+    m_zoneGeometry = 0;
+    m_zonePalette = 0;
     m_mainWld = 0;
     m_objMeshWld = 0;
     m_objDefWld = 0;
@@ -136,14 +139,19 @@ void Zone::clear()
 
 void Zone::importGeometry()
 {
-    m_geometry = new WLDModel(m_mainArchive, this);
-    WLDModelSkin *skin = m_geometry->skin();
+    // load zone regions as model parts
+    QList<WLDModelPart *> parts;
+    int partID = 0;
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
-        skin->addPart(meshDef, false);
-    WLDMaterialPalette *palette = skin->palette();
+        parts.append(new WLDModelPart(meshDef, partID++));
+    // load zone textures into the material palette
+    m_zonePalette = new WLDMaterialPalette(m_mainArchive, this);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
-        palette->addMaterialDef(matDef);
-    skin->combineParts();
+        m_zonePalette->addMaterialDef(matDef);
+    // combine all regions into a single mesh
+    m_zoneGeometry = WLDModelPart::combine(parts, m_zonePalette);
+    foreach(WLDModelPart *part, parts)
+        delete part;
 }
 
 void Zone::importObjects()
@@ -300,12 +308,12 @@ void Zone::draw(RenderState *state)
     state->multiplyMatrix(frustum.camera());
 
     // draw geometry
-    if(m_geometry)
+    if(m_zoneGeometry)
     {
         state->pushMatrix();
         //FIXME use the zone actor values
         state->scale(0.5, 0.5, 0.5);
-        m_geometry->skin()->draw(state);
+        state->drawMesh(m_zoneGeometry, m_zonePalette);
         state->popMatrix();
     }
 
