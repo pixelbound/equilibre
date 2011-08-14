@@ -31,7 +31,7 @@ Zone::~Zone()
     delete m_index;
 }
 
-const QMap<QString, WLDModel *> & Zone::objectModels() const
+const QMap<QString, WLDModelPart *> & Zone::objectModels() const
 {
     return m_objModels;
 }
@@ -41,9 +41,9 @@ const QMap<QString, WLDActor *> & Zone::charModels() const
     return m_charModels;
 }
 
-const QList<WLDActor *> & Zone::actors() const
+const QList<WLDZoneActor> & Zone::actors() const
 {
-    return m_actors;
+    return m_index->actors();
 }
 
 bool Zone::load(QString path, QString name)
@@ -107,15 +107,15 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
 
 void Zone::clear()
 {
-    foreach(WLDModel *model, m_objModels)
+    m_index->clear();
+    foreach(WLDModelPart *model, m_objModels)
         delete model;
+    foreach(WLDMaterialPalette *palette, m_objPalettes)
+        delete palette;
     foreach(WLDActor *actor, m_charModels)
-        delete actor;
-    foreach(WLDActor *actor, m_actors)
         delete actor;
     m_objModels.clear();
     m_charModels.clear();
-    m_actors.clear();
     delete m_geometry;
     delete m_mainWld;
     delete m_objMeshWld;
@@ -153,16 +153,17 @@ void Zone::importObjects()
     // import actors through Actor fragments
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
-        WLDModel *model = m_objModels.value(actorFrag->m_def.name());
+        QString actorName = actorFrag->m_def.name();
+        WLDModelPart *model = m_objModels.value(actorName);
         if(model)
         {
-            WLDActor *actor = new WLDActor(actorFrag, model, this);
-            m_actors.append(actor);
+            WLDMaterialPalette *palette = m_objPalettes.value(actorName);
+            WLDZoneActor actor(actorFrag, model, palette);
             m_index->add(actor);
         }
         else
         {
-            qDebug("Actor '%s' not found", actorFrag->m_def.name().toLatin1().constData());
+            qDebug("Actor '%s' not found", actorName.toLatin1().constData());
         }
     }
 }
@@ -172,11 +173,22 @@ void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
     // import models through ActorDef fragments
     foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
-        WLDModel *model = new WLDModel(archive, this);
-        WLDModelSkin *skin = model->skin();
-        foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
-            skin->addPart(meshDef, true);
+        WLDFragment *subModel = actorDef->m_models.value(0);
+        if(!subModel)
+            continue;
+        MeshFragment *mesh = subModel->cast<MeshFragment>();
+        if(!mesh)
+        {
+            if(subModel->kind() == HierSpriteFragment::ID)
+                qDebug("Hierarchical model in zone objects (%s)",
+                       actorDef->name().toLatin1().constData());
+            continue;
+        }
+        WLDModelPart *model = new WLDModelPart(mesh->m_def, 0, this);
+        WLDMaterialPalette *palette = new WLDMaterialPalette(archive, this);
+        palette->addPaletteDef(mesh->m_def->m_palette);
         m_objModels.insert(actorDef->name(), model);
+        m_objPalettes.insert(actorDef->name(), palette);
     }
 }
 
@@ -301,10 +313,11 @@ void Zone::draw(RenderState *state)
     if(m_showObjects)
     {
 //        drawVisibleObjects(state, m_index->root(), frustum);
-        foreach(WLDActor *actor, m_actors)
+        foreach(WLDZoneActor actor, m_index->actors())
         {
-            if(frustum.contains(actor->location()) == Frustum::INSIDE)
-                actor->draw(state);
+            //if(frustum.contains(actor.location()) == Frustum::INSIDE)
+            if(frustum.contains(actor.m_boundsAA) != Frustum::OUTSIDE)
+                actor.draw(state);
         }
     }
     state->popMatrix();
@@ -328,8 +341,9 @@ void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node, Frustum 
 
 void Zone::drawObjects(RenderState *state, ActorIndexNode *node)
 {
-    foreach(WLDActor *actor, node->actors())
-        actor->draw(state);
+    const QList<WLDZoneActor> &actors = m_index->actors();
+    foreach(int actorIndex, node->actors())
+        actors[actorIndex].draw(state);
 }
 
 const vec3 & Zone::playerPos() const

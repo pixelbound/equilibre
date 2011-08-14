@@ -97,18 +97,19 @@ MeshDefFragment * WLDModelPart::def() const
     return m_meshDef;
 }
 
-void WLDModelPart::draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones, uint32_t boneCount)
+void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
+                        const BoneTransform *bones, uint32_t boneCount)
 {
     if(!m_mesh)
     {
         m_mesh = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
         importVertexData(m_mesh, 0);
-        importMaterialGroups(m_mesh, 0, skin);
+        importMaterialGroups(m_mesh, 0, palette);
         // load indices
         for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
             m_mesh->indices.push_back(m_meshDef->m_indices[i]);
     }
-    state->drawMesh(m_mesh, skin->palette(), bones, boneCount);
+    state->drawMesh(m_mesh, palette, bones, boneCount);
 }
 
 void WLDModelPart::importVertexData(VertexGroup *vg, uint32_t offset)
@@ -132,7 +133,7 @@ void WLDModelPart::importVertexData(VertexGroup *vg, uint32_t offset)
     }
 }
 
-void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDModelSkin *skin)
+void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMaterialPalette *palette)
 {
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
@@ -146,10 +147,10 @@ void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMod
         mg.offset = pos;
         mg.count = vertexCount;
         // invisible groups have no material
-        if((matDef->m_param1 == 0) || !skin || !skin->palette())
+        if((matDef->m_param1 == 0) || !palette)
             mg.matName = QString::null;
         else
-            mg.matName = skin->palette()->materialName(palDef->m_materials[g.second]);
+            mg.matName = palette->materialName(palDef->m_materials[g.second]);
         vg->matGroups.append(mg);
         pos += vertexCount;
     }
@@ -410,7 +411,7 @@ void WLDModelSkin::combineParts()
     QVector<uint32_t> partDataOffsets, partIndiceOffsets;
     foreach(WLDModelPart *part, m_parts)
     {
-        part->importMaterialGroups(vg, indiceOffset, this);
+        part->importMaterialGroups(vg, indiceOffset, this->palette());
         part->importVertexData(vg, dataOffset);
         partDataOffsets.append(dataOffset);
         partIndiceOffsets.append(indiceOffset);
@@ -488,6 +489,6 @@ void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t
     else
     {
         foreach(WLDModelPart *part, m_parts)
-            part->draw(state, this, bones, boneCount);
+            part->draw(state, this->palette(), bones, boneCount);
     }
 }

@@ -119,7 +119,7 @@ class Fragment:
             classObj = getattr(module, className)
         else:
             classObj = cls
-            print("Class '%s' not found" % className, file=sys.stderr)
+            #print("Class '%s' not found" % className, file=sys.stderr)
         return classObj(ID, type, name, data)
     
     def unpack(self, wld):
@@ -313,6 +313,20 @@ class Fragment14(Fragment):
         #name3Data = self.data[self.pos: self.pos + self.Size3]
         #self.name3 = name3Data.decode("latin1")
         #self.pos += self.Size3
+    
+    def listModels(self):
+        models = []
+        meshTypes = [0x36, 0x2d]
+        for m in self.models:
+            if m:
+                if m.type in meshTypes: # Mesh
+                    models.append(m)
+                elif m.type == 0x11: # HierSprite
+                    if hasattr(m.Reference, "Fragments"):
+                        for m2 in m.Reference.Fragments:
+                            if m2 and (m2.type in meshTypes):
+                                models.append(m2)
+        return models
 
 class Fragment15(Fragment):
     """ This type of fragment refers to a world object. """

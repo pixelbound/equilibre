@@ -10,6 +10,7 @@
 class PFSArchive;
 class ActorFragment;
 class WLDModel;
+class WLDModelPart;
 class WLDActor;
 class RenderState;
 
@@ -64,16 +65,35 @@ private:
     QMap<EquipSlot, ActorEquip> m_equip;
 };
 
+/*!
+  \brief Describes an instance of a zone object.
+  */
+class WLDZoneActor
+{
+public:
+    WLDZoneActor(ActorFragment *frag, WLDModelPart *model, WLDMaterialPalette *palette);
+
+    const vec3 & location() const;
+    void draw(RenderState *state) const;
+
+    vec3 m_location, m_rotation, m_scale;
+    AABox m_boundsAA;
+    WLDModelPart *m_model;
+    WLDMaterialPalette *m_palette;
+};
+
+class ActorIndex;
+
 class ActorIndexNode
 {
 public:
     ActorIndexNode(const AABox &bounds);
     ~ActorIndexNode();
 
-    QVector<WLDActor *> & actors();
+    QVector<uint16_t> & actors();
     ActorIndexNode ** children();
     const AABox & bounds() const;
-    void add(WLDActor *actor);
+    void add(uint16_t index, const vec3 &pos, ActorIndex *tree);
     bool contains(const vec3 &pos) const;
 
 private:
@@ -82,7 +102,7 @@ private:
     //TODO optimize to: int count, union { ActorIndexNode *, WLDActor * }
     bool m_leaf;
     ActorIndexNode *m_children[8];
-    QVector<WLDActor *> m_actors;
+    QVector<uint16_t> m_actors;
     AABox m_bounds;
 };
 
@@ -92,12 +112,15 @@ public:
     ActorIndex();
     virtual ~ActorIndex();
 
+    const QList<WLDZoneActor> & actors() const;
     ActorIndexNode *root() const;
 
-    void add(WLDActor *actor);
+    void add(const WLDZoneActor &actor);
+    void clear();
 
 private:
     ActorIndexNode *m_root;
+    QList<WLDZoneActor> m_actors;
 };
 
 #endif

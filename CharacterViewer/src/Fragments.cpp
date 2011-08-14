@@ -312,8 +312,8 @@ bool MeshDefFragment::unpack(WLDReader *s)
     s->unpackArray("f", 3, &m_center);
     s->unpackArray("I", 3, &m_param2);
     s->unpackField('f', &m_maxDist);
-    s->unpackArray("f", 3, &m_min);
-    s->unpackArray("f", 3, &m_max);
+    s->unpackArray("f", 3, &m_boundsAA.low);
+    s->unpackArray("f", 3, &m_boundsAA.high);
     s->unpackFields("hhhhhhhhhh", &vertexCount, &texCoordsCount, &normalCount,
                  &colorCount, &polyCount, &vertexPieceCount, &polyTexCount,
                  &vertexTexCount, &m_size9, &scaleFactor);

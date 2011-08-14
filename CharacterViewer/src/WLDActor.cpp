@@ -149,6 +149,47 @@ void WLDActor::draw(RenderState *state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDModelPart *model, WLDMaterialPalette *palette)
+{
+    m_model = model;
+    m_palette = palette;
+    m_boundsAA = model->def()->m_boundsAA;
+    if(frag)
+    {
+        m_location = frag->m_location;
+        m_rotation = frag->m_rotation;
+        m_scale = frag->m_scale;
+        // FIXME account for rotation and scale
+        m_boundsAA.low = m_boundsAA.low + m_location;
+        m_boundsAA.high = m_boundsAA.high + m_location;
+    }
+    else
+    {
+        m_location = vec3(0.0, 0.0, 0.0);
+        m_rotation = vec3(0.0, 0.0, 0.0);
+        m_scale = vec3(1.0, 1.0, 1.0);
+    }
+}
+
+const vec3 & WLDZoneActor::location() const
+{
+    return m_location;
+}
+
+void WLDZoneActor::draw(RenderState *state) const
+{
+    state->pushMatrix();
+    state->translate(m_location);
+    state->rotate(m_rotation.x, 1.0, 0.0, 0.0);
+    state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
+    state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
+    state->scale(m_scale);
+    m_model->draw(state, m_palette);
+    state->popMatrix();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 bool boxContains(const vec3 &p, const AABox &b)
 {
     return (b.low.x <= p.x) && (p.x <= b.high.x)
@@ -163,7 +204,12 @@ ActorIndex::ActorIndex()
 
 ActorIndex::~ActorIndex()
 {
-    delete m_root;
+    clear();
+}
+
+const QList<WLDZoneActor> & ActorIndex::actors() const
+{
+    return m_actors;
 }
 
 ActorIndexNode *ActorIndex::root() const
@@ -171,7 +217,7 @@ ActorIndexNode *ActorIndex::root() const
     return m_root;
 }
 
-void ActorIndex::add(WLDActor *actor)
+void ActorIndex::add(const WLDZoneActor &actor)
 {
     if(!m_root)
     {
@@ -179,7 +225,16 @@ void ActorIndex::add(WLDActor *actor)
         vec3 low(-1e4, -1e4, -1e4), high(1e4, 1e4, 1e4);
         m_root = new ActorIndexNode(AABox(low, high));
     }
-    m_root->add(actor);
+    uint16_t index = (uint16_t)m_actors.count();
+    m_actors.append(actor);
+    m_root->add(index, actor.location(), this);
+}
+
+void ActorIndex::clear()
+{
+    delete m_root;
+    m_root = 0;
+    m_actors.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -201,7 +256,7 @@ ActorIndexNode::~ActorIndexNode()
     }
 }
 
-QVector<WLDActor *> & ActorIndexNode::actors()
+QVector<uint16_t> & ActorIndexNode::actors()
 {
     return m_actors;
 }
@@ -216,18 +271,18 @@ const AABox & ActorIndexNode::bounds() const
     return m_bounds;
 }
 
-void ActorIndexNode::add(WLDActor *actor)
+void ActorIndexNode::add(uint16_t index, const vec3 &pos, ActorIndex *tree)
 {
-    if(!contains(actor->location()))
+    if(!contains(pos))
         return;
     else if(!m_leaf)
     {
-        int childIndex = locate(actor->location());
-        m_children[childIndex]->add(actor);
+        int childIndex = locate(pos);
+        m_children[childIndex]->add(index, pos, tree);
     }
     else if(m_actors.count() <= 20)
     {
-        m_actors.append(actor);
+        m_actors.append(index);
     }
     else
     {
@@ -244,13 +299,15 @@ void ActorIndexNode::add(WLDActor *actor)
         m_leaf = false;
 
         // add actors to the children nodes
-        foreach(WLDActor *a, m_actors)
+        const QList<WLDZoneActor> &actors = tree->actors();
+        foreach(int actorIndex, m_actors)
         {
-            int childIndex = locate(a->location());
-            m_children[childIndex]->add(a);
+            vec3 pos = actors[actorIndex].location();
+            int childIndex = locate(pos);
+            m_children[childIndex]->add(actorIndex, pos, tree);
         }
         m_actors.clear();
-        add(actor);
+        add(index, pos, tree);
     }
 }
 

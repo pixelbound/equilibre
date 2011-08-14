@@ -62,9 +62,10 @@ public:
     MeshDefFragment *def() const;
 
     void importVertexData(VertexGroup *vg, uint32_t offset);
-    void importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDModelSkin *skin);
+    void importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMaterialPalette *pal);
 
-    void draw(RenderState *state, WLDModelSkin *skin, const BoneTransform *bones = 0, uint32_t boneCount = 0);
+    void draw(RenderState *state, WLDMaterialPalette *pal,
+              const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
     uint32_t m_partID;

@@ -261,7 +261,7 @@ public:
     vec3 m_center;
     uint32_t m_param2[3];
     float m_maxDist;
-    vec3 m_min, m_max;
+    AABox m_boundsAA;
     uint16_t m_size9;
     QVector<vec3> m_vertices;
     QVector<vec2> m_texCoords;
