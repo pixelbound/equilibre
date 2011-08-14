@@ -311,8 +311,6 @@ void Zone::draw(RenderState *state)
     if(m_zoneGeometry)
     {
         state->pushMatrix();
-        //FIXME use the zone actor values
-        state->scale(0.5, 0.5, 0.5);
         state->drawMesh(m_zoneGeometry, m_zonePalette);
         state->popMatrix();
     }
@@ -391,6 +389,12 @@ void Zone::showObjects(bool show)
 
 void Zone::step(float distForward, float distSideways, float distUpDown)
 {
-    matrix4 m = matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
+    const bool ghost = true;
+    matrix4 m;
+    if(ghost)
+        m = matrix4::rotate(m_cameraOrient.x, 1.0, 0.0, 0.0);
+    else
+        m.setIdentity();
+    m = m * matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
     m_playerPos = m_playerPos + m.map(vec3(distSideways, -distForward, distUpDown));
 }

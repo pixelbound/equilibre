@@ -69,6 +69,7 @@ void ZoneViewerWindow::initMenus()
     m_showFpsAction->setCheckable(true);
     m_showZoneObjectsAction = new QAction("Show Zone Objects", this);
     m_showZoneObjectsAction->setCheckable(true);
+    m_showZoneObjectsAction->setChecked(true);
 
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningUniformAction);
@@ -201,19 +202,16 @@ void ZoneScene::draw()
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)
 {
+    float dist = 10.0;
     int key = e->key();
     if(key == Qt::Key_Q)
-        m_zone->step(0.0, 5.0, 0.0);
+        m_zone->step(0.0, dist, 0.0);
     else if(key == Qt::Key_D)
-        m_zone->step(0.0, -5.0, 0.0);
+        m_zone->step(0.0, -dist, 0.0);
     else if(key == Qt::Key_Z)
-        m_zone->step(5.0, 0.0, 0.0);
+        m_zone->step(dist, 0.0, 0.0);
     else if(key == Qt::Key_S)
-        m_zone->step(-5.0, 0.0, 0.0);
-    else if(key == Qt::Key_E)
-        m_zone->step(0.0, 0.0, -5.0);
-    else if(key == Qt::Key_A)
-        m_zone->step(0.0, 0.0, 5.0);
+        m_zone->step(-dist, 0.0, 0.0);
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)

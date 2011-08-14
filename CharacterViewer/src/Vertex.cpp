@@ -323,7 +323,7 @@ Frustum::Frustum()
     m_angle = 45.0;
     m_aspect = 1.0;
     m_nearPlane = 0.1;
-    m_farPlane = 1000.0;
+    m_farPlane = 5000.0;
     m_dirty = true;
 }
 
