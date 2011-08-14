@@ -45,6 +45,7 @@ private:
     QAction *m_hardwareSkinningTextureAction;
     QAction *m_showFpsAction;
     QAction *m_showZoneObjectsAction;
+    QAction *m_cullZoneObjectsAction;
 };
 
 class ZoneScene : public Scene
@@ -66,6 +67,7 @@ public:
 
 public slots:
     void showZoneObjects(bool show);
+    void setFrustumCulling(bool enabled);
 
 private:
     double m_started;

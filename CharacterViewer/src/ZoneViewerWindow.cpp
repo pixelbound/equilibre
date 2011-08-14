@@ -69,13 +69,17 @@ void ZoneViewerWindow::initMenus()
     m_showFpsAction->setCheckable(true);
     m_showZoneObjectsAction = new QAction("Show Zone Objects", this);
     m_showZoneObjectsAction->setCheckable(true);
-    m_showZoneObjectsAction->setChecked(true);
+    m_showZoneObjectsAction->setChecked(m_scene->zone()->showObjects());
+    m_cullZoneObjectsAction = new QAction("Frustum Culling of Zone Objects", this);
+    m_cullZoneObjectsAction->setCheckable(true);
+    m_cullZoneObjectsAction->setChecked(m_scene->zone()->cullObjects());
 
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningUniformAction);
     renderMenu->addAction(m_hardwareSkinningTextureAction);
     renderMenu->addAction(m_showFpsAction);
     renderMenu->addAction(m_showZoneObjectsAction);
+    renderMenu->addAction(m_cullZoneObjectsAction);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(renderMenu);
@@ -91,6 +95,7 @@ void ZoneViewerWindow::initMenus()
     connect(m_hardwareSkinningTextureAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningTexture()));
     connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowFps(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
+    connect(m_cullZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(setFrustumCulling(bool)));
 }
 
 void ZoneViewerWindow::openArchive()
@@ -187,7 +192,12 @@ Zone * ZoneScene::zone() const
 
 void ZoneScene::showZoneObjects(bool show)
 {
-    m_zone->showObjects(show);
+    m_zone->setShowObjects(show);
+}
+
+void ZoneScene::setFrustumCulling(bool enabled)
+{
+    m_zone->setCullObjects(enabled);
 }
 
 void ZoneScene::init()

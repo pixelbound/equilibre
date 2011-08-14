@@ -23,6 +23,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cameraPos = vec3(0.0, 0.0, 0.0);
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
     m_showObjects = true;
+    m_cullObjects = true;
     m_index = new ActorIndex();
 }
 
@@ -318,11 +319,9 @@ void Zone::draw(RenderState *state)
     // draw objects
     if(m_showObjects)
     {
-//        drawVisibleObjects(state, m_index->root(), frustum);
         foreach(WLDZoneActor actor, m_index->actors())
         {
-            //if(frustum.contains(actor.location()) == Frustum::INSIDE)
-            if(frustum.contains(actor.m_boundsAA) != Frustum::OUTSIDE)
+            if(!m_cullObjects || frustum.contains(actor.m_boundsAA) != Frustum::OUTSIDE)
                 actor.draw(state);
         }
     }
@@ -382,9 +381,24 @@ const vec3 & Zone::cameraPos() const
     return m_cameraPos;
 }
 
-void Zone::showObjects(bool show)
+bool Zone::showObjects() const
+{
+    return m_showObjects;
+}
+
+void Zone::setShowObjects(bool show)
 {
     m_showObjects = show;
+}
+
+bool Zone::cullObjects() const
+{
+    return m_cullObjects;
+}
+
+void Zone::setCullObjects(bool enabled)
+{
+    m_cullObjects = enabled;
 }
 
 void Zone::step(float distForward, float distSideways, float distUpDown)

@@ -54,7 +54,11 @@ public:
     void setCameraOrient(const vec3 &rot);
     void step(float x, float y, float z);
 
-    void showObjects(bool show);
+    bool showObjects() const;
+    bool cullObjects() const;
+
+    void setShowObjects(bool show);
+    void setCullObjects(bool enabled);
 
 private:
     void importGeometry();
@@ -81,6 +85,7 @@ private:
     QMap<QString, WLDActor *> m_charModels;
     ActorIndex *m_index;
     bool m_showObjects;
+    bool m_cullObjects;
     // player and camera settings
     vec3 m_playerPos;
     float m_playerOrient;
