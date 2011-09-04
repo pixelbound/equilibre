@@ -3,6 +3,12 @@ find_package(ZLIB 1.0.0 REQUIRED)
 include(${QT_USE_FILE})
 include_directories(${ZLIB_INCLUDE_DIRS})
 
+if( WIN32 )
+    set(GLEW_LIBRARIES glew32)
+else( WIN32 )
+    set(GLEW_LIBRARIES GLEW)
+endif( WIN32 )
+
 set(CHARVIEWER_SOURCES
     src/main.cpp
     src/SceneViewport.cpp
@@ -67,4 +73,4 @@ add_executable(CharacterViewer
     ${CHARVIEWER_MOC_SOURCES}
     ${CHARVIEWER_RESOURCES}
 )
-target_link_libraries(CharacterViewer ${QT_LIBRARIES} GLEW ${ZLIB_LIBRARIES})
+target_link_libraries(CharacterViewer ${QT_LIBRARIES} ${GLEW_LIBRARIES} ${ZLIB_LIBRARIES})
