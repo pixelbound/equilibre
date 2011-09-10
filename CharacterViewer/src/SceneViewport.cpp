@@ -107,15 +107,15 @@ void SceneViewport::setShowFps(bool show)
 
 void SceneViewport::startFPS()
 {
-    m_start = QDateTime::currentDateTime();
+    m_start = QTime::currentTime();
 }
 
 void SceneViewport::updateFPS()
 {
-    qint64 elapsedMillis = m_start.msecsTo(QDateTime::currentDateTime());
+    qint64 elapsedMillis = m_start.msecsTo(QTime::currentTime());
     m_lastFPS = m_frames / ((float)elapsedMillis / 1000.0);
     m_frames = 0;
-    m_start = QDateTime::currentDateTime();
+    m_start = QTime::currentTime();
 }
 
 void SceneViewport::paintFPS(QPainter *p, float fps)

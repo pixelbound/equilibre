@@ -124,7 +124,7 @@ bool TrackDefFragment::unpack(WLDReader *s)
         if(rw != 0)
         {
             // normalize the quaternion, since it is stored as a 16-bit integer
-            l = sqrt(rw * rw + rx * rx + ry * ry + rz * rz);
+            l = sqrt((float)(rw * rw + rx * rx + ry * ry + rz * rz));
             frame.rotation = QQuaternion(rw / l, rx / l, ry / l, rz / l);
         }
         if(scale != 0)

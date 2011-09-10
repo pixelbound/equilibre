@@ -123,6 +123,11 @@ struct AABox
     vec3 negVertex(const vec3 &normal) const;
 };
 
+#ifdef _WIN32
+#undef NEAR
+#undef FAR
+#endif
+
 class Frustum
 {
 public:

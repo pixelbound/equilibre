@@ -403,7 +403,7 @@ void CharacterScene::mousePressEvent(QMouseEvent *e)
 {
     int x = e->x();
     int y = e->y();
-    if(e->button() & Qt::MiddleButton)       // middle button pans the scene
+    if(e->button() & Qt::MidButton)       // middle button pans the scene
     {
         m_transState.active = true;
         m_transState.x0 = x;
@@ -421,7 +421,7 @@ void CharacterScene::mousePressEvent(QMouseEvent *e)
 
 void CharacterScene::mouseReleaseEvent(QMouseEvent *e)
 {
-    if(e->button() & Qt::MiddleButton)
+    if(e->button() & Qt::MidButton)
         m_transState.active = false;
     else if(e->button() & Qt::LeftButton)
         m_rotState.active = false;

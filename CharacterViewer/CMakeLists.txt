@@ -66,7 +66,13 @@ set(CHARVIEWER_RESOURCES
 QT4_WRAP_CPP(CHARVIEWER_MOC_SOURCES ${CHARVIEWER_HEADERS})
 QT4_ADD_RESOURCES(CHARVIEWER_RESOURCES ${CHARVIEWER_RESOURCES})
 
-include_directories( include )
+include_directories(include)
+
+if(WIN32)
+    set(CHARVIEWER_HEADERS ${CHARVIEWER_HEADERS} win32/inttypes.h win32/stdint.h)
+    include_directories(include/win32)
+    add_definitions(/Dinline= /DM_PI=3.14159265358979323846)
+endif(WIN32)
 
 add_executable(CharacterViewer
     ${CHARVIEWER_SOURCES}

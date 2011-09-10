@@ -3,7 +3,7 @@
 
 #include "Platform.h"
 #include <QGLWidget>
-#include <QDateTime>
+#include <QTime>
 #include "Vertex.h"
 
 class QTimer;
@@ -53,7 +53,7 @@ private:
 
     // FPS settings
     QTimer *m_fpsTimer;
-    QDateTime m_start;
+    QTime m_start;
     uint m_frames;
     float m_lastFPS;
 };

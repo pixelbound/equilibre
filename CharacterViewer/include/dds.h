@@ -123,7 +123,14 @@ typedef enum
 #define DDSCAPS2_CUBEMAP_NEGATIVEZ 0x00008000
 #define DDSCAPS2_VOLUME            0x00200000
 
-typedef struct __attribute__((packed))
+#ifdef _WIN32
+#pragma pack(push,1)
+#define PACKED
+#else
+#define PACKED __attribute__((packed))
+#endif
+
+typedef struct PACKED
 {
    unsigned int size;
    unsigned int flags;
@@ -135,14 +142,14 @@ typedef struct __attribute__((packed))
    unsigned int amask;
 } dds_pixel_format_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
    unsigned int caps1;
    unsigned int caps2;
    unsigned int reserved[2];
 } dds_caps_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
    char magic[4];
    unsigned int size;
@@ -157,5 +164,9 @@ typedef struct __attribute__((packed))
    dds_caps_t caps;
    unsigned int reserved2;
 } dds_header_t;
+
+#ifdef _WIN32
+#pragma pack(pop)
+#endif
 
 #endif
