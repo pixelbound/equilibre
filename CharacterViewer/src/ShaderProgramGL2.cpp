@@ -269,7 +269,7 @@ void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
 
 void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
 {
-    if(!vg || !palette)
+    if(!vg)
         return;
     bool haveIndices = false;
     const uint32_t *indices = 0;
@@ -289,10 +289,10 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
     uploadVertexAttributes(vg);
     foreach(MaterialGroup mg, vg->matGroups)
     {
-        // skip meshes that don't have a palette of materials
+        // skip meshes that don't have a material
         if(mg.matName.isEmpty())
            continue;
-        Material *mat = palette->material(mg.matName);
+        Material *mat = palette ? palette->material(mg.matName) : NULL;
         if(mat)
         {
             // XXX fix rendering non-opaque polygons

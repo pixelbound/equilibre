@@ -80,6 +80,8 @@ WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, uint32_t partID, QObject *p
     m_partID = partID;
     m_meshDef = meshDef;
     m_mesh = 0;
+    m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
+    m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
 
 WLDModelPart::~WLDModelPart()
@@ -95,6 +97,11 @@ VertexGroup * WLDModelPart::mesh() const
 MeshDefFragment * WLDModelPart::def() const
 {
     return m_meshDef;
+}
+
+const AABox & WLDModelPart::boundsAA() const
+{
+    return m_boundsAA;
 }
 
 void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,

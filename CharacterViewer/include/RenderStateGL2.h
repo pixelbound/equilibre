@@ -18,6 +18,7 @@ public:
 
     virtual void drawMesh(VertexGroup *m, WLDMaterialPalette *palette,
         const BoneTransform *bones, int boneCount);
+    virtual void drawBox(const AABox &box);
     ShaderProgramGL2 * program() const;
 
     virtual SkinningMode skinningMode() const;
@@ -49,6 +50,7 @@ public:
 
 private:
     bool loadShaders();
+    static VertexGroup * createCube();
 
     vec4 m_ambient0;
     vec4 m_diffuse0;
@@ -61,6 +63,7 @@ private:
     std::vector<matrix4> m_matrixStack[3];
     ShaderProgramGL2 *m_programs[3];
     SkinningMode m_skinningMode;
+    VertexGroup *m_cube;
 };
 
 #endif

@@ -5,6 +5,7 @@
 #include <QList>
 #include <QMap>
 #include "Platform.h"
+#include "Vertex.h"
 
 class Mesh;
 class MeshDefFragment;
@@ -60,6 +61,7 @@ public:
 
     VertexGroup * mesh() const;
     MeshDefFragment *def() const;
+    const AABox & boundsAA() const;
 
     void importVertexData(VertexGroup *vg, uint32_t offset);
     void importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMaterialPalette *pal);
@@ -73,6 +75,7 @@ private:
     uint32_t m_partID;
     VertexGroup *m_mesh;
     MeshDefFragment *m_meshDef;
+    AABox m_boundsAA;
 };
 
 /*!

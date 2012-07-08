@@ -18,6 +18,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)HardwareSkinningUniform] = new UniformSkinningProgram(this);
     m_programs[(int)HardwareSkinningTexture] = new TextureSkinningProgram(this);
     m_skinningMode = SoftwareSkinning;
+    m_cube = createCube();
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -25,6 +26,7 @@ RenderStateGL2::~RenderStateGL2()
     delete m_programs[(int)SoftwareSkinning];
     delete m_programs[(int)HardwareSkinningUniform];
     delete m_programs[(int)HardwareSkinningTexture];
+    delete m_cube;
 }
 
 ShaderProgramGL2 * RenderStateGL2::program() const
@@ -51,6 +53,71 @@ void RenderStateGL2::drawMesh(VertexGroup *vg, WLDMaterialPalette *palette,
     {
         prog->draw(vg, palette);
     }
+}
+
+VertexGroup * RenderStateGL2::createCube()
+{
+    static const GLfloat vertices[][3] =
+    {
+        {-0.5, -0.5,  0.5}, {-0.5,  0.5,  0.5},
+        { 0.5,  0.5,  0.5}, { 0.5, -0.5,  0.5},
+        {-0.5, -0.5, -0.5}, {-0.5,  0.5, -0.5},
+        { 0.5,  0.5, -0.5}, { 0.5, -0.5, -0.5}
+    };
+
+    static const GLfloat faces_normals[][3] =
+    {
+        { 0.0,  0.0,  1.0}, { 1.0,  0.0,  0.0},
+        { 0.0, -1.0,  0.0}, { 0.0,  1.0,  0.0},
+        { 0.0,  0.0, -1.0}, {-1.0,  0.0,  0.0},
+    };
+
+    static const GLuint faces_indices[][4] =
+    {
+        {0, 3, 2, 1}, {2, 3, 7, 6},
+        {0, 4, 7, 3}, {1, 2, 6, 5},
+        {4, 5, 6, 7}, {0, 1, 5, 4}
+    };
+    
+    VertexGroup *vg = new VertexGroup(GL_QUADS, 24);
+    VertexData *vd = vg->data;
+    for(uint32_t i = 0; i < 6; i++)
+    {
+        const GLuint *face = faces_indices[i];
+        const GLfloat *normal = faces_normals[i];
+        for(uint32_t j = 0; j < 4; j++, vd++)
+        {
+            const GLfloat *vertex = vertices[face[j]];
+            vd->position = vec3(vertex[0], vertex[1], vertex[2]);
+            vd->normal = vec3(normal[0], normal[1], normal[2]);
+        }
+    }
+    MaterialGroup mg;
+    mg.count = 24;
+    mg.offset = 0;
+    mg.id = 0;
+    mg.matName = "cube";
+    vg->matGroups.push_back(mg);
+    return vg;
+}
+
+void RenderStateGL2::drawBox(const AABox &box)
+{
+    vec3 size = box.high - box.low;
+    pushMatrix();
+    translate(box.low.x, box.low.y, box.low.z);
+    scale(size.x, size.y, size.z);
+    translate(0.5, 0.5, 0.5);
+    
+    Material mat;
+    mat.setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
+    mat.setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
+    mat.setOpaque(false);
+    program()->beginApplyMaterial(mat);
+    drawMesh(m_cube, NULL, NULL, 0);
+    program()->endApplyMaterial(mat);
+    
+    popMatrix();
 }
 
 RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const

@@ -121,6 +121,7 @@ struct AABox
     vec3 center() const;
     vec3 posVertex(const vec3 &normal) const;
     vec3 negVertex(const vec3 &normal) const;
+    void extendTo(const vec3 &p);
 };
 
 #ifdef _WIN32

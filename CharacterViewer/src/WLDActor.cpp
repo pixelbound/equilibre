@@ -145,6 +145,9 @@ void WLDActor::draw(RenderState *state)
         state->popMatrix();
     }
     state->popMatrix();
+    
+    foreach(WLDModelPart *part, skin->parts())
+        state->drawBox(part->boundsAA());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +156,7 @@ WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDModelPart *model, WLDMaterial
 {
     m_model = model;
     m_palette = palette;
-    m_boundsAA = model->def()->m_boundsAA;
+    m_boundsAA = model->boundsAA();
     if(frag)
     {
         m_location = frag->m_location;
@@ -186,6 +189,8 @@ void WLDZoneActor::draw(RenderState *state) const
     state->scale(m_scale);
     m_model->draw(state, m_palette);
     state->popMatrix();
+    
+    state->drawBox(m_boundsAA);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -316,6 +316,16 @@ vec3 AABox::negVertex(const vec3 &normal) const
     return res;
 }
 
+void AABox::extendTo(const vec3 &p)
+{
+    low.x = min(low.x, p.x);
+    low.y = min(low.y, p.y);
+    low.z = min(low.z, p.z);
+    high.x = max(high.x, p.x);
+    high.y = max(high.y, p.y);
+    high.z = max(high.z, p.z);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Frustum::Frustum()
