@@ -122,6 +122,9 @@ struct AABox
     vec3 posVertex(const vec3 &normal) const;
     vec3 negVertex(const vec3 &normal) const;
     void extendTo(const vec3 &p);
+    void translate(const vec3 &trans);
+    void rotate(const vec3 &rot);
+    void scale(const vec3 &scale);
 };
 
 #ifdef _WIN32

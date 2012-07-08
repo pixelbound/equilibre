@@ -162,9 +162,9 @@ WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDModelPart *model, WLDMaterial
         m_location = frag->m_location;
         m_rotation = frag->m_rotation;
         m_scale = frag->m_scale;
-        // FIXME account for rotation and scale
-        m_boundsAA.low = m_boundsAA.low + m_location;
-        m_boundsAA.high = m_boundsAA.high + m_location;
+        m_boundsAA.scale(m_scale);
+        m_boundsAA.rotate(m_rotation);
+        m_boundsAA.translate(m_location);
     }
     else
     {

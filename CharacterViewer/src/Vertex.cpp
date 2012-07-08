@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
+#include <QQuaternion>
 #include "Vertex.h"
 
 using namespace std;
@@ -324,6 +325,49 @@ void AABox::extendTo(const vec3 &p)
     high.x = max(high.x, p.x);
     high.y = max(high.y, p.y);
     high.z = max(high.z, p.z);
+}
+
+static vec3 rotate_by_quat(vec3 v, QQuaternion q)
+{
+    QVector3D res = q.rotatedVector(QVector3D(v.x, v.y, v.z));
+    return vec3(res.x(), res.y(), res.z());
+}
+
+void AABox::translate(const vec3 &trans)
+{
+    low = low + trans;
+    high = high + trans;
+}
+
+void AABox::rotate(const vec3 &rot)
+{
+    QQuaternion qRot = QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, rot.x)
+        * QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, rot.y)
+        * QQuaternion::fromAxisAndAngle(0.0, 0.0, 1.0, rot.z);
+    vec3 size = high - low;
+    vec3 corners[] = {
+        low + vec3(0.0, 0.0, 0.0),
+        low + vec3(0.0, 0.0, size.z),
+        low + vec3(size.x, 0.0, size.z),
+        low + vec3(size.x, 0.0, 0.0),
+        low + vec3(size.x, size.y, size.z),
+        low + vec3(0.0, size.y, size.z),
+        low + vec3(size.x, size.y, size.z),
+        low + vec3(size.x, size.y, 0.0),
+    };
+    low = high = rotate_by_quat(corners[0], qRot);
+    for(uint32_t i = 1; i < 8; i++)
+        extendTo(rotate_by_quat(corners[i], qRot));
+}
+
+void AABox::scale(const vec3 &scale)
+{
+    low.x = low.x * scale.x;
+    low.y = low.y * scale.y;
+    low.z = low.z * scale.z;
+    high.x = high.x * scale.x;
+    high.y = high.y * scale.y;
+    high.z = high.z * scale.z;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
