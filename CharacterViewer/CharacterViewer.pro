@@ -40,7 +40,7 @@ win32 {
     LIBS += -L../glew-1.5.4-mingw32/lib -lglew32 -L../zlib125-dll/lib -lzdll
 }
 else {
-    LIBS += -lm -lz -lGLEW
+    LIBS += -lm -lz -lGLU -lGLEW
 }
 
 TARGET = CharacterViewer
