@@ -67,7 +67,8 @@ private:
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void drawVisibleObjects(RenderState *state, ActorIndexNode *node, Frustum &f);
+    void drawVisibleObjects(RenderState *state, ActorIndexNode *node,
+                            const Frustum &f, bool cull);
     void drawObjects(RenderState *state, ActorIndexNode *node);
 
     //TODO refactor this into data container classes

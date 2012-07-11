@@ -305,6 +305,7 @@ void Zone::draw(RenderState *state)
     frustum.setEye(-m_playerPos);
     frustum.setFocus(-m_playerPos + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
+    frustum.update();
     state->pushMatrix();
     state->multiplyMatrix(frustum.camera());
 
@@ -319,29 +320,23 @@ void Zone::draw(RenderState *state)
     // draw objects
     if(m_showObjects)
     {
-        foreach(WLDZoneActor actor, m_index->actors())
-        {
-            if(!m_cullObjects || frustum.contains(actor.m_boundsAA) != Frustum::OUTSIDE)
-                actor.draw(state);
-        }
+        drawVisibleObjects(state, m_index->root(), frustum, m_cullObjects);
     }
     state->popMatrix();
 }
 
-void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node, Frustum &f)
+void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node,
+                              const Frustum &f, bool cull)
 {
     if(!node)
         return;
-    Frustum::TestResult r = f.contains(node->bounds());
+    Frustum::TestResult r = cull ? f.contains(node->bounds()) : Frustum::INSIDE;
     if(r == Frustum::OUTSIDE)
         return;
-    if(r == Frustum::INSIDE)
-    {
-        drawObjects(state, node);
-        return;
-    }
+    cull = (r != Frustum::INSIDE);
     for(int i = 0; i < 8; i++)
-        drawVisibleObjects(state, node->children()[i], f);
+        drawVisibleObjects(state, node->children()[i], f, cull);
+    drawObjects(state, node);
 }
 
 void Zone::drawObjects(RenderState *state, ActorIndexNode *node)
