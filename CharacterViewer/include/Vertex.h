@@ -121,6 +121,7 @@ struct AABox
     vec3 center() const;
     vec3 posVertex(const vec3 &normal) const;
     vec3 negVertex(const vec3 &normal) const;
+    void cornersTo(vec3 *corners) const;
     void extendTo(const vec3 &p);
     void translate(const vec3 &trans);
     void rotate(const vec3 &rot);
@@ -168,16 +169,20 @@ public:
 
     matrix4 projection() const;
     matrix4 camera() const;
+    
+    const vec3 * corners() const;
+    const Plane * planes() const;
+    
+    void update();
 
-    TestResult contains(vec3 v);
-    TestResult contains(const AABox &b);
+    TestResult contains(vec3 v) const;
+    TestResult contains(const AABox &b) const;
 
 private:
-    void computePlanes();
-
     float m_angle, m_aspect, m_nearPlane, m_farPlane;
     vec3 m_eye, m_focus, m_up;
     Plane m_planes[6];
+    vec3 m_corners[8];
     bool m_dirty;
 };
 

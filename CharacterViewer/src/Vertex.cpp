@@ -317,6 +317,19 @@ vec3 AABox::negVertex(const vec3 &normal) const
     return res;
 }
 
+void AABox::cornersTo(vec3 *corners) const
+{
+    vec3 size = high - low;
+    corners[0] = low + vec3(0.0, 0.0, 0.0);
+    corners[1] = low + vec3(size.x, 0.0, 0.0);
+    corners[2] = low + vec3(size.x, size.y, 0.0);
+    corners[3] = low + vec3(0.0, size.y, 0.0);
+    corners[4] = low + vec3(0.0, 0.0, size.z);
+    corners[5] = low + vec3(size.x, 0.0, size.z);
+    corners[6] = low + vec3(size.x, size.y, size.z);
+    corners[7] = low + vec3(0.0, size.y, size.z);
+}
+
 void AABox::extendTo(const vec3 &p)
 {
     low.x = min(low.x, p.x);
@@ -344,17 +357,8 @@ void AABox::rotate(const vec3 &rot)
     QQuaternion qRot = QQuaternion::fromAxisAndAngle(1.0, 0.0, 0.0, rot.x)
         * QQuaternion::fromAxisAndAngle(0.0, 1.0, 0.0, rot.y)
         * QQuaternion::fromAxisAndAngle(0.0, 0.0, 1.0, rot.z);
-    vec3 size = high - low;
-    vec3 corners[] = {
-        low + vec3(0.0, 0.0, 0.0),
-        low + vec3(0.0, 0.0, size.z),
-        low + vec3(size.x, 0.0, size.z),
-        low + vec3(size.x, 0.0, 0.0),
-        low + vec3(size.x, size.y, size.z),
-        low + vec3(0.0, size.y, size.z),
-        low + vec3(size.x, size.y, size.z),
-        low + vec3(size.x, size.y, 0.0),
-    };
+    vec3 corners[8];
+    cornersTo(corners);
     low = high = rotate_by_quat(corners[0], qRot);
     for(uint32_t i = 1; i < 8; i++)
         extendTo(rotate_by_quat(corners[i], qRot));
@@ -435,10 +439,25 @@ matrix4 Frustum::camera() const
     return matrix4::lookAt(m_eye, m_focus, m_up);
 }
 
-void Frustum::computePlanes()
+const vec3 * Frustum::corners() const
 {
-    float nearHeight = m_nearPlane * (float)tan(m_angle * 0.5 * M_PI / 180.0);
+    return m_corners;
+}
+
+const Plane * Frustum::planes() const
+{
+    return m_planes;
+}
+
+void Frustum::update()
+{
+    if(!m_dirty)
+        return;
+    float ratio = (float)tan(m_angle * 0.5 * M_PI / 180.0);
+    float nearHeight = m_nearPlane * ratio;
     float nearWidth = nearHeight * m_aspect;
+    float farHeight = m_farPlane * ratio;
+    float farWidth = farHeight * m_aspect;
 
     // compute the three axes
     vec3 zAxis = (m_eye - m_focus).normalized();
@@ -448,6 +467,21 @@ void Frustum::computePlanes()
     // compute the centers of the near and far planes
     vec3 nearCenter = m_eye - zAxis * m_nearPlane;
     vec3 farCenter = m_eye - zAxis * m_farPlane;
+    
+    // compute the corners of the frustum
+    vec3 halfNearX = xAxis * nearWidth;
+    vec3 halfNearY = yAxis * nearHeight;
+    m_corners[0] = nearCenter - halfNearX - halfNearY;
+    m_corners[1] = nearCenter + halfNearX - halfNearY;
+    m_corners[2] = nearCenter + halfNearX + halfNearY;
+    m_corners[3] = nearCenter - halfNearX + halfNearY;
+    
+    vec3 halfFarX = xAxis * farWidth;
+    vec3 halfFarY = yAxis * farHeight;
+    m_corners[4] = farCenter - halfFarX - halfFarY;
+    m_corners[5] = farCenter + halfFarX - halfFarY;
+    m_corners[6] = farCenter + halfFarX + halfFarY;
+    m_corners[7] = farCenter - halfFarX + halfFarY;
 
     // compute the plane "positions" and normals
     m_planes[NEAR].p = nearCenter;
@@ -456,30 +490,28 @@ void Frustum::computePlanes()
     m_planes[FAR].p = farCenter;
     m_planes[FAR].n = zAxis;
 
-    m_planes[TOP].p = nearCenter + (yAxis * nearHeight);
+    m_planes[TOP].p = nearCenter + halfNearY;
     m_planes[TOP].n = vec3::cross(
-        ((nearCenter + (yAxis * nearHeight)) - m_eye).normalized(), xAxis);
+        (nearCenter + halfNearY - m_eye).normalized(), xAxis);
 
-    m_planes[BOTTOM].p = nearCenter - (yAxis * nearHeight);
+    m_planes[BOTTOM].p = nearCenter - halfNearY;
     m_planes[BOTTOM].n = vec3::cross(xAxis,
-        ((nearCenter - (yAxis * nearHeight)) - m_eye).normalized());
+        (nearCenter - halfNearY - m_eye).normalized());
 
-    m_planes[LEFT].p = nearCenter - (xAxis * nearWidth);
+    m_planes[LEFT].p = nearCenter - halfNearX;
     m_planes[LEFT].n = vec3::cross(
-        ((nearCenter - (xAxis * nearWidth)) - m_eye).normalized(), yAxis);
+        (nearCenter - halfNearX - m_eye).normalized(), yAxis);
 
-    m_planes[RIGHT].p = nearCenter + (xAxis * nearWidth);
+    m_planes[RIGHT].p = nearCenter + halfNearX;
     m_planes[RIGHT].n = vec3::cross(yAxis,
-        ((nearCenter + (xAxis * nearWidth)) - m_eye).normalized());
+        (nearCenter + halfNearX - m_eye).normalized());
+    
+    // the planes and corners are up-to-date now
+    m_dirty = false;
 }
 
-Frustum::TestResult Frustum::contains(vec3 v)
+Frustum::TestResult Frustum::contains(vec3 v) const
 {
-    if(m_dirty)
-    {
-        computePlanes();
-        m_dirty = false;
-    }
     for(int i = 0; i < 6; i++)
     {
         if(m_planes[i].distance(v) < 0)
@@ -488,25 +520,32 @@ Frustum::TestResult Frustum::contains(vec3 v)
     return INSIDE;
 }
 
-Frustum::TestResult Frustum::contains(const AABox &b)
+Frustum::TestResult Frustum::contains(const AABox &b) const
 {
-    if(m_dirty)
-    {
-        computePlanes();
-        m_dirty = false;
-    }
-    TestResult result = INSIDE;
+    int allInCount = 0;
+    vec3 corners[8];
+    b.cornersTo(corners);
     for(int i = 0; i < 6; i++)
     {
-        Plane &plane = m_planes[i];
-        // is the positive vertex outside?
-        if(plane.distance(b.posVertex(plane.n)) < 0)
+        // Count how many points are on the wrong side of the plane ('out').
+        const Plane &plane = m_planes[i];
+        int outCount = 0;
+        for(int j = 0; j < 8; j++)
+        {
+            if(plane.distance(corners[j]) < 0.0)
+            {
+                outCount++;
+            }
+        }
+        
+        // When all points are outside one plane, the box is outside the frustum.
+        if(outCount == 8)
+        {
             return OUTSIDE;
-        // is the negative vertex outside?
-        else if(plane.distance(b.negVertex(plane.n)) < 0)
-            result = INTERSECTING;
+        }
+        allInCount += (outCount == 0);
     }
-    return result;
+    return (allInCount == 6) ? INSIDE : INTERSECTING;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
