@@ -189,8 +189,6 @@ void WLDZoneActor::draw(RenderState *state) const
     state->scale(m_scale);
     m_model->draw(state, m_palette);
     state->popMatrix();
-    
-    state->drawBox(m_boundsAA);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
