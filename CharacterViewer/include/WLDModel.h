@@ -63,7 +63,7 @@ public:
     MeshDefFragment *def() const;
     const AABox & boundsAA() const;
 
-    void importVertexData(VertexGroup *vg, uint32_t offset);
+    void importVertexData(VertexGroup *vg);
     void importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMaterialPalette *pal);
 
     void draw(RenderState *state, WLDMaterialPalette *pal,
