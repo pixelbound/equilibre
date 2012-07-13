@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <GL/glew.h>
 #include "Platform.h"
 #include "RenderStateGL2.h"
 #include "ShaderProgramGL2.h"
@@ -79,7 +80,7 @@ VertexGroup * RenderStateGL2::createCube()
         {4, 5, 6, 7}, {0, 1, 5, 4}
     };
     
-    VertexGroup *vg = new VertexGroup(GL_QUADS, 24);
+    VertexGroup *vg = new VertexGroup(VertexGroup::Quad, 24);
     VertexData *vd = vg->data;
     for(uint32_t i = 0; i < 6; i++)
     {

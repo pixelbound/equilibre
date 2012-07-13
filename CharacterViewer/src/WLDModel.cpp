@@ -109,7 +109,7 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
 {
     if(!m_mesh)
     {
-        m_mesh = new VertexGroup(GL_TRIANGLES, m_meshDef->m_vertices.count());
+        m_mesh = new VertexGroup(VertexGroup::Triangle, m_meshDef->m_vertices.count());
         importVertexData(m_mesh, 0);
         importMaterialGroups(m_mesh, 0, palette);
         // load indices
@@ -176,7 +176,7 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
         totalVertices += part->def()->m_vertices.count();
 
     // import each part (vertices and material groups) into a single vertex group
-    VertexGroup *vg = new VertexGroup(GL_TRIANGLES, totalVertices);
+    VertexGroup *vg = new VertexGroup(VertexGroup::Triangle, totalVertices);
     uint32_t dataOffset = 0, indiceOffset = 0;
     QVector<uint32_t> partDataOffsets, partIndiceOffsets;
     foreach(WLDModelPart *part, parts)

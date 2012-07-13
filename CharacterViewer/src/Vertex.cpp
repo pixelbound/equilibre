@@ -564,7 +564,7 @@ Frustum::TestResult Frustum::containsAABox(const AABox &b) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-VertexGroup::VertexGroup(uint32_t mode, uint32_t count)
+VertexGroup::VertexGroup(VertexGroup::Primitive mode, uint32_t count)
 {
     this->mode = mode;
     this->count = count;
@@ -574,7 +574,7 @@ VertexGroup::VertexGroup(uint32_t mode, uint32_t count)
     memset(this->data, 0, sizeof(VertexData) * count);
 }
 
-VertexGroup::VertexGroup(uint32_t mode, const vector<VertexData> &data)
+VertexGroup::VertexGroup(VertexGroup::Primitive mode, const vector<VertexData> &data)
 {
     this->mode = mode;
     this->count = data.size();

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <GL/glew.h>
 #include <QTimer>
 #include <QKeyEvent>
 #include <QMouseEvent>

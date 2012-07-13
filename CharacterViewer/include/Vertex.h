@@ -213,11 +213,17 @@ public:
 class VertexGroup
 {
 public:
-    VertexGroup(uint32_t mode, uint32_t count);
-    VertexGroup(uint32_t mode, const std::vector<VertexData> &data);
+    enum Primitive
+    {
+        Triangle,
+        Quad
+    };
+    
+    VertexGroup(Primitive mode, uint32_t count);
+    VertexGroup(Primitive mode, const std::vector<VertexData> &data);
     virtual ~VertexGroup();
 
-    uint32_t mode;
+    Primitive mode;
     uint32_t count;
     VertexData *data;
     QVector<uint32_t> indices;

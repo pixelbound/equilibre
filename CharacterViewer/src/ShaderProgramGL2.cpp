@@ -1,3 +1,4 @@
+#include <GL/glew.h>
 #include "ShaderProgramGL2.h"
 #include "RenderStateGL2.h"
 #include "Material.h"
@@ -267,6 +268,18 @@ void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
             sizeof(VertexData), bonePointer);
 }
 
+static GLuint primitiveToGLMode(VertexGroup::Primitive mode)
+{
+    switch(mode)
+    {
+    case VertexGroup::Triangle:
+        return GL_TRIANGLES;
+    case VertexGroup::Quad:
+        return GL_QUADS;
+    }
+    return 0;
+}
+
 void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
 {
     if(!vg)
@@ -300,10 +313,11 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
                 continue;
             m_state->pushMaterial(*mat);
         }
+        GLuint mode = primitiveToGLMode(vg->mode);
         if(haveIndices)
-            glDrawElements(vg->mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
+            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
         else
-            glDrawArrays(vg->mode, mg.offset, mg.count);
+            glDrawArrays(mode, mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
     }
