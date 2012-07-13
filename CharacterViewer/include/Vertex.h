@@ -10,6 +10,8 @@ bool fequal(double a, double b);
 class Material;
 class WLDMaterialPalette;
 
+typedef unsigned int buffer_t;
+
 class vec2
 {
 public:
@@ -220,8 +222,8 @@ public:
     VertexData *data;
     QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;
-    uint32_t dataBuffer;
-    uint32_t indicesBuffer;
+    buffer_t dataBuffer;
+    buffer_t indicesBuffer;
 };
 
 #endif

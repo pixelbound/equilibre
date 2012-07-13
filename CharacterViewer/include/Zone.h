@@ -70,6 +70,7 @@ private:
     void drawVisibleObjects(RenderState *state, ActorIndexNode *node,
                             const Frustum &f, bool cull);
     void drawObjects(RenderState *state, ActorIndexNode *node);
+    void createGPUBuffer(VertexGroup *vg, RenderState *state);
 
     //TODO refactor this into data container classes
     QString m_name;
@@ -84,6 +85,7 @@ private:
     QMap<QString, WLDModelPart *> m_objModels;
     QMap<QString, WLDMaterialPalette *> m_objPalettes;
     QMap<QString, WLDActor *> m_charModels;
+    QVector<buffer_t> m_gpuBuffers;
     ActorIndex *m_index;
     bool m_showObjects;
     bool m_cullObjects;

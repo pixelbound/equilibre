@@ -295,6 +295,25 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
     }
 }
 
+void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
+{
+    if(!vg->dataBuffer)
+    {
+        vg->dataBuffer = state->createBuffer(vg->data,
+                                             vg->count * sizeof(VertexData));
+        if(vg->dataBuffer)
+            m_gpuBuffers.append(vg->dataBuffer);
+    }
+    if(!vg->indicesBuffer)
+    {
+        vg->indicesBuffer = state->createBuffer(vg->indices.constData(),
+                                                vg->indices.count() * sizeof(uint32_t));
+        if(vg->indicesBuffer)
+            m_gpuBuffers.append(vg->indicesBuffer);
+    }
+    
+}
+
 void Zone::draw(RenderState *state)
 {
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
@@ -312,9 +331,8 @@ void Zone::draw(RenderState *state)
     // draw geometry
     if(m_zoneGeometry)
     {
-        state->pushMatrix();
+        createGPUBuffer(m_zoneGeometry, state);
         state->drawMesh(m_zoneGeometry, m_zonePalette);
-        state->popMatrix();
     }
 
     // draw objects

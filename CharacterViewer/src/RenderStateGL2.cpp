@@ -249,6 +249,16 @@ void RenderStateGL2::setupViewport(int w, int h)
     setMatrixMode(ModelView);
 }
 
+buffer_t RenderStateGL2::createBuffer(const void *data, size_t size)
+{
+    buffer_t buffer;
+    glGenBuffers(1, &buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return buffer;
+}
+
 void RenderStateGL2::init()
 {
     m_programs[(int)SoftwareSkinning]->load("vertex.glsl", "fragment.glsl");

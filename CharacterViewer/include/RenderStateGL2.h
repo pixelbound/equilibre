@@ -47,6 +47,8 @@ public:
     // material operations
     virtual void pushMaterial(const Material &m);
     virtual void popMaterial();
+    
+    virtual buffer_t createBuffer(const void *data, size_t size);
 
 private:
     bool loadShaders();

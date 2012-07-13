@@ -232,20 +232,6 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
     }
     newGroups.append(group);
     vg->matGroups = newGroups;
-
-    // copy the vertex group to the GPU (FIXME move to RenderStateGL2)
-    uint32_t dataSize = totalVertices * sizeof(VertexData);
-    uint32_t indicesSize = vg->indices.count() * sizeof(uint32_t);
-    uint32_t buffers[2];
-    glGenBuffers(2, buffers);
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, dataSize, vg->data, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    vg->dataBuffer = buffers[0];
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, vg->indices.constData(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    vg->indicesBuffer = buffers[1];
     return vg;
 }
 

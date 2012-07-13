@@ -1,7 +1,6 @@
 #ifndef OPENEQ_RENDER_STATE_H
 #define OPENEQ_RENDER_STATE_H
 
-#include "Mesh.h"
 #include "Vertex.h"
 
 class QVector3D;
@@ -70,6 +69,10 @@ public:
 
     virtual void pushMaterial(const Material &m) = 0;
     virtual void popMaterial() = 0;
+    
+    // buffer operations
+    
+    virtual buffer_t createBuffer(const void *data, size_t size) = 0;
 
 protected:
     vec4 m_bgColor;
