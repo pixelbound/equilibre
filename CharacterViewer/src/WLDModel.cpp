@@ -111,7 +111,7 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
     {
         m_mesh = new VertexGroup(VertexGroup::Triangle);
         importVertexData(m_mesh);
-        importMaterialGroups(m_mesh, 0, palette);
+        importMaterialGroups(m_mesh, palette);
         // load indices
         for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
             m_mesh->indices.push_back(m_meshDef->m_indices[i]);
@@ -142,18 +142,18 @@ void WLDModelPart::importVertexData(VertexGroup *vg)
     }
 }
 
-void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMaterialPalette *palette)
+void WLDModelPart::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
 {
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
-    uint32_t pos = offset;
+    uint32_t meshOffset = 0;
     foreach(vec2us g, m_meshDef->m_polygonsByTex)
     {
         MaterialDefFragment *matDef = palDef->m_materials[g.second];
         uint32_t vertexCount = g.first * 3;
         MaterialGroup mg;
         mg.id = m_partID;
-        mg.offset = pos;
+        mg.offset = meshOffset;
         mg.count = vertexCount;
         // invisible groups have no material
         if((matDef->m_param1 == 0) || !palette)
@@ -161,7 +161,7 @@ void WLDModelPart::importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMat
         else
             mg.matName = palette->materialName(palDef->m_materials[g.second]);
         vg->matGroups.append(mg);
-        pos += vertexCount;
+        meshOffset += vertexCount;
     }
 }
 
@@ -180,33 +180,25 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
     // import each part (vertices and material groups) into a single vertex group
     VertexGroup *vg = new VertexGroup(VertexGroup::Triangle);
     vg->vertices.resize(totalVertices);
-    uint32_t indiceOffset = 0;
-    QVector<uint32_t> partDataOffsets, partIndiceOffsets;
+    QVector<uint32_t> partDataOffsets;
     foreach(WLDModelPart *part, parts)
     {
         partDataOffsets.append(vg->vertices.count());
-        partIndiceOffsets.append(indiceOffset);
-        part->importMaterialGroups(vg, indiceOffset, palette);
+        part->importMaterialGroups(vg, palette);
         part->importVertexData(vg);
-        indiceOffset += part->def()->m_indices.count();
     }
 
     // sort the polygons per material and reorder indices
     qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
-    indiceOffset = 0;
+    uint32_t indiceOffset = 0;
     for(int i = 0; i < vg->matGroups.count(); i++)
     {
         MaterialGroup &mg(vg->matGroups[i]);
         WLDModelPart *part = parts[mg.id];
         uint32_t partDataOffset = partDataOffsets[mg.id];
-        uint32_t partIndiceOffset = partIndiceOffsets[mg.id];
-        uint32_t groupOffset = mg.offset - partIndiceOffset;
         const QVector<uint16_t> &indices(part->def()->m_indices);
         for(uint32_t i = 0; i < mg.count; i++)
-        {
-            uint32_t indice = indices[groupOffset + i] + partDataOffset;
-            vg->indices.append(indice);
-        }
+            vg->indices.append(indices[mg.offset + i] + partDataOffset);
         mg.offset = indiceOffset;
         indiceOffset += mg.count;
     }

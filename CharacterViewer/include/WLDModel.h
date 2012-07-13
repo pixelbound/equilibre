@@ -64,7 +64,7 @@ public:
     const AABox & boundsAA() const;
 
     void importVertexData(VertexGroup *vg);
-    void importMaterialGroups(VertexGroup *vg, uint32_t offset, WLDMaterialPalette *pal);
+    void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal);
 
     void draw(RenderState *state, WLDMaterialPalette *pal,
               const BoneTransform *bones = 0, uint32_t boneCount = 0);
