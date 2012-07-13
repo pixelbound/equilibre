@@ -24,8 +24,8 @@ public:
     virtual void beginFrame();
     virtual void endFrame();
 
-    virtual void draw(VertexGroup *m, WLDMaterialPalette *palette);
-    virtual void drawSkinned(VertexGroup *m, WLDMaterialPalette *palette);
+    virtual void draw(const VertexGroup *m, WLDMaterialPalette *palette);
+    virtual void drawSkinned(const VertexGroup *m, WLDMaterialPalette *palette);
 
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
@@ -34,7 +34,7 @@ public:
     void endApplyMaterial(const Material &m);
 
     void enableVertexAttributes();
-    void uploadVertexAttributes(VertexGroup *vg);
+    void uploadVertexAttributes(const VertexGroup *vg);
     void disableVertexAttributes();
 
 protected:
@@ -55,7 +55,7 @@ class UniformSkinningProgram : public ShaderProgramGL2
 public:
     UniformSkinningProgram(RenderStateGL2 *state);
     virtual bool init();
-    virtual void drawSkinned(VertexGroup *m, WLDMaterialPalette *palette);
+    virtual void drawSkinned(const VertexGroup *m, WLDMaterialPalette *palette);
 
 private:
     int m_bonesLoc;
@@ -67,7 +67,7 @@ public:
     TextureSkinningProgram(RenderStateGL2 *state);
     virtual ~TextureSkinningProgram();
     virtual bool init();
-    virtual void drawSkinned(VertexGroup *m, WLDMaterialPalette *palette);
+    virtual void drawSkinned(const VertexGroup *m, WLDMaterialPalette *palette);
 
 private:
     int m_bonesLoc;

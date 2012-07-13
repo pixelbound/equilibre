@@ -38,7 +38,7 @@ ShaderProgramGL2 * RenderStateGL2::program() const
         return 0;
 }
 
-void RenderStateGL2::drawMesh(VertexGroup *vg, WLDMaterialPalette *palette,
+void RenderStateGL2::drawMesh(const VertexGroup *vg, WLDMaterialPalette *palette,
     const BoneTransform *bones, int boneCount)
 {
     ShaderProgramGL2 *prog = program();
@@ -80,8 +80,9 @@ VertexGroup * RenderStateGL2::createCube()
         {4, 5, 6, 7}, {0, 1, 5, 4}
     };
     
-    VertexGroup *vg = new VertexGroup(VertexGroup::Quad, 24);
-    VertexData *vd = vg->data;
+    VertexGroup *vg = new VertexGroup(VertexGroup::Quad);
+    vg->vertices.resize(24);
+    VertexData *vd = vg->vertices.data();
     for(uint32_t i = 0; i < 6; i++)
     {
         const GLuint *face = faces_indices[i];

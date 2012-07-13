@@ -242,12 +242,13 @@ void ShaderProgramGL2::disableVertexAttributes()
     }
 }
 
-void ShaderProgramGL2::uploadVertexAttributes(VertexGroup *vg)
+void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
 {
-    uint8_t *posPointer = (uint8_t *)&vg->data->position;
-    uint8_t *normalPointer = (uint8_t *)&vg->data->normal;
-    uint8_t *texCoordsPointer = (uint8_t *)&vg->data->texCoords;
-    uint8_t *bonePointer = (uint8_t *)&vg->data->bone;
+    const VertexData *vd = vg->vertices.constData();
+    const uint8_t *posPointer = (const uint8_t *)&vd->position;
+    const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
+    const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
+    const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
     if(vg->dataBuffer != 0)
     {
         posPointer = 0;
@@ -280,7 +281,7 @@ static GLuint primitiveToGLMode(VertexGroup::Primitive mode)
     return 0;
 }
 
-void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
+void ShaderProgramGL2::draw(const VertexGroup *vg, WLDMaterialPalette *palette)
 {
     if(!vg)
         return;
@@ -315,9 +316,9 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
         }
         GLuint mode = primitiveToGLMode(vg->mode);
         if(haveIndices)
-            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices + mg.offset);
+            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices + vg->indicesBufferOffset + mg.offset);
         else
-            glDrawArrays(mode, mg.offset, mg.count);
+            glDrawArrays(mode, vg->dataBufferOffset + mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
     }
@@ -328,15 +329,17 @@ void ShaderProgramGL2::draw(VertexGroup *vg, WLDMaterialPalette *palette)
     disableVertexAttributes();
 }
 
-void ShaderProgramGL2::drawSkinned(VertexGroup *vg, WLDMaterialPalette *palette)
+void ShaderProgramGL2::drawSkinned(const VertexGroup *vg, WLDMaterialPalette *palette)
 {
     if(!vg)
         return;
-    VertexGroup skinnedVg(vg->mode, vg->count);
+    VertexGroup skinnedVg(vg->mode);
+    skinnedVg.vertices.resize(vg->vertices.count());
     skinnedVg.indices = vg->indices;
     skinnedVg.matGroups = vg->matGroups;
-    VertexData *src = vg->data, *dst = skinnedVg.data;
-    for(uint32_t i = 0; i < vg->count; i++, src++, dst++)
+    const VertexData *src = vg->vertices.constData();
+    VertexData *dst = skinnedVg.vertices.data();
+    for(uint32_t i = 0; i < vg->vertices.count(); i++, src++, dst++)
     {
         BoneTransform transform;
         if((int)src->bone < MAX_TRANSFORMS)
@@ -362,7 +365,7 @@ bool UniformSkinningProgram::init()
     return m_bonesLoc >= 0;
 }
 
-void UniformSkinningProgram::drawSkinned(VertexGroup *vg, WLDMaterialPalette *palette)
+void UniformSkinningProgram::drawSkinned(const VertexGroup *vg, WLDMaterialPalette *palette)
 {
     glUniform4fv(m_bonesLoc, MAX_TRANSFORMS * 2, (const GLfloat *)m_bones);
     draw(vg, palette);
@@ -415,7 +418,7 @@ bool TextureSkinningProgram::init()
     return true;
 }
 
-void TextureSkinningProgram::drawSkinned(VertexGroup *vg, WLDMaterialPalette *palette)
+void TextureSkinningProgram::drawSkinned(const VertexGroup *vg, WLDMaterialPalette *palette)
 {
     // upload bone transforms to the transform texture
     glActiveTexture(GL_TEXTURE1);

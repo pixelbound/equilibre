@@ -18,7 +18,7 @@ public:
     virtual void init();
 
     // mesh operations
-    virtual void drawMesh(VertexGroup *m, WLDMaterialPalette *palette,
+    virtual void drawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
         const BoneTransform *bones = 0, int boneCount = 0) = 0;
     virtual void drawBox(const AABox &box) = 0;
 

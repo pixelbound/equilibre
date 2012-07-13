@@ -109,7 +109,8 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
 {
     if(!m_mesh)
     {
-        m_mesh = new VertexGroup(VertexGroup::Triangle, m_meshDef->m_vertices.count());
+        m_mesh = new VertexGroup(VertexGroup::Triangle);
+        m_mesh->vertices.resize(m_meshDef->m_vertices.count());
         importVertexData(m_mesh, 0);
         importMaterialGroups(m_mesh, 0, palette);
         // load indices
@@ -122,7 +123,7 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
 void WLDModelPart::importVertexData(VertexGroup *vg, uint32_t offset)
 {
     // load vertices, texCoords, normals, faces
-    VertexData *vd = vg->data + offset;
+    VertexData *vd = vg->vertices.data() + offset;
     for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_vertices.count(); i++, vd++)
     {
         vd->position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
@@ -131,7 +132,7 @@ void WLDModelPart::importVertexData(VertexGroup *vg, uint32_t offset)
         vd->bone = 0;
     }
     // load bone indices
-    vd = vg->data + offset;
+    vd = vg->vertices.data()+ offset;
     foreach(vec2us g, m_meshDef->m_vertexPieces)
     {
         uint16_t count = g.first, pieceID = g.second;
@@ -176,7 +177,8 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
         totalVertices += part->def()->m_vertices.count();
 
     // import each part (vertices and material groups) into a single vertex group
-    VertexGroup *vg = new VertexGroup(VertexGroup::Triangle, totalVertices);
+    VertexGroup *vg = new VertexGroup(VertexGroup::Triangle);
+    vg->vertices.resize(totalVertices);
     uint32_t dataOffset = 0, indiceOffset = 0;
     QVector<uint32_t> partDataOffsets, partIndiceOffsets;
     foreach(WLDModelPart *part, parts)

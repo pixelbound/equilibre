@@ -299,15 +299,13 @@ void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
 {
     if(!vg->dataBuffer)
     {
-        vg->dataBuffer = state->createBuffer(vg->data,
-                                             vg->count * sizeof(VertexData));
+        vg->dataBuffer = state->createBuffer(vg->vertices.constData(), vg->vertexDataSize());
         if(vg->dataBuffer)
             m_gpuBuffers.append(vg->dataBuffer);
     }
     if(!vg->indicesBuffer)
     {
-        vg->indicesBuffer = state->createBuffer(vg->indices.constData(),
-                                                vg->indices.count() * sizeof(uint32_t));
+        vg->indicesBuffer = state->createBuffer(vg->indices.constData(), vg->indexDataSize());
         if(vg->indicesBuffer)
             m_gpuBuffers.append(vg->indicesBuffer);
     }

@@ -16,7 +16,7 @@ public:
 
     virtual void init();
 
-    virtual void drawMesh(VertexGroup *m, WLDMaterialPalette *palette,
+    virtual void drawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
         const BoneTransform *bones, int boneCount);
     virtual void drawBox(const AABox &box);
     ShaderProgramGL2 * program() const;
