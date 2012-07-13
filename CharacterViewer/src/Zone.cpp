@@ -330,7 +330,7 @@ void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node,
 {
     if(!node)
         return;
-    Frustum::TestResult r = cull ? f.contains(node->bounds()) : Frustum::INSIDE;
+    Frustum::TestResult r = cull ? f.containsAABox(node->bounds()) : Frustum::INSIDE;
     if(r == Frustum::OUTSIDE)
         return;
     cull = (r != Frustum::INSIDE);

@@ -297,11 +297,11 @@ vec3 AABox::posVertex(const vec3 &normal) const
 {
     vec3 res = low;
     if(normal.x > 0)
-        res.x += high.x;
+        res.x = high.x;
     if(normal.y > 0)
-        res.y += high.y;
+        res.y = high.y;
     if(normal.z > 0)
-        res.z += high.z;
+        res.z = high.z;
     return res;
 }
 
@@ -309,11 +309,11 @@ vec3 AABox::negVertex(const vec3 &normal) const
 {
     vec3 res = low;
     if(normal.x < 0)
-        res.x += high.x;
+        res.x = high.x;
     if(normal.y < 0)
-        res.y += high.y;
+        res.y = high.y;
     if(normal.z < 0)
-        res.z += high.z;
+        res.z = high.z;
     return res;
 }
 
@@ -510,7 +510,7 @@ void Frustum::update()
     m_dirty = false;
 }
 
-Frustum::TestResult Frustum::contains(vec3 v) const
+Frustum::TestResult Frustum::containsPoint(vec3 v) const
 {
     for(int i = 0; i < 6; i++)
     {
@@ -520,11 +520,9 @@ Frustum::TestResult Frustum::contains(vec3 v) const
     return INSIDE;
 }
 
-Frustum::TestResult Frustum::contains(const AABox &b) const
+Frustum::TestResult Frustum::containsBox(const vec3 *corners) const
 {
     int allInCount = 0;
-    vec3 corners[8];
-    b.cornersTo(corners);
     for(int i = 0; i < 6; i++)
     {
         // Count how many points are on the wrong side of the plane ('out').
@@ -546,6 +544,22 @@ Frustum::TestResult Frustum::contains(const AABox &b) const
         allInCount += (outCount == 0);
     }
     return (allInCount == 6) ? INSIDE : INTERSECTING;
+}
+
+Frustum::TestResult Frustum::containsAABox(const AABox &b) const
+{
+    TestResult result = INSIDE;
+    for(int i = 0; i < 6; i++)
+    {
+        const Plane &plane = m_planes[i];
+        // is the positive vertex outside?
+        if(plane.distance(b.posVertex(plane.n)) < 0)
+            return OUTSIDE;
+        // is the negative vertex outside?
+        else if(plane.distance(b.negVertex(plane.n)) < 0)
+            result = INTERSECTING;
+    }
+    return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

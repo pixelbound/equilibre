@@ -175,8 +175,9 @@ public:
     
     void update();
 
-    TestResult contains(vec3 v) const;
-    TestResult contains(const AABox &b) const;
+    TestResult containsPoint(vec3 v) const;
+    TestResult containsAABox(const AABox &b) const;
+    TestResult containsBox(const vec3 *corners) const;
 
 private:
     float m_angle, m_aspect, m_nearPlane, m_farPlane;
