@@ -64,6 +64,8 @@ public:
     const AABox & boundsAA() const;
 
     void importVertexData(VertexGroup *vg, BufferSegment &dataLoc);
+    void importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
+                         const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
     void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal);
 
     void draw(RenderState *state, WLDMaterialPalette *pal,

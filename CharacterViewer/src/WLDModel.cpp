@@ -111,9 +111,8 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
     {
         importVertexData(m_mesh, m_mesh->dataBuffer);
         importMaterialGroups(m_mesh, palette);
-        // load indices
-        for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
-            m_mesh->indices.push_back(m_meshDef->m_indices[i]);
+        importIndexData(m_mesh, m_mesh->indicesBuffer, m_mesh->dataBuffer,
+                        0, (uint32_t)m_meshDef->m_indices.count());
     }
     state->drawMesh(m_mesh, palette, bones, boneCount);
 }
@@ -145,6 +144,16 @@ void WLDModelPart::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
         for(uint32_t i = 0; i < count; i++, vertexIndex++)
             vertices[i].bone = pieceID;
     }
+}
+
+void WLDModelPart::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
+                                   const BufferSegment &dataLoc, uint32_t offset, uint32_t count)
+{
+    indexLoc.offset = vg->indices.count();
+    indexLoc.count = count;
+    indexLoc.elementSize = sizeof(uint32_t);
+    for(uint32_t i = 0; i < count; i++)
+        vg->indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
 void WLDModelPart::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
@@ -188,17 +197,15 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
     vg->dataBuffer.count = vg->vertices.count();
     vg->dataBuffer.elementSize = sizeof(VertexData);
 
-    // sort the polygons per material and reorder indices
+    // sort the polygons per material and import indices
     qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
     uint32_t indiceOffset = 0;
     for(int i = 0; i < vg->matGroups.count(); i++)
     {
         MaterialGroup &mg(vg->matGroups[i]);
         WLDModelPart *part = parts[mg.id];
-        uint32_t dataOffset = part->mesh()->dataBuffer.offset;
-        const QVector<uint16_t> &indices(part->def()->m_indices);
-        for(uint32_t i = 0; i < mg.count; i++)
-            vg->indices.append(indices[mg.offset + i] + dataOffset);
+        part->importIndexData(vg, part->mesh()->indicesBuffer, part->mesh()->dataBuffer,
+                              mg.offset, mg.count);
         mg.offset = indiceOffset;
         indiceOffset += mg.count;
     }
