@@ -564,25 +564,31 @@ Frustum::TestResult Frustum::containsAABox(const AABox &b) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+BufferSegment::BufferSegment()
+{
+    buffer = 0;
+    elementSize = 0;
+    offset = 0;
+    count = 0;
+}
+
+size_t BufferSegment::size() const
+{
+    return count * elementSize;
+}
+
+size_t BufferSegment::address() const
+{
+    return offset * elementSize;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 VertexGroup::VertexGroup(VertexGroup::Primitive mode)
 {
     this->mode = mode;
-    this->dataBuffer = 0;
-    this->indicesBuffer = 0;
-    this->dataBufferOffset = 0;
-    this->indicesBufferOffset = 0;
 }
 
 VertexGroup::~VertexGroup()
 {
-}
-
-size_t VertexGroup::vertexDataSize() const
-{
-    return vertices.count() * sizeof(VertexData);
-}
-
-size_t VertexGroup::indexDataSize() const
-{
-    return indices.count() * sizeof(VertexData);
 }

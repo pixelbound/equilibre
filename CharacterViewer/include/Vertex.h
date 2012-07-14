@@ -210,6 +210,18 @@ public:
     QString matName;
 };
 
+struct BufferSegment
+{
+    buffer_t buffer;
+    uint32_t elementSize;
+    uint32_t offset;
+    uint32_t count;
+    
+    BufferSegment();
+    size_t size() const;
+    size_t address() const;
+};
+
 class VertexGroup
 {
 public:
@@ -221,18 +233,13 @@ public:
     
     VertexGroup(Primitive mode);
     virtual ~VertexGroup();
-    
-    size_t vertexDataSize() const;
-    size_t indexDataSize() const;
 
     Primitive mode;
     QVector<VertexData> vertices;
     QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;
-    buffer_t dataBuffer;
-    buffer_t indicesBuffer;
-    uint32_t dataBufferOffset;
-    uint32_t indicesBufferOffset;
+    BufferSegment dataBuffer;
+    BufferSegment indicesBuffer;
 };
 
 #endif

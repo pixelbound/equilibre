@@ -297,17 +297,17 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 
 void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
 {
-    if(!vg->dataBuffer)
+    if(!vg->dataBuffer.buffer)
     {
-        vg->dataBuffer = state->createBuffer(vg->vertices.constData(), vg->vertexDataSize());
-        if(vg->dataBuffer)
-            m_gpuBuffers.append(vg->dataBuffer);
+        vg->dataBuffer.buffer = state->createBuffer(vg->vertices.constData(), vg->dataBuffer.size());
+        if(vg->dataBuffer.buffer)
+            m_gpuBuffers.append(vg->dataBuffer.buffer);
     }
-    if(!vg->indicesBuffer)
+    if(!vg->indicesBuffer.buffer)
     {
-        vg->indicesBuffer = state->createBuffer(vg->indices.constData(), vg->indexDataSize());
-        if(vg->indicesBuffer)
-            m_gpuBuffers.append(vg->indicesBuffer);
+        vg->indicesBuffer.buffer = state->createBuffer(vg->indices.constData(), vg->indicesBuffer.size());
+        if(vg->indicesBuffer.buffer)
+            m_gpuBuffers.append(vg->indicesBuffer.buffer);
     }
     
 }

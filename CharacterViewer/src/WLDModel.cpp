@@ -79,7 +79,7 @@ WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, uint32_t partID, QObject *p
 {
     m_partID = partID;
     m_meshDef = meshDef;
-    m_mesh = 0;
+    m_mesh = new VertexGroup(VertexGroup::Triangle);
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
@@ -107,10 +107,9 @@ const AABox & WLDModelPart::boundsAA() const
 void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
                         const BoneTransform *bones, uint32_t boneCount)
 {
-    if(!m_mesh)
+    if(m_mesh->vertices.count() == 0)
     {
-        m_mesh = new VertexGroup(VertexGroup::Triangle);
-        importVertexData(m_mesh);
+        importVertexData(m_mesh, m_mesh->dataBuffer);
         importMaterialGroups(m_mesh, palette);
         // load indices
         for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_indices.count(); i++)
@@ -119,12 +118,18 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
     state->drawMesh(m_mesh, palette, bones, boneCount);
 }
 
-void WLDModelPart::importVertexData(VertexGroup *vg)
+void WLDModelPart::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
 {
-    // load vertices, texCoords, normals, faces
+    // update the mesh location
     QVector<VertexData> &vertices(vg->vertices);
+    uint32_t vertexCount = (uint32_t)m_meshDef->m_vertices.count();
     uint32_t vertexIndex = vertices.count();
-    for(uint32_t i = 0; i < (uint32_t)m_meshDef->m_vertices.count(); i++)
+    dataLoc.offset = vertexIndex;
+    dataLoc.count = vertexCount;
+    dataLoc.elementSize = sizeof(VertexData);
+    
+    // load vertices, texCoords, normals, faces
+    for(uint32_t i = 0; i < vertexCount; i++)
     {
         VertexData vd;
         vd.position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
@@ -172,21 +177,16 @@ static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b
 
 VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMaterialPalette *palette)
 {
-    // sum the vertice count for each part
-    uint32_t totalVertices = 0;
-    foreach(WLDModelPart *part, parts)
-        totalVertices += part->def()->m_vertices.count();
-
     // import each part (vertices and material groups) into a single vertex group
     VertexGroup *vg = new VertexGroup(VertexGroup::Triangle);
-    vg->vertices.resize(totalVertices);
-    QVector<uint32_t> partDataOffsets;
     foreach(WLDModelPart *part, parts)
     {
-        partDataOffsets.append(vg->vertices.count());
         part->importMaterialGroups(vg, palette);
-        part->importVertexData(vg);
+        part->importVertexData(vg, part->mesh()->dataBuffer);
     }
+    vg->dataBuffer.offset = 0;
+    vg->dataBuffer.count = vg->vertices.count();
+    vg->dataBuffer.elementSize = sizeof(VertexData);
 
     // sort the polygons per material and reorder indices
     qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
@@ -195,13 +195,16 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
     {
         MaterialGroup &mg(vg->matGroups[i]);
         WLDModelPart *part = parts[mg.id];
-        uint32_t partDataOffset = partDataOffsets[mg.id];
+        uint32_t dataOffset = part->mesh()->dataBuffer.offset;
         const QVector<uint16_t> &indices(part->def()->m_indices);
         for(uint32_t i = 0; i < mg.count; i++)
-            vg->indices.append(indices[mg.offset + i] + partDataOffset);
+            vg->indices.append(indices[mg.offset + i] + dataOffset);
         mg.offset = indiceOffset;
         indiceOffset += mg.count;
     }
+    vg->indicesBuffer.offset = 0;
+    vg->indicesBuffer.count = indiceOffset;
+    vg->indicesBuffer.elementSize = sizeof(uint32_t);
 
     // merge material groups with common material
     QVector<MaterialGroup> newGroups;
