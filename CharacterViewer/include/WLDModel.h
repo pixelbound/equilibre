@@ -53,12 +53,14 @@ private:
 /*!
   \brief Describes part of a model.
   */
+/// XXX rename to WLDMesh
 class WLDModelPart : public QObject
 {
 public:
     WLDModelPart(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
     virtual ~WLDModelPart();
 
+    ///XXX rename to meshData
     VertexGroup * mesh() const;
     MeshDefFragment *def() const;
     const AABox & boundsAA() const;
@@ -68,8 +70,10 @@ public:
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
     void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal);
 
-    void draw(RenderState *state, WLDMaterialPalette *pal,
+    void beginDraw(RenderState *state, WLDMaterialPalette *pal,
               const BoneTransform *bones = 0, uint32_t boneCount = 0);
+    void draw(RenderState *state);
+    void endDraw(RenderState *state);
 
     static VertexGroup * combine(const QList<WLDModelPart *> &parts, WLDMaterialPalette *palette);
 

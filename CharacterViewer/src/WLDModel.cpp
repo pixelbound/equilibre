@@ -104,7 +104,7 @@ const AABox & WLDModelPart::boundsAA() const
     return m_boundsAA;
 }
 
-void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
+void WLDModelPart::beginDraw(RenderState *state,  WLDMaterialPalette *palette,
                         const BoneTransform *bones, uint32_t boneCount)
 {
     if(m_mesh->vertices.count() == 0)
@@ -115,7 +115,15 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
                         0, (uint32_t)m_meshDef->m_indices.count());
     }
     state->beginDrawMesh(m_mesh, palette, bones, boneCount);
+}
+
+void WLDModelPart::draw(RenderState *state)
+{
     state->drawMesh();
+}
+
+void WLDModelPart::endDraw(RenderState *state)
+{
     state->endDrawMesh();
 }
 
@@ -478,6 +486,7 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
 
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
-    foreach(WLDModelPart *part, m_parts)
-        part->draw(state, this->palette(), bones, boneCount);
+    // XXX
+    //foreach(WLDModelPart *part, m_parts)
+    //    part->draw(state, this->palette(), bones, boneCount);
 }

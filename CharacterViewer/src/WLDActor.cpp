@@ -179,6 +179,11 @@ const vec3 & WLDZoneActor::location() const
     return m_location;
 }
 
+void WLDZoneActor::beginDraw(RenderState *state) const
+{
+    m_model->beginDraw(state, m_palette);
+}
+
 void WLDZoneActor::draw(RenderState *state) const
 {
     state->pushMatrix();
@@ -187,8 +192,13 @@ void WLDZoneActor::draw(RenderState *state) const
     state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
     state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
     state->scale(m_scale);
-    m_model->draw(state, m_palette);
+    m_model->draw(state);
     state->popMatrix();
+}
+
+void WLDZoneActor::endDraw(RenderState *state) const
+{
+    m_model->endDraw(state);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

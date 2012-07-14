@@ -67,10 +67,9 @@ private:
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void drawVisibleObjects(RenderState *state, ActorIndexNode *node,
-                            const Frustum &f, bool cull);
-    void drawObjects(RenderState *state, ActorIndexNode *node);
+    void findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull);
     void createGPUBuffer(VertexGroup *vg, RenderState *state);
+    void drawObjects(RenderState *state);
 
     //TODO refactor this into data container classes
     QString m_name;
@@ -89,6 +88,7 @@ private:
     ActorIndex *m_index;
     bool m_showObjects;
     bool m_cullObjects;
+    QVector<const WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;
     float m_playerOrient;

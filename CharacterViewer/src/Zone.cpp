@@ -309,7 +309,11 @@ void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
         if(vg->indicesBuffer.buffer)
             m_gpuBuffers.append(vg->indicesBuffer.buffer);
     }
-    
+}
+
+static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
+{
+    return a->m_model->def()->name() < b->m_model->def()->name();
 }
 
 void Zone::draw(RenderState *state)
@@ -337,14 +341,43 @@ void Zone::draw(RenderState *state)
 
     // draw objects
     if(m_showObjects)
-    {
-        drawVisibleObjects(state, m_index->root(), frustum, m_cullObjects);
-    }
+        drawObjects(state);
     state->popMatrix();
 }
 
-void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node,
-                              const Frustum &f, bool cull)
+void Zone::drawObjects(RenderState *state)
+{
+    // Build a list of visible objects and sort them by mesh.
+    Frustum &frustum = state->viewFrustum();
+    findVisibleObjects(m_index->root(), frustum, m_cullObjects);
+    qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
+    
+    // Draw one batch of objects (beginDraw/endDraw) per mesh.
+    int meshCount = 0;
+    if(m_visibleObjects.count() > 0)
+    {
+        MeshDefFragment *lastMesh = NULL;
+        const WLDZoneActor *lastActor = NULL;
+        foreach(const WLDZoneActor *actor, m_visibleObjects)
+        {
+            MeshDefFragment *currentMesh = actor->m_model->def();
+            if(currentMesh != lastMesh)
+            {
+                if(lastActor)
+                    lastActor->endDraw(state);
+                actor->beginDraw(state);
+                lastMesh = currentMesh;
+                meshCount++;
+            }
+            actor->draw(state);
+            lastActor = actor;
+        }
+        lastActor->endDraw(state);
+    }
+    m_visibleObjects.clear();
+}
+
+void Zone::findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull)
 {
     if(!node)
         return;
@@ -353,15 +386,10 @@ void Zone::drawVisibleObjects(RenderState *state, ActorIndexNode *node,
         return;
     cull = (r != Frustum::INSIDE);
     for(int i = 0; i < 8; i++)
-        drawVisibleObjects(state, node->children()[i], f, cull);
-    drawObjects(state, node);
-}
-
-void Zone::drawObjects(RenderState *state, ActorIndexNode *node)
-{
+        findVisibleObjects(node->children()[i], f, cull);
     const QList<WLDZoneActor> &actors = m_index->actors();
     foreach(int actorIndex, node->actors())
-        actors[actorIndex].draw(state);
+        m_visibleObjects.append(&actors[actorIndex]);
 }
 
 const vec3 & Zone::playerPos() const
