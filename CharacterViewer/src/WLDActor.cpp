@@ -152,10 +152,9 @@ void WLDActor::draw(RenderState *state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDMesh *mesh, WLDMaterialPalette *palette)
+WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDMesh *mesh)
 {
     this->mesh = mesh;
-    this->palette = palette;
     this->boundsAA = mesh->boundsAA();
     if(frag)
     {

@@ -79,6 +79,7 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
 {
     m_partID = partID;
     m_meshDef = meshDef;
+    m_palette = NULL;
     m_data = new VertexGroup(VertexGroup::Triangle);
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
@@ -86,6 +87,7 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
 
 WLDMesh::~WLDMesh()
 {
+    delete m_palette;
     delete m_data;
 }
 
@@ -104,17 +106,19 @@ const AABox & WLDMesh::boundsAA() const
     return m_boundsAA;
 }
 
-void WLDMesh::beginDraw(RenderState *state,  WLDMaterialPalette *palette,
-                        const BoneTransform *bones, uint32_t boneCount)
+WLDMaterialPalette * WLDMesh::palette() const
 {
-    if(m_data->vertices.count() == 0)
-    {
-        importVertexData(m_data, m_data->vertexBuffer);
-        importMaterialGroups(m_data, palette);
-        importIndexData(m_data, m_data->indexBuffer, m_data->vertexBuffer,
-                        0, (uint32_t)m_meshDef->m_indices.count());
-    }
-    state->beginDrawMesh(m_data, palette, bones, boneCount);
+    return m_palette;
+}
+
+void WLDMesh::setPalette(WLDMaterialPalette *palette)
+{
+    m_palette = palette;
+}
+
+void WLDMesh::beginDraw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
+{
+    state->beginDrawMesh(m_data, m_palette, bones, boneCount);
 }
 
 void WLDMesh::draw(RenderState *state)
@@ -171,6 +175,7 @@ void WLDMesh::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
     uint32_t meshOffset = 0;
+    palette = (palette == NULL) ? m_palette : palette;
     foreach(vec2us g, m_meshDef->m_polygonsByTex)
     {
         MaterialDefFragment *matDef = palDef->m_materials[g.second];

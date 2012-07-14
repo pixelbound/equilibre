@@ -59,18 +59,18 @@ public:
     WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
     virtual ~WLDMesh();
 
-    ///XXX rename to meshData
     VertexGroup * data() const;
     MeshDefFragment *def() const;
+    WLDMaterialPalette *palette() const;
+    void setPalette(WLDMaterialPalette *palette);
     const AABox & boundsAA() const;
 
     void importVertexData(VertexGroup *vg, BufferSegment &dataLoc);
     void importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
-    void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal);
+    void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal = 0);
 
-    void beginDraw(RenderState *state, WLDMaterialPalette *pal,
-              const BoneTransform *bones = 0, uint32_t boneCount = 0);
+    void beginDraw(RenderState *state, const BoneTransform *bones = 0, uint32_t boneCount = 0);
     void draw(RenderState *state);
     void endDraw(RenderState *state);
 
@@ -80,6 +80,7 @@ private:
     uint32_t m_partID;
     VertexGroup *m_data;
     MeshDefFragment *m_meshDef;
+    WLDMaterialPalette *m_palette;
     AABox m_boundsAA;
 };
 

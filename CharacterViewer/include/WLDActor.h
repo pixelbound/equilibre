@@ -71,12 +71,11 @@ private:
 class WLDZoneActor
 {
 public:
-    WLDZoneActor(ActorFragment *frag, WLDMesh *mesh, WLDMaterialPalette *palette);
+    WLDZoneActor(ActorFragment *frag, WLDMesh *mesh);
 
     vec3 location, rotation, scale;
     AABox boundsAA;
     WLDMesh *mesh;
-    WLDMaterialPalette *palette;
 };
 
 class ActorIndex;

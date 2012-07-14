@@ -24,6 +24,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
     m_showObjects = true;
     m_cullObjects = true;
+    m_objectsGeometry = NULL;
     m_index = new ActorIndex();
 }
 
@@ -112,12 +113,11 @@ void Zone::clear()
     m_index->clear();
     foreach(WLDMesh *model, m_objModels)
         delete model;
-    foreach(WLDMaterialPalette *palette, m_objPalettes)
-        delete palette;
     foreach(WLDActor *actor, m_charModels)
         delete actor;
     m_objModels.clear();
     m_charModels.clear();
+    delete m_objectsGeometry;
     delete m_zoneGeometry;
     delete m_zonePalette;
     delete m_mainWld;
@@ -127,6 +127,7 @@ void Zone::clear()
     delete m_mainArchive;
     delete m_objMeshArchive;
     delete m_charArchive;
+    m_objectsGeometry = 0;
     m_zoneGeometry = 0;
     m_zonePalette = 0;
     m_mainWld = 0;
@@ -166,8 +167,7 @@ void Zone::importObjects()
         WLDMesh *model = m_objModels.value(actorName);
         if(model)
         {
-            WLDMaterialPalette *palette = m_objPalettes.value(actorName);
-            WLDZoneActor actor(actorFrag, model, palette);
+            WLDZoneActor actor(actorFrag, model);
             m_index->add(actor);
         }
         else
@@ -196,8 +196,8 @@ void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
         WLDMesh *model = new WLDMesh(mesh->m_def, 0, this);
         WLDMaterialPalette *palette = new WLDMaterialPalette(archive, this);
         palette->addPaletteDef(mesh->m_def->m_palette);
+        model->setPalette(palette);
         m_objModels.insert(actorDef->name(), model);
-        m_objPalettes.insert(actorDef->name(), palette);
     }
 }
 
@@ -340,13 +340,17 @@ void Zone::draw(RenderState *state)
     }
 
     // draw objects
-    if(m_showObjects)
+    if(m_showObjects && (m_objMeshWld != NULL))
         drawObjects(state);
     state->popMatrix();
 }
 
 void Zone::drawObjects(RenderState *state)
 {
+    // Create a GPU buffer for the objects' vertices and indices if needed.
+    if(m_objectsGeometry == NULL)
+        m_objectsGeometry = uploadObjects(state);
+    
     // Build a list of visible objects and sort them by mesh.
     Frustum &frustum = state->viewFrustum();
     findVisibleObjects(m_index->root(), frustum, m_cullObjects);
@@ -362,7 +366,7 @@ void Zone::drawObjects(RenderState *state)
         {
             if(previousMesh)
                 previousMesh->endDraw(state);
-            currentMesh->beginDraw(state, actor->palette);
+            currentMesh->beginDraw(state);
             previousMesh = currentMesh;
             meshCount++;
         }
@@ -380,6 +384,43 @@ void Zone::drawObjects(RenderState *state)
     if(previousMesh)
         previousMesh->endDraw(state);
     m_visibleObjects.clear();
+}
+
+VertexGroup * Zone::uploadObjects(RenderState *state)
+{
+    VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
+    
+    // Import vertices and indices for each mesh.
+    foreach(WLDMesh *mesh, m_objModels.values())
+    {
+        mesh->importVertexData(geom, mesh->data()->vertexBuffer);
+        mesh->importIndexData(geom, mesh->data()->indexBuffer,
+                              mesh->data()->vertexBuffer,
+                              0, (uint32_t)mesh->def()->m_indices.count());
+        mesh->importMaterialGroups(mesh->data());
+    }
+    
+    // Create the GPU buffers.
+    geom->vertexBuffer.elementSize = sizeof(VertexData);
+    geom->vertexBuffer.count = geom->vertices.count();
+    geom->indexBuffer.elementSize = sizeof(uint32_t);
+    geom->indexBuffer.count = geom->indices.count();
+    createGPUBuffer(geom, state);
+    
+    // Set the buffer handles for each mesh.
+    foreach(WLDMesh *mesh, m_objModels.values())
+    {
+        mesh->data()->vertexBuffer.buffer = geom->vertexBuffer.buffer;
+        mesh->data()->indexBuffer.buffer = geom->indexBuffer.buffer;
+    }
+
+    // Free the memory used for vertices and indices.
+    geom->vertices.clear();
+    geom->indices.clear();
+    geom->vertices.squeeze();
+    geom->indices.squeeze();
+    
+    return geom;
 }
 
 void Zone::findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull)
