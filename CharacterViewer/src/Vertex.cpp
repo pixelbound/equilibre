@@ -317,6 +317,13 @@ vec3 AABox::negVertex(const vec3 &normal) const
     return res;
 }
 
+bool AABox::contains(const vec3 &p) const
+{
+    return (low.x <= p.x) && (p.x <= high.x)
+        && (low.y <= p.y) && (p.y <= high.y)
+        && (low.z <= p.z) && (p.z <= high.z);
+}
+
 void AABox::cornersTo(vec3 *corners) const
 {
     vec3 size = high - low;

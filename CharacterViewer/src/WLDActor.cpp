@@ -154,39 +154,27 @@ void WLDActor::draw(RenderState *state)
 
 WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDMesh *mesh, WLDMaterialPalette *palette)
 {
-    m_mesh = mesh;
-    m_palette = palette;
-    m_boundsAA = mesh->boundsAA();
+    this->mesh = mesh;
+    this->palette = palette;
+    this->boundsAA = mesh->boundsAA();
     if(frag)
     {
-        m_location = frag->m_location;
-        m_rotation = frag->m_rotation;
-        m_scale = frag->m_scale;
-        m_boundsAA.scale(m_scale);
-        m_boundsAA.rotate(m_rotation);
-        m_boundsAA.translate(m_location);
+        this->location = frag->m_location;
+        this->rotation = frag->m_rotation;
+        this->scale = frag->m_scale;
+        this->boundsAA.scale(this->scale);
+        this->boundsAA.rotate(this->rotation);
+        this->boundsAA.translate(this->location);
     }
     else
     {
-        m_location = vec3(0.0, 0.0, 0.0);
-        m_rotation = vec3(0.0, 0.0, 0.0);
-        m_scale = vec3(1.0, 1.0, 1.0);
+        this->location = vec3(0.0, 0.0, 0.0);
+        this->rotation = vec3(0.0, 0.0, 0.0);
+        this->scale = vec3(1.0, 1.0, 1.0);
     }
 }
 
-const vec3 & WLDZoneActor::location() const
-{
-    return m_location;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
-
-bool boxContains(const vec3 &p, const AABox &b)
-{
-    return (b.low.x <= p.x) && (p.x <= b.high.x)
-        && (b.low.y <= p.y) && (p.y <= b.high.y)
-        && (b.low.z <= p.z) && (p.z <= b.high.z);
-}
 
 ActorIndex::ActorIndex()
 {
@@ -218,7 +206,7 @@ void ActorIndex::add(const WLDZoneActor &actor)
     }
     uint16_t index = (uint16_t)m_actors.count();
     m_actors.append(actor);
-    m_root->add(index, actor.location(), this);
+    m_root->add(index, actor.location, this);
 }
 
 void ActorIndex::clear()
@@ -293,7 +281,7 @@ void ActorIndexNode::add(uint16_t index, const vec3 &pos, ActorIndex *tree)
         const QList<WLDZoneActor> &actors = tree->actors();
         foreach(int actorIndex, m_actors)
         {
-            vec3 pos = actors[actorIndex].location();
+            vec3 pos = actors[actorIndex].location;
             int childIndex = locate(pos);
             m_children[childIndex]->add(actorIndex, pos, tree);
         }
@@ -323,5 +311,5 @@ int ActorIndexNode::locate(const vec3 &pos) const
 
 bool ActorIndexNode::contains(const vec3 &pos) const
 {
-    return boxContains(pos, m_bounds);
+    return m_bounds.contains(pos);
 }

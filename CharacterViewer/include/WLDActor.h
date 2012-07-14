@@ -73,12 +73,10 @@ class WLDZoneActor
 public:
     WLDZoneActor(ActorFragment *frag, WLDMesh *mesh, WLDMaterialPalette *palette);
 
-    const vec3 & location() const;
-
-    vec3 m_location, m_rotation, m_scale;
-    AABox m_boundsAA;
-    WLDMesh *m_mesh;
-    WLDMaterialPalette *m_palette;
+    vec3 location, rotation, scale;
+    AABox boundsAA;
+    WLDMesh *mesh;
+    WLDMaterialPalette *palette;
 };
 
 class ActorIndex;

@@ -313,7 +313,7 @@ void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
 
 static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
 {
-    return a->m_mesh->def()->name() < b->m_mesh->def()->name();
+    return a->mesh->def()->name() < b->mesh->def()->name();
 }
 
 void Zone::draw(RenderState *state)
@@ -357,23 +357,23 @@ void Zone::drawObjects(RenderState *state)
     WLDMesh *previousMesh = NULL;
     foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
-        WLDMesh *currentMesh = actor->m_mesh;
+        WLDMesh *currentMesh = actor->mesh;
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
                 previousMesh->endDraw(state);
-            currentMesh->beginDraw(state, actor->m_palette);
+            currentMesh->beginDraw(state, actor->palette);
             previousMesh = currentMesh;
             meshCount++;
         }
         
         // Draw the zone object.
         state->pushMatrix();
-        state->translate(actor->m_location);
-        state->rotate(actor->m_rotation.x, 1.0, 0.0, 0.0);
-        state->rotate(actor->m_rotation.y, 0.0, 1.0, 0.0);
-        state->rotate(actor->m_rotation.z, 0.0, 0.0, 1.0);
-        state->scale(actor->m_scale);
+        state->translate(actor->location);
+        state->rotate(actor->rotation.x, 1.0, 0.0, 0.0);
+        state->rotate(actor->rotation.y, 0.0, 1.0, 0.0);
+        state->rotate(actor->rotation.z, 0.0, 0.0, 1.0);
+        state->scale(actor->scale);
         currentMesh->draw(state);
         state->popMatrix();
     }
