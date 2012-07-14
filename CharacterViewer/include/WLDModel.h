@@ -17,7 +17,7 @@ class Material;
 class PFSArchive;
 class RenderState;
 class VertexGroup;
-class WLDModelPart;
+class WLDMesh;
 class WLDModelSkin;
 class WLDSkeleton;
 class BoneTransform;
@@ -53,15 +53,14 @@ private:
 /*!
   \brief Describes part of a model.
   */
-/// XXX rename to WLDMesh
-class WLDModelPart : public QObject
+class WLDMesh : public QObject
 {
 public:
-    WLDModelPart(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
-    virtual ~WLDModelPart();
+    WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
+    virtual ~WLDMesh();
 
     ///XXX rename to meshData
-    VertexGroup * mesh() const;
+    VertexGroup * data() const;
     MeshDefFragment *def() const;
     const AABox & boundsAA() const;
 
@@ -75,11 +74,11 @@ public:
     void draw(RenderState *state);
     void endDraw(RenderState *state);
 
-    static VertexGroup * combine(const QList<WLDModelPart *> &parts, WLDMaterialPalette *palette);
+    static VertexGroup * combine(const QList<WLDMesh *> &meshes, WLDMaterialPalette *palette);
 
 private:
     uint32_t m_partID;
-    VertexGroup *m_mesh;
+    VertexGroup *m_data;
     MeshDefFragment *m_meshDef;
     AABox m_boundsAA;
 };
@@ -130,7 +129,7 @@ public:
     QString name() const;
 
     WLDMaterialPalette *palette() const;
-    const QList<WLDModelPart *> & parts() const;
+    const QList<WLDMesh *> & parts() const;
 
     void addPart(MeshDefFragment *frag, bool importPalette = true);
 
@@ -145,7 +144,7 @@ private:
     QString m_name;
     WLDModel *m_model;
     WLDMaterialPalette *m_palette;
-    QList<WLDModelPart *> m_parts;
+    QList<WLDMesh *> m_parts;
     VertexGroup *m_aggregMesh;
 };
 

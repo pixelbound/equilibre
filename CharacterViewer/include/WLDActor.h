@@ -10,7 +10,7 @@
 class PFSArchive;
 class ActorFragment;
 class WLDModel;
-class WLDModelPart;
+class WLDMesh;
 class WLDActor;
 class RenderState;
 
@@ -71,13 +71,13 @@ private:
 class WLDZoneActor
 {
 public:
-    WLDZoneActor(ActorFragment *frag, WLDModelPart *model, WLDMaterialPalette *palette);
+    WLDZoneActor(ActorFragment *frag, WLDMesh *mesh, WLDMaterialPalette *palette);
 
     const vec3 & location() const;
 
     vec3 m_location, m_rotation, m_scale;
     AABox m_boundsAA;
-    WLDModelPart *m_model;
+    WLDMesh *m_mesh;
     WLDMaterialPalette *m_palette;
 };
 

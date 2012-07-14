@@ -33,7 +33,7 @@ Zone::~Zone()
     delete m_index;
 }
 
-const QMap<QString, WLDModelPart *> & Zone::objectModels() const
+const QMap<QString, WLDMesh *> & Zone::objectModels() const
 {
     return m_objModels;
 }
@@ -110,7 +110,7 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
 void Zone::clear()
 {
     m_index->clear();
-    foreach(WLDModelPart *model, m_objModels)
+    foreach(WLDMesh *model, m_objModels)
         delete model;
     foreach(WLDMaterialPalette *palette, m_objPalettes)
         delete palette;
@@ -141,17 +141,17 @@ void Zone::clear()
 void Zone::importGeometry()
 {
     // load zone regions as model parts
-    QList<WLDModelPart *> parts;
+    QList<WLDMesh *> parts;
     int partID = 0;
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
-        parts.append(new WLDModelPart(meshDef, partID++));
+        parts.append(new WLDMesh(meshDef, partID++));
     // load zone textures into the material palette
     m_zonePalette = new WLDMaterialPalette(m_mainArchive, this);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         m_zonePalette->addMaterialDef(matDef);
     // combine all regions into a single mesh
-    m_zoneGeometry = WLDModelPart::combine(parts, m_zonePalette);
-    foreach(WLDModelPart *part, parts)
+    m_zoneGeometry = WLDMesh::combine(parts, m_zonePalette);
+    foreach(WLDMesh *part, parts)
         delete part;
 }
 
@@ -163,7 +163,7 @@ void Zone::importObjects()
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();
-        WLDModelPart *model = m_objModels.value(actorName);
+        WLDMesh *model = m_objModels.value(actorName);
         if(model)
         {
             WLDMaterialPalette *palette = m_objPalettes.value(actorName);
@@ -193,7 +193,7 @@ void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
                        actorDef->name().toLatin1().constData());
             continue;
         }
-        WLDModelPart *model = new WLDModelPart(mesh->m_def, 0, this);
+        WLDMesh *model = new WLDMesh(mesh->m_def, 0, this);
         WLDMaterialPalette *palette = new WLDMaterialPalette(archive, this);
         palette->addPaletteDef(mesh->m_def->m_palette);
         m_objModels.insert(actorDef->name(), model);
@@ -257,7 +257,7 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         WLDModelSkin *skin = model->skins().value(skinName);
         if(!skin)
             continue;
-        foreach(WLDModelPart *part, model->skin()->parts())
+        foreach(WLDMesh *part, model->skin()->parts())
         {
             QString actorName2, meshName2, skinName2;
             WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
@@ -297,23 +297,23 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 
 void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
 {
-    if(!vg->dataBuffer.buffer)
+    if(!vg->vertexBuffer.buffer)
     {
-        vg->dataBuffer.buffer = state->createBuffer(vg->vertices.constData(), vg->dataBuffer.size());
-        if(vg->dataBuffer.buffer)
-            m_gpuBuffers.append(vg->dataBuffer.buffer);
+        vg->vertexBuffer.buffer = state->createBuffer(vg->vertices.constData(), vg->vertexBuffer.size());
+        if(vg->vertexBuffer.buffer)
+            m_gpuBuffers.append(vg->vertexBuffer.buffer);
     }
-    if(!vg->indicesBuffer.buffer)
+    if(!vg->indexBuffer.buffer)
     {
-        vg->indicesBuffer.buffer = state->createBuffer(vg->indices.constData(), vg->indicesBuffer.size());
-        if(vg->indicesBuffer.buffer)
-            m_gpuBuffers.append(vg->indicesBuffer.buffer);
+        vg->indexBuffer.buffer = state->createBuffer(vg->indices.constData(), vg->indexBuffer.size());
+        if(vg->indexBuffer.buffer)
+            m_gpuBuffers.append(vg->indexBuffer.buffer);
     }
 }
 
 static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
 {
-    return a->m_model->def()->name() < b->m_model->def()->name();
+    return a->m_mesh->def()->name() < b->m_mesh->def()->name();
 }
 
 void Zone::draw(RenderState *state)
@@ -354,10 +354,10 @@ void Zone::drawObjects(RenderState *state)
     
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
     int meshCount = 0;
-    WLDModelPart *previousMesh = NULL;
+    WLDMesh *previousMesh = NULL;
     foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
-        WLDModelPart *currentMesh = actor->m_model;
+        WLDMesh *currentMesh = actor->m_mesh;
         if(currentMesh != previousMesh)
         {
             if(previousMesh)

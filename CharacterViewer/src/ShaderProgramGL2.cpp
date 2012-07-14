@@ -250,7 +250,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
     const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
     const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
     const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
-    if(vg->dataBuffer.buffer != 0)
+    if(vg->vertexBuffer.buffer != 0)
     {
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
@@ -295,11 +295,11 @@ void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, WLDMaterialPalette *
     if(bones && (boneCount > 0))
         setBoneTransforms(bones, boneCount);
     enableVertexAttributes();
-    if(vg->dataBuffer.buffer != 0)
-        glBindBuffer(GL_ARRAY_BUFFER, vg->dataBuffer.buffer);
-    if(vg->indicesBuffer.buffer != 0)
+    if(vg->vertexBuffer.buffer != 0)
+        glBindBuffer(GL_ARRAY_BUFFER, vg->vertexBuffer.buffer);
+    if(vg->indexBuffer.buffer != 0)
     {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indicesBuffer.buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indexBuffer.buffer);
         m_meshData.haveIndices = true;
     }
     else if(vg->indices.count() > 0)
@@ -330,9 +330,9 @@ void ShaderProgramGL2::drawMesh()
         }
         GLuint mode = primitiveToGLMode(vg->mode);
         if(m_meshData.haveIndices)
-            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, m_meshData.indices + vg->indicesBuffer.offset + mg.offset);
+            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, m_meshData.indices + vg->indexBuffer.offset + mg.offset);
         else
-            glDrawArrays(mode, vg->dataBuffer.offset + mg.offset, mg.count);
+            glDrawArrays(mode, vg->vertexBuffer.offset + mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
     }
@@ -343,9 +343,9 @@ void ShaderProgramGL2::endDrawMesh()
     if(!m_meshData.pending)
         return;
     const VertexGroup *vg = m_meshData.vg;
-    if(vg->indicesBuffer.buffer != 0)
+    if(vg->indexBuffer.buffer != 0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    if(vg->dataBuffer.buffer != 0)
+    if(vg->vertexBuffer.buffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
     disableVertexAttributes();
     m_meshData.clear();

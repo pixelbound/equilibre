@@ -238,8 +238,8 @@ public:
     QVector<VertexData> vertices;
     QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;
-    BufferSegment dataBuffer;
-    BufferSegment indicesBuffer;
+    BufferSegment vertexBuffer;
+    BufferSegment indexBuffer;
 };
 
 #endif

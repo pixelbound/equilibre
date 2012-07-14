@@ -75,59 +75,59 @@ QList<MeshDefFragment *> WLDModel::listMeshes(ActorDefFragment *def)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelPart::WLDModelPart(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : QObject(parent)
+WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : QObject(parent)
 {
     m_partID = partID;
     m_meshDef = meshDef;
-    m_mesh = new VertexGroup(VertexGroup::Triangle);
+    m_data = new VertexGroup(VertexGroup::Triangle);
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
 
-WLDModelPart::~WLDModelPart()
+WLDMesh::~WLDMesh()
 {
-    delete m_mesh;
+    delete m_data;
 }
 
-VertexGroup * WLDModelPart::mesh() const
+VertexGroup * WLDMesh::data() const
 {
-    return m_mesh;
+    return m_data;
 }
 
-MeshDefFragment * WLDModelPart::def() const
+MeshDefFragment * WLDMesh::def() const
 {
     return m_meshDef;
 }
 
-const AABox & WLDModelPart::boundsAA() const
+const AABox & WLDMesh::boundsAA() const
 {
     return m_boundsAA;
 }
 
-void WLDModelPart::beginDraw(RenderState *state,  WLDMaterialPalette *palette,
+void WLDMesh::beginDraw(RenderState *state,  WLDMaterialPalette *palette,
                         const BoneTransform *bones, uint32_t boneCount)
 {
-    if(m_mesh->vertices.count() == 0)
+    if(m_data->vertices.count() == 0)
     {
-        importVertexData(m_mesh, m_mesh->dataBuffer);
-        importMaterialGroups(m_mesh, palette);
-        importIndexData(m_mesh, m_mesh->indicesBuffer, m_mesh->dataBuffer,
+        importVertexData(m_data, m_data->vertexBuffer);
+        importMaterialGroups(m_data, palette);
+        importIndexData(m_data, m_data->indexBuffer, m_data->vertexBuffer,
                         0, (uint32_t)m_meshDef->m_indices.count());
     }
-    state->beginDrawMesh(m_mesh, palette, bones, boneCount);
+    state->beginDrawMesh(m_data, palette, bones, boneCount);
 }
 
-void WLDModelPart::draw(RenderState *state)
+void WLDMesh::draw(RenderState *state)
 {
     state->drawMesh();
 }
 
-void WLDModelPart::endDraw(RenderState *state)
+void WLDMesh::endDraw(RenderState *state)
 {
     state->endDrawMesh();
 }
 
-void WLDModelPart::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
+void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
 {
     // update the mesh location
     QVector<VertexData> &vertices(vg->vertices);
@@ -156,7 +156,7 @@ void WLDModelPart::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
     }
 }
 
-void WLDModelPart::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
+void WLDMesh::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
                                    const BufferSegment &dataLoc, uint32_t offset, uint32_t count)
 {
     indexLoc.offset = vg->indices.count();
@@ -166,7 +166,7 @@ void WLDModelPart::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
         vg->indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
-void WLDModelPart::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
+void WLDMesh::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
 {
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
@@ -194,18 +194,18 @@ static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b
     return a.matName < b.matName;
 }
 
-VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMaterialPalette *palette)
+VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes, WLDMaterialPalette *palette)
 {
     // import each part (vertices and material groups) into a single vertex group
     VertexGroup *vg = new VertexGroup(VertexGroup::Triangle);
-    foreach(WLDModelPart *part, parts)
+    foreach(WLDMesh *mesh, meshes)
     {
-        part->importMaterialGroups(vg, palette);
-        part->importVertexData(vg, part->mesh()->dataBuffer);
+        mesh->importMaterialGroups(vg, palette);
+        mesh->importVertexData(vg, mesh->data()->vertexBuffer);
     }
-    vg->dataBuffer.offset = 0;
-    vg->dataBuffer.count = vg->vertices.count();
-    vg->dataBuffer.elementSize = sizeof(VertexData);
+    vg->vertexBuffer.offset = 0;
+    vg->vertexBuffer.count = vg->vertices.count();
+    vg->vertexBuffer.elementSize = sizeof(VertexData);
 
     // sort the polygons per material and import indices
     qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
@@ -213,15 +213,15 @@ VertexGroup * WLDModelPart::combine(const QList<WLDModelPart *> &parts, WLDMater
     for(int i = 0; i < vg->matGroups.count(); i++)
     {
         MaterialGroup &mg(vg->matGroups[i]);
-        WLDModelPart *part = parts[mg.id];
-        part->importIndexData(vg, part->mesh()->indicesBuffer, part->mesh()->dataBuffer,
+        WLDMesh *mesh = meshes[mg.id];
+        mesh->importIndexData(vg, mesh->data()->indexBuffer, mesh->data()->vertexBuffer,
                               mg.offset, mg.count);
         mg.offset = indiceOffset;
         indiceOffset += mg.count;
     }
-    vg->indicesBuffer.offset = 0;
-    vg->indicesBuffer.count = indiceOffset;
-    vg->indicesBuffer.elementSize = sizeof(uint32_t);
+    vg->indexBuffer.offset = 0;
+    vg->indexBuffer.count = indiceOffset;
+    vg->indexBuffer.elementSize = sizeof(uint32_t);
 
     // merge material groups with common material
     QVector<MaterialGroup> newGroups;
@@ -432,7 +432,7 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
     {
-        foreach(WLDModelPart *part, defaultSkin->parts())
+        foreach(WLDMesh *part, defaultSkin->parts())
             addPart(part->def());
     }
 }
@@ -451,7 +451,7 @@ WLDMaterialPalette *WLDModelSkin::palette() const
     return m_palette;
 }
 
-const QList<WLDModelPart *> & WLDModelSkin::parts() const
+const QList<WLDMesh *> & WLDModelSkin::parts() const
 {
     return m_parts;
 }
@@ -463,7 +463,7 @@ void WLDModelSkin::addPart(MeshDefFragment *frag, bool importPalette)
     if(importPalette)
         m_palette->addPaletteDef(frag->m_palette);
     uint32_t partID = m_parts.count();
-    m_parts.append(new WLDModelPart(frag, partID, m_model));
+    m_parts.append(new WLDMesh(frag, partID, m_model));
 }
 
 bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,

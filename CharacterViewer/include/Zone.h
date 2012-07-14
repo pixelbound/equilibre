@@ -11,7 +11,7 @@ class Mesh;
 class PFSArchive;
 class WLDData;
 class WLDModel;
-class WLDModelPart;
+class WLDMesh;
 class WLDActor;
 class WLDZoneActor;
 class ActorIndex;
@@ -30,7 +30,7 @@ public:
     Zone(QObject *parent = 0);
     virtual ~Zone();
 
-    const QMap<QString, WLDModelPart *> & objectModels() const;
+    const QMap<QString, WLDMesh *> & objectModels() const;
     const QMap<QString, WLDActor *> & charModels() const;
     const QList<WLDZoneActor> & actors() const;
 
@@ -81,10 +81,11 @@ private:
     WLDData *m_mainWld;
     WLDData *m_objMeshWld, *m_objDefWld;
     WLDData *m_charWld;
-    QMap<QString, WLDModelPart *> m_objModels;
+    QMap<QString, WLDMesh *> m_objModels;
     QMap<QString, WLDMaterialPalette *> m_objPalettes;
     QMap<QString, WLDActor *> m_charModels;
     QVector<buffer_t> m_gpuBuffers;
+    // zone objects
     ActorIndex *m_index;
     bool m_showObjects;
     bool m_cullObjects;
