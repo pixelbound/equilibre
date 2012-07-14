@@ -114,7 +114,9 @@ void WLDModelPart::draw(RenderState *state,  WLDMaterialPalette *palette,
         importIndexData(m_mesh, m_mesh->indicesBuffer, m_mesh->dataBuffer,
                         0, (uint32_t)m_meshDef->m_indices.count());
     }
-    state->drawMesh(m_mesh, palette, bones, boneCount);
+    state->beginDrawMesh(m_mesh, palette, bones, boneCount);
+    state->drawMesh();
+    state->endDrawMesh();
 }
 
 void WLDModelPart::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)

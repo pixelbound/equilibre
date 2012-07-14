@@ -330,7 +330,9 @@ void Zone::draw(RenderState *state)
     if(m_zoneGeometry)
     {
         createGPUBuffer(m_zoneGeometry, state);
-        state->drawMesh(m_zoneGeometry, m_zonePalette);
+        state->beginDrawMesh(m_zoneGeometry, m_zonePalette);
+        state->drawMesh();
+        state->endDrawMesh();
     }
 
     // draw objects

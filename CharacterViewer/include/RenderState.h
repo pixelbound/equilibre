@@ -17,9 +17,29 @@ public:
 
     virtual void init();
 
-    // mesh operations
-    virtual void drawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
-        const BoneTransform *bones = 0, int boneCount = 0) = 0;
+    /**
+     * @brief Prepare the GPU for drawing one or more mesh with the same geometry.
+     * For example, send the geometry to the GPU if it isn't there already.
+     * @param geom Geometry of the mesh (vertices and indices).
+     * @param palette Palette of materials or NULL if the mesh has no material.
+     * @param bones Array of bone transformations or NULL if the mesh is not skinned.
+     * @param boneCount Number of bone transformations.
+     */
+    virtual void beginDrawMesh(const VertexGroup *geom, WLDMaterialPalette *palette,
+                               const BoneTransform *bones = 0, int boneCount = 0) = 0;
+    /**
+     * @brief Draw a mesh whose geometry was passed to @ref beginDrawMesh.
+     * Multiple instances of the same mesh can be drawn by calling @ref drawMesh
+     * multiple times with different transformations.
+     */
+    virtual void drawMesh() = 0;
+    /**
+     * @brief Clean up the resources used by @ref beginDrawMesh and allow it to be
+     * called again.
+     */
+    virtual void endDrawMesh() = 0;
+    
+    // debug operations
     virtual void drawBox(const AABox &box) = 0;
 
     enum SkinningMode

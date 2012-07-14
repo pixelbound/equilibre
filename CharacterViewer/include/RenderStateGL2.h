@@ -15,9 +15,12 @@ public:
     virtual ~RenderStateGL2();
 
     virtual void init();
-
-    virtual void drawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
-        const BoneTransform *bones, int boneCount);
+    
+    virtual void beginDrawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
+                               const BoneTransform *bones, int boneCount);
+    virtual void drawMesh();
+    virtual void endDrawMesh();
+    
     virtual void drawBox(const AABox &box);
     ShaderProgramGL2 * program() const;
 

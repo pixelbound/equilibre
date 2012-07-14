@@ -38,22 +38,30 @@ ShaderProgramGL2 * RenderStateGL2::program() const
         return 0;
 }
 
-void RenderStateGL2::drawMesh(const VertexGroup *vg, WLDMaterialPalette *palette,
-    const BoneTransform *bones, int boneCount)
+void RenderStateGL2::beginDrawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
+                                   const BoneTransform *bones, int boneCount)
 {
     ShaderProgramGL2 *prog = program();
-    if(!vg || !prog || !prog->loaded())
+    if(!prog || !prog->loaded())
+        return;
+    prog->beginDrawMesh(m, palette, bones, boneCount);
+}
+
+void RenderStateGL2::drawMesh()
+{
+    ShaderProgramGL2 *prog = program();
+    if(!prog || !prog->loaded())
         return;
     prog->setMatrices(m_matrix[(int)ModelView], m_matrix[(int)Projection]);
-    if(bones && boneCount > 0)
-    {
-        prog->setBoneTransforms(bones, boneCount);
-        prog->drawSkinned(vg, palette);
-    }
-    else
-    {
-        prog->draw(vg, palette);
-    }
+    prog->drawMesh();
+}
+
+void RenderStateGL2::endDrawMesh()
+{
+    ShaderProgramGL2 *prog = program();
+    if(!prog || !prog->loaded())
+        return;
+    prog->endDrawMesh();
 }
 
 VertexGroup * RenderStateGL2::createCube()
@@ -116,7 +124,9 @@ void RenderStateGL2::drawBox(const AABox &box)
     mat.setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
     mat.setOpaque(false);
     program()->beginApplyMaterial(mat);
-    drawMesh(m_cube, NULL, NULL, 0);
+    beginDrawMesh(m_cube, NULL, NULL, 0);
+    drawMesh();
+    endDrawMesh();
     program()->endApplyMaterial(mat);
     
     popMatrix();
