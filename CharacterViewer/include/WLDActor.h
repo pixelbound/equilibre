@@ -74,9 +74,6 @@ public:
     WLDZoneActor(ActorFragment *frag, WLDModelPart *model, WLDMaterialPalette *palette);
 
     const vec3 & location() const;
-    void beginDraw(RenderState *state) const;
-    void draw(RenderState *state) const;
-    void endDraw(RenderState *state) const;
 
     vec3 m_location, m_rotation, m_scale;
     AABox m_boundsAA;

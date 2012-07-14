@@ -354,26 +354,31 @@ void Zone::drawObjects(RenderState *state)
     
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
     int meshCount = 0;
-    if(m_visibleObjects.count() > 0)
+    WLDModelPart *previousMesh = NULL;
+    foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
-        MeshDefFragment *lastMesh = NULL;
-        const WLDZoneActor *lastActor = NULL;
-        foreach(const WLDZoneActor *actor, m_visibleObjects)
+        WLDModelPart *currentMesh = actor->m_model;
+        if(currentMesh != previousMesh)
         {
-            MeshDefFragment *currentMesh = actor->m_model->def();
-            if(currentMesh != lastMesh)
-            {
-                if(lastActor)
-                    lastActor->endDraw(state);
-                actor->beginDraw(state);
-                lastMesh = currentMesh;
-                meshCount++;
-            }
-            actor->draw(state);
-            lastActor = actor;
+            if(previousMesh)
+                previousMesh->endDraw(state);
+            currentMesh->beginDraw(state, actor->m_palette);
+            previousMesh = currentMesh;
+            meshCount++;
         }
-        lastActor->endDraw(state);
+        
+        // Draw the zone object.
+        state->pushMatrix();
+        state->translate(actor->m_location);
+        state->rotate(actor->m_rotation.x, 1.0, 0.0, 0.0);
+        state->rotate(actor->m_rotation.y, 0.0, 1.0, 0.0);
+        state->rotate(actor->m_rotation.z, 0.0, 0.0, 1.0);
+        state->scale(actor->m_scale);
+        currentMesh->draw(state);
+        state->popMatrix();
     }
+    if(previousMesh)
+        previousMesh->endDraw(state);
     m_visibleObjects.clear();
 }
 
