@@ -365,8 +365,8 @@ void Zone::drawObjects(RenderState *state)
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
-                previousMesh->endDraw(state);
-            currentMesh->beginDraw(state);
+                state->endDrawMesh();
+            state->beginDrawMesh(currentMesh->data(), currentMesh->palette());
             previousMesh = currentMesh;
             meshCount++;
         }
@@ -378,11 +378,11 @@ void Zone::drawObjects(RenderState *state)
         state->rotate(actor->rotation.y, 0.0, 1.0, 0.0);
         state->rotate(actor->rotation.z, 0.0, 0.0, 1.0);
         state->scale(actor->scale);
-        currentMesh->draw(state);
+        state->drawMesh();
         state->popMatrix();
     }
     if(previousMesh)
-        previousMesh->endDraw(state);
+        state->endDrawMesh();
     m_visibleObjects.clear();
 }
 

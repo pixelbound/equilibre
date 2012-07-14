@@ -70,10 +70,6 @@ public:
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
     void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal = 0);
 
-    void beginDraw(RenderState *state, const BoneTransform *bones = 0, uint32_t boneCount = 0);
-    void draw(RenderState *state);
-    void endDraw(RenderState *state);
-
     static VertexGroup * combine(const QList<WLDMesh *> &meshes, WLDMaterialPalette *palette);
 
 private:

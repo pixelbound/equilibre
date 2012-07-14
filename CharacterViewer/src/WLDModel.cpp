@@ -116,21 +116,6 @@ void WLDMesh::setPalette(WLDMaterialPalette *palette)
     m_palette = palette;
 }
 
-void WLDMesh::beginDraw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
-{
-    state->beginDrawMesh(m_data, m_palette, bones, boneCount);
-}
-
-void WLDMesh::draw(RenderState *state)
-{
-    state->drawMesh();
-}
-
-void WLDMesh::endDraw(RenderState *state)
-{
-    state->endDrawMesh();
-}
-
 void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
 {
     // update the mesh location
