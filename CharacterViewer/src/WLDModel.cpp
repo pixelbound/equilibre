@@ -408,7 +408,8 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
     mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
     mat->setOpaque(opaque);
-    mat->loadTexture(img, true, !dds);
+    mat->setImage(img);
+    mat->setOrigin(dds ? Material::OpenGL : Material::Qt);
     return mat;
 }
 

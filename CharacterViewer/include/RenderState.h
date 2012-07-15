@@ -3,6 +3,7 @@
 
 #include "Vertex.h"
 
+class QImage;
 class QVector3D;
 class QQuaternion;
 class BoneTransform;
@@ -87,6 +88,8 @@ public:
 
     // material operations
 
+    virtual texture_t loadTexture(QImage img, bool mipmaps = false, bool convertToGL = true) = 0;
+    virtual void freeTexture(texture_t tex) = 0;
     virtual void pushMaterial(const Material &m) = 0;
     virtual void popMaterial() = 0;
     

@@ -1,5 +1,7 @@
 #include <cstdio>
 #include <GL/glew.h>
+#include <QImage>
+#include <QGLWidget>
 #include "Platform.h"
 #include "RenderStateGL2.h"
 #include "ShaderProgramGL2.h"
@@ -192,6 +194,48 @@ void RenderStateGL2::scale(float sx, float sy, float sz)
 matrix4 RenderStateGL2::currentMatrix() const
 {
     return m_matrix[(int)m_matrixMode];
+}
+
+static void setTextureParams(GLenum target, bool mipmaps)
+{
+    if(mipmaps)
+        glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    else
+        glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+}
+
+texture_t RenderStateGL2::loadTexture(QImage img, bool mipmaps, bool convertToGL)
+{
+    QImage img2;
+    if(convertToGL)
+        img2 = QGLWidget::convertToGLFormat(img);
+    else
+        img2 = img;
+    texture_t texID = 0;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    if(mipmaps)
+    {
+        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img2.width(), img2.height(),
+            GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
+    }
+    else
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img2.width(), img2.height(), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
+    }
+    setTextureParams(GL_TEXTURE_2D, false);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return texID;
+}
+
+void RenderStateGL2::freeTexture(texture_t tex)
+{
+    if(tex != 0)
+        glDeleteTextures(1, &tex);
 }
 
 void RenderStateGL2::pushMaterial(const Material &m)

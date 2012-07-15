@@ -201,6 +201,7 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
 
 void ShaderProgramGL2::beginApplyMaterial(const Material &m)
 {
+    //XXX GL_MAX_TEXTURE_IMAGE_UNITS
     glUniform4fv(m_uniform[U_MAT_AMBIENT], 1, (const GLfloat *)&m.ambient());
     glUniform4fv(m_uniform[U_MAT_DIFFUSE], 1, (const GLfloat *)&m.diffuse());
     if(m.texture() != 0)
@@ -323,6 +324,14 @@ void ShaderProgramGL2::drawMesh()
         Material *mat = m_meshData.palette ? m_meshData.palette->material(mg.matName) : NULL;
         if(mat)
         {
+            // Load texture on first use.
+            if((mat->texture() == 0) && !mat->image().isNull())
+            {
+                bool convertToGL = mat->origin() != Material::OpenGL;
+                mat->setTexture(m_state->loadTexture(mat->image(), true, convertToGL));
+                mat->image() = QImage();
+            }
+            
             // XXX fix rendering non-opaque polygons
             if(!mat->isOpaque())
                 continue;

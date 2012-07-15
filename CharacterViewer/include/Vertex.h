@@ -11,6 +11,7 @@ class Material;
 class WLDMaterialPalette;
 
 typedef unsigned int buffer_t;
+typedef unsigned int texture_t;
 
 class vec2
 {

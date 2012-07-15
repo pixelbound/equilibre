@@ -44,7 +44,7 @@ void SceneViewport::initializeGL()
         fprintf(stderr, "OpenGL 2.0 features not available");
         return;
     }
-
+    
     m_state->init();
     m_scene->init();
 }

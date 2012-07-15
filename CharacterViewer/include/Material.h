@@ -3,15 +3,18 @@
 
 #include <string>
 #include <inttypes.h>
+#include <QImage>
 #include "Vertex.h"
-
-using namespace std;
-
-class QImage;
 
 class Material
 {
 public:
+    enum OriginType
+    {
+        OpenGL,
+        Qt
+    };
+    
     Material();
     Material(vec4 ambient, vec4 diffuse, vec4 specular, float shine);
 
@@ -26,15 +29,15 @@ public:
 
     bool isOpaque() const;
     void setOpaque(bool opaque);
+    
+    QImage image() const;
+    void setImage(QImage newImage);
+    
+    OriginType origin() const;
+    void setOrigin(OriginType newOrigin);
 
-    uint32_t texture() const;
-    void setTexture(uint32_t texture);
-    void freeTexture();
-
-    void loadTexture(QImage &img, bool mipmaps = false, bool convertToGL = true);
-    void loadTexture(string path, bool mipmaps = false, bool convertToGL = true);
-    static uint32_t textureFromImage(QImage &img, bool mipmaps = false, bool convertToGL = true);
-    static uint32_t textureFromImage(string path, bool mipmaps = false, bool convertToGL = true);
+    texture_t texture() const;
+    void setTexture(texture_t texture);
 
     static bool loadTextureDDS(const char *data, size_t size, QImage &img);
 
@@ -43,7 +46,9 @@ private:
     vec4 m_diffuse;
     vec4 m_specular;
     float m_shine;
-    uint32_t m_texture;
+    QImage m_img;
+    OriginType m_origin;
+    texture_t m_texture;
     bool m_opaque;
 };
 
