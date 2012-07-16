@@ -75,6 +75,13 @@ set(CHARVIEWER_RESOURCES
     resources.qrc
 )
 
+set(CHARVIEWER_RESOURCE_FILES
+    fragment.glsl
+    vertex.glsl
+    vertex_skinned_texture.glsl
+    vertex_skinned_uniform.glsl
+)
+
 QT4_WRAP_CPP(CHARVIEWER_MOC_SOURCES ${CHARVIEWER_HEADERS})
 QT4_ADD_RESOURCES(CHARVIEWER_RESOURCES ${CHARVIEWER_RESOURCES})
 
@@ -90,5 +97,7 @@ add_executable(CharacterViewer
     ${CHARVIEWER_SOURCES}
     ${CHARVIEWER_MOC_SOURCES}
     ${CHARVIEWER_RESOURCES}
+    ${CHARVIEWER_RESOURCE_FILES}
+    ${CHARVIEWER_HEADERS}
 )
 target_link_libraries(CharacterViewer ${QT_LIBRARIES} ${GLEW_LIBRARIES} ${ZLIB_LIBRARIES})
