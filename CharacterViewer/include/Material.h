@@ -4,7 +4,10 @@
 #include <string>
 #include <inttypes.h>
 #include <QImage>
+#include <QMap>
 #include "Vertex.h"
+
+class RenderState;
 
 class Material
 {
@@ -50,6 +53,20 @@ private:
     OriginType m_origin;
     texture_t m_texture;
     bool m_opaque;
+};
+
+class MaterialMap
+{
+public:
+    MaterialMap();
+    ~MaterialMap();
+    Material * material(QString name) const;
+    void setMaterial(QString name, Material *mat);
+    void upload(RenderState *state);
+    
+private:
+    QMap<QString, Material *> m_materials;
+    bool m_uploaded;
 };
 
 #endif

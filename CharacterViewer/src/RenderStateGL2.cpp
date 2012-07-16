@@ -40,13 +40,13 @@ ShaderProgramGL2 * RenderStateGL2::program() const
         return 0;
 }
 
-void RenderStateGL2::beginDrawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
+void RenderStateGL2::beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
                                    const BoneTransform *bones, int boneCount)
 {
     ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
-    prog->beginDrawMesh(m, palette, bones, boneCount);
+    prog->beginDrawMesh(m, materials, bones, boneCount);
 }
 
 void RenderStateGL2::drawMesh()

@@ -8,7 +8,7 @@ class QVector3D;
 class QQuaternion;
 class BoneTransform;
 class Material;
-class WLDMaterialPalette;
+class MaterialMap;
 
 class RenderState
 {
@@ -22,11 +22,11 @@ public:
      * @brief Prepare the GPU for drawing one or more mesh with the same geometry.
      * For example, send the geometry to the GPU if it isn't there already.
      * @param geom Geometry of the mesh (vertices and indices).
-     * @param palette Palette of materials or NULL if the mesh has no material.
+     * @param materials Mesh materials or NULL if the mesh has no material.
      * @param bones Array of bone transformations or NULL if the mesh is not skinned.
      * @param boneCount Number of bone transformations.
      */
-    virtual void beginDrawMesh(const VertexGroup *geom, WLDMaterialPalette *palette,
+    virtual void beginDrawMesh(const VertexGroup *geom, MaterialMap *materials,
                                const BoneTransform *bones = 0, int boneCount = 0) = 0;
     /**
      * @brief Draw a mesh whose geometry was passed to @ref beginDrawMesh.

@@ -1,4 +1,5 @@
 #include <QFileInfo>
+#include <QImage>
 #include "Zone.h"
 #include "PFSArchive.h"
 #include "WLDData.h"
@@ -7,6 +8,7 @@
 #include "WLDSkeleton.h"
 #include "Fragments.h"
 #include "RenderState.h"
+#include "Material.h"
 
 Zone::Zone(QObject *parent) : QObject(parent)
 {
@@ -17,7 +19,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_objMeshWld = m_objDefWld = 0;
     m_charWld = 0;
     m_zoneGeometry = 0;
-    m_zonePalette = 0;
+    m_zoneMaterials = 0;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
     m_cameraPos = vec3(0.0, 0.0, 0.0);
@@ -119,7 +121,7 @@ void Zone::clear()
     m_charModels.clear();
     delete m_objectsGeometry;
     delete m_zoneGeometry;
-    delete m_zonePalette;
+    delete m_zoneMaterials;
     delete m_mainWld;
     delete m_objMeshWld;
     delete m_objDefWld;
@@ -129,7 +131,7 @@ void Zone::clear()
     delete m_charArchive;
     m_objectsGeometry = 0;
     m_zoneGeometry = 0;
-    m_zonePalette = 0;
+    m_zoneMaterials = 0;
     m_mainWld = 0;
     m_objMeshWld = 0;
     m_objDefWld = 0;
@@ -147,11 +149,12 @@ void Zone::importGeometry()
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
         parts.append(new WLDMesh(meshDef, partID++));
     // load zone textures into the material palette
-    m_zonePalette = new WLDMaterialPalette(m_mainArchive, this);
+    WLDMaterialPalette zonePalette(m_mainArchive, this);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
-        m_zonePalette->addMaterialDef(matDef);
+        zonePalette.addMaterialDef(matDef);
+    m_zoneMaterials = zonePalette.loadMaterials();
     // combine all regions into a single mesh
-    m_zoneGeometry = WLDMesh::combine(parts, m_zonePalette);
+    m_zoneGeometry = WLDMesh::combine(parts);
     foreach(WLDMesh *part, parts)
         delete part;
 }
@@ -194,9 +197,9 @@ void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
             continue;
         }
         WLDMesh *model = new WLDMesh(mesh->m_def, 0, this);
-        WLDMaterialPalette *palette = new WLDMaterialPalette(archive, this);
-        palette->addPaletteDef(mesh->m_def->m_palette);
-        model->setPalette(palette);
+        WLDMaterialPalette palette(archive, this);
+        palette.addPaletteDef(mesh->m_def->m_palette);
+        model->setMaterials(palette.loadMaterials());
         m_objModels.insert(actorDef->name(), model);
     }
 }
@@ -333,8 +336,8 @@ void Zone::draw(RenderState *state)
     // draw geometry
     if(m_zoneGeometry)
     {
-        createGPUBuffer(m_zoneGeometry, state);
-        state->beginDrawMesh(m_zoneGeometry, m_zonePalette);
+        uploadZone(state);
+        state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
         state->drawMesh();
         state->endDrawMesh();
     }
@@ -366,7 +369,7 @@ void Zone::drawObjects(RenderState *state)
         {
             if(previousMesh)
                 state->endDrawMesh();
-            state->beginDrawMesh(currentMesh->data(), currentMesh->palette());
+            state->beginDrawMesh(currentMesh->data(), currentMesh->materials());
             previousMesh = currentMesh;
             meshCount++;
         }
@@ -386,6 +389,12 @@ void Zone::drawObjects(RenderState *state)
     m_visibleObjects.clear();
 }
 
+void Zone::uploadZone(RenderState *state)
+{
+    createGPUBuffer(m_zoneGeometry, state);
+    m_zoneMaterials->upload(state);
+}
+
 VertexGroup * Zone::uploadObjects(RenderState *state)
 {
     VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
@@ -398,6 +407,8 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
                               mesh->data()->vertexBuffer,
                               0, (uint32_t)mesh->def()->m_indices.count());
         mesh->importMaterialGroups(mesh->data());
+        if(mesh->materials())
+            mesh->materials()->upload(state);
     }
     
     // Create the GPU buffers.

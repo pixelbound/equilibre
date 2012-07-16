@@ -79,7 +79,7 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
 {
     m_partID = partID;
     m_meshDef = meshDef;
-    m_palette = NULL;
+    m_materials = NULL;
     m_data = new VertexGroup(VertexGroup::Triangle);
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
@@ -87,7 +87,8 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
 
 WLDMesh::~WLDMesh()
 {
-    delete m_palette;
+    // One mesh -> one palette of materials.
+    delete m_materials;
     delete m_data;
 }
 
@@ -106,14 +107,14 @@ const AABox & WLDMesh::boundsAA() const
     return m_boundsAA;
 }
 
-WLDMaterialPalette * WLDMesh::palette() const
+MaterialMap * WLDMesh::materials() const
 {
-    return m_palette;
+    return m_materials;
 }
 
-void WLDMesh::setPalette(WLDMaterialPalette *palette)
+void WLDMesh::setMaterials(MaterialMap *materials)
 {
-    m_palette = palette;
+    m_materials = materials;
 }
 
 void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
@@ -155,12 +156,11 @@ void WLDMesh::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
         vg->indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
-void WLDMesh::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
+void WLDMesh::importMaterialGroups(VertexGroup *vg)
 {
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
     uint32_t meshOffset = 0;
-    palette = (palette == NULL) ? m_palette : palette;
     foreach(vec2us g, m_meshDef->m_polygonsByTex)
     {
         MaterialDefFragment *matDef = palDef->m_materials[g.second];
@@ -170,10 +170,10 @@ void WLDMesh::importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *palette)
         mg.offset = meshOffset;
         mg.count = vertexCount;
         // invisible groups have no material
-        if((matDef->m_param1 == 0) || !palette)
+        if(matDef->m_param1 == 0)
             mg.matName = QString::null;
         else
-            mg.matName = palette->materialName(palDef->m_materials[g.second]);
+            mg.matName = WLDMaterialPalette::materialName(palDef->m_materials[g.second]);
         vg->matGroups.append(mg);
         meshOffset += vertexCount;
     }
@@ -184,13 +184,13 @@ static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b
     return a.matName < b.matName;
 }
 
-VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes, WLDMaterialPalette *palette)
+VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
 {
     // import each part (vertices and material groups) into a single vertex group
     VertexGroup *vg = new VertexGroup(VertexGroup::Triangle);
     foreach(WLDMesh *mesh, meshes)
     {
-        mesh->importMaterialGroups(vg, palette);
+        mesh->importMaterialGroups(vg);
         mesh->importVertexData(vg, mesh->data()->vertexBuffer);
     }
     vg->vertexBuffer.offset = 0;
@@ -288,7 +288,7 @@ bool WLDMaterialPalette::explodeName(MaterialDefFragment *def, QString &charName
     return explodeName(def->name(), charName, palName, partName);
 }
 
-QString WLDMaterialPalette::materialName(QString defName) const
+QString WLDMaterialPalette::materialName(QString defName)
 {
     QString charName, palName, partName;
     if(explodeName(defName, charName, palName, partName))
@@ -297,23 +297,21 @@ QString WLDMaterialPalette::materialName(QString defName) const
         return defName.replace("_MDF", "");
 }
 
-QString WLDMaterialPalette::materialName(MaterialDefFragment *def) const
+QString WLDMaterialPalette::materialName(MaterialDefFragment *def)
 {
     return materialName(def->name());
 }
 
-Material * WLDMaterialPalette::material(QString name)
+MaterialMap * WLDMaterialPalette::loadMaterials()
 {
-    QString canName = materialName(name);
-    Material *mat = m_materials.value(canName);
-    if(mat)
-        return mat;
-    MaterialDefFragment *matDef = m_materialDefs.value(canName);
-    if(!matDef)
-        return 0;
-    mat = loadMaterial(matDef);
-    m_materials.insert(canName, mat);
-    return mat;
+    MaterialMap *materials = new MaterialMap();
+    foreach(MaterialDefFragment *frag, m_materialDefs)
+    {
+        QString canName = materialName(frag);
+        Material *mat = loadMaterial(frag);
+        materials->setMaterial(canName, mat);
+    }
+    return materials;
 }
 
 Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)

@@ -7,7 +7,6 @@
 #include "Platform.h"
 #include "Vertex.h"
 
-class Mesh;
 class PFSArchive;
 class WLDData;
 class WLDModel;
@@ -18,6 +17,7 @@ class ActorIndex;
 class ActorIndexNode;
 class WLDSkeleton;
 class WLDMaterialPalette;
+class MaterialMap;
 class ActorDefFragment;
 class RenderState;
 
@@ -70,12 +70,13 @@ private:
     void findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull);
     void createGPUBuffer(VertexGroup *vg, RenderState *state);
     void drawObjects(RenderState *state);
+    void uploadZone(RenderState *state);
     VertexGroup * uploadObjects(RenderState *state);
 
     //TODO refactor this into data container classes
     QString m_name;
     VertexGroup *m_zoneGeometry;
-    WLDMaterialPalette *m_zonePalette;
+    MaterialMap *m_zoneMaterials;
     PFSArchive *m_mainArchive;
     PFSArchive *m_objMeshArchive;
     PFSArchive *m_charArchive;

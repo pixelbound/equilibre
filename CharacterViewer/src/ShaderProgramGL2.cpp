@@ -3,7 +3,6 @@
 #include "RenderStateGL2.h"
 #include "Material.h"
 #include "WLDSkeleton.h"
-#include "WLDModel.h"
 
 const int MAX_TRANSFORMS = 256;
 const int A_POSITION = 0;
@@ -283,14 +282,14 @@ static GLuint primitiveToGLMode(VertexGroup::Primitive mode)
     return 0;
 }
 
-void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, WLDMaterialPalette *palette,
+void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materials,
                                      const BoneTransform *bones, int boneCount)
 {
     if(m_meshData.pending || !vg)
         return;
     m_meshData.pending = true;
     m_meshData.vg = vg;
-    m_meshData.palette = palette;
+    m_meshData.materials = materials;
     m_meshData.bones = bones;
     m_meshData.boneCount = boneCount;
     if(bones && (boneCount > 0))
@@ -321,17 +320,9 @@ void ShaderProgramGL2::drawMesh()
         // skip meshes that don't have a material
         if(mg.matName.isEmpty())
            continue;
-        Material *mat = m_meshData.palette ? m_meshData.palette->material(mg.matName) : NULL;
+        Material *mat = m_meshData.materials ? m_meshData.materials->material(mg.matName) : NULL;
         if(mat)
         {
-            // Load texture on first use.
-            if((mat->texture() == 0) && !mat->image().isNull())
-            {
-                bool convertToGL = mat->origin() != Material::OpenGL;
-                mat->setTexture(m_state->loadTexture(mat->image(), true, convertToGL));
-                mat->image() = QImage();
-            }
-            
             // XXX fix rendering non-opaque polygons
             if(!mat->isOpaque())
                 continue;
@@ -475,7 +466,7 @@ void MeshDataGL2::clear()
     vg = NULL;
     bones = NULL;
     boneCount = 0;
-    palette = NULL;
+    materials = NULL;
     haveIndices = false;
     indices = NULL;
     pending = false;

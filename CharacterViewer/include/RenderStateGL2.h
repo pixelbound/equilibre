@@ -7,6 +7,7 @@
 #include "RenderState.h"
 
 class ShaderProgramGL2;
+class MaterialMap;
 
 class RenderStateGL2 : public RenderState
 {
@@ -16,7 +17,7 @@ public:
 
     virtual void init();
     
-    virtual void beginDrawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
+    virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMesh();
     virtual void endDrawMesh();

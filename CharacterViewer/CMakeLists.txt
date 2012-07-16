@@ -18,7 +18,7 @@ if( WIN32 )
       message(FATAL_ERROR "The path to the GLEW include directory must be set.")
     endif()
 else( WIN32 )
-    set(GLEW_LIBRARIES GLEW)
+    set(GLEW_LIBRARIES GLEW GL GLU)
 endif( WIN32 )
 
 set(CHARVIEWER_SOURCES

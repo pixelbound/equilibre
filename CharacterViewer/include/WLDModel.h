@@ -14,6 +14,7 @@ class MaterialDefFragment;
 class MaterialPaletteFragment;
 class ActorDefFragment;
 class Material;
+class MaterialMap;
 class PFSArchive;
 class RenderState;
 class VertexGroup;
@@ -21,7 +22,6 @@ class WLDMesh;
 class WLDModelSkin;
 class WLDSkeleton;
 class BoneTransform;
-class WLDMaterialPalette;
 class WLDAnimation;
 
 /*!
@@ -61,22 +61,22 @@ public:
 
     VertexGroup * data() const;
     MeshDefFragment *def() const;
-    WLDMaterialPalette *palette() const;
-    void setPalette(WLDMaterialPalette *palette);
+    MaterialMap *materials() const;
+    void setMaterials(MaterialMap *materials);
     const AABox & boundsAA() const;
 
     void importVertexData(VertexGroup *vg, BufferSegment &dataLoc);
     void importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
-    void importMaterialGroups(VertexGroup *vg, WLDMaterialPalette *pal = 0);
+    void importMaterialGroups(VertexGroup *vg);
 
-    static VertexGroup * combine(const QList<WLDMesh *> &meshes, WLDMaterialPalette *palette);
+    static VertexGroup * combine(const QList<WLDMesh *> &meshes);
 
 private:
     uint32_t m_partID;
     VertexGroup *m_data;
     MeshDefFragment *m_meshDef;
-    WLDMaterialPalette *m_palette;
+    MaterialMap *m_materials;
     AABox m_boundsAA;
 };
 
@@ -88,28 +88,27 @@ class WLDMaterialPalette : public QObject
 {
 public:
     WLDMaterialPalette(PFSArchive *archive, QObject *parent = 0);
-
+    
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
+    
+    MaterialMap * loadMaterials();
 
     /*!
       \brief Return the canonical name of a material. This strips out the palette ID.
       */
-    QString materialName(QString defName) const;
-    QString materialName(MaterialDefFragment *def) const;
+    static QString materialName(QString defName);
+    static QString materialName(MaterialDefFragment *def);
 
     static bool explodeName(QString defName, QString &charName,
                             QString &palName, QString &partName);
     static bool explodeName(MaterialDefFragment *def, QString &charName,
                             QString &palName, QString &partName);
 
-    Material * material(QString name);
-
 private:
     Material * loadMaterial(MaterialDefFragment *frag);
 
     QMap<QString, MaterialDefFragment *> m_materialDefs;
-    QMap<QString, Material *> m_materials;
     PFSArchive *m_archive;
 };
 

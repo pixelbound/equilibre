@@ -1,6 +1,7 @@
 #include <QImage>
 #include "Platform.h"
 #include "Material.h"
+#include "RenderState.h"
 #include "dds.h"
 #include "dxt.h"
 
@@ -141,4 +142,45 @@ bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
     }
     qDebug("DDS format not supported / not implemented");
     return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MaterialMap::MaterialMap()
+{
+    m_uploaded = false;
+}
+
+MaterialMap::~MaterialMap()
+{
+    foreach(Material *mat, m_materials)
+        delete mat;
+}
+
+Material * MaterialMap::material(QString name) const
+{
+    return m_materials.value(name);
+}
+
+void MaterialMap::setMaterial(QString name, Material *mat)
+{
+    m_materials[name] = mat;
+}
+
+void MaterialMap::upload(RenderState *state)
+{
+    if(m_uploaded)
+        return;
+    foreach(Material *mat, m_materials)
+    {
+        if(!mat)
+            continue;
+        bool convertToGL = mat->origin() != Material::OpenGL;
+        if(!mat->image().isNull())
+        {
+            mat->setTexture(state->loadTexture(mat->image(), true, convertToGL));
+            mat->image() = QImage();   
+        }
+    }
+    m_uploaded = true;
 }

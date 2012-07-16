@@ -8,7 +8,8 @@
 
 class RenderStateGL2;
 class BoneTransform;
-class WLDMaterialPalette;
+class Material;
+class MaterialMap;
 
 class MeshDataGL2
 {
@@ -18,7 +19,7 @@ public:
     const VertexGroup *vg;
     const BoneTransform *bones;
     uint32_t boneCount;
-    WLDMaterialPalette *palette;
+    MaterialMap *materials;
     const uint32_t *indices;
     bool haveIndices;
     bool pending;
@@ -38,7 +39,7 @@ public:
     virtual void beginFrame();
     virtual void endFrame();
     
-    virtual void beginDrawMesh(const VertexGroup *m, WLDMaterialPalette *palette,
+    virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMesh();
     virtual void endDrawMesh();
