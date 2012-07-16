@@ -217,12 +217,14 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool mipmaps, bool convertToGL
     texture_t texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
+#ifndef _WIN32
     if(mipmaps)
     {
         gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img2.width(), img2.height(),
             GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
     }
     else
+#endif
     {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img2.width(), img2.height(), 0,
             GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
