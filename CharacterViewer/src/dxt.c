@@ -75,7 +75,7 @@ static void extract_block(const unsigned char *src, int x, int y,
 }
 
 /* pack BGR8 to RGB565 */
-static inline unsigned short pack_rgb565(const unsigned char *c)
+static INLINE unsigned short pack_rgb565(const unsigned char *c)
 {
    //return(((c[2] >> 3) << 11) | ((c[1] >> 2) << 5) | (c[0] >> 3));
    return((mul8bit(c[2], 31) << 11) |

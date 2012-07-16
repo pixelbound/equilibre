@@ -36,18 +36,18 @@
 /* round integer x up to next multiple of 4 */
 #define RND_MUL4(x)    ((x) + (4 - ((x) & 3)))
 
-static inline int mul8bit(int a, int b)
+static INLINE int mul8bit(int a, int b)
 {
    int t = a * b + 128;
    return((t + (t >> 8)) >> 8);
 }
 
-static inline int blerp(int a, int b, int x)
+static INLINE int blerp(int a, int b, int x)
 {
    return(a + mul8bit(b - a, x));
 }
 
-static inline int icerp(int a, int b, int c, int d, int x)
+static INLINE int icerp(int a, int b, int c, int d, int x)
 {
    int p = (d - c) - (a - b);
    int q = (a - b) - p;

@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 2.8)
 find_package(Qt4 4.6.0 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 find_package(ZLIB 1.0.0 REQUIRED)
 include(${QT_USE_FILE})
@@ -71,7 +72,7 @@ include_directories(include)
 if(WIN32)
     set(CHARVIEWER_HEADERS ${CHARVIEWER_HEADERS} win32/inttypes.h win32/stdint.h)
     include_directories(include/win32)
-    add_definitions(/Dinline= /DM_PI=3.14159265358979323846)
+    add_definitions(/DM_PI=3.14159265358979323846)
 endif(WIN32)
 
 add_executable(CharacterViewer

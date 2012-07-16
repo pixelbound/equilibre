@@ -154,7 +154,7 @@ static void scale_image_nearest(unsigned char *dst, int dw, int dh,
    }
 }
 
-static inline int gamma_correct(int v, float gamma)
+static INLINE int gamma_correct(int v, float gamma)
 {
    v = (int)(powf((float)v / 255.0f, gamma) * 255);
    if(v > 255) v = 255;
@@ -488,7 +488,7 @@ static void scale_image_lanczos(unsigned char *dst, int dw, int dh,
    int sstride = sw * bpp;
    float center, contrib, density, s, r;
    
-   unsigned char *d, *row, *col;
+   unsigned char *d, *row, *col, *tmp;
    
    float xscale = MIN(xfactor, 1.0f) / blur;
    float yscale = MIN(yfactor, 1.0f) / blur;
@@ -496,12 +496,13 @@ static void scale_image_lanczos(unsigned char *dst, int dw, int dh,
    float ysupport = FILTER_RADIUS / yscale;
    
    float invgamma;
-   
+
    if(xsupport <= 0.5f)
    {
       xsupport = 0.5f + 1e-12f;
       xscale = 1.0f;
    }
+
    if(ysupport <= 0.5f)
    {
       ysupport = 0.5f + 1e-12f;
@@ -509,8 +510,6 @@ static void scale_image_lanczos(unsigned char *dst, int dw, int dh,
    }
    
    /* resample in Y direction first to temporary buffer */
-   unsigned char *tmp;
-   
    tmp = malloc(sw * dh * bpp);
    d = tmp;
 

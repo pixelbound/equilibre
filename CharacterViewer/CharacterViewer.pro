@@ -1,4 +1,4 @@
-INCLUDEPATH += include
+INCLUDEPATH += include include/win32
 HEADERS = include/SceneViewport.h \
     include/RenderState.h include/RenderStateGL2.h include/ShaderProgramGL2.h \
     include/Material.h include/Vertex.h \
@@ -15,7 +15,7 @@ HEADERS = include/SceneViewport.h \
     include/WLDSkeleton.h \
     include/CharacterViewerWindow.h \
     include/imath.h include/dxt_tables.h include/dds.h include/dxt.h \
-    include/ZoneViewerWindow.h
+    include/ZoneViewerWindow.h include/win32/inttypes.h
 
 SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/RenderState.cpp src/RenderStateGL2.cpp src/ShaderProgramGL2.cpp \
@@ -36,8 +36,9 @@ SOURCES = src/main.cpp src/SceneViewport.cpp \
     src/ZoneViewerWindow.cpp
 
 win32 {
-    INCLUDEPATH += ../glew-1.5.4-mingw32/include ../zlib125-dll/include
-    LIBS += -L../glew-1.5.4-mingw32/lib -lglew32 -L../zlib125-dll/lib -lzdll
+    INCLUDEPATH += ../glew-1.7.0-win32/include ../zlib125-dll/include
+    LIBS += -L../glew-1.7.0-win32/lib -lglew32 -L../zlib125-dll/lib -lzdll
+    DEFINES += M_PI=3.14159265358979323846
 }
 else {
     LIBS += -lm -lz -lGLU -lGLEW

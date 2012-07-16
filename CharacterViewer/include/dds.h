@@ -126,8 +126,10 @@ typedef enum
 #ifdef _WIN32
 #pragma pack(push,1)
 #define PACKED
+#define INLINE
 #else
 #define PACKED __attribute__((packed))
+#define INLINE inline
 #endif
 
 typedef struct PACKED
