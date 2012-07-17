@@ -17,9 +17,10 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_diffuse0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
-    m_programs[(int)SoftwareSkinning] = new ShaderProgramGL2(this);
-    m_programs[(int)HardwareSkinningUniform] = new UniformSkinningProgram(this);
-    m_programs[(int)HardwareSkinningTexture] = new TextureSkinningProgram(this);
+    m_programs[(int)BasicShader] = new ShaderProgramGL2(this);
+    m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
+    m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
+	m_programs[(int)InstancedShader] = new InstancingProgram(this);
     m_skinningMode = SoftwareSkinning;
     m_cube = createCube();
 }
@@ -334,7 +335,8 @@ buffer_t RenderStateGL2::createBuffer(const void *data, size_t size)
 
 void RenderStateGL2::init()
 {
-    m_programs[(int)SoftwareSkinning]->load("vertex.glsl", "fragment.glsl");
-    m_programs[(int)HardwareSkinningUniform]->load("vertex_skinned_uniform.glsl", "fragment.glsl");
-    m_programs[(int)HardwareSkinningTexture]->load("vertex_skinned_texture.glsl", "fragment.glsl");
+    m_programs[(int)BasicShader]->load("vertex.glsl", "fragment.glsl");
+    m_programs[(int)SkinningUniformShader]->load("vertex_skinned_uniform.glsl", "fragment.glsl");
+    m_programs[(int)SkinningTextureShader]->load("vertex_skinned_texture.glsl", "fragment.glsl");
+	m_programs[(int)InstancedShader]->load("vertex_instanced.glsl", "fragment.glsl");
 }

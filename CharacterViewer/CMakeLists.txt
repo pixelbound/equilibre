@@ -78,12 +78,16 @@ set(CHARVIEWER_RESOURCES
 set(CHARVIEWER_RESOURCE_FILES
     fragment.glsl
     vertex.glsl
+    vertex_instanced.glsl
     vertex_skinned_texture.glsl
     vertex_skinned_uniform.glsl
 )
 
 QT4_WRAP_CPP(CHARVIEWER_MOC_SOURCES ${CHARVIEWER_HEADERS})
 QT4_ADD_RESOURCES(CHARVIEWER_RESOURCES ${CHARVIEWER_RESOURCES})
+
+source_group(shaders FILES ${CHARVIEWER_RESOURCE_FILES})
+source_group(moc FILES ${CHARVIEWER_MOC_SOURCES})
 
 include_directories(include)
 

@@ -77,17 +77,28 @@ protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
     void drawMaterialGroups(const VertexGroup *vg, int instances);
-    void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
+	void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
 
     RenderStateGL2 *m_state;
     uint32_t m_vertexShader;
     uint32_t m_fragmentShader;
     uint32_t m_program;
-    uint32_t m_instanceMvBuffer;
     int m_attr[A_MAX+1];
     int m_uniform[U_MAX+1];
     vec4 *m_bones;
     MeshDataGL2 m_meshData;
+};
+
+class InstancingProgram : public ShaderProgramGL2
+{
+public:
+    InstancingProgram(RenderStateGL2 *state);
+	virtual ~InstancingProgram();
+    virtual bool init();
+	virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
+
+private:
+    uint32_t m_instanceMvBuffer;
 };
 
 class UniformSkinningProgram : public ShaderProgramGL2

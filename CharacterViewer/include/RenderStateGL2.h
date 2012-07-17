@@ -58,6 +58,14 @@ public:
     
     virtual buffer_t createBuffer(const void *data, size_t size);
 
+	enum ShaderMode
+    {
+        BasicShader = 0,
+        SkinningUniformShader = 1,
+        SkinningTextureShader = 2,
+		InstancedShader = 3
+    };
+
 private:
     bool loadShaders();
     static VertexGroup * createCube();
@@ -71,8 +79,9 @@ private:
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];
-    ShaderProgramGL2 *m_programs[3];
+    ShaderProgramGL2 *m_programs[4];
     SkinningMode m_skinningMode;
+	ShaderMode m_shaderMode;
     VertexGroup *m_cube;
 };
 

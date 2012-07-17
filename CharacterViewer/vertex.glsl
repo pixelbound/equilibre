@@ -1,7 +1,6 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec2 a_texCoords;
-attribute mat4 a_modelViewMatrix;
 
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
@@ -21,8 +20,7 @@ varying vec2 v_texCoords;
 
 void main()
 {
-    //gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1.0);
-    gl_Position = u_projectionMatrix * a_modelViewMatrix * vec4(a_position, 1.0);
+    gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1.0);
     v_texCoords = a_texCoords;
 
     vec3 normal, lightDir, halfVector;

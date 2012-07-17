@@ -15,16 +15,12 @@ ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
     for(int i = 0; i <= U_MAX; i++)
         m_uniform[i] = -1;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
-    m_instanceMvBuffer = 0;
     m_meshData.clear();
 }
 
 ShaderProgramGL2::~ShaderProgramGL2()
 {
     delete [] m_bones;
-
-    if(m_instanceMvBuffer != 0)
-        glDeleteBuffers(1, &m_instanceMvBuffer);
 
     uint32_t currentProg = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, (int32_t *)&currentProg);
@@ -57,15 +53,6 @@ bool ShaderProgramGL2::load(QString vertexFile, QString fragmentFile)
 
 bool ShaderProgramGL2::init()
 {
-    // Create a buffer that can contain model-view matrices for instanced objects.
-    if(GLEW_ARB_draw_instanced && GLEW_ARB_instanced_arrays)
-    {
-        size_t bufferSize = RenderState::MAX_OBJECT_INSTANCES * sizeof(matrix4);
-        glGenBuffers(1, &m_instanceMvBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
-        glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_DYNAMIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    }
     return true;
 }
 
@@ -324,34 +311,11 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
 {
     if(!m_meshData.pending)
         return;
-    int mvAttr = m_attr[A_MODEL_VIEW_0];
-    if((m_instanceMvBuffer == 0) || (mvAttr < 0) ||
-        (instances < 2) || (instances > RenderState::MAX_OBJECT_INSTANCES))
+    // Naive instancing with the basic shader.
+    for(uint32_t i = 0; i < instances; i++)
     {
-        // Naive instancing if the extensions are not supported.
-        for(uint32_t i = 0; i < instances; i++)
-        {
-            setModelViewMatrix(mvMatrices[i]);
-            drawMaterialGroups(m_meshData.vg, 1);
-        }
-    }
-    else
-    {
-        size_t bufferSize = instances * sizeof(matrix4);
-        size_t bufferStride = sizeof(vec4) * 4;
-        glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, mvMatrices);
-        for(int i = 0; i < 4; i++)
-        {
-            void *ptr = (void*)(sizeof(vec4) * i);
-            enableVertexAttribute(A_MODEL_VIEW_0, i);
-            glVertexAttribPointer(mvAttr + i, 4, GL_FLOAT, GL_FALSE, bufferStride, ptr);
-            glVertexAttribDivisor(mvAttr + i, 1);
-        }
-        drawMaterialGroups(m_meshData.vg, instances);
-        for(int i = 0; i < 4; i++)
-            glVertexAttribDivisor(mvAttr + i, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        setModelViewMatrix(mvMatrices[i]);
+        drawMaterialGroups(m_meshData.vg, 1);
     }
 }
 
@@ -435,6 +399,62 @@ void ShaderProgramGL2::endDrawMesh()
     draw(&skinnedVg, palette);
     endDraw(&skinnedVg);
 }*/
+
+////////////////////////////////////////////////////////////////////////////////
+
+InstancingProgram::InstancingProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
+{
+	m_instanceMvBuffer = 0;
+}
+
+InstancingProgram::~InstancingProgram()
+{
+	if(m_instanceMvBuffer != 0)
+        glDeleteBuffers(1, &m_instanceMvBuffer);
+}
+
+bool InstancingProgram::init()
+{
+	// Make sure the attribute is being used.
+	if(m_attr[A_MODEL_VIEW_0] < 0)
+		return false;
+
+	// Make sure the required extensions are present.
+	if(!GLEW_ARB_draw_instanced || !GLEW_ARB_instanced_arrays)
+		return false;
+
+	// Create a buffer that can contain model-view matrices for instanced objects.
+    size_t bufferSize = RenderState::MAX_OBJECT_INSTANCES * sizeof(matrix4);
+    glGenBuffers(1, &m_instanceMvBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
+    glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+	return true;
+}
+
+void InstancingProgram::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
+{
+    if(!m_meshData.pending)
+        return;
+    if(instances > RenderState::MAX_OBJECT_INSTANCES)
+		return;
+    size_t bufferSize = instances * sizeof(matrix4);
+    size_t bufferStride = sizeof(vec4) * 4;
+    glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, mvMatrices);
+	int mvAttr = m_attr[A_MODEL_VIEW_0];
+    for(int i = 0; i < 4; i++)
+    {
+        void *ptr = (void*)(sizeof(vec4) * i);
+        enableVertexAttribute(A_MODEL_VIEW_0, i);
+        glVertexAttribPointer(mvAttr + i, 4, GL_FLOAT, GL_FALSE, bufferStride, ptr);
+        glVertexAttribDivisor(mvAttr + i, 1);
+    }
+    drawMaterialGroups(m_meshData.vg, instances);
+    for(int i = 0; i < 4; i++)
+        glVertexAttribDivisor(mvAttr + i, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
