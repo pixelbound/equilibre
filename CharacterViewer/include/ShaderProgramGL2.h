@@ -42,8 +42,11 @@ public:
     virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMesh();
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
     virtual void endDrawMesh();
 
+    void setModelViewMatrix(const matrix4 &modelView);
+    void setProjectionMatrix(const matrix4 &projection);
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
 

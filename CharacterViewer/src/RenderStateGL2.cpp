@@ -54,8 +54,18 @@ void RenderStateGL2::drawMesh()
     ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
-    prog->setMatrices(m_matrix[(int)ModelView], m_matrix[(int)Projection]);
+    prog->setModelViewMatrix(m_matrix[(int)ModelView]);
+    prog->setProjectionMatrix(m_matrix[(int)Projection]);
     prog->drawMesh();
+}
+
+void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
+{
+    ShaderProgramGL2 *prog = program();
+    if(!prog || !prog->loaded())
+        return;
+    prog->setProjectionMatrix(m_matrix[(int)Projection]);
+    prog->drawMeshBatch(mvMatrices, instances);
 }
 
 void RenderStateGL2::endDrawMesh()
@@ -194,6 +204,11 @@ void RenderStateGL2::scale(float sx, float sy, float sz)
 matrix4 RenderStateGL2::currentMatrix() const
 {
     return m_matrix[(int)m_matrixMode];
+}
+
+matrix4 RenderStateGL2::matrix(RenderState::MatrixMode mode) const
+{
+    return m_matrix[(int)mode];
 }
 
 static void setTextureParams(GLenum target, bool mipmaps)

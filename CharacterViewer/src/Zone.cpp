@@ -10,6 +10,8 @@
 #include "RenderState.h"
 #include "Material.h"
 
+const int MAX_OBJECT_INSTANCES = 32;
+
 Zone::Zone(QObject *parent) : QObject(parent)
 {
     m_mainArchive = 0;
@@ -362,13 +364,21 @@ void Zone::drawObjects(RenderState *state)
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
+    QVector<matrix4> mvMatrices;
     foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
         WLDMesh *currentMesh = actor->mesh;
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
+            {
+                if(mvMatrices.count() > 0)
+                {
+                    state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+                    mvMatrices.clear();
+                }
                 state->endDrawMesh();
+            }
             state->beginDrawMesh(currentMesh->data(), currentMesh->materials());
             previousMesh = currentMesh;
             meshCount++;
@@ -381,11 +391,24 @@ void Zone::drawObjects(RenderState *state)
         state->rotate(actor->rotation.y, 0.0, 1.0, 0.0);
         state->rotate(actor->rotation.z, 0.0, 0.0, 1.0);
         state->scale(actor->scale);
-        state->drawMesh();
+        mvMatrices.append(state->matrix(RenderState::ModelView));
         state->popMatrix();
+        
+        if(mvMatrices.count() >= MAX_OBJECT_INSTANCES)
+        {
+            state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+            mvMatrices.clear();
+        }
     }
     if(previousMesh)
+    {
+        if(mvMatrices.count() > 0)
+        {
+            state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+            mvMatrices.clear();
+        }
         state->endDrawMesh();
+    }
     m_visibleObjects.clear();
 }
 

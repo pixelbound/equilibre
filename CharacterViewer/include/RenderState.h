@@ -35,6 +35,11 @@ public:
      */
     virtual void drawMesh() = 0;
     /**
+     * @brief Draw several instances of a mesh whose geometry was passed to
+     * @ref beginDrawMesh, each with a different model-view matrix.
+     */
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances) = 0;
+    /**
      * @brief Clean up the resources used by @ref beginDrawMesh and allow it to be
      * called again.
      */
@@ -78,6 +83,7 @@ public:
     virtual void scale(float sx, float sy, float sz) = 0;
 
     virtual matrix4 currentMatrix() const = 0;
+    virtual matrix4 matrix(RenderState::MatrixMode mode) const = 0;
 
     // general state operations
 

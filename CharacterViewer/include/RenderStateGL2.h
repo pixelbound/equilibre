@@ -20,6 +20,7 @@ public:
     virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMesh();
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
     virtual void endDrawMesh();
     
     virtual void drawBox(const AABox &box);
@@ -41,6 +42,7 @@ public:
     virtual void scale(float sx, float sy, float sz);
 
     virtual matrix4 currentMatrix() const;
+    virtual matrix4 matrix(RenderState::MatrixMode mode) const;
 
     // general state operations
     virtual Frustum & viewFrustum();

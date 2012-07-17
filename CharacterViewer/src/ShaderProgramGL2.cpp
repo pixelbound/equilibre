@@ -171,10 +171,14 @@ uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type)
     return shader;
 }
 
-void ShaderProgramGL2::setMatrices(const matrix4 &modelView, const matrix4 &projection)
+void ShaderProgramGL2::setModelViewMatrix(const matrix4 &modelView)
 {
     glUniformMatrix4fv(m_uniform[U_MODELVIEW_MATRIX],
         1, GL_FALSE, (const GLfloat *)modelView.d);
+}
+
+void ShaderProgramGL2::setProjectionMatrix(const matrix4 &projection)
+{
     glUniformMatrix4fv(m_uniform[U_PROJECTION_MATRIX],
         1, GL_FALSE, (const GLfloat *)projection.d);
 }
@@ -335,6 +339,16 @@ void ShaderProgramGL2::drawMesh()
             glDrawArrays(mode, vg->vertexBuffer.offset + mg.offset, mg.count);
         if(mat)
             m_state->popMaterial();
+    }
+}
+
+void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
+{
+    // Naive instancing if the extensions are not supported.
+    for(uint32_t i = 0; i < instances; i++)
+    {
+        setModelViewMatrix(mvMatrices[i]);
+        drawMesh();
     }
 }
 
