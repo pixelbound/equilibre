@@ -122,7 +122,7 @@ bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
     if(memcmp(hdr.magic, "DDS ", 4) || (hdr.size != 124) ||
         !(hdr.flags & DDSD_PIXELFORMAT) || !(hdr.flags & DDSD_CAPS) )
         return false;
-    if((!hdr.flags & DDSD_LINEARSIZE) || (hdr.pitch_or_linsize > left))
+    if(!(hdr.flags & DDSD_LINEARSIZE) || (hdr.pitch_or_linsize > left))
         return false;
 
     pf = hdr.pixelfmt;
