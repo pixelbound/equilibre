@@ -88,7 +88,9 @@ QT4_ADD_RESOURCES(CHARVIEWER_RESOURCES ${CHARVIEWER_RESOURCES})
 include_directories(include)
 
 if(WIN32)
-    set(CHARVIEWER_HEADERS ${CHARVIEWER_HEADERS} win32/inttypes.h win32/stdint.h)
+    set(CHARVIEWER_HEADERS ${CHARVIEWER_HEADERS}
+      include/win32/inttypes.h
+      include/win32/stdint.h)
     include_directories(include/win32)
     add_definitions(/DM_PI=3.14159265358979323846)
 endif(WIN32)
