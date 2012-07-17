@@ -157,6 +157,11 @@ MaterialMap::~MaterialMap()
         delete mat;
 }
 
+const QMap<QString, Material *> & MaterialMap::materials() const
+{
+    return m_materials;
+}
+
 Material * MaterialMap::material(QString name) const
 {
     return m_materials.value(name);
@@ -165,6 +170,27 @@ Material * MaterialMap::material(QString name) const
 void MaterialMap::setMaterial(QString name, Material *mat)
 {
     m_materials[name] = mat;
+}
+
+void MaterialMap::textureArrayInfo(int &maxWidth, int &maxHeight,
+                                   size_t &totalMem, size_t &usedMem) const
+{
+    const size_t pixelSize = 4;
+    size_t count = 0;
+    maxWidth = maxHeight = totalMem = usedMem = 0;
+    foreach(Material *mat, m_materials)
+    {
+        if(!mat)
+            continue;
+        int width = mat->image().width();
+        int height = mat->image().height();
+        maxWidth = qMax(maxWidth, width);
+        maxHeight = qMax(maxHeight, height);
+        usedMem += (width * height * pixelSize);
+        //qDebug("Texture %d x %d", width, height);
+        count++;
+    }
+    totalMem = maxWidth * maxHeight * pixelSize * count;
 }
 
 void MaterialMap::upload(RenderState *state)

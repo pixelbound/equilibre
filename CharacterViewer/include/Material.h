@@ -60,9 +60,11 @@ class MaterialMap
 public:
     MaterialMap();
     ~MaterialMap();
+    const QMap<QString, Material *> & materials() const;
     Material * material(QString name) const;
     void setMaterial(QString name, Material *mat);
     void upload(RenderState *state);
+    void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:
     QMap<QString, Material *> m_materials;

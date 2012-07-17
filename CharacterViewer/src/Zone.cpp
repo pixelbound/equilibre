@@ -159,6 +159,11 @@ void Zone::importGeometry()
     m_zoneGeometry = WLDMesh::combine(parts);
     foreach(WLDMesh *part, parts)
         delete part;
+    int maxWidth = 0, maxHeight = 0;
+    size_t totalMem = 0, usedMem = 0;
+    m_zoneMaterials->textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
+    float usage = (float)usedMem / (float)totalMem;
+    qDebug("Zone texture array: %d used / %d allocated (%f)", usedMem, totalMem, usage);
 }
 
 void Zone::importObjects()
