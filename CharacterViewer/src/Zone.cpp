@@ -10,8 +10,6 @@
 #include "RenderState.h"
 #include "Material.h"
 
-const int MAX_OBJECT_INSTANCES = 32;
-
 Zone::Zone(QObject *parent) : QObject(parent)
 {
     m_mainArchive = 0;
@@ -399,7 +397,7 @@ void Zone::drawObjects(RenderState *state)
         mvMatrices.append(state->matrix(RenderState::ModelView));
         state->popMatrix();
         
-        if(mvMatrices.count() >= MAX_OBJECT_INSTANCES)
+        if(mvMatrices.count() >= RenderState::MAX_OBJECT_INSTANCES)
         {
             state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
             mvMatrices.clear();

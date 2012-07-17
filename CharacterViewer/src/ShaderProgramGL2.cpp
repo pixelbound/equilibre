@@ -4,21 +4,6 @@
 #include "Material.h"
 #include "WLDSkeleton.h"
 
-const int MAX_TRANSFORMS = 256;
-const int A_POSITION = 0;
-const int A_NORMAL = 1;
-const int A_TEX_COORDS = 2;
-const int A_BONE_INDEX = 3;
-const int A_MAX = A_BONE_INDEX;
-
-const int U_MODELVIEW_MATRIX = 0;
-const int U_PROJECTION_MATRIX = 1;
-const int U_MAT_AMBIENT = 2;
-const int U_MAT_DIFFUSE = 3;
-const int U_MAT_HAS_TEXTURE = 4;
-const int U_MAT_TEXTURE = 5;
-const int U_MAX = U_MAT_TEXTURE;
-
 ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
 {
     m_state = state;
@@ -30,12 +15,16 @@ ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
     for(int i = 0; i <= U_MAX; i++)
         m_uniform[i] = -1;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
+    m_instanceMvBuffer = 0;
     m_meshData.clear();
 }
 
 ShaderProgramGL2::~ShaderProgramGL2()
 {
     delete [] m_bones;
+
+    if(m_instanceMvBuffer != 0)
+        glDeleteBuffers(1, &m_instanceMvBuffer);
 
     uint32_t currentProg = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, (int32_t *)&currentProg);
@@ -68,6 +57,15 @@ bool ShaderProgramGL2::load(QString vertexFile, QString fragmentFile)
 
 bool ShaderProgramGL2::init()
 {
+    // Create a buffer that can contain model-view matrices for instanced objects.
+    if(GLEW_ARB_draw_instanced && GLEW_ARB_instanced_arrays)
+    {
+        size_t bufferSize = RenderState::MAX_OBJECT_INSTANCES * sizeof(matrix4);
+        glGenBuffers(1, &m_instanceMvBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
+        glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
     return true;
 }
 
@@ -137,6 +135,7 @@ bool ShaderProgramGL2::compileProgram(QString vertexFile, QString fragmentFile)
     m_attr[A_NORMAL] = glGetAttribLocation(program, "a_normal");
     m_attr[A_TEX_COORDS] = glGetAttribLocation(program, "a_texCoords");
     m_attr[A_BONE_INDEX] = glGetAttribLocation(program, "a_boneIndex");
+    m_attr[A_MODEL_VIEW_0] = glGetAttribLocation(program, "a_modelViewMatrix");
     return true;
 }
 
@@ -229,22 +228,16 @@ void ShaderProgramGL2::endApplyMaterial(const Material &m)
     }
 }
 
-void ShaderProgramGL2::enableVertexAttributes()
+void ShaderProgramGL2::enableVertexAttribute(int attr, int index)
 {
-    for(int i = 0; i <= A_MAX; i++)
-    {
-        if(m_attr[i] >= 0)
-            glEnableVertexAttribArray(m_attr[i]);
-    }
+    if(m_attr[attr] >= 0)
+        glEnableVertexAttribArray(m_attr[attr] + index);
 }
 
-void ShaderProgramGL2::disableVertexAttributes()
+void ShaderProgramGL2::disableVertexAttribute(int attr, int index)
 {
-    for(int i = 0; i <= A_MAX; i++)
-    {
-        if(m_attr[i] >= 0)
-            glDisableVertexAttribArray(m_attr[i]);
-    }
+    if(m_attr[attr] >= 0)
+        glDisableVertexAttribArray(m_attr[attr] + index);
 }
 
 void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
@@ -256,6 +249,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
     const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
     if(vg->vertexBuffer.buffer != 0)
     {
+        glBindBuffer(GL_ARRAY_BUFFER, vg->vertexBuffer.buffer);
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
         texCoordsPointer = normalPointer + sizeof(vec3);
@@ -272,6 +266,8 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
             sizeof(VertexData), bonePointer);
+    if(vg->vertexBuffer.buffer != 0)
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 static GLuint primitiveToGLMode(VertexGroup::Primitive mode)
@@ -296,11 +292,14 @@ void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materia
     m_meshData.materials = materials;
     m_meshData.bones = bones;
     m_meshData.boneCount = boneCount;
+    enableVertexAttribute(A_POSITION);
+    enableVertexAttribute(A_NORMAL);
+    enableVertexAttribute(A_TEX_COORDS);
     if(bones && (boneCount > 0))
+    {
+        enableVertexAttribute(A_BONE_INDEX);
         setBoneTransforms(bones, boneCount);
-    enableVertexAttributes();
-    if(vg->vertexBuffer.buffer != 0)
-        glBindBuffer(GL_ARRAY_BUFFER, vg->vertexBuffer.buffer);
+    }
     if(vg->indexBuffer.buffer != 0)
     {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indexBuffer.buffer);
@@ -318,38 +317,82 @@ void ShaderProgramGL2::drawMesh()
 {
     if(!m_meshData.pending)
         return;
-    const VertexGroup *vg = m_meshData.vg;
-    foreach(MaterialGroup mg, vg->matGroups)
-    {
-        // skip meshes that don't have a material
-        if(mg.matName.isEmpty())
-           continue;
-        Material *mat = m_meshData.materials ? m_meshData.materials->material(mg.matName) : NULL;
-        if(mat)
-        {
-            // XXX fix rendering non-opaque polygons
-            if(!mat->isOpaque())
-                continue;
-            m_state->pushMaterial(*mat);
-        }
-        GLuint mode = primitiveToGLMode(vg->mode);
-        if(m_meshData.haveIndices)
-            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, m_meshData.indices + vg->indexBuffer.offset + mg.offset);
-        else
-            glDrawArrays(mode, vg->vertexBuffer.offset + mg.offset, mg.count);
-        if(mat)
-            m_state->popMaterial();
-    }
+    drawMaterialGroups(m_meshData.vg, 1);
 }
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
 {
-    // Naive instancing if the extensions are not supported.
-    for(uint32_t i = 0; i < instances; i++)
+    if(!m_meshData.pending)
+        return;
+    int mvAttr = m_attr[A_MODEL_VIEW_0];
+    if((m_instanceMvBuffer == 0) || (mvAttr < 0) ||
+        (instances < 2) || (instances > RenderState::MAX_OBJECT_INSTANCES))
     {
-        setModelViewMatrix(mvMatrices[i]);
-        drawMesh();
+        // Naive instancing if the extensions are not supported.
+        for(uint32_t i = 0; i < instances; i++)
+        {
+            setModelViewMatrix(mvMatrices[i]);
+            drawMaterialGroups(m_meshData.vg, 1);
+        }
     }
+    else
+    {
+        size_t bufferSize = instances * sizeof(matrix4);
+        size_t bufferStride = sizeof(vec4) * 4;
+        glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, mvMatrices);
+        for(int i = 0; i < 4; i++)
+        {
+            void *ptr = (void*)(sizeof(vec4) * i);
+            enableVertexAttribute(A_MODEL_VIEW_0, i);
+            glVertexAttribPointer(mvAttr + i, 4, GL_FLOAT, GL_FALSE, bufferStride, ptr);
+            glVertexAttribDivisor(mvAttr + i, 1);
+        }
+        drawMaterialGroups(m_meshData.vg, instances);
+        for(int i = 0; i < 4; i++)
+            glVertexAttribDivisor(mvAttr + i, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+}
+
+void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg, int instances)
+{
+    foreach(MaterialGroup mg, vg->matGroups)
+        drawMaterialGroup(vg, mg, instances);
+}
+
+void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances)
+{
+    // skip meshes that don't have a material
+    if(mg.matName.isEmpty())
+       return;
+    Material *mat = m_meshData.materials ? m_meshData.materials->material(mg.matName) : NULL;
+    if(mat)
+    {
+        // XXX fix rendering non-opaque polygons
+        if(!mat->isOpaque())
+            return;
+        m_state->pushMaterial(*mat);
+    }
+    GLuint mode = primitiveToGLMode(vg->mode);
+    if(m_meshData.haveIndices)
+    {
+        const uint32_t *indices = m_meshData.indices + vg->indexBuffer.offset + mg.offset;
+        if(instances > 1)
+            glDrawElementsInstanced(mode, mg.count, GL_UNSIGNED_INT, indices, instances);
+        else
+            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices);
+    }
+    else
+    {
+        uint32_t offset = vg->vertexBuffer.offset + mg.offset;
+        if(instances > 1)
+            glDrawArraysInstanced(mode, offset, mg.count, instances);
+        else
+            glDrawArrays(mode, offset, mg.count);
+    }
+    if(mat)
+        m_state->popMaterial();
 }
 
 void ShaderProgramGL2::endDrawMesh()
@@ -359,9 +402,12 @@ void ShaderProgramGL2::endDrawMesh()
     const VertexGroup *vg = m_meshData.vg;
     if(vg->indexBuffer.buffer != 0)
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-    if(vg->vertexBuffer.buffer != 0)
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-    disableVertexAttributes();
+    for(int i = 0; i < 4; i++)
+        disableVertexAttribute(A_MODEL_VIEW_0, i);
+    disableVertexAttribute(A_BONE_INDEX);
+    disableVertexAttribute(A_POSITION);
+    disableVertexAttribute(A_NORMAL);
+    disableVertexAttribute(A_TEX_COORDS);
     m_meshData.clear();
 }
 

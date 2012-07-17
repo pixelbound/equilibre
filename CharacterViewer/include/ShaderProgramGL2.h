@@ -6,6 +6,22 @@
 #include <QString>
 #include "Vertex.h"
 
+const int MAX_TRANSFORMS = 256;
+const int A_POSITION = 0;
+const int A_NORMAL = 1;
+const int A_TEX_COORDS = 2;
+const int A_BONE_INDEX = 3;
+const int A_MODEL_VIEW_0 = 4;
+const int A_MAX = A_MODEL_VIEW_0;
+
+const int U_MODELVIEW_MATRIX = 0;
+const int U_PROJECTION_MATRIX = 1;
+const int U_MAT_AMBIENT = 2;
+const int U_MAT_DIFFUSE = 3;
+const int U_MAT_HAS_TEXTURE = 4;
+const int U_MAT_TEXTURE = 5;
+const int U_MAX = U_MAT_TEXTURE;
+
 class RenderStateGL2;
 class BoneTransform;
 class Material;
@@ -53,20 +69,23 @@ public:
     void beginApplyMaterial(const Material &m);
     void endApplyMaterial(const Material &m);
 
-    void enableVertexAttributes();
+    void enableVertexAttribute(int attr, int index = 0);
+    void disableVertexAttribute(int attr, int index = 0);
     void uploadVertexAttributes(const VertexGroup *vg);
-    void disableVertexAttributes();
 
 protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
+    void drawMaterialGroups(const VertexGroup *vg, int instances);
+    void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
 
     RenderStateGL2 *m_state;
     uint32_t m_vertexShader;
     uint32_t m_fragmentShader;
     uint32_t m_program;
-    int m_attr[4];
-    int m_uniform[6];
+    uint32_t m_instanceMvBuffer;
+    int m_attr[A_MAX+1];
+    int m_uniform[U_MAX+1];
     vec4 *m_bones;
     MeshDataGL2 m_meshData;
 };
