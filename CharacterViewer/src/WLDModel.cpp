@@ -133,7 +133,7 @@ void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
         VertexData vd;
         vd.position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
         vd.normal = m_meshDef->m_normals.value(i);
-        vd.texCoords = m_meshDef->m_texCoords.value(i);
+        vd.texCoords = vec3(m_meshDef->m_texCoords.value(i), 0.0f);
         vd.bone = 0;
         vertices.append(vd);
     }

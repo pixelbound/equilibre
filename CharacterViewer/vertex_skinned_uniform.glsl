@@ -18,7 +18,7 @@ uniform vec4 u_material_diffuse;
 uniform vec4 u_bones[512];
 
 varying vec4 v_color;
-varying vec2 v_texCoords;
+varying vec3 v_texCoords;
 
 // http://qt.gitorious.org/qt/qt/blobs/raw/4.7/src/gui/math3d/qquaternion.h
 vec4 mult_quat(vec4 q1, vec4 q2)

@@ -46,6 +46,13 @@ public:
         this->y = y;
         this->z = z;
     }
+    
+    inline vec3(vec2 xy, float z)
+    {
+        this->x = xy.x;
+        this->y = xy.y;
+        this->z = z;
+    }
 
     vec3 normalized() const;
 
@@ -195,9 +202,9 @@ class VertexData
 public:
     vec3 position;
     vec3 normal;
-    vec2 texCoords;
+    vec3 texCoords;
     uint32_t bone;
-    uint32_t padding[3]; // align on 16-bytes boundaries
+    uint32_t padding[2]; // align on 16-bytes boundaries
 };
 
 class MaterialGroup

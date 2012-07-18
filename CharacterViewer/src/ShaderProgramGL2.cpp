@@ -245,7 +245,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
         texCoordsPointer = normalPointer + sizeof(vec3);
-        bonePointer = texCoordsPointer + sizeof(vec2);
+        bonePointer = texCoordsPointer + sizeof(vec3);
     }
     glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
         sizeof(VertexData), posPointer);
@@ -253,7 +253,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
         glVertexAttribPointer(m_attr[A_NORMAL], 3, GL_FLOAT, GL_FALSE,
             sizeof(VertexData), normalPointer);
     if(m_attr[A_TEX_COORDS] >= 0)
-        glVertexAttribPointer(m_attr[A_TEX_COORDS], 2, GL_FLOAT, GL_FALSE,
+        glVertexAttribPointer(m_attr[A_TEX_COORDS], 3, GL_FLOAT, GL_FALSE,
             sizeof(VertexData), texCoordsPointer);
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
