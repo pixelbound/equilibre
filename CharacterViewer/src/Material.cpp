@@ -11,7 +11,7 @@ Material::Material()
     m_diffuse = vec4(0.0, 0.0, 0.0, 0.0);
     m_specular = vec4(0.0, 0.0, 0.0, 0.0);
     m_shine = 0.0;
-    m_origin = OpenGL;
+    m_origin = LowerLeft;
     m_texture = 0;
     m_opaque = true;
 }
@@ -22,7 +22,7 @@ Material::Material(vec4 ambient, vec4 diffuse, vec4 specular, float shine)
     m_diffuse = diffuse;
     m_specular = specular;
     m_shine = shine;
-    m_origin = OpenGL;
+    m_origin = LowerLeft;
     m_texture = 0;
     m_opaque = true;
 }
@@ -201,7 +201,7 @@ void MaterialMap::upload(RenderState *state)
     {
         if(!mat)
             continue;
-        bool convertToGL = mat->origin() != Material::OpenGL;
+        bool convertToGL = mat->origin() != Material::LowerLeft;
         if(!mat->image().isNull())
         {
             mat->setTexture(state->loadTexture(mat->image(), true, convertToGL));

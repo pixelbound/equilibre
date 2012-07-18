@@ -14,8 +14,8 @@ class Material
 public:
     enum OriginType
     {
-        OpenGL,
-        Qt
+        LowerLeft,
+        UpperLeft
     };
     
     Material();
