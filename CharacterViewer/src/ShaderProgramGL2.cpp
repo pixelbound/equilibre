@@ -22,9 +22,7 @@ ShaderProgramGL2::~ShaderProgramGL2()
 {
     delete [] m_bones;
 
-    uint32_t currentProg = 0;
-    glGetIntegerv(GL_CURRENT_PROGRAM, (int32_t *)&currentProg);
-    if(currentProg == m_program)
+    if(current())
         glUseProgram(0);
     if(m_vertexShader != 0)
         glDeleteShader(m_vertexShader);
@@ -49,6 +47,13 @@ bool ShaderProgramGL2::load(QString vertexFile, QString fragmentFile)
         return false;
     else
         return true;
+}
+
+bool ShaderProgramGL2::current() const
+{
+    uint32_t currentProg = 0;
+    glGetIntegerv(GL_CURRENT_PROGRAM, (int32_t *)&currentProg);
+    return (currentProg != 0) && (currentProg == m_program);
 }
 
 bool ShaderProgramGL2::init()
@@ -404,32 +409,32 @@ void ShaderProgramGL2::endDrawMesh()
 
 InstancingProgram::InstancingProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
 {
-	m_instanceMvBuffer = 0;
+    m_instanceMvBuffer = 0;
 }
 
 InstancingProgram::~InstancingProgram()
 {
-	if(m_instanceMvBuffer != 0)
+    if(m_instanceMvBuffer != 0)
         glDeleteBuffers(1, &m_instanceMvBuffer);
 }
 
 bool InstancingProgram::init()
 {
-	// Make sure the attribute is being used.
-	if(m_attr[A_MODEL_VIEW_0] < 0)
-		return false;
+    // Make sure the attribute is being used.
+    if(m_attr[A_MODEL_VIEW_0] < 0)
+        return false;
 
-	// Make sure the required extensions are present.
-	if(!GLEW_ARB_draw_instanced || !GLEW_ARB_instanced_arrays)
-		return false;
+    // Make sure the required extensions are present.
+    if(!GLEW_ARB_draw_instanced || !GLEW_ARB_instanced_arrays)
+        return false;
 
-	// Create a buffer that can contain model-view matrices for instanced objects.
+    // Create a buffer that can contain model-view matrices for instanced objects.
     size_t bufferSize = RenderState::MAX_OBJECT_INSTANCES * sizeof(matrix4);
     glGenBuffers(1, &m_instanceMvBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
     glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-	return true;
+    return true;
 }
 
 void InstancingProgram::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
@@ -442,7 +447,7 @@ void InstancingProgram::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instan
     size_t bufferStride = sizeof(vec4) * 4;
     glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, mvMatrices);
-	int mvAttr = m_attr[A_MODEL_VIEW_0];
+    int mvAttr = m_attr[A_MODEL_VIEW_0];
     for(int i = 0; i < 4; i++)
     {
         void *ptr = (void*)(sizeof(vec4) * i);

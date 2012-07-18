@@ -48,6 +48,7 @@ public:
     virtual ~ShaderProgramGL2();
 
     bool loaded() const;
+    bool current() const;
 
     bool load(QString vertexFile, QString fragmentFile);
 
@@ -77,7 +78,7 @@ protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
     void drawMaterialGroups(const VertexGroup *vg, int instances);
-	void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
+    void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
 
     RenderStateGL2 *m_state;
     uint32_t m_vertexShader;

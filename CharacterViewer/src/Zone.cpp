@@ -342,6 +342,7 @@ void Zone::draw(RenderState *state)
     if(m_zoneGeometry)
     {
         uploadZone(state);
+        state->setRenderMode(RenderState::Basic);
         state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
         state->drawMesh();
         state->endDrawMesh();
@@ -368,6 +369,7 @@ void Zone::drawObjects(RenderState *state)
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
     QVector<matrix4> mvMatrices;
+    state->setRenderMode(RenderState::Instanced);
     foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
         WLDMesh *currentMesh = actor->mesh;

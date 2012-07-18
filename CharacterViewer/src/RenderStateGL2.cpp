@@ -17,28 +17,28 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_diffuse0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
     m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
+    m_renderMode = Basic;
+    m_skinningMode = SoftwareSkinning;
+    m_shader = BasicShader;
     m_programs[(int)BasicShader] = new ShaderProgramGL2(this);
     m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
-	m_programs[(int)InstancedShader] = new InstancingProgram(this);
-    m_skinningMode = SoftwareSkinning;
+    m_programs[(int)InstancedShader] = new InstancingProgram(this);
     m_cube = createCube();
 }
 
 RenderStateGL2::~RenderStateGL2()
 {
-    delete m_programs[(int)SoftwareSkinning];
-    delete m_programs[(int)HardwareSkinningUniform];
-    delete m_programs[(int)HardwareSkinningTexture];
+    delete m_programs[(int)BasicShader];
+    delete m_programs[(int)SkinningUniformShader];
+    delete m_programs[(int)SkinningTextureShader];
+    delete m_programs[(int)InstancedShader];
     delete m_cube;
 }
 
 ShaderProgramGL2 * RenderStateGL2::program() const
 {
-    if((m_skinningMode >= SoftwareSkinning) && (m_skinningMode <= HardwareSkinningTexture))
-        return m_programs[(int)m_skinningMode];
-    else
-        return 0;
+    return m_programs[(int)m_shader];
 }
 
 void RenderStateGL2::beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
@@ -145,6 +145,30 @@ void RenderStateGL2::drawBox(const AABox &box)
     popMatrix();
 }
 
+RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode render,
+                                                       RenderState::SkinningMode skinning) const
+{
+    switch(render)
+    {
+    default:
+    case Basic:
+        return BasicShader;
+    case Instanced:
+        return InstancedShader;
+    case Skinning:
+      switch(skinning)
+      {
+      default:
+      case SoftwareSkinning:
+          return BasicShader;
+      case HardwareSkinningUniform:
+          return SkinningUniformShader;
+      case HardwareSkinningTexture:
+          return SkinningTextureShader;
+      }
+    }
+}
+
 RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
 {
     return m_skinningMode;
@@ -152,14 +176,24 @@ RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
 
 void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 {
-    ShaderProgramGL2 *newProg = m_programs[(int)newMode];
-    if((m_skinningMode != newMode) && newProg->loaded())
-        m_skinningMode = newMode;
+    m_skinningMode = newMode;
+    setShader(shaderFromModes(m_renderMode, newMode));
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
 {
     m_matrixMode = newMode;
+}
+
+RenderState::RenderMode RenderStateGL2::renderMode() const
+{
+    return m_renderMode;
+}
+
+void RenderStateGL2::setRenderMode(RenderState::RenderMode newMode)
+{
+    m_renderMode = newMode;
+    setShader(shaderFromModes(newMode, m_skinningMode));
 }
 
 void RenderStateGL2::loadIdentity()
@@ -300,8 +334,9 @@ bool RenderStateGL2::beginFrame()
 void RenderStateGL2::endFrame()
 {
     setMatrixMode(ModelView);
-    popMatrix();ShaderProgramGL2 *prog = program();
-    if(prog && prog->loaded())
+    popMatrix();
+    ShaderProgramGL2 *prog = program();
+    if(prog && prog->current())
         prog->endFrame();
     glPopAttrib();
     glFlush();
@@ -335,8 +370,43 @@ buffer_t RenderStateGL2::createBuffer(const void *data, size_t size)
 
 void RenderStateGL2::init()
 {
-    m_programs[(int)BasicShader]->load("vertex.glsl", "fragment.glsl");
-    m_programs[(int)SkinningUniformShader]->load("vertex_skinned_uniform.glsl", "fragment.glsl");
-    m_programs[(int)SkinningTextureShader]->load("vertex_skinned_texture.glsl", "fragment.glsl");
-	m_programs[(int)InstancedShader]->load("vertex_instanced.glsl", "fragment.glsl");
+    initShader(BasicShader, "vertex.glsl", "fragment.glsl");
+    initShader(SkinningUniformShader, "vertex_skinned_uniform.glsl", "fragment.glsl");
+    initShader(SkinningTextureShader, "vertex_skinned_texture.glsl", "fragment.glsl");
+    initShader(InstancedShader, "vertex_instanced.glsl", "fragment.glsl");
+}
+
+bool RenderStateGL2::initShader(RenderStateGL2::Shader shader,
+                                 QString vertexFile, QString fragmentFile)
+{
+    ShaderProgramGL2 *prog = m_programs[(int)shader];
+    if(!prog->load(vertexFile, fragmentFile))
+    {
+        delete prog;
+        m_programs[(int)shader] = NULL;
+        return false;
+    }
+    return true;
+}
+
+void RenderStateGL2::setShader(RenderStateGL2::Shader newShader)
+{
+    ShaderProgramGL2 *oldProg = program();
+    ShaderProgramGL2 *newProg = m_programs[(int)newShader];
+    if(oldProg != newProg)
+    {
+        // Change to the new program only if the program loaded correctly.
+        if(newProg && newProg->loaded())
+        {
+            m_shader = newShader;
+
+            // Disable the old program.
+            if(oldProg->current())
+                oldProg->endFrame();
+
+            // Make sure the new program is current.
+            if(!newProg->current())
+                newProg->beginFrame();
+        }
+    }
 }

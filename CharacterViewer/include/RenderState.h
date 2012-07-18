@@ -61,6 +61,16 @@ public:
     virtual SkinningMode skinningMode() const = 0;
     virtual void setSkinningMode(SkinningMode newMode) = 0;
 
+    enum RenderMode
+    {
+        Basic = 0,
+        Skinning = 1,
+        Instanced = 2
+    };
+
+    virtual RenderMode renderMode() const = 0;
+    virtual void setRenderMode(RenderMode newMode) = 0;
+
     // matrix operations
 
     enum MatrixMode

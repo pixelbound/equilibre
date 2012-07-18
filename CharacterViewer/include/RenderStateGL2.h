@@ -29,6 +29,9 @@ public:
     virtual SkinningMode skinningMode() const;
     virtual void setSkinningMode(SkinningMode newMode);
 
+    virtual RenderMode renderMode() const;
+    virtual void setRenderMode(RenderMode newMode);
+
     // matrix operations
     virtual void setMatrixMode(MatrixMode newMode);
 
@@ -58,16 +61,19 @@ public:
     
     virtual buffer_t createBuffer(const void *data, size_t size);
 
-	enum ShaderMode
+    enum Shader
     {
         BasicShader = 0,
         SkinningUniformShader = 1,
         SkinningTextureShader = 2,
-		InstancedShader = 3
+        InstancedShader = 3
     };
 
 private:
-    bool loadShaders();
+    bool initShader(RenderStateGL2::Shader shader, QString vertexFile,
+                    QString fragmentFile);
+    Shader shaderFromModes(RenderMode render, SkinningMode skinning) const;
+    void setShader(Shader newShader);
     static VertexGroup * createCube();
 
     vec4 m_ambient0;
@@ -80,8 +86,9 @@ private:
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];
     ShaderProgramGL2 *m_programs[4];
+    RenderMode m_renderMode;
     SkinningMode m_skinningMode;
-	ShaderMode m_shaderMode;
+    Shader m_shader;
     VertexGroup *m_cube;
 };
 
