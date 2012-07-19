@@ -79,6 +79,7 @@ protected:
     static uint32_t loadShader(QString path, uint32_t type);
     void drawMaterialGroups(const VertexGroup *vg, int instances);
     void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
+    virtual void prepareMeshData();
     virtual void drawSkinned();
 
     RenderStateGL2 *m_state;
@@ -108,6 +109,7 @@ class UniformSkinningProgram : public ShaderProgramGL2
 public:
     UniformSkinningProgram(RenderStateGL2 *state);
     virtual bool init();
+    virtual void prepareMeshData();
     virtual void drawSkinned();
 
 private:
@@ -120,6 +122,7 @@ public:
     TextureSkinningProgram(RenderStateGL2 *state);
     virtual ~TextureSkinningProgram();
     virtual bool init();
+    virtual void prepareMeshData();
     virtual void drawSkinned();
 
 private:
