@@ -134,7 +134,13 @@ void WLDActor::draw(RenderState *state)
     state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
     state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
     state->scale(m_scale);
+    // XXX drawEquip method to minimize program changes
+    if(bones.count() > 0)
+        state->setRenderMode(RenderState::Skinning);
+    else
+        state->setRenderMode(RenderState::Basic);
     skin->draw(state, bones.constData(), (uint32_t)bones.count());
+    state->setRenderMode(RenderState::Basic);
     foreach(ActorEquip eq, m_equip)
     {
         BoneTransform bone = bones.value(eq.first);
@@ -145,9 +151,6 @@ void WLDActor::draw(RenderState *state)
         state->popMatrix();
     }
     state->popMatrix();
-    
-    foreach(WLDMesh *part, skin->parts())
-        state->drawBox(part->boundsAA());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

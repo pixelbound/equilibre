@@ -248,7 +248,10 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             WLDModel *model = actor->model();
             WLDModelSkin *skin = model->skins().value(palName);
             if(!skin)
+            {
                 skin = model->newSkin(palName, archive);
+                skin->setPalette(new WLDMaterialPalette(archive));
+            }
             skin->palette()->addMaterialDef(matDef);
         }
     }
@@ -351,6 +354,7 @@ void Zone::draw(RenderState *state)
     // draw objects
     if(m_showObjects && (m_objMeshWld != NULL))
         drawObjects(state);
+    
     state->popMatrix();
 }
 
@@ -460,6 +464,27 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
     geom->indices.squeeze();
     
     return geom;
+}
+
+void Zone::uploadCharacters(RenderState *state)
+{
+    foreach(WLDActor *actor, m_charModels)
+        uploadCharacter(state, actor);
+}
+
+void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
+{
+    WLDModel *model = actor->model();
+    foreach(WLDModelSkin *skin, model->skins())
+    {
+        MaterialMap *materials = skin->materials();
+        if(!materials)
+        {
+            materials = skin->palette()->loadMaterials();
+            skin->setMaterials(materials);
+        }
+        materials->upload(state);
+    }
 }
 
 void Zone::findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull)

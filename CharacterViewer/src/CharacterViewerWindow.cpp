@@ -351,10 +351,11 @@ void CharacterScene::draw()
     m_state->rotate(rot.y, 0.0, 1.0, 0.0);
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
-
+    
     WLDActor *charModel = selectedCharacter();
     if(charModel)
     {
+        m_zone->uploadCharacter(m_state, charModel);
         charModel->setAnimTime(currentTime());
         charModel->draw(m_state);
     }

@@ -418,6 +418,7 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
     m_name = name;
     m_model = model;
     m_palette = new WLDMaterialPalette(archive, this);
+    m_materials = NULL;
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
     {
@@ -438,6 +439,21 @@ QString WLDModelSkin::name() const
 WLDMaterialPalette *WLDModelSkin::palette() const
 {
     return m_palette;
+}
+
+void WLDModelSkin::setPalette(WLDMaterialPalette *newPal)
+{
+    m_palette = newPal;
+}
+
+MaterialMap * WLDModelSkin::materials() const
+{
+    return m_materials;
+}
+
+void WLDModelSkin::setMaterials(MaterialMap *newMaterials)
+{
+    m_materials = newMaterials;
 }
 
 const QList<WLDMesh *> & WLDModelSkin::parts() const
@@ -475,7 +491,10 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
 
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
-    // XXX
-    //foreach(WLDModelPart *part, m_parts)
-    //    part->draw(state, this->palette(), bones, boneCount);
+    foreach(WLDMesh *mesh, m_parts)
+    {
+        state->beginDrawMesh(mesh->data(), m_materials, bones, boneCount);
+        state->drawMesh();
+        state->endDrawMesh();
+    }
 }

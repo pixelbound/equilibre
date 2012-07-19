@@ -59,6 +59,8 @@ public:
 
     void setShowObjects(bool show);
     void setCullObjects(bool enabled);
+    
+    void uploadCharacter(RenderState *state, WLDActor *actor);
 
 private:
     void importGeometry();
@@ -72,6 +74,7 @@ private:
     void drawObjects(RenderState *state);
     void uploadZone(RenderState *state);
     VertexGroup * uploadObjects(RenderState *state);
+    void uploadCharacters(RenderState *state);
 
     //TODO refactor this into data container classes
     QString m_name;

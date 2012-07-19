@@ -125,6 +125,11 @@ public:
     QString name() const;
 
     WLDMaterialPalette *palette() const;
+    void setPalette(WLDMaterialPalette *newPal);
+    
+    MaterialMap *materials() const;
+    void setMaterials(MaterialMap *newMaterials);
+    
     const QList<WLDMesh *> & parts() const;
 
     void addPart(MeshDefFragment *frag, bool importPalette = true);
@@ -140,8 +145,8 @@ private:
     QString m_name;
     WLDModel *m_model;
     WLDMaterialPalette *m_palette;
+    MaterialMap *m_materials;
     QList<WLDMesh *> m_parts;
-    VertexGroup *m_aggregMesh;
 };
 
 #endif
