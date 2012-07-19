@@ -52,6 +52,7 @@ private:
     QImage m_img;
     OriginType m_origin;
     texture_t m_texture;
+    //XXX texture Z coord
     bool m_opaque;
 };
 
