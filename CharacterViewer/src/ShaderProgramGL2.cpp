@@ -279,6 +279,7 @@ void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materia
 {
     if(m_meshData.pending || !vg)
         return;
+    // XXX make the caller pass this structure to be reentrant
     m_meshData.pending = true;
     m_meshData.vg = vg;
     m_meshData.materials = materials;
@@ -309,7 +310,10 @@ void ShaderProgramGL2::drawMesh()
 {
     if(!m_meshData.pending)
         return;
-    drawMaterialGroups(m_meshData.vg, 1);
+    if(m_meshData.bones && (m_meshData.boneCount > 0))
+        drawSkinned();
+    else
+        drawMaterialGroups(m_meshData.vg, 1);
 }
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
@@ -368,9 +372,7 @@ void ShaderProgramGL2::endDrawMesh()
 {
     if(!m_meshData.pending)
         return;
-    const VertexGroup *vg = m_meshData.vg;
-    if(vg->indexBuffer.buffer != 0)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     for(int i = 0; i < 4; i++)
         disableVertexAttribute(A_MODEL_VIEW_0, i);
     disableVertexAttribute(A_BONE_INDEX);
@@ -380,10 +382,9 @@ void ShaderProgramGL2::endDrawMesh()
     m_meshData.clear();
 }
 
-/*void ShaderProgramGL2::drawSkinned(const VertexGroup *vg, WLDMaterialPalette *palette)
+void ShaderProgramGL2::drawSkinned()
 {
-    if(!vg)
-        return;
+    const VertexGroup *vg = m_meshData.vg;
     VertexGroup skinnedVg(vg->mode);
     skinnedVg.vertices.resize(vg->vertices.count());
     skinnedVg.indices = vg->indices;
@@ -400,10 +401,9 @@ void ShaderProgramGL2::endDrawMesh()
         dst->bone = src->bone;
         dst->texCoords = src->texCoords;
     }
-    beginDraw(&skinnedVg);
-    draw(&skinnedVg, palette);
-    endDraw(&skinnedVg);
-}*/
+    uploadVertexAttributes(&skinnedVg);
+    drawMaterialGroups(&skinnedVg, 1);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -474,11 +474,11 @@ bool UniformSkinningProgram::init()
     return m_bonesLoc >= 0;
 }
 
-/*void UniformSkinningProgram::drawSkinned(const VertexGroup *vg, WLDMaterialPalette *palette)
+void UniformSkinningProgram::drawSkinned()
 {
     glUniform4fv(m_bonesLoc, MAX_TRANSFORMS * 2, (const GLfloat *)m_bones);
-    draw(vg, palette);
-}*/
+    drawMaterialGroups(m_meshData.vg, 1);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -527,7 +527,7 @@ bool TextureSkinningProgram::init()
     return true;
 }
 
-/*void TextureSkinningProgram::drawSkinned(const VertexGroup *vg, WLDMaterialPalette *palette)
+void TextureSkinningProgram::drawSkinned()
 {
     // upload bone transforms to the transform texture
     glActiveTexture(GL_TEXTURE1);
@@ -537,12 +537,12 @@ bool TextureSkinningProgram::init()
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(m_bonesLoc, 1);
     // draw the mesh and let the shader do the skinning
-    draw(vg, palette);
+    drawMaterialGroups(m_meshData.vg, 1);
     // restore state
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_RECTANGLE, 0);
     glActiveTexture(GL_TEXTURE0);
-}*/
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
