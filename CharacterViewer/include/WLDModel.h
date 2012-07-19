@@ -65,6 +65,9 @@ public:
     void setMaterials(MaterialMap *materials);
     const AABox & boundsAA() const;
 
+    void importVertexData();
+    void importIndexData();
+    void importMaterialGroups();
     void importVertexData(VertexGroup *vg, BufferSegment &dataLoc);
     void importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);

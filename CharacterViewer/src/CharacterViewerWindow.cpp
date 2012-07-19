@@ -26,7 +26,7 @@ CharacterViewerWindow::CharacterViewerWindow(RenderState *state, QWidget *parent
 {
     m_scene = new CharacterScene(state);
     m_state = state;
-    m_lastDir = "../Data";
+    m_lastDir = m_scene->assetPath();
     setWindowTitle("OpenEQ Character Viewer");
     m_viewport = new SceneViewport(m_scene, state);
     m_actorText = new QComboBox();

@@ -117,6 +117,11 @@ void WLDMesh::setMaterials(MaterialMap *materials)
     m_materials = materials;
 }
 
+void WLDMesh::importVertexData()
+{
+    importVertexData(m_data, m_data->vertexBuffer);
+}
+
 void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
 {
     // update the mesh location
@@ -146,6 +151,12 @@ void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
     }
 }
 
+void WLDMesh::importIndexData()
+{
+    importIndexData(m_data, m_data->indexBuffer, m_data->vertexBuffer,
+        0, (uint32_t)m_meshDef->m_indices.count());
+}
+
 void WLDMesh::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
                                    const BufferSegment &dataLoc, uint32_t offset, uint32_t count)
 {
@@ -154,6 +165,11 @@ void WLDMesh::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
     indexLoc.elementSize = sizeof(uint32_t);
     for(uint32_t i = 0; i < count; i++)
         vg->indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
+}
+
+void WLDMesh::importMaterialGroups()
+{
+    importMaterialGroups(m_data);
 }
 
 void WLDMesh::importMaterialGroups(VertexGroup *vg)

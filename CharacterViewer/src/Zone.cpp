@@ -434,11 +434,11 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_objModels.values())
     {
-        mesh->importVertexData(geom, mesh->data()->vertexBuffer);
+        mesh->importVertexData();
         mesh->importIndexData(geom, mesh->data()->indexBuffer,
                               mesh->data()->vertexBuffer,
                               0, (uint32_t)mesh->def()->m_indices.count());
-        mesh->importMaterialGroups(mesh->data());
+        mesh->importMaterialGroups();
         if(mesh->materials())
             mesh->materials()->upload(state);
     }
@@ -477,6 +477,19 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
     WLDModel *model = actor->model();
     foreach(WLDModelSkin *skin, model->skins())
     {
+        // Import mesh geometry.
+        foreach(WLDMesh *mesh, skin->parts())
+        {
+            if(mesh->data()->vertices.count() == 0)
+            {
+                mesh->importVertexData();
+                mesh->importIndexData();
+                mesh->importMaterialGroups();
+                createGPUBuffer(mesh->data(), state);
+            }
+        }
+
+        // Upload materials (textures).
         MaterialMap *materials = skin->materials();
         if(!materials)
         {
