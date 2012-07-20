@@ -79,8 +79,8 @@ protected:
     static uint32_t loadShader(QString path, uint32_t type);
     void drawMaterialGroups(const VertexGroup *vg, int instances);
     void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
-    virtual void prepareMeshData();
-    virtual void drawSkinned();
+    virtual void beginSkinMesh();
+    virtual void endSkinMesh();
 
     RenderStateGL2 *m_state;
     uint32_t m_vertexShader;
@@ -109,8 +109,8 @@ class UniformSkinningProgram : public ShaderProgramGL2
 public:
     UniformSkinningProgram(RenderStateGL2 *state);
     virtual bool init();
-    virtual void prepareMeshData();
-    virtual void drawSkinned();
+    virtual void beginSkinMesh();
+    virtual void endSkinMesh();
 
 private:
     int m_bonesLoc;
@@ -122,8 +122,8 @@ public:
     TextureSkinningProgram(RenderStateGL2 *state);
     virtual ~TextureSkinningProgram();
     virtual bool init();
-    virtual void prepareMeshData();
-    virtual void drawSkinned();
+    virtual void beginSkinMesh();
+    virtual void endSkinMesh();
 
 private:
     int m_bonesLoc;
