@@ -147,7 +147,7 @@ void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
     {
         uint16_t count = g.first, pieceID = g.second;
         for(uint32_t i = 0; i < count; i++, vertexIndex++)
-            vertices[i].bone = pieceID;
+            vertices[vertexIndex].bone = pieceID;
     }
 }
 
