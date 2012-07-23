@@ -434,7 +434,7 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_objModels.values())
     {
-        mesh->importVertexData();
+        mesh->importVertexData(geom, mesh->data()->vertexBuffer);
         mesh->importIndexData(geom, mesh->data()->indexBuffer,
                               mesh->data()->vertexBuffer,
                               0, (uint32_t)mesh->def()->m_indices.count());
