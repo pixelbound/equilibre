@@ -272,8 +272,11 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
     QImage img3 = img2;
     int width = img2.width(), height = img2.height();
     int level = 0;
-    while((width > 0) && (height > 0))
+    while((width > 0) || (height > 0))
     {
+        // The last mipmap level is 1x1, even when original width and height are different.
+        width = qMax(width, 1);
+        height = qMax(height, 1);
         if(level > 0)
         {
             // create mipmap image
