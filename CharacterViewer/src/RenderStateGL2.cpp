@@ -24,7 +24,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
-    m_cube = createCube();
+    createCube();
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -77,7 +77,7 @@ void RenderStateGL2::endDrawMesh()
     prog->endDrawMesh();
 }
 
-VertexGroup * RenderStateGL2::createCube()
+void RenderStateGL2::createCube()
 {
     static const GLfloat vertices[][3] =
     {
@@ -101,9 +101,9 @@ VertexGroup * RenderStateGL2::createCube()
         {4, 5, 6, 7}, {0, 1, 5, 4}
     };
     
-    VertexGroup *vg = new VertexGroup(VertexGroup::Quad);
-    vg->vertices.resize(24);
-    VertexData *vd = vg->vertices.data();
+    m_cube = new VertexGroup(VertexGroup::Quad);
+    m_cube->vertices.resize(24);
+    VertexData *vd = m_cube->vertices.data();
     for(uint32_t i = 0; i < 6; i++)
     {
         const GLuint *face = faces_indices[i];
@@ -120,8 +120,14 @@ VertexGroup * RenderStateGL2::createCube()
     mg.offset = 0;
     mg.id = 0;
     mg.matName = "cube";
-    vg->matGroups.push_back(mg);
-    return vg;
+    m_cube->matGroups.push_back(mg);
+    
+    m_cubeMats = new MaterialMap();
+    Material *mat = new Material();
+    mat->setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
+    mat->setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
+    mat->setOpaque(false);
+    m_cubeMats->setMaterial("cube", mat);
 }
 
 void RenderStateGL2::drawBox(const AABox &box)
@@ -131,17 +137,9 @@ void RenderStateGL2::drawBox(const AABox &box)
     translate(box.low.x, box.low.y, box.low.z);
     scale(size.x, size.y, size.z);
     translate(0.5, 0.5, 0.5);
-    
-    Material mat;
-    mat.setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
-    mat.setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
-    mat.setOpaque(false);
-    program()->beginApplyMaterial(mat);
-    beginDrawMesh(m_cube, NULL, NULL, 0);
+    beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    program()->endApplyMaterial(mat);
-    
     popMatrix();
 }
 

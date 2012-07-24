@@ -73,7 +73,7 @@ private:
                     QString fragmentFile);
     Shader shaderFromModes(RenderMode render, SkinningMode skinning) const;
     void setShader(Shader newShader);
-    static VertexGroup * createCube();
+    void createCube();
 
     vec4 m_ambient0;
     vec4 m_diffuse0;
@@ -88,6 +88,7 @@ private:
     SkinningMode m_skinningMode;
     Shader m_shader;
     VertexGroup *m_cube;
+    MaterialMap *m_cubeMats;
 };
 
 #endif

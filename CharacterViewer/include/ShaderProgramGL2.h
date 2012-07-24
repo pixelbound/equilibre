@@ -67,9 +67,6 @@ public:
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
 
-    void beginApplyMaterial(const Material &m);
-    void endApplyMaterial(const Material &m);
-
     void enableVertexAttribute(int attr, int index = 0);
     void disableVertexAttribute(int attr, int index = 0);
     void uploadVertexAttributes(const VertexGroup *vg);
@@ -77,6 +74,8 @@ public:
 protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
+    void beginApplyMaterial(MaterialMap *map, Material *m);
+    void endApplyMaterial(MaterialMap *map, Material *m);
     void drawMaterialGroups(const VertexGroup *vg, int instances);
     void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
     virtual void beginSkinMesh();

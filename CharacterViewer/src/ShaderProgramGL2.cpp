@@ -193,15 +193,16 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
     }
 }
 
-void ShaderProgramGL2::beginApplyMaterial(const Material &m)
+void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
 {
     //XXX GL_MAX_TEXTURE_IMAGE_UNITS
-    glUniform4fv(m_uniform[U_MAT_AMBIENT], 1, (const GLfloat *)&m.ambient());
-    glUniform4fv(m_uniform[U_MAT_DIFFUSE], 1, (const GLfloat *)&m.diffuse());
-    if(m.texture() != 0)
+    GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    glUniform4fv(m_uniform[U_MAT_AMBIENT], 1, (const GLfloat *)&m->ambient());
+    glUniform4fv(m_uniform[U_MAT_DIFFUSE], 1, (const GLfloat *)&m->diffuse());
+    if(m->texture() != 0)
     {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m.texture());
+        glBindTexture(target, m->texture());
         glUniform1i(m_uniform[U_MAT_TEXTURE], 0);
         glUniform1i(m_uniform[U_MAT_HAS_TEXTURE], 1);
     }
@@ -211,12 +212,13 @@ void ShaderProgramGL2::beginApplyMaterial(const Material &m)
     }
 }
 
-void ShaderProgramGL2::endApplyMaterial(const Material &m)
+void ShaderProgramGL2::endApplyMaterial(MaterialMap *map, Material *m)
 {
-    if(m.texture() != 0)
+    GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    if(m->texture() != 0)
     {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(target, 0);
     }
 }
 
@@ -344,7 +346,7 @@ void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &m
         // XXX fix rendering non-opaque polygons
         if(!mat->isOpaque())
             return;
-        beginApplyMaterial(*mat);
+        beginApplyMaterial(m_meshData.materials, mat);
     }
     GLuint mode = primitiveToGLMode(vg->mode);
     if(m_meshData.haveIndices)
@@ -364,7 +366,7 @@ void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &m
             glDrawArrays(mode, offset, mg.count);
     }
     if(mat)
-        endApplyMaterial(*mat);
+        endApplyMaterial(m_meshData.materials, mat);
 }
 
 void ShaderProgramGL2::endDrawMesh()
