@@ -54,7 +54,7 @@ public:
     virtual void endFrame();
 
     // material operations
-    virtual texture_t loadTexture(QImage img, bool mipmaps, bool convertToGL);
+    virtual texture_t loadTexture(QImage img, bool convertToGL);
     virtual void freeTexture(texture_t tex) ;
     virtual void pushMaterial(const Material &m);
     virtual void popMaterial();

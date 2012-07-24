@@ -257,49 +257,43 @@ static void setTextureParams(GLenum target, bool mipmaps)
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-texture_t RenderStateGL2::loadTexture(QImage img, bool mipmaps, bool convertToGL)
+texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
 {
     QImage img2;
     if(convertToGL)
         img2 = QGLWidget::convertToGLFormat(img);
     else
         img2 = img;
+    GLuint target = GL_TEXTURE_2D;
     texture_t texID = 0;
     glGenTextures(1, &texID);
-    glBindTexture(GL_TEXTURE_2D, texID);
+    glBindTexture(target, texID);
 #ifdef _WIN32
-    if(mipmaps)
+    QImage img3 = img2;
+    int width = img2.width(), height = img2.height();
+    int level = 0;
+    while((width > 0) && (height > 0))
     {
-		QImage img3 = img2;
-		int width = img2.width(), height = img2.height();
-		int level = 0;
-		while((width > 0) && (height > 0))
-		{
-			if(level > 0)
-			{
-				// create mipmap image
-				img3 = img2.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-			}
-			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, width, height, 0,
-				GL_RGBA, GL_UNSIGNED_BYTE, img3.bits());
-			width >>= 1;
-			height >>= 1;
-			level++;
-		}
+        if(level > 0)
+        {
+            // create mipmap image
+            img3 = img2.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        }
+        glTexImage2D(target, level, GL_RGBA, width, height, 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, img3.bits());
+        width >>= 1;
+        height >>= 1;
+        level++;
+    }
 #else
-	if(mipmaps)
-	{
-        gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, img2.width(), img2.height(),
-            GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
-    }
-    else
+    gluBuild2DMipmaps(target, GL_RGBA, img2.width(), img2.height(),
+        GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
 #endif
-    {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img2.width(), img2.height(), 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
-    }
-    setTextureParams(GL_TEXTURE_2D, false);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(target, 0);
     return texID;
 }
 

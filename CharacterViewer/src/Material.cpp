@@ -204,7 +204,7 @@ void MaterialMap::upload(RenderState *state)
         bool convertToGL = mat->origin() != Material::LowerLeft;
         if(!mat->image().isNull())
         {
-            mat->setTexture(state->loadTexture(mat->image(), true, convertToGL));
+            mat->setTexture(state->loadTexture(mat->image(), convertToGL));
             mat->image() = QImage();   
         }
     }
