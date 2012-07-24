@@ -332,7 +332,7 @@ static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeat
 
 texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
 {
-    GLuint target = GL_TEXTURE_2D;
+    GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(target, texID);

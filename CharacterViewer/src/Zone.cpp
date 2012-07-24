@@ -423,8 +423,39 @@ void Zone::drawObjects(RenderState *state)
 
 void Zone::uploadZone(RenderState *state)
 {
+    if(!m_zoneMaterials->uploaded())
+    {
+        // Upload the materials as a texture array, assigning z coordinates to materials.
+        m_zoneMaterials->uploadArray(state);
+        
+        // Set the texture Z coordinate in the vertex buffer before uploading to the GPU.
+        QMap<uint32_t, Material *> vertexMat;
+        VertexData *vd = m_zoneGeometry->vertices.data();
+        foreach(MaterialGroup mg, m_zoneGeometry->matGroups)
+        {
+            Material *mat = m_zoneMaterials->material(mg.matName);
+            if(!mat)
+                continue;
+            float z = mat->subTexture();
+            const uint32_t *indices = m_zoneGeometry->indices.constData() + mg.offset;
+            for(uint32_t i = 0; i < mg.count; i++)
+            {
+                uint32_t vertexID = indices[i];
+                Material *oldMat = vertexMat[vertexID];
+                if(oldMat && (oldMat != mat))
+                    qDebug("Verted %d is shared by multiples indices");
+                
+                if(!oldMat)
+                {
+                    vertexMat[vertexID] = mat;
+                    // XXX fix xy coords when the size is smaller than max size
+                    vd[vertexID].texCoords.z = z;
+                }
+            }
+        }
+    }
+    
     createGPUBuffer(m_zoneGeometry, state);
-    m_zoneMaterials->upload(state);
 }
 
 VertexGroup * Zone::uploadObjects(RenderState *state)

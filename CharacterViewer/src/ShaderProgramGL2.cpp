@@ -196,7 +196,8 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
 void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
 {
     //XXX GL_MAX_TEXTURE_IMAGE_UNITS
-    GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    GLuint target = GL_TEXTURE_2D_ARRAY;
     glUniform4fv(m_uniform[U_MAT_AMBIENT], 1, (const GLfloat *)&m->ambient());
     glUniform4fv(m_uniform[U_MAT_DIFFUSE], 1, (const GLfloat *)&m->diffuse());
     if(m->texture() != 0)
@@ -214,7 +215,8 @@ void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
 
 void ShaderProgramGL2::endApplyMaterial(MaterialMap *map, Material *m)
 {
-    GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
+    GLuint target = GL_TEXTURE_2D_ARRAY;
     if(m->texture() != 0)
     {
         glActiveTexture(GL_TEXTURE0);

@@ -41,7 +41,12 @@ void SceneViewport::initializeGL()
     }
     else if(!GLEW_VERSION_2_0)
     {
-        fprintf(stderr, "OpenGL 2.0 features not available");
+        fprintf(stderr, "OpenGL 2.0 features not available.");
+        return;
+    }
+    else if(!GL_EXT_texture_array)
+    {
+        fprintf(stderr, "'GL_EXT_texture_array' extension not available.");
         return;
     }
     
