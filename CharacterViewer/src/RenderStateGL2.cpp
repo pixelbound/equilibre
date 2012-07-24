@@ -268,7 +268,7 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
     texture_t texID = 0;
     glGenTextures(1, &texID);
     glBindTexture(target, texID);
-#ifdef _WIN32
+
     QImage img3 = img2;
     int width = img2.width(), height = img2.height();
     int level = 0;
@@ -285,10 +285,7 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
         height >>= 1;
         level++;
     }
-#else
-    gluBuild2DMipmaps(target, GL_RGBA, img2.width(), img2.height(),
-        GL_RGBA, GL_UNSIGNED_BYTE, img2.bits());
-#endif
+
     glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
