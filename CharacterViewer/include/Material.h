@@ -41,6 +41,9 @@ public:
 
     texture_t texture() const;
     void setTexture(texture_t texture);
+    
+    uint subTexture() const;
+    void setSubTexture(uint newID);
 
     static bool loadTextureDDS(const char *data, size_t size, QImage &img);
 
@@ -52,7 +55,7 @@ private:
     QImage m_img;
     OriginType m_origin;
     texture_t m_texture;
-    //XXX texture Z coord
+    uint m_subTexture;
     bool m_opaque;
 };
 
@@ -64,11 +67,17 @@ public:
     const QMap<QString, Material *> & materials() const;
     Material * material(QString name) const;
     void setMaterial(QString name, Material *mat);
+    
+    texture_t arrayTexture() const;
+    bool uploaded() const;
+    
     void upload(RenderState *state);
+    void uploadArray(RenderState *state);
     void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:
     QMap<QString, Material *> m_materials;
+    texture_t m_arrayTexture;
     bool m_uploaded;
 };
 

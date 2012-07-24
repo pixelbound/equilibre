@@ -13,6 +13,7 @@ Material::Material()
     m_shine = 0.0;
     m_origin = LowerLeft;
     m_texture = 0;
+    m_subTexture = 0;
     m_opaque = true;
 }
 
@@ -107,6 +108,16 @@ void Material::setTexture(texture_t texture)
     m_texture = texture;
 }
 
+uint Material::subTexture() const
+{
+    return m_subTexture;
+}
+
+void Material::setSubTexture(uint newID)
+{
+    m_subTexture = newID;
+}
+
 bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
 {
     dds_header_t hdr;
@@ -149,6 +160,7 @@ bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
 MaterialMap::MaterialMap()
 {
     m_uploaded = false;
+    m_arrayTexture = 0;
 }
 
 MaterialMap::~MaterialMap()
@@ -170,6 +182,16 @@ Material * MaterialMap::material(QString name) const
 void MaterialMap::setMaterial(QString name, Material *mat)
 {
     m_materials[name] = mat;
+}
+
+texture_t MaterialMap::arrayTexture() const
+{
+    return m_arrayTexture;
+}
+
+bool MaterialMap::uploaded() const
+{
+    return m_uploaded;
 }
 
 void MaterialMap::textureArrayInfo(int &maxWidth, int &maxHeight,
@@ -202,11 +224,39 @@ void MaterialMap::upload(RenderState *state)
         if(!mat)
             continue;
         bool convertToGL = mat->origin() != Material::LowerLeft;
-        if(!mat->image().isNull())
+        if(!mat->image().isNull() && (mat->texture() == 0))
         {
             mat->setTexture(state->loadTexture(mat->image(), convertToGL));
-            mat->image() = QImage();   
+            mat->image() = QImage();
         }
+    }
+    m_uploaded = true;
+}
+
+void MaterialMap::uploadArray(RenderState *state)
+{
+    if(m_uploaded)
+        return;
+    QVector<Material *> uploadMats;
+    QVector<QImage> images;
+    foreach(Material *mat, m_materials)
+    {
+        if(!mat)
+            continue;
+        if(!mat->image().isNull() && (mat->texture() == 0))
+        {
+            uploadMats.append(mat);
+            images.append(mat->image());
+        }
+    }
+    
+    m_arrayTexture = state->loadTextures(images.constData(), images.count(), true);
+    for(uint i = 0; i < uploadMats.count(); i++)
+    {
+        Material *mat = uploadMats[i];
+        mat->setTexture(m_arrayTexture);
+        mat->setSubTexture(i);
+        mat->setImage(QImage());
     }
     m_uploaded = true;
 }
