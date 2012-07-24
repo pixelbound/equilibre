@@ -55,6 +55,7 @@ public:
 
     // material operations
     virtual texture_t loadTexture(QImage img, bool convertToGL);
+    virtual texture_t loadTextures(QImage *images, size_t count, bool convertToGL);
     virtual void freeTexture(texture_t tex) ;
     virtual void pushMaterial(const Material &m);
     virtual void popMaterial();

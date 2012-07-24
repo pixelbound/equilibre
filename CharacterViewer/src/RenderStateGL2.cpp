@@ -257,20 +257,42 @@ static void setTextureParams(GLenum target, bool mipmaps)
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
+static void defineImage(uint target, int width, int height, uint depth)
 {
-    QImage img2;
-    if(convertToGL)
-        img2 = QGLWidget::convertToGLFormat(img);
-    else
-        img2 = img;
-    GLuint target = GL_TEXTURE_2D;
-    texture_t texID = 0;
-    glGenTextures(1, &texID);
-    glBindTexture(target, texID);
+    const GLenum format = GL_RGBA;
+    const GLenum type = GL_UNSIGNED_BYTE;
+    int level = 0;
+    while((width > 0) || (height > 0))
+    {
+        // The last mipmap level is 1x1, even when original width and height are different.
+        width = qMax(width, 1);
+        height = qMax(height, 1);
+        switch(target)
+        {
+        default:
+        case GL_TEXTURE_2D:
+        case GL_TEXTURE_RECTANGLE:
+            glTexImage2D(target, level, format, width, height, 0, format, type, NULL);
+            break;
+        case GL_TEXTURE_3D:
+        case GL_TEXTURE_2D_ARRAY:
+            glTexImage3D(target, level, format, width, height, depth, 0, format, type, NULL);
+            break;
+        }
+        width >>= 1;
+        height >>= 1;
+        level++;
+    }
+}
 
-    QImage img3 = img2;
-    int width = img2.width(), height = img2.height();
+static void uploadImage(uint target, QImage img, uint z, bool convertToGL)
+{
+    const GLenum format = GL_RGBA;
+    const GLenum type = GL_UNSIGNED_BYTE;
+    if(convertToGL)
+        img = QGLWidget::convertToGLFormat(img);
+    QImage levelImg = img;
+    int width = img.width(), height = img.height();
     int level = 0;
     while((width > 0) || (height > 0))
     {
@@ -280,15 +302,71 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
         if(level > 0)
         {
             // create mipmap image
-            img3 = img2.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+            levelImg = img.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
-        glTexImage2D(target, level, GL_RGBA, width, height, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, img3.bits());
+        switch(target)
+        {
+        default:
+        case GL_TEXTURE_2D:
+        case GL_TEXTURE_RECTANGLE:
+            glTexSubImage2D(target, level, 0, 0, width, height, format, type, levelImg.bits());
+            break;
+        case GL_TEXTURE_3D:
+        case GL_TEXTURE_2D_ARRAY:
+            glTexSubImage3D(target, level, 0, 0, z, width, height, 1, format, type, levelImg.bits());
+            break;
+        }
         width >>= 1;
         height >>= 1;
         level++;
     }
+}
 
+texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
+{
+    GLuint target = GL_TEXTURE_2D;
+    texture_t texID = 0;
+    glGenTextures(1, &texID);
+    glBindTexture(target, texID);
+
+    // Allocate the texture array and all its mipmap levels.
+    defineImage(target, img.width(), img.height(), 1);
+    
+    // Copy image data.
+    uploadImage(target, img, 0, convertToGL);
+
+    // Set texture parameters.
+    glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(target, 0);
+    return texID;
+}
+
+texture_t RenderStateGL2::loadTextures(QImage *images, size_t count, bool convertToGL)
+{
+    GLuint target = GL_TEXTURE_2D_ARRAY;
+    texture_t texID = 0;
+    glGenTextures(1, &texID);
+    glBindTexture(target, texID);
+    
+    // Figure out what's the maximum texture dimensions of the images.
+    int maxWidth = 0, maxHeight = 0;
+    for(size_t i = 0; i < count; i++)
+    {
+        maxWidth = qMax(maxWidth, images[i].width());
+        maxHeight = qMax(maxHeight, images[i].height());
+    }
+    
+    // Allocate the texture array and all its mipmap levels.
+    defineImage(target, maxWidth, maxHeight, count);
+    
+    // Copy image data.
+    for(size_t i = 0; i < count; i++)
+        uploadImage(target, images[i], i, convertToGL);
+    
+    // Set texture parameters.
     glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
