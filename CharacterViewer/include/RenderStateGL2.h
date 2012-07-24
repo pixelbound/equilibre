@@ -57,8 +57,6 @@ public:
     virtual texture_t loadTexture(QImage img, bool convertToGL);
     virtual texture_t loadTextures(const QImage *images, size_t count, bool convertToGL);
     virtual void freeTexture(texture_t tex) ;
-    virtual void pushMaterial(const Material &m);
-    virtual void popMaterial();
     
     virtual buffer_t createBuffer(const void *data, size_t size);
 
@@ -82,7 +80,6 @@ private:
     vec4 m_specular0;
     vec4 m_light0_pos;
     Frustum m_frustum;
-    std::vector<Material> m_materialStack;
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];

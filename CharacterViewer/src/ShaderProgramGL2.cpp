@@ -344,7 +344,7 @@ void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &m
         // XXX fix rendering non-opaque polygons
         if(!mat->isOpaque())
             return;
-        m_state->pushMaterial(*mat);
+        beginApplyMaterial(*mat);
     }
     GLuint mode = primitiveToGLMode(vg->mode);
     if(m_meshData.haveIndices)
@@ -364,7 +364,7 @@ void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &m
             glDrawArrays(mode, offset, mg.count);
     }
     if(mat)
-        m_state->popMaterial();
+        endApplyMaterial(*mat);
 }
 
 void ShaderProgramGL2::endDrawMesh()

@@ -396,26 +396,6 @@ void RenderStateGL2::freeTexture(texture_t tex)
         glDeleteTextures(1, &tex);
 }
 
-void RenderStateGL2::pushMaterial(const Material &m)
-{
-    m_materialStack.push_back(m);
-    ShaderProgramGL2 *prog = program();
-    if(prog && prog->loaded())
-        prog->beginApplyMaterial(m);
-}
-
-void RenderStateGL2::popMaterial()
-{
-    Material m = m_materialStack.back();
-    m_materialStack.pop_back();
-    ShaderProgramGL2 *prog = program();
-    if(!prog || !prog->loaded())
-        return;
-    prog->endApplyMaterial(m);
-    if(m_materialStack.size() > 0)
-        prog->beginApplyMaterial(m_materialStack.back());
-}
-
 bool RenderStateGL2::beginFrame()
 {
     ShaderProgramGL2 *prog = program();
