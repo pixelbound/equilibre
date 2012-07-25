@@ -77,7 +77,7 @@ protected:
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
     void drawMaterialGroups(const VertexGroup *vg, int instances);
-    void drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances);
+    void drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg, int instances);
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
 

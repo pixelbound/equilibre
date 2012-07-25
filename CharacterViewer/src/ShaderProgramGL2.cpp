@@ -333,23 +333,64 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
 
 void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg, int instances)
 {
-    foreach(MaterialGroup mg, vg->matGroups)
-        drawMaterialGroup(vg, mg, instances);
+    // No material - nothing is drawn.
+    if(!m_meshData.materials)
+        return;
+
+    // Get a Material pointer for each material group.
+    QVector<MaterialGroup> groups;
+    QVector<Material *> groupMats;
+    for(int i = 0; i < vg->matGroups.count(); i++)
+    {
+        QString matName = vg->matGroups[i].matName;
+        Material *mat = m_meshData.materials->material(matName);
+        // skip meshes that don't have a material
+        // XXX fix rendering non-opaque polygons
+        if(!mat || !mat->isOpaque())
+            continue;
+        groups.append(vg->matGroups[i]);
+        groupMats.append(mat);
+    }
+
+    // Check whether all materials use the same texture (array) or not.
+    Material *arrayMat = NULL;
+    if(groups.count() > 0)
+    {
+        arrayMat = groupMats[0];
+        for(int i = 1; i < groupMats.count(); i++)
+        {
+            if(arrayMat->texture() != groupMats[i]->texture())
+            {
+                arrayMat = NULL;
+                break;
+            }
+        }
+    }
+
+    if(arrayMat != NULL)
+    {
+        // If all material groups use the same texture we can render them together.
+        // XXX have an uniform array of material state
+        beginApplyMaterial(m_meshData.materials, arrayMat);
+        for(int i = 0; i < groups.count(); i++)
+            drawMaterialGroup(vg, groups[i], instances);
+        endApplyMaterial(m_meshData.materials, arrayMat);
+    }
+    else
+    {
+        // Otherwise we have to change the texture for every material group.
+        for(int i = 0; i < groups.count(); i++)
+        {
+            Material *mat = groupMats[i];
+            beginApplyMaterial(m_meshData.materials, mat);
+            drawMaterialGroup(vg, groups[i], instances);
+            endApplyMaterial(m_meshData.materials, mat);
+        }
+    }
 }
 
-void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &mg, int instances)
+void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg, int instances)
 {
-    // skip meshes that don't have a material
-    if(mg.matName.isEmpty())
-       return;
-    Material *mat = m_meshData.materials ? m_meshData.materials->material(mg.matName) : NULL;
-    if(mat)
-    {
-        // XXX fix rendering non-opaque polygons
-        if(!mat->isOpaque())
-            return;
-        beginApplyMaterial(m_meshData.materials, mat);
-    }
     GLuint mode = primitiveToGLMode(vg->mode);
     if(m_meshData.haveIndices)
     {
@@ -367,8 +408,6 @@ void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, MaterialGroup &m
         else
             glDrawArrays(mode, offset, mg.count);
     }
-    if(mat)
-        endApplyMaterial(m_meshData.materials, mat);
 }
 
 void ShaderProgramGL2::endDrawMesh()
