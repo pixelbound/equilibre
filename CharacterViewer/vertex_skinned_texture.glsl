@@ -13,8 +13,6 @@ const vec4 u_light_pos = vec4(0.0, 1.0, 1.0, 0.0);
 
 uniform vec4 u_material_ambient;
 uniform vec4 u_material_diffuse;
-//uniform vec4 u_material_specular;
-//uniform float u_material_shine;
 
 uniform sampler2DRect u_bones;
 
@@ -66,12 +64,9 @@ void main()
 
     normal = normalize(normalMatrix * a_normal);
     lightDir = normalize(u_light_pos.xyz);
-    //halfVector = normalize(lightDir + vec3(0, 0, 1));
 
     ambient = u_material_ambient * u_light_ambient;
     diffuse = max(dot(normal, lightDir), 0.0) * u_material_diffuse * u_light_diffuse;
-    //specular = pow(max(dot(normal, halfVector), 0.0), u_material_shine)
-    //    * u_material_specular * u_light_specular;
 
     v_color = ambient + diffuse;
 }

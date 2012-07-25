@@ -75,10 +75,6 @@ private:
     void setShader(Shader newShader);
     void createCube();
 
-    vec4 m_ambient0;
-    vec4 m_diffuse0;
-    vec4 m_specular0;
-    vec4 m_light0_pos;
     Frustum m_frustum;
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];

@@ -12,10 +12,6 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_matrix[(int)ModelView].setIdentity();
     m_matrix[(int)Projection].setIdentity();
     m_matrix[(int)Texture].setIdentity();
-    m_ambient0 = vec4(1.0, 1.0, 1.0, 1.0);
-    m_diffuse0 = vec4(1.0, 1.0, 1.0, 1.0);
-    m_specular0 = vec4(1.0, 1.0, 1.0, 1.0);
-    m_light0_pos = vec4(0.0, 1.0, 1.0, 0.0);
     m_renderMode = Basic;
     m_skinningMode = SoftwareSkinning;
     m_shader = BasicShader;

@@ -10,22 +10,19 @@ Material::Material()
 {
     m_ambient = vec4(0.0, 0.0, 0.0, 0.0);
     m_diffuse = vec4(0.0, 0.0, 0.0, 0.0);
-    m_specular = vec4(0.0, 0.0, 0.0, 0.0);
-    m_shine = 0.0;
     m_origin = LowerLeft;
     m_texture = 0;
     m_subTexture = 0;
     m_opaque = true;
 }
 
-Material::Material(vec4 ambient, vec4 diffuse, vec4 specular, float shine)
+Material::Material(vec4 ambient, vec4 diffuse)
 {
     m_ambient = ambient;
     m_diffuse = diffuse;
-    m_specular = specular;
-    m_shine = shine;
     m_origin = LowerLeft;
     m_texture = 0;
+    m_subTexture = 0;
     m_opaque = true;
 }
 
@@ -39,16 +36,6 @@ const vec4 & Material::diffuse() const
     return m_diffuse;
 }
 
-const vec4 & Material::specular() const
-{
-    return m_specular;
-}
-
-float Material::shine() const
-{
-    return m_shine;
-}
-
 void Material::setAmbient(const vec4 &ambient)
 {
     m_ambient = ambient;
@@ -57,16 +44,6 @@ void Material::setAmbient(const vec4 &ambient)
 void Material::setDiffuse(const vec4 &diffuse)
 {
     m_diffuse = diffuse;
-}
-
-void Material::setSpecular(const vec4 &specular)
-{
-    m_specular = specular;
-}
-
-void Material::setShine(float shine)
-{
-    m_shine = shine;
 }
 
 bool Material::isOpaque() const

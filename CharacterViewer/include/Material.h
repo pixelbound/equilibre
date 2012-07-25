@@ -20,16 +20,12 @@ public:
     };
     
     Material();
-    Material(vec4 ambient, vec4 diffuse, vec4 specular, float shine);
+    Material(vec4 ambient, vec4 diffuse);
 
     const vec4 & ambient() const;
     const vec4 & diffuse() const;
-    const vec4 & specular() const;
-    float shine() const;
     void setAmbient(const vec4 &ambient);
     void setDiffuse(const vec4 &diffuse);
-    void setSpecular(const vec4 &specular);
-    void setShine(float shine);
 
     bool isOpaque() const;
     void setOpaque(bool opaque);
