@@ -14,7 +14,8 @@ const vec4 u_light_pos = vec4(0.0, 1.0, 1.0, 0.0);
 uniform vec4 u_material_ambient;
 uniform vec4 u_material_diffuse;
 
-uniform sampler2DRect u_bones;
+uniform sampler2D u_bones;
+const vec2 u_bonesSize = vec2(2.0f, 256.0f);
 
 varying vec4 v_color;
 varying vec3 v_texCoords;
@@ -43,8 +44,8 @@ vec3 rotate_by_quat(vec3 v, vec4 q)
 
 vec4 skin(vec3 pos)
 {
-    vec4 translation = texture2DRect(u_bones, vec2(0, a_boneIndex));
-    vec4 rotation = texture2DRect(u_bones, vec2(1, a_boneIndex));
+    vec4 translation = texture2D(u_bones, vec2(0.0f, a_boneIndex) / u_bonesSize);
+    vec4 rotation = texture2D(u_bones, vec2(1.0f, a_boneIndex)) / u_bonesSize);
     return vec4(rotate_by_quat(pos, rotation) + translation.xyz, 1.0);
 }
 

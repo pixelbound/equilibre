@@ -573,21 +573,21 @@ bool TextureSkinningProgram::init()
         fprintf(stderr, "error: vertex texture fetch is not supported.\n");
         return false;
     }
-    else if(!GLEW_ARB_texture_rectangle)
+    else if(!GLEW_ARB_texture_float)
     {
-        fprintf(stderr, "error: extension 'ARB_texture_rectangle' is not supported.\n");
+        fprintf(stderr, "error: extension 'ARB_texture_float' is not supported.\n");
         return false;
     }
     glGenTextures(1, &m_boneTexture);
     setBoneTransforms(0, 0);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_boneTexture);
-    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP);
-    glTexParameterf(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexImage2D(GL_TEXTURE_RECTANGLE, 0, GL_RGBA32F, 2, MAX_TRANSFORMS, 0,
-        GL_RGBA, GL_FLOAT, m_bones);
-    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+    glBindTexture(GL_TEXTURE_2D, m_boneTexture);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 2, MAX_TRANSFORMS, 0,
+        GL_RGBA, GL_FLOAT, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
     return true;
 }
 
@@ -595,8 +595,8 @@ void TextureSkinningProgram::beginSkinMesh()
 {
     // upload bone transforms to the transform texture
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_RECTANGLE, m_boneTexture);
-    glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, 0, 0, 2, MAX_TRANSFORMS,
+    glBindTexture(GL_TEXTURE_2D, m_boneTexture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 2, MAX_TRANSFORMS,
         GL_RGBA, GL_FLOAT, m_bones);
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(m_bonesLoc, 1);
