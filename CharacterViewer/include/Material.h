@@ -8,6 +8,7 @@
 #include "Vertex.h"
 
 class RenderState;
+class VertexGroup;
 
 class Material
 {
@@ -73,6 +74,7 @@ public:
     
     void upload(RenderState *state);
     void uploadArray(RenderState *state);
+    void updateTexCoords(VertexGroup *vg);
     void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:
