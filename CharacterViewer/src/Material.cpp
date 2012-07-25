@@ -227,7 +227,6 @@ void MaterialMap::upload(RenderState *state)
         if(!mat->image().isNull() && (mat->texture() == 0))
         {
             mat->setTexture(state->loadTexture(mat->image(), convertToGL));
-            mat->image() = QImage();
         }
     }
     m_uploaded = true;
@@ -255,8 +254,7 @@ void MaterialMap::uploadArray(RenderState *state)
     {
         Material *mat = uploadMats[i];
         mat->setTexture(m_arrayTexture);
-        mat->setSubTexture(i);
-        mat->setImage(QImage());
+        mat->setSubTexture(i + 1);
     }
     m_uploaded = true;
 }

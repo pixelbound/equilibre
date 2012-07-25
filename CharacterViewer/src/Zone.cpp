@@ -426,29 +426,29 @@ void Zone::uploadZone(RenderState *state)
     if(!m_zoneMaterials->uploaded())
     {
         // Upload the materials as a texture array, assigning z coordinates to materials.
+        int maxWidth, maxHeight;
+        size_t totalMem, usedMem;
+        m_zoneMaterials->textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
         m_zoneMaterials->uploadArray(state);
         
-        // Set the texture Z coordinate in the vertex buffer before uploading to the GPU.
-        QMap<uint32_t, Material *> vertexMat;
+        // Update the texture coordinates in the vertex buffer before uploading to the GPU.
         VertexData *vd = m_zoneGeometry->vertices.data();
         foreach(MaterialGroup mg, m_zoneGeometry->matGroups)
         {
             Material *mat = m_zoneMaterials->material(mg.matName);
             if(!mat)
                 continue;
+            float matScalingX = (float)mat->image().width() / (float)maxWidth;
+            float matScalingY = (float)mat->image().height() / (float)maxHeight;
             float z = mat->subTexture();
             const uint32_t *indices = m_zoneGeometry->indices.constData() + mg.offset;
             for(uint32_t i = 0; i < mg.count; i++)
             {
                 uint32_t vertexID = indices[i];
-                Material *oldMat = vertexMat[vertexID];
-                if(oldMat && (oldMat != mat))
-                    qDebug("Verted %d is shared by multiples indices");
-                
-                if(!oldMat)
+                if(vd[vertexID].texCoords.z == 0)
                 {
-                    vertexMat[vertexID] = mat;
-                    // XXX fix xy coords when the size is smaller than max size
+                    vd[vertexID].texCoords.x *= matScalingX;
+                    vd[vertexID].texCoords.y *= matScalingY;
                     vd[vertexID].texCoords.z = z;
                 }
             }

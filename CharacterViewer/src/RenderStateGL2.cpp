@@ -374,6 +374,8 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count, bool 
     for(size_t i = 0; i < count; i++)
     {
         QImage img = images[i];
+        // Repeat textures smaller than the texture array
+        // so that we can easily use GL_REPEAT.
         uint32_t repeatX = maxWidth / img.width();
         uint32_t repeatY = maxHeight / img.height();
         uploadImage(target, img, i, repeatX, repeatY, convertToGL);
