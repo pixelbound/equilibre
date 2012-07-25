@@ -43,10 +43,8 @@ vec3 rotate_by_quat(vec3 v, vec4 q)
 
 vec4 skin(vec3 pos)
 {
-    vec4 rotation = texture2DRect(u_bones, vec2(0, a_boneIndex));
-    vec4 translation = texture2DRect(u_bones, vec2(1, a_boneIndex));
-    //vec4 rotation = vec4(0.0, 0.0, 0.0, 1.0);
-    //vec4 translation = vec4(0.0, 0.0, 0.0, 1.0);
+    vec4 translation = texture2DRect(u_bones, vec2(0, a_boneIndex));
+    vec4 rotation = texture2DRect(u_bones, vec2(1, a_boneIndex));
     return vec4(rotate_by_quat(pos, rotation) + translation.xyz, 1.0);
 }
 
