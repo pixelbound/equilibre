@@ -54,8 +54,8 @@ public:
     virtual void endFrame();
 
     // material operations
-    virtual texture_t loadTexture(QImage img, bool convertToGL);
-    virtual texture_t loadTextures(const QImage *images, size_t count, bool convertToGL);
+    virtual texture_t loadTexture(QImage img);
+    virtual texture_t loadTextures(const QImage *images, size_t count);
     virtual void freeTexture(texture_t tex) ;
     
     virtual buffer_t createBuffer(const void *data, size_t size);

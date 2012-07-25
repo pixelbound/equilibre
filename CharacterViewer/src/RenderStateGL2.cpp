@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <GL/glew.h>
 #include <QImage>
-#include <QGLWidget>
 #include "Platform.h"
 #include "RenderStateGL2.h"
 #include "ShaderProgramGL2.h"
@@ -283,12 +282,10 @@ static void defineImage(uint32_t target, int width, int height, uint32_t depth)
     }
 }
 
-static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeatX, uint32_t repeatY, bool convertToGL)
+static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeatX, uint32_t repeatY)
 {
     const GLenum format = GL_RGBA;
     const GLenum type = GL_UNSIGNED_BYTE;
-    if(convertToGL)
-        img = QGLWidget::convertToGLFormat(img);
     QImage levelImg = img;
     int width = img.width(), height = img.height();
     int level = 0;
@@ -330,7 +327,7 @@ static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeat
     }
 }
 
-texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
+texture_t RenderStateGL2::loadTexture(QImage img)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -341,7 +338,7 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
     defineImage(target, img.width(), img.height(), 1);
     
     // Copy image data.
-    uploadImage(target, img, 0, 1, 1, convertToGL);
+    uploadImage(target, img, 0, 1, 1);
 
     // Set texture parameters.
     glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -352,7 +349,7 @@ texture_t RenderStateGL2::loadTexture(QImage img, bool convertToGL)
     return texID;
 }
 
-texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count, bool convertToGL)
+texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -378,7 +375,7 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count, bool 
         // so that we can easily use GL_REPEAT.
         uint32_t repeatX = maxWidth / img.width();
         uint32_t repeatY = maxHeight / img.height();
-        uploadImage(target, img, i, repeatX, repeatY, convertToGL);
+        uploadImage(target, img, i, repeatX, repeatY);
     }
     
     // Set texture parameters.

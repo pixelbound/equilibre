@@ -1,4 +1,5 @@
 #include <QImage>
+#include <QGLWidget>
 #include "Platform.h"
 #include "Material.h"
 #include "RenderState.h"
@@ -223,10 +224,12 @@ void MaterialMap::upload(RenderState *state)
     {
         if(!mat)
             continue;
-        bool convertToGL = mat->origin() != Material::LowerLeft;
         if(!mat->image().isNull() && (mat->texture() == 0))
         {
-            mat->setTexture(state->loadTexture(mat->image(), convertToGL));
+            QImage img = mat->image();
+            if(mat->origin() != Material::LowerLeft)
+              img = QGLWidget::convertToGLFormat(img);
+            mat->setTexture(state->loadTexture(img));
         }
     }
     m_uploaded = true;
@@ -244,12 +247,15 @@ void MaterialMap::uploadArray(RenderState *state)
             continue;
         if(!mat->image().isNull() && (mat->texture() == 0))
         {
+            QImage img = mat->image();
+            if(mat->origin() != Material::LowerLeft)
+              img = QGLWidget::convertToGLFormat(img);
             uploadMats.append(mat);
-            images.append(mat->image());
+            images.append(img);
         }
     }
     
-    m_arrayTexture = state->loadTextures(images.constData(), images.count(), true);
+    m_arrayTexture = state->loadTextures(images.constData(), images.count());
     for(uint i = 0; i < uploadMats.count(); i++)
     {
         Material *mat = uploadMats[i];

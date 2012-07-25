@@ -107,8 +107,8 @@ public:
 
     // material operations
 
-    virtual texture_t loadTexture(QImage img, bool convertToGL = true) = 0;
-    virtual texture_t loadTextures(const QImage *images, size_t count, bool convertToGL = true) = 0;
+    virtual texture_t loadTexture(QImage img) = 0;
+    virtual texture_t loadTextures(const QImage *images, size_t count) = 0;
     virtual void freeTexture(texture_t tex) = 0;
     
     // buffer operations
