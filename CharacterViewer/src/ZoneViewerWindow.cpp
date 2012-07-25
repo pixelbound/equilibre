@@ -67,6 +67,9 @@ void ZoneViewerWindow::initMenus()
 
     m_showFpsAction = new QAction("Show FPS", this);
     m_showFpsAction->setCheckable(true);
+    m_showZoneAction = new QAction("Show Zone", this);
+    m_showZoneAction->setCheckable(true);
+    m_showZoneAction->setChecked(m_scene->zone()->showZone());
     m_showZoneObjectsAction = new QAction("Show Zone Objects", this);
     m_showZoneObjectsAction->setCheckable(true);
     m_showZoneObjectsAction->setChecked(m_scene->zone()->showObjects());
@@ -78,6 +81,7 @@ void ZoneViewerWindow::initMenus()
     renderMenu->addAction(m_hardwareSkinningUniformAction);
     renderMenu->addAction(m_hardwareSkinningTextureAction);
     renderMenu->addAction(m_showFpsAction);
+    renderMenu->addAction(m_showZoneAction);
     renderMenu->addAction(m_showZoneObjectsAction);
     renderMenu->addAction(m_cullZoneObjectsAction);
 
@@ -94,6 +98,7 @@ void ZoneViewerWindow::initMenus()
     connect(m_hardwareSkinningUniformAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningUniform()));
     connect(m_hardwareSkinningTextureAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningTexture()));
     connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowFps(bool)));
+    connect(m_showZoneAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZone(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
     connect(m_cullZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(setFrustumCulling(bool)));
 }
@@ -188,6 +193,11 @@ ZoneScene::ZoneScene(RenderState *state) : Scene(state)
 Zone * ZoneScene::zone() const
 {
     return m_zone;
+}
+
+void ZoneScene::showZone(bool show)
+{
+    m_zone->setShowZone(show);
 }
 
 void ZoneScene::showZoneObjects(bool show)

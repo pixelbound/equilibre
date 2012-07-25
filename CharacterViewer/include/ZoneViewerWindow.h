@@ -44,6 +44,7 @@ private:
     QAction *m_hardwareSkinningUniformAction;
     QAction *m_hardwareSkinningTextureAction;
     QAction *m_showFpsAction;
+    QAction *m_showZoneAction;
     QAction *m_showZoneObjectsAction;
     QAction *m_cullZoneObjectsAction;
 };
@@ -66,6 +67,7 @@ public:
     virtual void mouseReleaseEvent(QMouseEvent *e);
 
 public slots:
+    void showZone(bool show);
     void showZoneObjects(bool show);
     void setFrustumCulling(bool enabled);
 

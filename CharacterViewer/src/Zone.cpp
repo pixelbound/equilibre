@@ -24,6 +24,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_playerOrient = 0.0;
     m_cameraPos = vec3(0.0, 0.0, 0.0);
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
+    m_showZone = true;
     m_showObjects = true;
     m_cullObjects = true;
     m_objectsGeometry = NULL;
@@ -342,7 +343,7 @@ void Zone::draw(RenderState *state)
     state->multiplyMatrix(frustum.camera());
 
     // draw geometry
-    if(m_zoneGeometry)
+    if(m_showZone && m_zoneGeometry)
     {
         uploadZone(state);
         state->setRenderMode(RenderState::Basic);
@@ -551,6 +552,16 @@ void Zone::setCameraOrient(const vec3 &rot)
 const vec3 & Zone::cameraPos() const
 {
     return m_cameraPos;
+}
+
+bool Zone::showZone() const
+{
+    return m_showZone;
+}
+
+void Zone::setShowZone(bool show)
+{
+    m_showZone = show;
 }
 
 bool Zone::showObjects() const

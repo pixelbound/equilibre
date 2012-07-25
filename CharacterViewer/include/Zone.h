@@ -54,9 +54,11 @@ public:
     void setCameraOrient(const vec3 &rot);
     void step(float x, float y, float z);
 
+    bool showZone() const;
     bool showObjects() const;
     bool cullObjects() const;
 
+    void setShowZone(bool show);
     void setShowObjects(bool show);
     void setCullObjects(bool enabled);
     
@@ -92,6 +94,7 @@ private:
     // zone objects
     VertexGroup *m_objectsGeometry;
     ActorIndex *m_index;
+    bool m_showZone;
     bool m_showObjects;
     bool m_cullObjects;
     QVector<const WLDZoneActor *> m_visibleObjects;
