@@ -193,6 +193,7 @@ void WLDMesh::importMaterialGroups(VertexGroup *vg)
         vg->matGroups.append(mg);
         meshOffset += vertexCount;
     }
+    //XXX sort groups by offset
 }
 
 static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b)

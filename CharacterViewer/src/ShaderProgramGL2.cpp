@@ -371,6 +371,7 @@ void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg, int instances)
     {
         // If all material groups use the same texture we can render them together.
         // XXX have an uniform array of material state
+        //XXX assume groups are sorted by offset and merge as many as possible
         beginApplyMaterial(m_meshData.materials, arrayMat);
         for(int i = 0; i < groups.count(); i++)
             drawMaterialGroup(vg, groups[i], instances);

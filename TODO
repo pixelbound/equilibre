@@ -1,0 +1,26 @@
+Divide into sub-projects: Renderer, Game, CharViewer, ZoneViewer
+Material type, can specify material mask when rendering
+    Draw opaque materials and then masked materials
+Replace matName by matHash in MaterialGroup
+CharacterData, ZoneData
+Load file for mapping animations to characters
+sort non-solid items front to back
+start animation when selecting it (remember the time when it was first selected)
+mimic character selection screen (load character selection background and rotate, random animation)
+split animation tracks into two lists (skinning, positioning) and renumber piece IDs
+use some form of query for loading character skins (instead of scanning the list of fragments multiple times)
+zone viewer
+    use the BSP tree to render only what's visible
+    put all mesh data in a VBO
+    sort meshes by texture
+import animated textures
+import item animations (gequip.s3d)
+fix Luclin/PoP skinning artefacts
+
+fix 213462fe17828c1468cb39d6653da8816aea667f (Implementing a zone viewer 03/072011) that broke BAF helm/hair
+
+transparency/mask misses
+    IT555 (gequip4)
+Unknown render mode 7, a, 14, b, 9
+fix vertex order in faces (zone-in to Felwithe)
+use the zone fragment scale for the zone geometry
