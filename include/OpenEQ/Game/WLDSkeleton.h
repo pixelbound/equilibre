@@ -5,8 +5,8 @@
 #include <QMap>
 #include <QVector3D>
 #include <QQuaternion>
-#include "Platform.h"
-#include "Vertex.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Render/Vertex.h"
 #include "WLDFragment.h"
 
 class HierSpriteDefFragment;

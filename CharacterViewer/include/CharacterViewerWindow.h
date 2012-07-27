@@ -2,7 +2,7 @@
 #define OPENEQ_CHARACTER_VIEWER_WINDOW_H
 
 #include <QMainWindow>
-#include "Scene.h"
+#include "OpenEQ/Render/Scene.h"
 
 class QComboBox;
 class QVBoxLayout;

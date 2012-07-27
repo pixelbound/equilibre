@@ -3,11 +3,11 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPaintEvent>
-#include "Scene.h"
-#include "RenderState.h"
-#include "WLDModel.h"
-#include "WLDActor.h"
-#include "Zone.h"
+#include "OpenEQ/Render/Scene.h"
+#include "OpenEQ/Render/RenderState.h"
+#include "OpenEQ/Game/WLDModel.h"
+#include "OpenEQ/Game/WLDActor.h"
+#include "OpenEQ/Game/Zone.h"
 
 Scene::Scene(RenderState *state)
 {

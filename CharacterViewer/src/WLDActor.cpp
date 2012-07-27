@@ -1,7 +1,7 @@
-#include "WLDActor.h"
-#include "WLDModel.h"
-#include "Fragments.h"
-#include "RenderState.h"
+#include "OpenEQ/Game/WLDActor.h"
+#include "OpenEQ/Game/WLDModel.h"
+#include "OpenEQ/Game/Fragments.h"
+#include "OpenEQ/Render/RenderState.h"
 
 WLDActor::WLDActor(WLDModel *model, QObject *parent) : QObject(parent)
 {

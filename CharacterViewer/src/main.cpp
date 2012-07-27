@@ -3,12 +3,12 @@
 #include <QGLFormat>
 #include <QDir>
 #include <QMessageBox>
-#include "Scene.h"
-#include "Zone.h"
-#include "WLDActor.h"
-#include "WLDModel.h"
-#include "WLDSkeleton.h"
-#include "RenderStateGL2.h"
+#include "OpenEQ/Render/Scene.h"
+#include "OpenEQ/Render/RenderStateGL2.h"
+#include "OpenEQ/Game/Zone.h"
+#include "OpenEQ/Game/WLDActor.h"
+#include "OpenEQ/Game/WLDModel.h"
+#include "OpenEQ/Game/WLDSkeleton.h"
 #include "CharacterViewerWindow.h"
 #include "ZoneViewerWindow.h"
 
@@ -16,7 +16,7 @@ QWidget * showCharViewer(RenderState *state)
 {
     // create viewport for rendering the scene
     CharacterViewerWindow *v = new CharacterViewerWindow(state);
-    CharacterScene *scene = v->scene();
+    /*CharacterScene *scene = v->scene();
     Zone *z = scene->zone();
     QDir assetDir(scene->assetPath());
     z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
@@ -35,7 +35,7 @@ QWidget * showCharViewer(RenderState *state)
         charActor->model()->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());
         charActor->setAnimName("P01");
         charActor->setPaletteName("03");
-    }
+    }*/
     return v;
 }
 
@@ -59,8 +59,8 @@ int main(int argc, char **argv)
     RenderStateGL2 state;
 
     // main window loop
-    //QWidget *v = showCharViewer(&state);
-    QWidget *v = showZoneViewer(&state);
+    QWidget *v = showCharViewer(&state);
+    //QWidget *v = showZoneViewer(&state);
     v->setWindowState(Qt::WindowMaximized);
     v->show();
     app.exec();

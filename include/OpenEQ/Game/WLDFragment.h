@@ -2,7 +2,7 @@
 #define OPENEQ_WLD_FRAGMENT_H
 
 #include <QObject>
-#include "Platform.h"
+#include "OpenEQ/Render/Platform.h"
 
 class WLDData;
 class WLDReader;

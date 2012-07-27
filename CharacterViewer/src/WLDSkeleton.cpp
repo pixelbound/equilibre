@@ -1,6 +1,6 @@
 #include <cmath>
-#include "WLDSkeleton.h"
-#include "Fragments.h"
+#include "OpenEQ/Game/WLDSkeleton.h"
+#include "OpenEQ/Game/Fragments.h"
 
 BoneTransform::BoneTransform()
 {

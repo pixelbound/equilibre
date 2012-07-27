@@ -1,10 +1,10 @@
 #ifndef OPENEQ_SCENE_VIEWPORT_H
 #define OPENEQ_SCENE_VIEWPORT_H
 
-#include "Platform.h"
 #include <QGLWidget>
 #include <QTime>
-#include "Vertex.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Render/Vertex.h"
 
 class QTimer;
 class QPainter;

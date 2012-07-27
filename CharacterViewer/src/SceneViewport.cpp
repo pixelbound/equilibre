@@ -5,11 +5,11 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPaintEvent>
-#include "SceneViewport.h"
-#include "Vertex.h"
-#include "Scene.h"
-#include "Material.h"
-#include "RenderState.h"
+#include "OpenEQ/Render/SceneViewport.h"
+#include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Render/Scene.h"
+#include "OpenEQ/Render/Material.h"
+#include "OpenEQ/Render/RenderState.h"
 
 SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) : QGLWidget(parent)
 {

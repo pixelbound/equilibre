@@ -3,7 +3,7 @@
 #include <vector>
 #include <cstring>
 #include <QQuaternion>
-#include "Vertex.h"
+#include "OpenEQ/Render/Vertex.h"
 
 using namespace std;
 

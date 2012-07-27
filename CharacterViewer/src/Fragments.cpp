@@ -1,6 +1,6 @@
 #include <cmath>
-#include "Fragments.h"
-#include "WLDData.h"
+#include "OpenEQ/Game/Fragments.h"
+#include "OpenEQ/Game/WLDData.h"
 
 BitmapNameFragment::BitmapNameFragment(QString name) : WLDFragment(ID, name)
 {

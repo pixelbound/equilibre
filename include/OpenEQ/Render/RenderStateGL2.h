@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 #include <inttypes.h>
-#include "RenderState.h"
+#include "OpenEQ/Render/RenderState.h"
 
 class ShaderProgramGL2;
 class MaterialMap;

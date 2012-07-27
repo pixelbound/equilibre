@@ -46,29 +46,29 @@ set(CHARVIEWER_SOURCES
 )
 
 set(CHARVIEWER_HEADERS
-    include/SceneViewport.h
-    include/RenderState.h
-    include/RenderStateGL2.h
-    include/ShaderProgramGL2.h
-    include/Material.h
-    include/Vertex.h
-    include/Scene.h
-    include/Platform.h
-    include/WLDData.h
-    include/WLDFragment.h
-    include/Fragments.h
-    include/WLDModel.h
-    include/StreamReader.h
-    include/PFSArchive.h
-    include/WLDActor.h
-    include/Zone.h
-    include/WLDSkeleton.h
-    include/CharacterViewerWindow.h
-    include/imath.h
-    include/dxt_tables.h
-    include/dds.h
-    include/dxt.h
+    ../include/OpenEQ/Render/SceneViewport.h
+    ../include/OpenEQ/Render/RenderState.h
+    ../include/OpenEQ/Render/RenderStateGL2.h
+    ../include/OpenEQ/Render/ShaderProgramGL2.h
+    ../include/OpenEQ/Render/Material.h
+    ../include/OpenEQ/Render/Vertex.h
+    ../include/OpenEQ/Render/Scene.h
+    ../include/OpenEQ/Render/Platform.h
+    ../include/OpenEQ/Game/WLDData.h
+    ../include/OpenEQ/Game/WLDFragment.h
+    ../include/OpenEQ/Game/Fragments.h
+    ../include/OpenEQ/Game/WLDModel.h
+    ../include/OpenEQ/Game/StreamReader.h
+    ../include/OpenEQ/Game/PFSArchive.h
+    ../include/OpenEQ/Game/WLDActor.h
+    ../include/OpenEQ/Game/Zone.h
+    ../include/OpenEQ/Game/WLDSkeleton.h
+    ../include/OpenEQ/Render/imath.h
+    ../include/OpenEQ/Render/dxt_tables.h
+    ../include/OpenEQ/Render/dds.h
+    ../include/OpenEQ/Render/dxt.h
     include/ZoneViewerWindow.h
+    include/CharacterViewerWindow.h
 )
 
 set(CHARVIEWER_RESOURCES

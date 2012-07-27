@@ -2,7 +2,7 @@
 #define OPENEQ_STREAM_READER_H
 
 #include <QObject>
-#include "Platform.h"
+#include "OpenEQ/Render/Platform.h"
 
 class QIODevice;
 

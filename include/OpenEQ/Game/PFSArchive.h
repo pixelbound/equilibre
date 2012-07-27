@@ -5,7 +5,7 @@
 #include <QByteArray>
 #include <QList>
 #include <QMap>
-#include "Platform.h"
+#include "OpenEQ/Render/Platform.h"
 
 class QFile;
 class StreamReader;

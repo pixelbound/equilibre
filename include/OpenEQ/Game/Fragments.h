@@ -5,10 +5,10 @@
 #include <QVector>
 #include <QColor>
 #include <QPair>
-#include "Platform.h"
-#include "Vertex.h"
-#include "WLDFragment.h"
-#include "WLDSkeleton.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Game/WLDFragment.h"
+#include "OpenEQ/Game/WLDSkeleton.h"
 
 typedef QPair<uint16_t, uint16_t> vec2us;
 

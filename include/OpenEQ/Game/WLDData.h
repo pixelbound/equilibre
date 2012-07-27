@@ -4,9 +4,9 @@
 #include <QObject>
 #include <QList>
 #include <QByteArray>
-#include "Platform.h"
-#include "WLDFragment.h"
-#include "StreamReader.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Game/WLDFragment.h"
+#include "OpenEQ/Game/StreamReader.h"
 
 class QIODevice;
 class PFSArchive;

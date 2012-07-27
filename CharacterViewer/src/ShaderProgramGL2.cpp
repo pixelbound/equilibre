@@ -1,8 +1,8 @@
 #include <GL/glew.h>
-#include "ShaderProgramGL2.h"
-#include "RenderStateGL2.h"
-#include "Material.h"
-#include "WLDSkeleton.h"
+#include "OpenEQ/Render/ShaderProgramGL2.h"
+#include "OpenEQ/Render/RenderStateGL2.h"
+#include "OpenEQ/Render/Material.h"
+#include "OpenEQ/Game/WLDSkeleton.h" //XXX
 
 ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
 {
@@ -417,6 +417,7 @@ void ShaderProgramGL2::endDrawMesh()
         return;
     if(m_meshData.bones && (m_meshData.boneCount > 0))
         endSkinMesh();
+    //XXX No unbind / do unbind at the end of the frame.
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     for(int i = 0; i < 4; i++)
         disableVertexAttribute(A_MODEL_VIEW_0, i);

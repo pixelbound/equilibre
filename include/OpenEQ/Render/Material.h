@@ -5,7 +5,7 @@
 #include <inttypes.h>
 #include <QImage>
 #include <QMap>
-#include "Vertex.h"
+#include "OpenEQ/Render/Vertex.h"
 
 class RenderState;
 class VertexGroup;

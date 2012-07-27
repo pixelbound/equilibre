@@ -1,10 +1,10 @@
 #include <cstdio>
 #include <GL/glew.h>
 #include <QImage>
-#include "Platform.h"
-#include "RenderStateGL2.h"
-#include "ShaderProgramGL2.h"
-#include "Material.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Render/RenderStateGL2.h"
+#include "OpenEQ/Render/ShaderProgramGL2.h"
+#include "OpenEQ/Render/Material.h"
 
 RenderStateGL2::RenderStateGL2() : RenderState()
 {

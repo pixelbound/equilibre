@@ -1,7 +1,7 @@
 #include <QVector3D>
 #include <QQuaternion>
 #include <QMatrix4x4>
-#include "RenderState.h"
+#include "OpenEQ/Render/RenderState.h"
 
 RenderState::RenderState()
 {

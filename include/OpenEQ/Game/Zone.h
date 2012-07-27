@@ -4,8 +4,8 @@
 #include <QObject>
 #include <QList>
 #include <QMap>
-#include "Platform.h"
-#include "Vertex.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Render/Vertex.h"
 
 class PFSArchive;
 class WLDData;

@@ -1,8 +1,8 @@
 #include <QIODevice>
 #include <QFile>
 #include <QBuffer>
-#include "WLDData.h"
-#include "PFSArchive.h"
+#include "OpenEQ/Game/WLDData.h"
+#include "OpenEQ/Game/PFSArchive.h"
 
 /*!
   \brief Describes the header of a .wld file.

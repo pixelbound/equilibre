@@ -2,8 +2,8 @@
 #define OPENEQ_ZONE_VIEWER_WINDOW_H
 
 #include <QMainWindow>
-#include "Scene.h"
-#include "Vertex.h"
+#include "OpenEQ/Render/Scene.h"
+#include "OpenEQ/Render/Vertex.h"
 
 class QComboBox;
 class QVBoxLayout;

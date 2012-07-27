@@ -1,7 +1,7 @@
 #ifndef OPENEQ_RENDER_STATE_H
 #define OPENEQ_RENDER_STATE_H
 
-#include "Vertex.h"
+#include "OpenEQ/Render/Vertex.h"
 
 class QImage;
 class QVector3D;

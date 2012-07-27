@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QMap>
-#include "Vertex.h"
+#include "OpenEQ/Render/Vertex.h"
 
 class WLDModel;
 class WLDActor;

@@ -11,13 +11,13 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include "ZoneViewerWindow.h"
-#include "SceneViewport.h"
-#include "RenderState.h"
-#include "Scene.h"
-#include "WLDModel.h"
-#include "WLDActor.h"
-#include "WLDSkeleton.h"
-#include "Zone.h"
+#include "OpenEQ/Render/SceneViewport.h"
+#include "OpenEQ/Render/RenderState.h"
+#include "OpenEQ/Render/Scene.h"
+#include "OpenEQ/Game/WLDModel.h"
+#include "OpenEQ/Game/WLDActor.h"
+#include "OpenEQ/Game/WLDSkeleton.h"
+#include "OpenEQ/Game/Zone.h"
 
 ZoneViewerWindow::ZoneViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
 {

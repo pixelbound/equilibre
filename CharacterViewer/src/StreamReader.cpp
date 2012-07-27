@@ -1,6 +1,6 @@
 #include <stdarg.h>
 #include <QIODevice>
-#include "StreamReader.h"
+#include "OpenEQ/Game/StreamReader.h"
 
 StreamReader::StreamReader(QIODevice *stream)
 {
