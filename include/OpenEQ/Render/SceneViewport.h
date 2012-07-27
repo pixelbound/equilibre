@@ -4,7 +4,6 @@
 #include <QGLWidget>
 #include <QTime>
 #include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
 
 class QTimer;
 class QPainter;
@@ -12,7 +11,7 @@ class QGLFormat;
 class Scene;
 class RenderState;
 
-class SceneViewport : public QGLWidget
+class RENDER_DLL SceneViewport : public QGLWidget
 {
     Q_OBJECT
 

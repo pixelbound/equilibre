@@ -15,7 +15,7 @@ class PFSArchive;
   \brief Holds the content of a .wld file (mostly a list of fragments such as
   textures, meshes, skeletons, etc).
   */
-class WLDData : public QObject
+class GAME_DLL WLDData : public QObject
 {
 public:
     WLDData(QObject *parent = 0);
@@ -59,7 +59,7 @@ private:
     QList<WLDFragment *> m_fragments;
 };
 
-class WLDReader : public StreamReader
+class GAME_DLL WLDReader : public StreamReader
 {
 public:
     WLDReader(QIODevice *stream, WLDData *wld);

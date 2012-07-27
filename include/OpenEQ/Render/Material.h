@@ -1,16 +1,15 @@
 #ifndef OPENEQ_MATERIAL_H
 #define OPENEQ_MATERIAL_H
 
-#include <string>
-#include <inttypes.h>
 #include <QImage>
 #include <QMap>
+#include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
 
 class RenderState;
 class VertexGroup;
 
-class Material
+class RENDER_DLL Material
 {
 public:
     enum OriginType
@@ -56,7 +55,7 @@ private:
     bool m_opaque;
 };
 
-class MaterialMap
+class RENDER_DLL MaterialMap
 {
 public:
     MaterialMap();

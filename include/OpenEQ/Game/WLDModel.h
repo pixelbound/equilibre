@@ -27,7 +27,7 @@ class WLDAnimation;
 /*!
   \brief Describes a model (such as an object or a character) that can be rendered.
   */
-class WLDModel : public QObject
+class GAME_DLL WLDModel : public QObject
 {
 public:
     WLDModel(PFSArchive *archive, QObject *parent = 0);
@@ -53,7 +53,7 @@ private:
 /*!
   \brief Describes part of a model.
   */
-class WLDMesh : public QObject
+class GAME_DLL WLDMesh : public QObject
 {
 public:
     WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
@@ -87,7 +87,7 @@ private:
   \brief Defines a set of materials (e.g. textures) that can be used for a model.
   One model can have multiple palettes but can only use one at the same time.
   */
-class WLDMaterialPalette : public QObject
+class GAME_DLL WLDMaterialPalette : public QObject
 {
 public:
     WLDMaterialPalette(PFSArchive *archive, QObject *parent = 0);
@@ -119,7 +119,7 @@ private:
   \brief Describes one way an actor can be rendered. A skin can include a texture
   palette and alternative meshes (e.g. for a character's head).
   */
-class WLDModelSkin : public QObject
+class GAME_DLL WLDModelSkin : public QObject
 {
 public:
     WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, QObject *parent = 0);

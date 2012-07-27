@@ -44,6 +44,8 @@ QT4_ADD_RESOURCES(LIB_RESOURCES ${LIB_RESOURCES})
 source_group(shaders FILES ${LIB_RESOURCE_FILES})
 source_group(moc FILES ${LIB_MOC_SOURCES})
 
+add_definitions(-DBUILD_RENDER_DLL)
+
 add_library(OpenEQRender SHARED
     ${LIB_SOURCES}
     ${LIB_MOC_SOURCES}

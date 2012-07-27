@@ -6,7 +6,7 @@
 
 class QIODevice;
 
-class StreamReader
+class GAME_DLL StreamReader
 {
 public:
     StreamReader(QIODevice *stream);

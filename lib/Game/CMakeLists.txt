@@ -26,6 +26,8 @@ QT4_WRAP_CPP(LIB_MOC_SOURCES ${LIB_HEADERS})
 
 source_group(moc FILES ${LIB_MOC_SOURCES})
 
+add_definitions(-DBUILD_GAME_DLL)
+
 add_library(OpenEQGame SHARED
     ${LIB_SOURCES}
     ${LIB_MOC_SOURCES}
@@ -33,7 +35,6 @@ add_library(OpenEQGame SHARED
     ${LIB_RESOURCE_FILES}
     ${LIB_HEADERS}
 )
-
 
 target_link_libraries(OpenEQGame
     OpenEQRender

@@ -63,10 +63,10 @@ public:
     static vec3 normal(const vec3 &a, const vec3 &b, const vec3 &c);
 };
 
-vec3 operator-(const vec3 &a);
-vec3 operator+(const vec3 &a, const vec3 &b);
-vec3 operator-(const vec3 &a, const vec3 &b);
-vec3 operator*(const vec3 &a, float scalar);
+vec3 RENDER_DLL operator-(const vec3 &a);
+vec3 RENDER_DLL operator+(const vec3 &a, const vec3 &b);
+vec3 RENDER_DLL operator-(const vec3 &a, const vec3 &b);
+vec3 RENDER_DLL operator*(const vec3 &a, float scalar);
 
 class RENDER_DLL vec4
 {
@@ -112,6 +112,8 @@ public:
     static matrix4 ortho(float left, float right, float bottom, float top, float nearPlane, float farPlane);
     static matrix4 lookAt(vec3 eye, vec3 center, vec3 up);
 };
+
+matrix4 RENDER_DLL operator*(const matrix4 &a, const matrix4 &b);
 
 class RENDER_DLL BoneTransform
 {
@@ -212,8 +214,6 @@ private:
     vec3 m_corners[8];
     bool m_dirty;
 };
-
-matrix4 operator*(const matrix4 &a, const matrix4 &b);
 
 class RENDER_DLL VertexData
 {

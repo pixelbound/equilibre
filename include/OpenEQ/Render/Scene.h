@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QMap>
+#include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
 
 class WLDModel;
@@ -22,7 +23,7 @@ struct MouseState
     vec3 last;        // value of delta/theta when the user last clicked
 };
 
-class Scene : public QObject
+class RENDER_DLL Scene : public QObject
 {
     Q_OBJECT
 

@@ -31,7 +31,7 @@ public:
 /*!
   \brief Holds the content of a WLD fragment (e.g. texture, mesh, skeleton, etc).
   */
-class WLDFragment
+class GAME_DLL WLDFragment
 {
 public:
     WLDFragment(uint32_t kind, QString name);
@@ -62,7 +62,7 @@ private:
 /*!
   \brief Refers to another fragment, either directly or through a name.
   */
-class WLDFragmentRef
+class GAME_DLL WLDFragmentRef
 {
 public:
     WLDFragmentRef();

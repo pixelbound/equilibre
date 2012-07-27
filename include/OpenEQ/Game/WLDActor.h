@@ -19,7 +19,7 @@ typedef QPair<int, WLDActor *> ActorEquip;
 /*!
   \brief Describes an instance of a model (such as an object or a character).
   */
-class WLDActor : public QObject
+class GAME_DLL WLDActor : public QObject
 {
 public:
     WLDActor(WLDModel *model, QObject *parent = 0);
@@ -68,7 +68,7 @@ private:
 /*!
   \brief Describes an instance of a zone object.
   */
-class WLDZoneActor
+class GAME_DLL WLDZoneActor
 {
 public:
     WLDZoneActor(ActorFragment *frag, WLDMesh *mesh);
@@ -80,7 +80,7 @@ public:
 
 class ActorIndex;
 
-class ActorIndexNode
+class GAME_DLL ActorIndexNode
 {
 public:
     ActorIndexNode(const AABox &bounds);
@@ -102,7 +102,7 @@ private:
     AABox m_bounds;
 };
 
-class ActorIndex
+class GAME_DLL ActorIndex
 {
 public:
     ActorIndex();

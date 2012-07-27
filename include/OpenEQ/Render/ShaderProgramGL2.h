@@ -2,9 +2,9 @@
 #define OPENEQ_SHADER_PROGRAM_GL2_H
 
 #include <vector>
-#include <inttypes.h>
 #include <QString>
-#include "Vertex.h"
+#include "OpenEQ/Render/Platform.h"
+#include "OpenEQ/Render/Vertex.h"
 
 const int MAX_TRANSFORMS = 256;
 const int A_POSITION = 0;

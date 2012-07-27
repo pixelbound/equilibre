@@ -24,7 +24,7 @@ class RenderState;
 /*!
   \brief Describes a zone of the world.
   */
-class Zone : public QObject
+class GAME_DLL Zone : public QObject
 {
 public:
     Zone(QObject *parent = 0);

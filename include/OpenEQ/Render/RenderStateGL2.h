@@ -3,13 +3,13 @@
 
 #include <vector>
 #include <string>
-#include <inttypes.h>
+#include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/RenderState.h"
 
 class ShaderProgramGL2;
 class MaterialMap;
 
-class RenderStateGL2 : public RenderState
+class RENDER_DLL RenderStateGL2 : public RenderState
 {
 public:
     RenderStateGL2();

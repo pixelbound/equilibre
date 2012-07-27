@@ -21,7 +21,7 @@ public:
 /*!
   \brief Allows extraction of PFS archives (e.g. .pfs, .s3d, .pak files).
   */
-class PFSArchive : public QObject
+class GAME_DLL PFSArchive : public QObject
 {
 public:
     PFSArchive(QString path, QObject *parent = 0);

@@ -3,8 +3,6 @@
 
 #include <QObject>
 #include <QMap>
-#include <QVector3D>
-#include <QQuaternion>
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
 #include "WLDFragment.h"
@@ -25,26 +23,10 @@ public:
     QVector<uint32_t> children;
 };
 
-class BoneTransform
-{
-public:
-    QVector4D location;
-    QQuaternion rotation;
-
-    BoneTransform();
-    BoneTransform(const vec4 &loc, const vec4 &rot);
-
-    vec3 map(const vec3 &v);
-    QVector4D map(const QVector4D &v);
-    void toDualQuaternion(vec4 &d0, vec4 &d1) const;
-
-    static BoneTransform interpolate(BoneTransform a, BoneTransform b, double c);
-};
-
 /*!
   \brief Holds information about a model's skeleton, used for animation.
   */
-class WLDSkeleton : public QObject
+class GAME_DLL WLDSkeleton : public QObject
 {
 public:
     WLDSkeleton(HierSpriteDefFragment *def, QObject *parent = 0);
@@ -66,7 +48,7 @@ private:
 /*!
   \brief Describes one way of animating a model's skeleton.
   */
-class WLDAnimation : public QObject
+class GAME_DLL WLDAnimation : public QObject
 {
 public:
     WLDAnimation(QString name, QVector<TrackDefFragment *> tracks, WLDSkeleton *skel,

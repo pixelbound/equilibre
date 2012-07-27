@@ -1,6 +1,7 @@
 #ifndef OPENEQ_RENDER_STATE_H
 #define OPENEQ_RENDER_STATE_H
 
+#include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
 
 class QImage;
@@ -10,7 +11,7 @@ class BoneTransform;
 class Material;
 class MaterialMap;
 
-class RenderState
+class RENDER_DLL RenderState
 {
 public:
     RenderState();
