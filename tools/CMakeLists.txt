@@ -1,0 +1,2 @@
+subdirs(CharacterViewer)
+subdirs(ZoneViewer)

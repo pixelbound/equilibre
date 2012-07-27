@@ -10,7 +10,6 @@
 #include "OpenEQ/Game/WLDModel.h"
 #include "OpenEQ/Game/WLDSkeleton.h"
 #include "CharacterViewerWindow.h"
-#include "ZoneViewerWindow.h"
 
 QWidget * showCharViewer(RenderState *state)
 {
@@ -39,13 +38,6 @@ QWidget * showCharViewer(RenderState *state)
     return v;
 }
 
-QWidget * showZoneViewer(RenderState *state)
-{
-    //ZoneViewerWindow *v = new ZoneViewerWindow(state);
-    //v->scene()->zone()->load(v->scene()->assetPath(), "gfaydark");
-    return new ZoneViewerWindow(state);
-}
-
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
@@ -60,7 +52,6 @@ int main(int argc, char **argv)
 
     // main window loop
     QWidget *v = showCharViewer(&state);
-    //QWidget *v = showZoneViewer(&state);
     v->setWindowState(Qt::WindowMaximized);
     v->show();
     app.exec();
