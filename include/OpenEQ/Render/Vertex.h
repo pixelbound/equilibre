@@ -1,16 +1,18 @@
 #ifndef OPENEQ_VERTEX_H
 #define OPENEQ_VERTEX_H
 
-#include <inttypes.h>
 #include <QString>
 #include <QVector>
+#include <QVector3D>
+#include <QQuaternion>
+#include "OpenEQ/Render/Platform.h"
 
 bool fequal(double a, double b);
 
 typedef unsigned int buffer_t;
 typedef unsigned int texture_t;
 
-class vec2
+class RENDER_DLL vec2
 {
 public:
     float x;
@@ -28,7 +30,7 @@ public:
     }
 };
 
-class vec3
+class RENDER_DLL vec3
 {
 public:
     float x;
@@ -66,7 +68,7 @@ vec3 operator+(const vec3 &a, const vec3 &b);
 vec3 operator-(const vec3 &a, const vec3 &b);
 vec3 operator*(const vec3 &a, float scalar);
 
-class vec4
+class RENDER_DLL vec4
 {
 public:
     float x;
@@ -88,7 +90,7 @@ public:
     }
 };
 
-class matrix4
+class RENDER_DLL matrix4
 {
 public:
     float d[16];
@@ -111,7 +113,23 @@ public:
     static matrix4 lookAt(vec3 eye, vec3 center, vec3 up);
 };
 
-struct Plane
+class RENDER_DLL BoneTransform
+{
+public:
+    QVector4D location;
+    QQuaternion rotation;
+
+    BoneTransform();
+    BoneTransform(const vec4 &loc, const vec4 &rot);
+
+    vec3 map(const vec3 &v);
+    QVector4D map(const QVector4D &v);
+    void toDualQuaternion(vec4 &d0, vec4 &d1) const;
+
+    static BoneTransform interpolate(BoneTransform a, BoneTransform b, double c);
+};
+
+struct RENDER_DLL Plane
 {
     vec3 p; // point on the plane
     vec3 n; // normal of the plane
@@ -119,7 +137,7 @@ struct Plane
     float distance(vec3 v) const;
 };
 
-struct AABox
+struct RENDER_DLL AABox
 {
     vec3 low, high;
 
@@ -141,7 +159,7 @@ struct AABox
 #undef FAR
 #endif
 
-class Frustum
+class RENDER_DLL Frustum
 {
 public:
     enum PlaneIndex
@@ -197,7 +215,7 @@ private:
 
 matrix4 operator*(const matrix4 &a, const matrix4 &b);
 
-class VertexData
+class RENDER_DLL VertexData
 {
 public:
     vec3 position;
@@ -207,7 +225,7 @@ public:
     uint32_t padding[2]; // align on 16-bytes boundaries
 };
 
-class MaterialGroup
+class RENDER_DLL MaterialGroup
 {
 public:
     uint32_t id;
@@ -216,7 +234,7 @@ public:
     QString matName;
 };
 
-struct BufferSegment
+struct RENDER_DLL BufferSegment
 {
     buffer_t buffer;
     uint32_t elementSize;
@@ -228,7 +246,7 @@ struct BufferSegment
     size_t address() const;
 };
 
-class VertexGroup
+class RENDER_DLL VertexGroup
 {
 public:
     enum Primitive

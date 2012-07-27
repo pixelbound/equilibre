@@ -2,7 +2,6 @@
 #include "OpenEQ/Render/ShaderProgramGL2.h"
 #include "OpenEQ/Render/RenderStateGL2.h"
 #include "OpenEQ/Render/Material.h"
-#include "OpenEQ/Game/WLDSkeleton.h" //XXX
 
 ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
 {

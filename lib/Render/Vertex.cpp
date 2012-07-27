@@ -271,6 +271,51 @@ void matrix4::dump() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
+BoneTransform::BoneTransform()
+{
+}
+
+BoneTransform::BoneTransform(const vec4 &loc, const vec4 &rot)
+{
+    location = QVector4D(loc.x, loc.y, loc.z, loc.w);
+    rotation = QQuaternion(rot.w, rot.x, rot.y, rot.z);
+}
+
+vec3 BoneTransform::map(const vec3 &v)
+{
+    QVector3D v2(v.x, v.y, v.z);
+    v2 = rotation.rotatedVector(v2) + location.toVector3D();
+    return vec3(v2.x(), v2.y(), v2.z());
+}
+
+QVector4D BoneTransform::map(const QVector4D &v)
+{
+    return QVector4D(rotation.rotatedVector(v.toVector3D()) + location.toVector3D(), 1.0);
+}
+
+BoneTransform BoneTransform::interpolate(BoneTransform a, BoneTransform b, double f)
+{
+    BoneTransform c;
+    c.rotation = QQuaternion::slerp(a.rotation, b.rotation, f);
+    c.location = (a.location * (1.0 - f)) + (b.location * f);
+    return c;
+}
+
+void BoneTransform::toDualQuaternion(vec4 &d0, vec4 &d1) const
+{
+    const QVector4D &tran(location);
+    d0.x = rotation.x();
+    d0.y = rotation.y();
+    d0.z = rotation.z();
+    d0.w = rotation.scalar();
+    d1.x = 0.5f * (tran.x() * d0.w + tran.y() * d0.z - tran.z() * d0.y);
+    d1.y = 0.5f * (-tran.x() * d0.z + tran.y() * d0.w + tran.z() * d0.x);
+    d1.z = 0.5f * (tran.x() * d0.y - tran.y() * d0.x + tran.z() * d0.w);
+    d1.w = -0.5f * (tran.x() * d0.x + tran.y() * d0.y + tran.z() * d0.z);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 float Plane::distance(vec3 v) const
 {
     return vec3::dot(n, v) + vec3::dot(-n, p);
