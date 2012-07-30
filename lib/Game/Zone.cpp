@@ -9,6 +9,7 @@
 #include "OpenEQ/Game/Fragments.h"
 #include "OpenEQ/Render/RenderState.h"
 #include "OpenEQ/Render/Material.h"
+#include "OpenEQ/Render/FrameStat.h"
 
 Zone::Zone(QObject *parent) : QObject(parent)
 {
@@ -27,6 +28,8 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_showZone = true;
     m_showObjects = true;
     m_cullObjects = true;
+    m_zoneStat = NULL;
+    m_objectsStat = NULL;
     m_objectsGeometry = NULL;
     m_index = new ActorIndex();
 }
@@ -343,18 +346,37 @@ void Zone::draw(RenderState *state)
     state->multiplyMatrix(frustum.camera());
 
     // draw geometry
+    if(!m_zoneStat)
+        m_zoneStat = state->createStat("Zone (ms)");
     if(m_showZone && m_zoneGeometry)
     {
+        m_zoneStat->beginTime();
         uploadZone(state);
         state->setRenderMode(RenderState::Basic);
         state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
         state->drawMesh();
         state->endDrawMesh();
+        m_zoneStat->endTime(1000.0);
+    }
+    else
+    {
+        // XXX do this automatically every frame.
+        m_zoneStat->addSample(0.0f);
     }
 
     // draw objects
+    if(!m_objectsStat)
+        m_objectsStat = state->createStat("Objects (ms)");
     if(m_showObjects && (m_objMeshWld != NULL))
+    {
+        m_objectsStat->beginTime();
         drawObjects(state);
+        m_objectsStat->endTime(1000.0);
+    }
+    else
+    {
+        m_objectsStat->addSample(0.0f);
+    }
     
     state->popMatrix();
 }

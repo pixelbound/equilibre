@@ -14,6 +14,8 @@ public:
     float average() const;
 
     void addSample(float s);
+    void beginTime();
+    void endTime(double factor = 1.0);
     void clear();
 
 private:
@@ -21,6 +23,7 @@ private:
     QVector<float> m_samples;
     int m_current;
     int m_count;
+    double m_startTime;
 };
 
 #endif

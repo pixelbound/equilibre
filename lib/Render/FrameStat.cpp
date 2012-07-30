@@ -4,6 +4,7 @@
 FrameStat::FrameStat(QString name, int samples)
 {
     m_name = name;
+    m_startTime = 0.0;
     for(int i = 0; i < samples; i++)
         m_samples.append(0.0f);
     clear();
@@ -25,6 +26,18 @@ float FrameStat::average() const
         sum += m_samples[pos];
     }
     return sum / m_count;
+}
+
+void FrameStat::beginTime()
+{
+    m_startTime = currentTime();
+}
+
+void FrameStat::endTime(double factor)
+{
+    double duration = currentTime() - m_startTime;
+    float s = (float)(duration * factor);
+    addSample(s);
 }
 
 void FrameStat::addSample(float s)

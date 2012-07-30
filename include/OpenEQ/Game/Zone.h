@@ -20,6 +20,7 @@ class WLDMaterialPalette;
 class MaterialMap;
 class ActorDefFragment;
 class RenderState;
+class FrameStat;
 
 /*!
   \brief Describes a zone of the world.
@@ -97,6 +98,8 @@ private:
     bool m_showZone;
     bool m_showObjects;
     bool m_cullObjects;
+    FrameStat *m_zoneStat;
+    FrameStat *m_objectsStat;
     QVector<const WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;

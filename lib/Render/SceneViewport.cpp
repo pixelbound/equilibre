@@ -70,16 +70,14 @@ void SceneViewport::paintEvent(QPaintEvent *)
 
 void SceneViewport::paintGL()
 {
-    double frameStart = currentTime();
+    m_frameStat->beginTime();
     if(m_state->beginFrame())
     {
         m_scene->draw();
         m_state->endFrame();
     }
-    double frameEnd = currentTime();
-    float frameDur = (float)(frameEnd - frameStart);
+    m_frameStat->endTime(1000.0f);
     //float fps = (frameDur == 0.0f) ? 0.0f : (1.0f / frameDur);
-    m_frameStat->addSample(frameDur * 1000.0f);
 }
 
 void SceneViewport::toggleAnimation()
