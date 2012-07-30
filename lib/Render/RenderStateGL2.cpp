@@ -5,6 +5,7 @@
 #include "OpenEQ/Render/RenderStateGL2.h"
 #include "OpenEQ/Render/ShaderProgramGL2.h"
 #include "OpenEQ/Render/Material.h"
+#include "OpenEQ/Render/FrameStat.h"
 
 RenderStateGL2::RenderStateGL2() : RenderState()
 {
@@ -488,4 +489,16 @@ void RenderStateGL2::setShader(RenderStateGL2::Shader newShader)
                 newProg->beginFrame();
         }
     }
+}
+
+const QVector<FrameStat *> & RenderStateGL2::stats() const
+{
+    return m_stats;
+}
+
+FrameStat * RenderStateGL2::createStat(QString name)
+{
+    FrameStat *stat = new FrameStat(name, 64);
+    m_stats.append(stat);
+    return stat;
 }

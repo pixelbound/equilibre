@@ -10,6 +10,7 @@
 #include "OpenEQ/Render/Scene.h"
 #include "OpenEQ/Render/Material.h"
 #include "OpenEQ/Render/RenderState.h"
+#include "OpenEQ/Render/FrameStat.h"
 
 SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) : QGLWidget(parent)
 {
@@ -18,12 +19,11 @@ SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) 
     m_state = state;
     m_renderTimer = new QTimer(this);
     m_renderTimer->setInterval(0);
-    m_frames = 0;
-    m_lastFPS = 0;
-    m_fpsTimer = new QTimer(this);
-    m_fpsTimer->setInterval(1000);
+    m_frameStat = state->createStat("Frame (ms)");
+    m_statsTimer = new QTimer(this);
+    m_statsTimer->setInterval(1000);
     setAutoFillBackground(false);
-    connect(m_fpsTimer, SIGNAL(timeout()), this, SLOT(updateFPS()));
+    connect(m_statsTimer, SIGNAL(timeout()), this, SLOT(updateStats()));
     connect(m_renderTimer, SIGNAL(timeout()), this, SLOT(update()));
 }
 
@@ -64,18 +64,22 @@ void SceneViewport::paintEvent(QPaintEvent *)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
     paintGL();
-    m_frames++;
-    if(m_fpsTimer->isActive())
-        paintFPS(&painter, m_lastFPS);
+    if(m_statsTimer->isActive())
+        paintStats(&painter);
 }
 
 void SceneViewport::paintGL()
 {
+    double frameStart = currentTime();
     if(m_state->beginFrame())
     {
         m_scene->draw();
         m_state->endFrame();
     }
+    double frameEnd = currentTime();
+    float frameDur = (float)(frameEnd - frameStart);
+    //float fps = (frameDur == 0.0f) ? 0.0f : (1.0f / frameDur);
+    m_frameStat->addSample(frameDur * 1000.0f);
 }
 
 void SceneViewport::toggleAnimation()
@@ -93,46 +97,56 @@ void SceneViewport::setAnimation(bool enabled)
     updateAnimationState();
 }
 
-bool SceneViewport::showFps() const
+bool SceneViewport::showStats() const
 {
-    return m_fpsTimer->isActive();
+    return m_statsTimer->isActive();
 }
 
-void SceneViewport::setShowFps(bool show)
+void SceneViewport::setShowStats(bool show)
 {
     if(show)
     {
-        startFPS();
-        m_fpsTimer->start();
+        startStats();
+        m_statsTimer->start();
     }
     else
     {
-        m_fpsTimer->stop();
+        m_statsTimer->stop();
     }
 }
 
-void SceneViewport::startFPS()
+void SceneViewport::startStats()
 {
-    m_start = QTime::currentTime();
+    m_frameStat->clear();
 }
 
-void SceneViewport::updateFPS()
+void SceneViewport::updateStats()
 {
-    qint64 elapsedMillis = m_start.msecsTo(QTime::currentTime());
-    m_lastFPS = m_frames / ((float)elapsedMillis / 1000.0);
-    m_frames = 0;
-    m_start = QTime::currentTime();
+    const QVector<FrameStat *> stats = m_state->stats();
+    for(int i = 0; i < stats.count(); i++)
+    {
+        if(i >= m_lastStats.count())
+            m_lastStats.append(0.0f);
+        m_lastStats[i] = stats[i]->average();
+    }
 }
 
-void SceneViewport::paintFPS(QPainter *p, float fps)
+void SceneViewport::paintStats(QPainter *p)
 {
     QFont f;
     f.setPointSizeF(16.0);
     f.setWeight(QFont::Bold);
     p->setFont(f);
-    QString text = QString("%1 FPS").arg(fps, 0, 'g', 4);
+    QString text;
+    const QVector<FrameStat *> stats = m_state->stats();
+    for(int i = 0; i < stats.count(); i++)
+    {
+        FrameStat *stat = stats[i];
+        float val = m_lastStats.value(i);
+        text += QString("%1: %2\n").arg(stat->name()).arg(val, 0, 'g', 4);
+    }
     p->setPen(QPen(Qt::white));
-    p->drawText(QRectF(QPointF(10, 5), QSizeF(200, 100)), text);
+    p->drawText(QRectF(QPointF(10, 5), QSizeF(800, 400)), text);
 }
 
 void SceneViewport::updateAnimationState()

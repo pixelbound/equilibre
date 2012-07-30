@@ -1,6 +1,7 @@
 #ifndef OPENEQ_RENDER_STATE_H
 #define OPENEQ_RENDER_STATE_H
 
+#include <QVector>
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
 
@@ -10,6 +11,7 @@ class QQuaternion;
 class BoneTransform;
 class Material;
 class MaterialMap;
+class FrameStat;
 
 class RENDER_DLL RenderState
 {
@@ -115,6 +117,11 @@ public:
     // buffer operations
     
     virtual buffer_t createBuffer(const void *data, size_t size) = 0;
+
+    // Performance measurement
+
+    virtual FrameStat * createStat(QString name) = 0;
+    virtual const QVector<FrameStat *> &stats() const = 0;
 
 protected:
     vec4 m_bgColor;

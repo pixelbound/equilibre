@@ -60,6 +60,11 @@ public:
     
     virtual buffer_t createBuffer(const void *data, size_t size);
 
+    // Performance measurement
+
+    virtual FrameStat * createStat(QString name);
+    virtual const QVector<FrameStat *> &stats() const;
+
     enum Shader
     {
         BasicShader = 0,
@@ -85,6 +90,7 @@ private:
     Shader m_shader;
     VertexGroup *m_cube;
     MaterialMap *m_cubeMats;
+    QVector<FrameStat *> m_stats;
 };
 
 #endif

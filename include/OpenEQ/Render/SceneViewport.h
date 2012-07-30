@@ -3,6 +3,7 @@
 
 #include <QGLWidget>
 #include <QTime>
+#include <QVector>
 #include "OpenEQ/Render/Platform.h"
 
 class QTimer;
@@ -10,6 +11,7 @@ class QPainter;
 class QGLFormat;
 class Scene;
 class RenderState;
+class FrameStat;
 
 class RENDER_DLL SceneViewport : public QGLWidget
 {
@@ -20,10 +22,10 @@ public:
     virtual ~SceneViewport();
 
     void setAnimation(bool enabled);
-    bool showFps() const;
+    bool showStats() const;
 
 public slots:
-    void setShowFps(bool show);
+    void setShowStats(bool show);
 
 protected:
     virtual void initializeGL();
@@ -37,11 +39,11 @@ protected:
     virtual void wheelEvent(QWheelEvent *e);
 
 private slots:
-    void updateFPS();
+    void updateStats();
 
 private:
-    void paintFPS(QPainter *p, float fps);
-    void startFPS();
+    void paintStats(QPainter *p);
+    void startStats();
     void updateAnimationState();
     void toggleAnimation();
 
@@ -50,11 +52,10 @@ private:
     QTimer *m_renderTimer;
     bool m_animate;
 
-    // FPS settings
-    QTimer *m_fpsTimer;
-    QTime m_start;
-    uint m_frames;
-    float m_lastFPS;
+    // Stats
+    QTimer *m_statsTimer;
+    QVector<float> m_lastStats;
+    FrameStat *m_frameStat;
 };
 
 #endif

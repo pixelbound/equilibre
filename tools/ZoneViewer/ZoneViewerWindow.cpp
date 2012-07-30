@@ -65,7 +65,7 @@ void ZoneViewerWindow::initMenus()
     skinningActions->addAction(m_hardwareSkinningUniformAction);
     skinningActions->addAction(m_hardwareSkinningTextureAction);
 
-    m_showFpsAction = new QAction("Show FPS", this);
+    m_showFpsAction = new QAction("Show stats", this);
     m_showFpsAction->setCheckable(true);
     m_showZoneAction = new QAction("Show Zone", this);
     m_showZoneAction->setCheckable(true);
@@ -97,7 +97,7 @@ void ZoneViewerWindow::initMenus()
     connect(m_softwareSkinningAction, SIGNAL(triggered()), this, SLOT(setSoftwareSkinning()));
     connect(m_hardwareSkinningUniformAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningUniform()));
     connect(m_hardwareSkinningTextureAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningTexture()));
-    connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowFps(bool)));
+    connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowStats(bool)));
     connect(m_showZoneAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZone(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
     connect(m_cullZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(setFrustumCulling(bool)));
@@ -160,7 +160,7 @@ void ZoneViewerWindow::updateMenus()
         m_hardwareSkinningTextureAction->setChecked(true);
         break;
     }
-    m_showFpsAction->setChecked(m_viewport->showFps());
+    m_showFpsAction->setChecked(m_viewport->showStats());
 }
 
 void ZoneViewerWindow::setSoftwareSkinning()

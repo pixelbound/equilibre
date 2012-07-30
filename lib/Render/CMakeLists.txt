@@ -1,5 +1,6 @@
 set(LIB_SOURCES
     dxt.c
+    FrameStat.cpp
     Material.cpp
     mipmap.c
     Platform.cpp
@@ -19,6 +20,7 @@ set(LIB_HEADERS
     ../../include/OpenEQ/Render/Material.h
     ../../include/OpenEQ/Render/Vertex.h
     ../../include/OpenEQ/Render/Scene.h
+    ../../include/OpenEQ/Render/FrameStat.h
     ../../include/OpenEQ/Render/Platform.h
     ../../include/OpenEQ/Render/imath.h
     ../../include/OpenEQ/Render/dxt_tables.h
