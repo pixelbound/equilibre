@@ -19,7 +19,6 @@ SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) 
     m_state = state;
     m_renderTimer = new QTimer(this);
     m_renderTimer->setInterval(0);
-    m_frameStat = state->createStat("Frame (ms)");
     m_statsTimer = new QTimer(this);
     m_statsTimer->setInterval(1000);
     setAutoFillBackground(false);
@@ -70,14 +69,9 @@ void SceneViewport::paintEvent(QPaintEvent *)
 
 void SceneViewport::paintGL()
 {
-    m_frameStat->beginTime();
     if(m_state->beginFrame())
-    {
         m_scene->draw();
-        m_state->endFrame();
-    }
-    m_frameStat->endTime(1000.0f);
-    //float fps = (frameDur == 0.0f) ? 0.0f : (1.0f / frameDur);
+    m_state->endFrame();
 }
 
 void SceneViewport::toggleAnimation()
@@ -115,7 +109,8 @@ void SceneViewport::setShowStats(bool show)
 
 void SceneViewport::startStats()
 {
-    m_frameStat->clear();
+    foreach(FrameStat *stat, m_state->stats())
+        stat->clear();
 }
 
 void SceneViewport::updateStats()

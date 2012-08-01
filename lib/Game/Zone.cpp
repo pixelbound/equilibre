@@ -356,12 +356,7 @@ void Zone::draw(RenderState *state)
         state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
         state->drawMesh();
         state->endDrawMesh();
-        m_zoneStat->endTime(1000.0);
-    }
-    else
-    {
-        // XXX do this automatically every frame.
-        m_zoneStat->addSample(0.0f);
+        m_zoneStat->endTime();
     }
 
     // draw objects
@@ -371,11 +366,7 @@ void Zone::draw(RenderState *state)
     {
         m_objectsStat->beginTime();
         drawObjects(state);
-        m_objectsStat->endTime(1000.0);
-    }
-    else
-    {
-        m_objectsStat->addSample(0.0f);
+        m_objectsStat->endTime();
     }
     
     state->popMatrix();

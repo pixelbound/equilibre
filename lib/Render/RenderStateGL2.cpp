@@ -21,6 +21,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
     createCube();
+    m_frameStat = createStat("Frame (ms)");
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -392,6 +393,7 @@ void RenderStateGL2::freeTexture(texture_t tex)
 
 bool RenderStateGL2::beginFrame()
 {
+    m_frameStat->beginTime();
     ShaderProgramGL2 *prog = program();
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
@@ -419,7 +421,10 @@ void RenderStateGL2::endFrame()
     if(prog && prog->current())
         prog->endFrame();
     glPopAttrib();
-    glFlush();
+    glFinish();
+    m_frameStat->endTime();
+    foreach(FrameStat *stat, m_stats)
+        stat->next();
 }
 
 Frustum & RenderStateGL2::viewFrustum()

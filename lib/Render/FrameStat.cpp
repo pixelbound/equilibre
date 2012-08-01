@@ -33,20 +33,28 @@ void FrameStat::beginTime()
     m_startTime = currentTime();
 }
 
-void FrameStat::endTime(double factor)
+void FrameStat::endTime()
 {
     double duration = currentTime() - m_startTime;
-    float s = (float)(duration * factor);
-    addSample(s);
+    setCurrent((float)(duration * 1000.0f));
 }
 
-void FrameStat::addSample(float s)
+float FrameStat::current() const
 {
-    // Store the sample at the current position.
+    return m_samples[m_current];
+}
+
+void FrameStat::setCurrent(float s)
+{
     m_samples[m_current] = s;
+}
+
+void FrameStat::next()
+{
     // Move towards the beginning of the buffer, wrapping to the end when we get there.
     m_current = (m_current > 0) ? (m_current - 1) : (m_samples.count() - 1);
     m_count = qMin(m_count + 1, m_samples.count());
+    setCurrent(0.0f);
 }
 
 void FrameStat::clear()

@@ -91,6 +91,7 @@ private:
     VertexGroup *m_cube;
     MaterialMap *m_cubeMats;
     QVector<FrameStat *> m_stats;
+    FrameStat *m_frameStat;
 };
 
 #endif

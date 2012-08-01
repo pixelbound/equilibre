@@ -13,10 +13,12 @@ public:
     QString name() const;
     float average() const;
 
-    void addSample(float s);
+    float current() const;
+    void setCurrent(float s);
     void beginTime();
-    void endTime(double factor = 1.0);
+    void endTime();
     void clear();
+    void next();
 
 private:
     QString m_name;

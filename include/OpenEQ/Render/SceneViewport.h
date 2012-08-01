@@ -55,7 +55,6 @@ private:
     // Stats
     QTimer *m_statsTimer;
     QVector<float> m_lastStats;
-    FrameStat *m_frameStat;
 };
 
 #endif
