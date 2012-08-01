@@ -21,7 +21,9 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
     createCube();
+    m_fpsStat = createStat("FPS");
     m_frameStat = createStat("Frame (ms)");
+    m_waitGPUStat = createStat("GPU wait (ms)");
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -421,8 +423,18 @@ void RenderStateGL2::endFrame()
     if(prog && prog->current())
         prog->endFrame();
     glPopAttrib();
+
+    // Wait for the GPU to finish rendering the scene.
+    m_waitGPUStat->beginTime();
     glFinish();
+    m_waitGPUStat->endTime();
+
+    // Update the frame time and FPS.
     m_frameStat->endTime();
+    float frameTime = m_frameStat->current() / 1000.0f;
+    m_fpsStat->setCurrent((frameTime == 0.0f) ? 0.0f : (1.0f / frameTime));
+
+    // Move each frame stat to the next sample.
     foreach(FrameStat *stat, m_stats)
         stat->next();
 }
