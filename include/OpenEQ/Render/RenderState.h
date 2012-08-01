@@ -120,7 +120,7 @@ public:
 
     // Performance measurement
 
-    virtual FrameStat * createStat(QString name) = 0;
+    virtual FrameStat * createStat(QString name, bool gpu) = 0;
     virtual const QVector<FrameStat *> &stats() const = 0;
 
 protected:

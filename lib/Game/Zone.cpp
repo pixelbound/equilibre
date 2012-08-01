@@ -347,7 +347,7 @@ void Zone::draw(RenderState *state)
 
     // draw geometry
     if(!m_zoneStat)
-        m_zoneStat = state->createStat("Zone (ms)");
+        m_zoneStat = state->createStat("Zone (ms)", true);
     if(m_showZone && m_zoneGeometry)
     {
         m_zoneStat->beginTime();
@@ -361,7 +361,7 @@ void Zone::draw(RenderState *state)
 
     // draw objects
     if(!m_objectsStat)
-        m_objectsStat = state->createStat("Objects (ms)");
+        m_objectsStat = state->createStat("Objects (ms)", true);
     if(m_showObjects && (m_objMeshWld != NULL))
     {
         m_objectsStat->beginTime();
