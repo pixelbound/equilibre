@@ -21,7 +21,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
     createCube();
-    m_frameStat = createStat("Frame (ms)", false);
+    m_frameStat = createStat("Frame (ms)", FrameStat::WallTime);
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -507,9 +507,9 @@ const QVector<FrameStat *> & RenderStateGL2::stats() const
     return m_stats;
 }
 
-FrameStat * RenderStateGL2::createStat(QString name, bool gpu)
+FrameStat * RenderStateGL2::createStat(QString name, FrameStat::TimerType type)
 {
-    FrameStat *stat = new FrameStat(name, 64, gpu);
+    FrameStat *stat = new FrameStat(name, 64, type);
     m_stats.append(stat);
     return stat;
 }

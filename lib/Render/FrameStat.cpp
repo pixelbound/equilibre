@@ -1,21 +1,24 @@
 #include <string.h>
+#include <time.h>
 #include <GL/glew.h>
 #include "OpenEQ/Render/FrameStat.h"
 
-FrameStat::FrameStat(QString name, int samples, bool gpu)
+FrameStat::FrameStat(QString name, int samples, FrameStat::TimerType type)
 {
     m_name = name;
     m_startTime = 0.0;
     for(int i = 0; i < samples; i++)
         m_samples.append(0.0f);
-    if(gpu && GLEW_EXT_timer_query)
+    m_timer = 0;
+    if(type == GPUTime)
     {
-        glGenQueries(1, &m_timer);
-        m_gpu = m_timer != 0;
+        if(GLEW_EXT_timer_query)
+            glGenQueries(1, &m_timer);
+        m_timerType = (m_timer > 0) ? GPUTime : CPUTime;
     }
     else
     {
-        m_gpu = false;
+        m_timerType = type;
     }
     m_pendingGpuQuery = false;
     clear();
@@ -23,7 +26,7 @@ FrameStat::FrameStat(QString name, int samples, bool gpu)
 
 FrameStat::~FrameStat()
 {
-    if(m_gpu)
+    if(m_timerType == GPUTime)
         glDeleteQueries(1, &m_timer);
 }
 
@@ -47,13 +50,17 @@ float FrameStat::average() const
 
 void FrameStat::beginTime()
 {
-    if(m_gpu)
+    if(m_timerType == GPUTime)
     {
         if(!m_pendingGpuQuery)
         {
             glBeginQuery(GL_TIME_ELAPSED, m_timer);
             m_pendingGpuQuery = true;
         }
+    }
+    else if(m_timerType == CPUTime)
+    {
+        m_startTime = (double)clock() / CLOCKS_PER_SEC;
     }
     else
     {
@@ -63,10 +70,16 @@ void FrameStat::beginTime()
 
 void FrameStat::endTime()
 {
-    if(m_gpu)
+    if(m_timerType == GPUTime)
     {
         if(m_pendingGpuQuery)
             glEndQuery(GL_TIME_ELAPSED);
+    }
+    else if(m_timerType == CPUTime)
+    {
+        double current = (double)clock() / CLOCKS_PER_SEC;
+        double duration = current - m_startTime;
+        setCurrent((float)(duration * 1000.0f));
     }
     else
     {
@@ -87,7 +100,7 @@ void FrameStat::setCurrent(float s)
 
 void FrameStat::next()
 {
-    if(m_gpu && m_pendingGpuQuery)
+    if(m_timerType == GPUTime && m_pendingGpuQuery)
     {
         uint64_t elapsedNs = 0;
         glGetQueryObjectui64vEXT(m_timer, GL_QUERY_RESULT, &elapsedNs);

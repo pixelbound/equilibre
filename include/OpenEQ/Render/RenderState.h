@@ -4,6 +4,7 @@
 #include <QVector>
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Render/FrameStat.h"
 
 class QImage;
 class QVector3D;
@@ -120,7 +121,7 @@ public:
 
     // Performance measurement
 
-    virtual FrameStat * createStat(QString name, bool gpu) = 0;
+    virtual FrameStat * createStat(QString name, FrameStat::TimerType type) = 0;
     virtual const QVector<FrameStat *> &stats() const = 0;
 
 protected:

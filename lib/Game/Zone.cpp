@@ -349,9 +349,9 @@ void Zone::draw(RenderState *state)
 
     // draw geometry
     if(!m_zoneStat)
-        m_zoneStat = state->createStat("Zone CPU (ms)", false);
+        m_zoneStat = state->createStat("Zone CPU (ms)", FrameStat::CPUTime);
     if(!m_zoneStatGPU)
-        m_zoneStatGPU = state->createStat("Zone GPU (ms)", true);
+        m_zoneStatGPU = state->createStat("Zone GPU (ms)", FrameStat::GPUTime);
     if(m_showZone && m_zoneGeometry)
     {
         m_zoneStat->beginTime();
@@ -367,9 +367,9 @@ void Zone::draw(RenderState *state)
 
     // draw objects
     if(!m_objectsStat)
-        m_objectsStat = state->createStat("Objects CPU (ms)", false);
+        m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
     if(!m_objectsStatGPU)
-        m_objectsStatGPU = state->createStat("Objects GPU (ms)", true);
+        m_objectsStatGPU = state->createStat("Objects GPU (ms)", FrameStat::GPUTime);
     if(m_showObjects && (m_objMeshWld != NULL))
     {
         m_objectsStat->beginTime();

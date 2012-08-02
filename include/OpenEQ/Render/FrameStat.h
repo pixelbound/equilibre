@@ -10,7 +10,14 @@ typedef uint32_t gpu_timer_t;
 class RENDER_DLL FrameStat
 {
 public:
-    FrameStat(QString name, int samples, bool gpu);
+    enum TimerType
+    {
+        WallTime,
+        CPUTime,
+        GPUTime
+    };
+
+    FrameStat(QString name, int samples, TimerType type);
     virtual ~FrameStat();
 
     QString name() const;
@@ -26,7 +33,7 @@ public:
 private:
     QString m_name;
     QVector<float> m_samples;
-    bool m_gpu;
+    TimerType m_timerType;
     bool m_pendingGpuQuery;
     gpu_timer_t m_timer;
     int m_current;

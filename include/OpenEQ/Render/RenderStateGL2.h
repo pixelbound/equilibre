@@ -62,7 +62,7 @@ public:
 
     // Performance measurement
 
-    virtual FrameStat * createStat(QString name, bool gpu);
+    virtual FrameStat * createStat(QString name, FrameStat::TimerType type);
     virtual const QVector<FrameStat *> &stats() const;
 
     enum Shader
