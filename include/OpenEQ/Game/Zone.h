@@ -100,6 +100,8 @@ private:
     bool m_cullObjects;
     FrameStat *m_zoneStat;
     FrameStat *m_objectsStat;
+    FrameStat *m_zoneStatGPU;
+    FrameStat *m_objectsStatGPU;
     QVector<const WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;

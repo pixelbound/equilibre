@@ -21,7 +21,6 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
     createCube();
-    m_fpsStat = createStat("FPS", false);
     m_frameStat = createStat("Frame (ms)", false);
 }
 
@@ -428,8 +427,6 @@ void RenderStateGL2::endFrame()
 
     // Update the frame time and FPS.
     m_frameStat->endTime();
-    float frameTime = m_frameStat->current() / 1000.0f;
-    m_fpsStat->setCurrent((frameTime == 0.0f) ? 0.0f : (1.0f / frameTime));
 
     // Move each frame stat to the next sample.
     foreach(FrameStat *stat, m_stats)

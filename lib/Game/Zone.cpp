@@ -30,6 +30,8 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cullObjects = true;
     m_zoneStat = NULL;
     m_objectsStat = NULL;
+    m_zoneStatGPU = NULL;
+    m_objectsStatGPU = NULL;
     m_objectsGeometry = NULL;
     m_index = new ActorIndex();
 }
@@ -347,25 +349,33 @@ void Zone::draw(RenderState *state)
 
     // draw geometry
     if(!m_zoneStat)
-        m_zoneStat = state->createStat("Zone (ms)", true);
+        m_zoneStat = state->createStat("Zone CPU (ms)", false);
+    if(!m_zoneStatGPU)
+        m_zoneStatGPU = state->createStat("Zone GPU (ms)", true);
     if(m_showZone && m_zoneGeometry)
     {
         m_zoneStat->beginTime();
+        m_zoneStatGPU->beginTime();
         uploadZone(state);
         state->setRenderMode(RenderState::Basic);
         state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
         state->drawMesh();
         state->endDrawMesh();
+        m_zoneStatGPU->endTime();
         m_zoneStat->endTime();
     }
 
     // draw objects
     if(!m_objectsStat)
-        m_objectsStat = state->createStat("Objects (ms)", true);
+        m_objectsStat = state->createStat("Objects CPU (ms)", false);
+    if(!m_objectsStatGPU)
+        m_objectsStatGPU = state->createStat("Objects GPU (ms)", true);
     if(m_showObjects && (m_objMeshWld != NULL))
     {
         m_objectsStat->beginTime();
+        m_objectsStatGPU->beginTime();
         drawObjects(state);
+        m_objectsStatGPU->endTime();
         m_objectsStat->endTime();
     }
     
