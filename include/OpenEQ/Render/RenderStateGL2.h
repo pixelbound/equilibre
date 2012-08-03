@@ -92,6 +92,7 @@ private:
     MaterialMap *m_cubeMats;
     QVector<FrameStat *> m_stats;
     FrameStat *m_frameStat;
+    FrameStat *m_clearStat;
 };
 
 #endif

@@ -22,6 +22,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
     createCube();
     m_frameStat = createStat("Frame (ms)", FrameStat::WallTime);
+    m_clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
 
 RenderStateGL2::~RenderStateGL2()
@@ -409,7 +410,9 @@ bool RenderStateGL2::beginFrame()
         glClearColor(m_bgColor.x, m_bgColor.y, m_bgColor.z, m_bgColor.w);
     else
         glClearColor(1.0, 0.0, 0.0, 1.0);
+    m_clearStat->beginTime();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    m_clearStat->endTime();
     return shaderLoaded;
 }
 
