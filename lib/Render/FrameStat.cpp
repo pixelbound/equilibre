@@ -3,7 +3,7 @@
 #include <GL/glew.h>
 #include "OpenEQ/Render/FrameStat.h"
 
-FrameStat::FrameStat(QString name, int samples, FrameStat::TimerType type)
+FrameStat::FrameStat(QString name, int samples, FrameStat::Type type)
 {
     m_name = name;
     m_startTime = 0.0;
@@ -14,11 +14,11 @@ FrameStat::FrameStat(QString name, int samples, FrameStat::TimerType type)
     {
         if(GLEW_EXT_timer_query)
             glGenQueries(1, &m_timer);
-        m_timerType = (m_timer > 0) ? GPUTime : CPUTime;
+        m_type = (m_timer > 0) ? GPUTime : CPUTime;
     }
     else
     {
-        m_timerType = type;
+        m_type = type;
     }
     m_pendingGpuQuery = false;
     clear();
@@ -26,7 +26,7 @@ FrameStat::FrameStat(QString name, int samples, FrameStat::TimerType type)
 
 FrameStat::~FrameStat()
 {
-    if(m_timerType == GPUTime)
+    if(m_type == GPUTime)
         glDeleteQueries(1, &m_timer);
 }
 
@@ -35,9 +35,9 @@ QString FrameStat::name() const
     return m_name;
 }
 
-FrameStat::TimerType FrameStat::type() const
+FrameStat::Type FrameStat::type() const
 {
-    return m_timerType;
+    return m_type;
 }
 
 float FrameStat::average() const
@@ -55,7 +55,7 @@ float FrameStat::average() const
 
 void FrameStat::beginTime()
 {
-    if(m_timerType == GPUTime)
+    if(m_type == GPUTime)
     {
         if(!m_pendingGpuQuery)
         {
@@ -63,11 +63,11 @@ void FrameStat::beginTime()
             m_pendingGpuQuery = true;
         }
     }
-    else if(m_timerType == CPUTime)
+    else if(m_type == CPUTime)
     {
         m_startTime = (double)clock() / CLOCKS_PER_SEC;
     }
-    else
+    else if(m_type == WallTime)
     {
         m_startTime = currentTime();
     }
@@ -75,18 +75,18 @@ void FrameStat::beginTime()
 
 void FrameStat::endTime()
 {
-    if(m_timerType == GPUTime)
+    if(m_type == GPUTime)
     {
         if(m_pendingGpuQuery)
             glEndQuery(GL_TIME_ELAPSED);
     }
-    else if(m_timerType == CPUTime)
+    else if(m_type == CPUTime)
     {
         double current = (double)clock() / CLOCKS_PER_SEC;
         double duration = current - m_startTime;
         setCurrent((float)(duration * 1000.0f));
     }
-    else
+    else if(m_type == WallTime)
     {
         double duration = currentTime() - m_startTime;
         setCurrent((float)(duration * 1000.0f));
@@ -105,7 +105,7 @@ void FrameStat::setCurrent(float s)
 
 void FrameStat::next()
 {
-    if(m_timerType == GPUTime && m_pendingGpuQuery)
+    if(m_type == GPUTime && m_pendingGpuQuery)
     {
         uint64_t elapsedNs = 0;
         glGetQueryObjectui64vEXT(m_timer, GL_QUERY_RESULT, &elapsedNs);

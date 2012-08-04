@@ -13,6 +13,7 @@ ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
         m_attr[i] = -1;
     for(int i = 0; i <= U_MAX; i++)
         m_uniform[i] = -1;
+    m_drawCalls = 0;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
     m_meshData.clear();
 }
@@ -55,6 +56,11 @@ bool ShaderProgramGL2::current() const
     return (currentProg != 0) && (currentProg == m_program);
 }
 
+int ShaderProgramGL2::drawCalls() const
+{
+    return m_drawCalls;
+}
+
 bool ShaderProgramGL2::init()
 {
     return true;
@@ -62,6 +68,7 @@ bool ShaderProgramGL2::init()
 
 void ShaderProgramGL2::beginFrame()
 {
+    m_drawCalls = 0;
     glUseProgram(m_program);
 }
 
@@ -408,6 +415,7 @@ void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, const MaterialGr
         else
             glDrawArrays(mode, offset, mg.count);
     }
+    m_drawCalls++;
 }
 
 void ShaderProgramGL2::endDrawMesh()

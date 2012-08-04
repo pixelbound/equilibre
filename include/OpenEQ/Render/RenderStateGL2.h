@@ -62,7 +62,7 @@ public:
 
     // Performance measurement
 
-    virtual FrameStat * createStat(QString name, FrameStat::TimerType type);
+    virtual FrameStat * createStat(QString name, FrameStat::Type type);
     virtual void destroyStat(FrameStat *stat);
     virtual const QVector<FrameStat *> &stats() const;
 
@@ -95,6 +95,7 @@ private:
     int m_gpuTimers;
     FrameStat *m_frameStat;
     FrameStat *m_clearStat;
+    FrameStat *m_drawCallsStat;
 };
 
 #endif

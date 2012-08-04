@@ -22,6 +22,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
     m_gpuTimers = 0;
     createCube();
+    m_drawCallsStat = createStat("Draw calls", FrameStat::Counter);
     m_frameStat = createStat("Frame (ms)", FrameStat::WallTime);
     m_clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
@@ -423,7 +424,10 @@ void RenderStateGL2::endFrame()
     popMatrix();
     ShaderProgramGL2 *prog = program();
     if(prog && prog->current())
+    {
         prog->endFrame();
+        m_drawCallsStat->setCurrent(prog->drawCalls());
+    }
     glPopAttrib();
 
     // Wait for the GPU to finish rendering the scene if we are profiling it.
@@ -512,7 +516,7 @@ const QVector<FrameStat *> & RenderStateGL2::stats() const
     return m_stats;
 }
 
-FrameStat * RenderStateGL2::createStat(QString name, FrameStat::TimerType type)
+FrameStat * RenderStateGL2::createStat(QString name, FrameStat::Type type)
 {
     FrameStat *stat = new FrameStat(name, 64, type);
     m_stats.append(stat);

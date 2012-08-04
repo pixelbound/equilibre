@@ -121,7 +121,7 @@ public:
 
     // Performance measurement
 
-    virtual FrameStat * createStat(QString name, FrameStat::TimerType type) = 0;
+    virtual FrameStat * createStat(QString name, FrameStat::Type type) = 0;
     virtual void destroyStat(FrameStat *stat) = 0;
     virtual const QVector<FrameStat *> &stats() const = 0;
 

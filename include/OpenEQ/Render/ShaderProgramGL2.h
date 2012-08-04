@@ -49,6 +49,7 @@ public:
 
     bool loaded() const;
     bool current() const;
+    int drawCalls() const;
 
     bool load(QString vertexFile, QString fragmentFile);
 
@@ -89,6 +90,7 @@ protected:
     int m_uniform[U_MAX+1];
     vec4 *m_bones;
     MeshDataGL2 m_meshData;
+    int m_drawCalls;
 };
 
 class InstancingProgram : public ShaderProgramGL2
