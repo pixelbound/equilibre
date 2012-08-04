@@ -51,12 +51,7 @@ void RenderStateGL2::beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
 
 void RenderStateGL2::drawMesh()
 {
-    ShaderProgramGL2 *prog = program();
-    if(!prog || !prog->loaded())
-        return;
-    prog->setModelViewMatrix(m_matrix[(int)ModelView]);
-    prog->setProjectionMatrix(m_matrix[(int)Projection]);
-    prog->drawMesh();
+    drawMeshBatch(&m_matrix[(int)ModelView], 1);
 }
 
 void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)

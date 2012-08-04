@@ -2,7 +2,6 @@
     <qresource prefix="/">
         <file>fragment.glsl</file>
         <file>vertex.glsl</file>
-        <file>vertex_instanced.glsl</file>
         <file>vertex_skinned_texture.glsl</file>
         <file>vertex_skinned_uniform.glsl</file>
     </qresource>

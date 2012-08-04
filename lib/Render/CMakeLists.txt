@@ -35,7 +35,6 @@ set(LIB_RESOURCES
 set(LIB_RESOURCE_FILES
     fragment.glsl
     vertex.glsl
-    vertex_instanced.glsl
     vertex_skinned_texture.glsl
     vertex_skinned_uniform.glsl
 )

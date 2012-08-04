@@ -325,13 +325,6 @@ void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materia
     uploadVertexAttributes(vg);
 }
 
-void ShaderProgramGL2::drawMesh()
-{
-    if(!m_meshData.pending)
-        return;
-    drawMaterialGroups(m_meshData.vg);
-}
-
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
 {
     if(!m_meshData.pending)
