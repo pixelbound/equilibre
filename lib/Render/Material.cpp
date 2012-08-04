@@ -242,15 +242,14 @@ void MaterialMap::uploadArray(RenderState *state)
     m_uploaded = true;
 }
 
-void MaterialMap::updateTexCoords(VertexGroup *vg)
+void MaterialMap::updateTexCoords(const QVector<MaterialGroup> &groups, VertexData *vertices, const uint32_t *indices)
 {
     if(!uploaded())
         return;
-    VertexData *vd = vg->vertices.data();
     int maxWidth, maxHeight;
     size_t totalMem, usedMem;
     textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
-    foreach(MaterialGroup mg, vg->matGroups)
+    foreach(MaterialGroup mg, groups)
     {
         Material *mat = material(mg.matName);
         if(!mat)
@@ -258,15 +257,15 @@ void MaterialMap::updateTexCoords(VertexGroup *vg)
         float matScalingX = (float)mat->image().width() / (float)maxWidth;
         float matScalingY = (float)mat->image().height() / (float)maxHeight;
         float z = mat->subTexture();
-        const uint32_t *indices = vg->indices.constData() + mg.offset;
+        const uint32_t *mgIndices = indices + mg.offset;
         for(uint32_t i = 0; i < mg.count; i++)
         {
-            uint32_t vertexID = indices[i];
-            if(vd[vertexID].texCoords.z == 0)
+            uint32_t vertexID = mgIndices[i];
+            if(vertices[vertexID].texCoords.z == 0)
             {
-                vd[vertexID].texCoords.x *= matScalingX;
-                vd[vertexID].texCoords.y *= matScalingY;
-                vd[vertexID].texCoords.z = z;
+                vertices[vertexID].texCoords.x *= matScalingX;
+                vertices[vertexID].texCoords.y *= matScalingY;
+                vertices[vertexID].texCoords.z = z;
             }
         }
     }

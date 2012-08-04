@@ -7,7 +7,7 @@ cache modelview matrix of zone object
 combine draw calls when using the same material
     assume groups are sorted by offset and merge as many as possible
 have an uniform array of material state
-No unbind / do unbind at the end of the frame
+No unbind / do unbind at the end of the frame (use VAOs?)
 texture arrays for objects
 remove support for instancing
 Replace matName by matHash in MaterialGroup

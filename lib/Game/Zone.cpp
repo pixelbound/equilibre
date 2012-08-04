@@ -453,7 +453,9 @@ void Zone::uploadZone(RenderState *state)
         m_zoneMaterials->uploadArray(state);
         
         // Update the texture coordinates in the vertex buffer before uploading to the GPU.
-        m_zoneMaterials->updateTexCoords(m_zoneGeometry);
+        VertexData *vertices = m_zoneGeometry->vertices.data();
+        const uint32_t *indices = m_zoneGeometry->indices.constData();
+        m_zoneMaterials->updateTexCoords(m_zoneGeometry->matGroups, vertices, indices);
     }
     
     createGPUBuffer(m_zoneGeometry, state);
@@ -466,13 +468,20 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_objModels.values())
     {
-        mesh->importVertexData(geom, mesh->data()->vertexBuffer);
-        mesh->importIndexData(geom, mesh->data()->indexBuffer,
-                              mesh->data()->vertexBuffer,
+        VertexGroup *meshVg = mesh->data();
+        mesh->importVertexData(geom, meshVg->vertexBuffer);
+        mesh->importIndexData(geom, meshVg->indexBuffer,
+                              meshVg->vertexBuffer,
                               0, (uint32_t)mesh->def()->m_indices.count());
         mesh->importMaterialGroups();
-        if(mesh->materials())
-            mesh->materials()->upload(state);
+        MaterialMap *materials = mesh->materials();
+        if(materials)
+        {
+            VertexData *vertices = geom->vertices.data();
+            const uint32_t *indices = geom->indices.constData() + meshVg->indexBuffer.offset;
+            materials->uploadArray(state);
+            materials->updateTexCoords(meshVg->matGroups, vertices, indices);
+        }
     }
     
     // Create the GPU buffers.
