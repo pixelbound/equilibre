@@ -43,14 +43,14 @@ FrameStat::Type FrameStat::type() const
 float FrameStat::average() const
 {
     float sum = 0.0f;
-    if(m_count == 0)
+    if(m_count < 2)
         return sum;
-    for(int i = 0; i < m_count; i++)
+    for(int i = 1; i < m_count; i++)
     {
         int pos = (m_current + i) % m_samples.count();
         sum += m_samples[pos];
     }
-    return sum / m_count;
+    return sum / (m_count - 1);
 }
 
 void FrameStat::beginTime()
