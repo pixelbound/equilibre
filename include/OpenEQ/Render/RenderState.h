@@ -48,9 +48,6 @@ public:
      * called again.
      */
     virtual void endDrawMesh() = 0;
-
-    // XXX Create a function for this.
-    static const int MAX_OBJECT_INSTANCES = 32;
     
     // debug operations
     virtual void drawBox(const AABox &box) = 0;

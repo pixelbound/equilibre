@@ -425,12 +425,6 @@ void Zone::drawObjects(RenderState *state)
         state->scale(actor->scale);
         mvMatrices.append(state->matrix(RenderState::ModelView));
         state->popMatrix();
-        
-        if(mvMatrices.count() >= RenderState::MAX_OBJECT_INSTANCES)
-        {
-            state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
-            mvMatrices.clear();
-        }
     }
     if(previousMesh)
     {
