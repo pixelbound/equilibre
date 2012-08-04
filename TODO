@@ -1,10 +1,18 @@
-Divide into sub-projects: Renderer, Game, CharViewer, ZoneViewer
+one frame latency for querying GL timers and remove glFinish
 Material type, can specify material mask when rendering
     Draw opaque materials and then masked materials
+sort non-solid items front to back
+draw objects before zone
+cache modelview matrix of zone object
+combine draw calls when using the same material
+    assume groups are sorted by offset and merge as many as possible
+have an uniform array of material state
+No unbind / do unbind at the end of the frame
+texture arrays for objects
+remove support for instancing
 Replace matName by matHash in MaterialGroup
 CharacterData, ZoneData
 Load file for mapping animations to characters
-sort non-solid items front to back
 start animation when selecting it (remember the time when it was first selected)
 mimic character selection screen (load character selection background and rotate, random animation)
 split animation tracks into two lists (skinning, positioning) and renumber piece IDs

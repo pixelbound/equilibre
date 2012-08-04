@@ -346,6 +346,20 @@ void Zone::draw(RenderState *state)
     frustum.update();
     state->pushMatrix();
     state->multiplyMatrix(frustum.camera());
+    
+    // draw objects
+    if(!m_objectsStat)
+        m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
+    if(!m_objectsStatGPU)
+        m_objectsStatGPU = state->createStat("Objects GPU (ms)", FrameStat::GPUTime);
+    if(m_showObjects && (m_objMeshWld != NULL))
+    {
+        m_objectsStat->beginTime();
+        m_objectsStatGPU->beginTime();
+        drawObjects(state);
+        m_objectsStatGPU->endTime();
+        m_objectsStat->endTime();
+    }
 
     // draw geometry
     if(!m_zoneStat)
@@ -363,20 +377,6 @@ void Zone::draw(RenderState *state)
         state->endDrawMesh();
         m_zoneStatGPU->endTime();
         m_zoneStat->endTime();
-    }
-
-    // draw objects
-    if(!m_objectsStat)
-        m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
-    if(!m_objectsStatGPU)
-        m_objectsStatGPU = state->createStat("Objects GPU (ms)", FrameStat::GPUTime);
-    if(m_showObjects && (m_objMeshWld != NULL))
-    {
-        m_objectsStat->beginTime();
-        m_objectsStatGPU->beginTime();
-        drawObjects(state);
-        m_objectsStatGPU->endTime();
-        m_objectsStat->endTime();
     }
     
     state->popMatrix();
