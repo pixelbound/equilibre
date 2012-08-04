@@ -49,13 +49,13 @@ public:
 
     bool loaded() const;
     bool current() const;
+    uint32_t program() const;
     int drawCalls() const;
+    void resetDrawCalls();
 
     bool load(QString vertexFile, QString fragmentFile);
 
     virtual bool init();
-    virtual void beginFrame();
-    virtual void endFrame();
     
     virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);

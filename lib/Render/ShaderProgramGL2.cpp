@@ -56,25 +56,24 @@ bool ShaderProgramGL2::current() const
     return (currentProg != 0) && (currentProg == m_program);
 }
 
+uint32_t ShaderProgramGL2::program() const
+{
+    return m_program;
+}
+
 int ShaderProgramGL2::drawCalls() const
 {
     return m_drawCalls;
 }
 
+void ShaderProgramGL2::resetDrawCalls()
+{
+    m_drawCalls = 0;
+}
+
 bool ShaderProgramGL2::init()
 {
     return true;
-}
-
-void ShaderProgramGL2::beginFrame()
-{
-    m_drawCalls = 0;
-    glUseProgram(m_program);
-}
-
-void ShaderProgramGL2::endFrame()
-{
-    glUseProgram(0);
 }
 
 bool ShaderProgramGL2::compileProgram(QString vertexFile, QString fragmentFile)

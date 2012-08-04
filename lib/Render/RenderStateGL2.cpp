@@ -401,7 +401,7 @@ bool RenderStateGL2::beginFrame()
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
-        prog->beginFrame();
+        glUseProgram(prog->program());
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -420,14 +420,23 @@ bool RenderStateGL2::beginFrame()
 
 void RenderStateGL2::endFrame()
 {
+    // Count draw calls made by all programs.
+    int totalDrawCalls = 0;
+    for(int i = 0; i < 4; i++)
+    {
+        ShaderProgramGL2 *prog = m_programs[i];
+        if(prog)
+        {
+            totalDrawCalls += prog->drawCalls();
+            prog->resetDrawCalls();
+        }
+    }
+    m_drawCallsStat->setCurrent(totalDrawCalls);
+    
+    // Reset state.
     setMatrixMode(ModelView);
     popMatrix();
-    ShaderProgramGL2 *prog = program();
-    if(prog && prog->current())
-    {
-        prog->endFrame();
-        m_drawCallsStat->setCurrent(prog->drawCalls());
-    }
+    glUseProgram(0);
     glPopAttrib();
 
     // Wait for the GPU to finish rendering the scene if we are profiling it.
@@ -499,14 +508,7 @@ void RenderStateGL2::setShader(RenderStateGL2::Shader newShader)
         if(newProg && newProg->loaded())
         {
             m_shader = newShader;
-
-            // Disable the old program.
-            if(oldProg->current())
-                oldProg->endFrame();
-
-            // Make sure the new program is current.
-            if(!newProg->current())
-                newProg->beginFrame();
+            glUseProgram(newProg->program());
         }
     }
 }
