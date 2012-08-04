@@ -327,22 +327,12 @@ void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materia
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
 {
-    if(!m_meshData.pending)
-        return;
-    for(uint32_t i = 0; i < instances; i++)
-    {
-        setModelViewMatrix(mvMatrices[i]);
-        drawMaterialGroups(m_meshData.vg);
-    }
-}
-
-void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg)
-{
     // No material - nothing is drawn.
-    if(!m_meshData.materials)
+    if(!m_meshData.pending || !m_meshData.materials)
         return;
 
     // Get a Material pointer for each material group.
+    const VertexGroup *vg = m_meshData.vg;
     QVector<MaterialGroup> groups;
     QVector<Material *> groupMats;
     for(int i = 0; i < vg->matGroups.count(); i++)
@@ -378,8 +368,12 @@ void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg)
         // XXX have an uniform array of material state
         //XXX assume groups are sorted by offset and merge as many as possible
         beginApplyMaterial(m_meshData.materials, arrayMat);
-        for(int i = 0; i < groups.count(); i++)
-            drawMaterialGroup(vg, groups[i]);
+        for(uint32_t i = 0; i < instances; i++)
+        {
+            setModelViewMatrix(mvMatrices[i]);
+            for(int j = 0; j < groups.count(); j++)
+                drawMaterialGroup(vg, groups[j]);
+        }
         endApplyMaterial(m_meshData.materials, arrayMat);
     }
     else
@@ -389,7 +383,11 @@ void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg)
         {
             Material *mat = groupMats[i];
             beginApplyMaterial(m_meshData.materials, mat);
-            drawMaterialGroup(vg, groups[i]);
+            for(uint32_t j = 0; j < instances; j++)
+            {
+                setModelViewMatrix(mvMatrices[j]);
+                drawMaterialGroup(vg, groups[i]);
+            }
             endApplyMaterial(m_meshData.materials, mat);
         }
     }

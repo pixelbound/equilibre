@@ -77,7 +77,6 @@ protected:
     static uint32_t loadShader(QString path, uint32_t type);
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
-    void drawMaterialGroups(const VertexGroup *vg);
     void drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg);
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
