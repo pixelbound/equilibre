@@ -96,6 +96,7 @@ private:
     FrameStat *m_frameStat;
     FrameStat *m_clearStat;
     FrameStat *m_drawCallsStat;
+    FrameStat *m_textureBindsStat;
 };
 
 #endif

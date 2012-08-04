@@ -51,7 +51,8 @@ public:
     bool current() const;
     uint32_t program() const;
     int drawCalls() const;
-    void resetDrawCalls();
+    int textureBinds() const;
+    void resetFrameStats();
 
     bool load(QString vertexFile, QString fragmentFile);
 
@@ -91,6 +92,7 @@ protected:
     vec4 *m_bones;
     MeshDataGL2 m_meshData;
     int m_drawCalls;
+    int m_textureBinds;
 };
 
 class InstancingProgram : public ShaderProgramGL2

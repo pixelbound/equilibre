@@ -23,6 +23,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_gpuTimers = 0;
     createCube();
     m_drawCallsStat = createStat("Draw calls", FrameStat::Counter);
+    m_textureBindsStat = createStat("Texture binds", FrameStat::Counter);
     m_frameStat = createStat("Frame (ms)", FrameStat::WallTime);
     m_clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
@@ -420,18 +421,21 @@ bool RenderStateGL2::beginFrame()
 
 void RenderStateGL2::endFrame()
 {
-    // Count draw calls made by all programs.
+    // Count draw calls and texture binds made by all programs.
     int totalDrawCalls = 0;
+    int totalTextureBinds = 0;
     for(int i = 0; i < 4; i++)
     {
         ShaderProgramGL2 *prog = m_programs[i];
         if(prog)
         {
             totalDrawCalls += prog->drawCalls();
-            prog->resetDrawCalls();
+            totalTextureBinds += prog->textureBinds();
+            prog->resetFrameStats();
         }
     }
     m_drawCallsStat->setCurrent(totalDrawCalls);
+    m_textureBindsStat->setCurrent(totalTextureBinds);
     
     // Reset state.
     setMatrixMode(ModelView);

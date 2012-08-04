@@ -14,6 +14,7 @@ ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
     for(int i = 0; i <= U_MAX; i++)
         m_uniform[i] = -1;
     m_drawCalls = 0;
+    m_textureBinds = 0;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
     m_meshData.clear();
 }
@@ -66,9 +67,15 @@ int ShaderProgramGL2::drawCalls() const
     return m_drawCalls;
 }
 
-void ShaderProgramGL2::resetDrawCalls()
+int ShaderProgramGL2::textureBinds() const
+{
+    return m_textureBinds;
+}
+
+void ShaderProgramGL2::resetFrameStats()
 {
     m_drawCalls = 0;
+    m_textureBinds = 0;
 }
 
 bool ShaderProgramGL2::init()
@@ -211,6 +218,7 @@ void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
         glBindTexture(target, m->texture());
         glUniform1i(m_uniform[U_MAT_TEXTURE], 0);
         glUniform1i(m_uniform[U_MAT_HAS_TEXTURE], 1);
+        m_textureBinds++;
     }
     else
     {
@@ -608,6 +616,7 @@ void TextureSkinningProgram::beginSkinMesh()
         GL_RGBA, GL_FLOAT, m_bones);
     glActiveTexture(GL_TEXTURE0);
     glUniform1i(m_bonesLoc, 1);
+    m_textureBinds++;
 }
 
 void TextureSkinningProgram::endSkinMesh()
