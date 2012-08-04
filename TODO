@@ -4,8 +4,6 @@ Material type, can specify material mask when rendering
     Draw opaque materials and then masked materials
 sort non-solid items front to back
 cache modelview matrix of zone object
-combine draw calls when using the same material
-    assume groups are sorted by offset and merge as many as possible
 have an uniform array of material state
 No unbind / do unbind at the end of the frame (use VAOs?)
 texture arrays for objects

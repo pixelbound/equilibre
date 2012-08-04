@@ -366,13 +366,30 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
     {
         // If all material groups use the same texture we can render them together.
         // XXX have an uniform array of material state
-        //XXX assume groups are sorted by offset and merge as many as possible
         beginApplyMaterial(m_meshData.materials, arrayMat);
         for(uint32_t i = 0; i < instances; i++)
         {
             setModelViewMatrix(mvMatrices[i]);
-            for(int j = 0; j < groups.count(); j++)
-                drawMaterialGroup(vg, groups[j]);
+
+            // Assume groups are sorted by offset and merge as many as possible.
+            MaterialGroup merged;
+            merged.offset = groups[0].offset;
+            merged.count = groups[0].count;
+            for(int j = 1; j < groups.count(); j++)
+            {
+                uint32_t mergedEnd = merged.offset + merged.count;
+                if(groups[j].offset == mergedEnd)
+                {
+                    merged.count += groups[j].count;
+                }
+                else
+                {
+                    drawMaterialGroup(vg, merged);
+                    merged.offset = groups[j].offset;
+                    merged.count = groups[j].count;
+                }
+            }
+            drawMaterialGroup(vg, merged);
         }
         endApplyMaterial(m_meshData.materials, arrayMat);
     }
