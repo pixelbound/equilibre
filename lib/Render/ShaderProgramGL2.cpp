@@ -329,22 +329,21 @@ void ShaderProgramGL2::drawMesh()
 {
     if(!m_meshData.pending)
         return;
-    drawMaterialGroups(m_meshData.vg, 1);
+    drawMaterialGroups(m_meshData.vg);
 }
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
 {
     if(!m_meshData.pending)
         return;
-    // Naive instancing with the basic shader.
     for(uint32_t i = 0; i < instances; i++)
     {
         setModelViewMatrix(mvMatrices[i]);
-        drawMaterialGroups(m_meshData.vg, 1);
+        drawMaterialGroups(m_meshData.vg);
     }
 }
 
-void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg, int instances)
+void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg)
 {
     // No material - nothing is drawn.
     if(!m_meshData.materials)
@@ -387,7 +386,7 @@ void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg, int instances)
         //XXX assume groups are sorted by offset and merge as many as possible
         beginApplyMaterial(m_meshData.materials, arrayMat);
         for(int i = 0; i < groups.count(); i++)
-            drawMaterialGroup(vg, groups[i], instances);
+            drawMaterialGroup(vg, groups[i]);
         endApplyMaterial(m_meshData.materials, arrayMat);
     }
     else
@@ -397,30 +396,24 @@ void ShaderProgramGL2::drawMaterialGroups(const VertexGroup *vg, int instances)
         {
             Material *mat = groupMats[i];
             beginApplyMaterial(m_meshData.materials, mat);
-            drawMaterialGroup(vg, groups[i], instances);
+            drawMaterialGroup(vg, groups[i]);
             endApplyMaterial(m_meshData.materials, mat);
         }
     }
 }
 
-void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg, int instances)
+void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg)
 {
     GLuint mode = primitiveToGLMode(vg->mode);
     if(m_meshData.haveIndices)
     {
         const uint32_t *indices = m_meshData.indices + vg->indexBuffer.offset + mg.offset;
-        if(instances > 1)
-            glDrawElementsInstanced(mode, mg.count, GL_UNSIGNED_INT, indices, instances);
-        else
-            glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices);
+        glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices);
     }
     else
     {
         uint32_t offset = vg->vertexBuffer.offset + mg.offset;
-        if(instances > 1)
-            glDrawArraysInstanced(mode, offset, mg.count, instances);
-        else
-            glDrawArrays(mode, offset, mg.count);
+        glDrawArrays(mode, offset, mg.count);
     }
     m_drawCalls++;
 }
