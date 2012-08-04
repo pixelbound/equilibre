@@ -397,7 +397,6 @@ void Zone::drawObjects(RenderState *state)
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
     QVector<matrix4> mvMatrices;
-    state->setRenderMode(RenderState::Instanced);
     foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
         WLDMesh *currentMesh = actor->mesh;

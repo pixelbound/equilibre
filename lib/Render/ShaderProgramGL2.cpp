@@ -484,62 +484,6 @@ void ShaderProgramGL2::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-InstancingProgram::InstancingProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
-{
-    m_instanceMvBuffer = 0;
-}
-
-InstancingProgram::~InstancingProgram()
-{
-    if(m_instanceMvBuffer != 0)
-        glDeleteBuffers(1, &m_instanceMvBuffer);
-}
-
-bool InstancingProgram::init()
-{
-    // Make sure the attribute is being used.
-    if(m_attr[A_MODEL_VIEW_0] < 0)
-        return false;
-
-    // Make sure the required extensions are present.
-    if(!GLEW_ARB_draw_instanced || !GLEW_ARB_instanced_arrays)
-        return false;
-
-    // Create a buffer that can contain model-view matrices for instanced objects.
-    size_t bufferSize = RenderState::MAX_OBJECT_INSTANCES * sizeof(matrix4);
-    glGenBuffers(1, &m_instanceMvBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
-    glBufferData(GL_ARRAY_BUFFER, bufferSize, NULL, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    return true;
-}
-
-void InstancingProgram::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
-{
-    if(!m_meshData.pending)
-        return;
-    if(instances > RenderState::MAX_OBJECT_INSTANCES)
-		return;
-    size_t bufferSize = instances * sizeof(matrix4);
-    size_t bufferStride = sizeof(vec4) * 4;
-    glBindBuffer(GL_ARRAY_BUFFER, m_instanceMvBuffer);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, mvMatrices);
-    int mvAttr = m_attr[A_MODEL_VIEW_0];
-    for(int i = 0; i < 4; i++)
-    {
-        void *ptr = (void*)(sizeof(vec4) * i);
-        enableVertexAttribute(A_MODEL_VIEW_0, i);
-        glVertexAttribPointer(mvAttr + i, 4, GL_FLOAT, GL_FALSE, bufferStride, ptr);
-        glVertexAttribDivisor(mvAttr + i, 1);
-    }
-    drawMaterialGroups(m_meshData.vg, instances);
-    for(int i = 0; i < 4; i++)
-        glVertexAttribDivisor(mvAttr + i, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 UniformSkinningProgram::UniformSkinningProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
 {
     m_bonesLoc = -1;

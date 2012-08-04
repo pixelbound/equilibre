@@ -70,8 +70,7 @@ public:
     {
         BasicShader = 0,
         SkinningUniformShader = 1,
-        SkinningTextureShader = 2,
-        InstancedShader = 3
+        SkinningTextureShader = 2
     };
 
 private:
@@ -85,7 +84,7 @@ private:
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];
-    ShaderProgramGL2 *m_programs[4];
+    ShaderProgramGL2 *m_programs[3];
     RenderMode m_renderMode;
     SkinningMode m_skinningMode;
     Shader m_shader;

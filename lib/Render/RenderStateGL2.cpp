@@ -19,7 +19,6 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)BasicShader] = new ShaderProgramGL2(this);
     m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
-    m_programs[(int)InstancedShader] = new InstancingProgram(this);
     m_gpuTimers = 0;
     createCube();
     m_drawCallsStat = createStat("Draw calls", FrameStat::Counter);
@@ -33,7 +32,6 @@ RenderStateGL2::~RenderStateGL2()
     delete m_programs[(int)BasicShader];
     delete m_programs[(int)SkinningUniformShader];
     delete m_programs[(int)SkinningTextureShader];
-    delete m_programs[(int)InstancedShader];
     delete m_cube;
 }
 
@@ -152,8 +150,6 @@ RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode r
     default:
     case Basic:
         return BasicShader;
-    case Instanced:
-        return InstancedShader;
     case Skinning:
       switch(skinning)
       {
@@ -424,7 +420,7 @@ void RenderStateGL2::endFrame()
     // Count draw calls and texture binds made by all programs.
     int totalDrawCalls = 0;
     int totalTextureBinds = 0;
-    for(int i = 0; i < 4; i++)
+    for(int i = 0; i < 3; i++)
     {
         ShaderProgramGL2 *prog = m_programs[i];
         if(prog)
@@ -486,7 +482,6 @@ void RenderStateGL2::init()
     initShader(BasicShader, "vertex.glsl", "fragment.glsl");
     initShader(SkinningUniformShader, "vertex_skinned_uniform.glsl", "fragment.glsl");
     initShader(SkinningTextureShader, "vertex_skinned_texture.glsl", "fragment.glsl");
-    initShader(InstancedShader, "vertex_instanced.glsl", "fragment.glsl");
 }
 
 bool RenderStateGL2::initShader(RenderStateGL2::Shader shader,

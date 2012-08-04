@@ -68,8 +68,7 @@ public:
     enum RenderMode
     {
         Basic = 0,
-        Skinning = 1,
-        Instanced = 2
+        Skinning = 1
     };
 
     virtual RenderMode renderMode() const = 0;

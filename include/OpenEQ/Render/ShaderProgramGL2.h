@@ -95,18 +95,6 @@ protected:
     int m_textureBinds;
 };
 
-class InstancingProgram : public ShaderProgramGL2
-{
-public:
-    InstancingProgram(RenderStateGL2 *state);
-	virtual ~InstancingProgram();
-    virtual bool init();
-	virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
-
-private:
-    uint32_t m_instanceMvBuffer;
-};
-
 class UniformSkinningProgram : public ShaderProgramGL2
 {
 public:
