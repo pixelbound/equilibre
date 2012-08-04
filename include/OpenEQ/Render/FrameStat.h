@@ -22,6 +22,7 @@ public:
 
     QString name() const;
     float average() const;
+    TimerType type() const;
 
     float current() const;
     void setCurrent(float s);

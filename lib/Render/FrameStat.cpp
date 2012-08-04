@@ -35,6 +35,11 @@ QString FrameStat::name() const
     return m_name;
 }
 
+FrameStat::TimerType FrameStat::type() const
+{
+    return m_timerType;
+}
+
 float FrameStat::average() const
 {
     float sum = 0.0f;

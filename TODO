@@ -1,8 +1,8 @@
 one frame latency for querying GL timers and remove glFinish
+    is it still an issue with vsync disabled?
 Material type, can specify material mask when rendering
     Draw opaque materials and then masked materials
 sort non-solid items front to back
-draw objects before zone
 cache modelview matrix of zone object
 combine draw calls when using the same material
     assume groups are sorted by offset and merge as many as possible

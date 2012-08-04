@@ -63,6 +63,7 @@ public:
     // Performance measurement
 
     virtual FrameStat * createStat(QString name, FrameStat::TimerType type);
+    virtual void destroyStat(FrameStat *stat);
     virtual const QVector<FrameStat *> &stats() const;
 
     enum Shader
@@ -91,6 +92,7 @@ private:
     VertexGroup *m_cube;
     MaterialMap *m_cubeMats;
     QVector<FrameStat *> m_stats;
+    int m_gpuTimers;
     FrameStat *m_frameStat;
     FrameStat *m_clearStat;
 };

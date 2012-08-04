@@ -20,6 +20,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     m_programs[(int)InstancedShader] = new InstancingProgram(this);
+    m_gpuTimers = 0;
     createCube();
     m_frameStat = createStat("Frame (ms)", FrameStat::WallTime);
     m_clearStat = createStat("Clear (ms)", FrameStat::WallTime);
@@ -425,8 +426,9 @@ void RenderStateGL2::endFrame()
         prog->endFrame();
     glPopAttrib();
 
-    // Wait for the GPU to finish rendering the scene.
-    glFinish();
+    // Wait for the GPU to finish rendering the scene if we are profiling it.
+    if(m_gpuTimers > 0)
+        glFinish();
 
     // Update the frame time and FPS.
     m_frameStat->endTime();
@@ -514,5 +516,19 @@ FrameStat * RenderStateGL2::createStat(QString name, FrameStat::TimerType type)
 {
     FrameStat *stat = new FrameStat(name, 64, type);
     m_stats.append(stat);
+    if(stat->type() == FrameStat::GPUTime)
+        m_gpuTimers++;
     return stat;
+}
+
+void RenderStateGL2::destroyStat(FrameStat *stat)
+{
+    int pos = m_stats.indexOf(stat);
+    if(pos >= 0)
+    {
+        if(stat->type() == FrameStat::GPUTime)
+            m_gpuTimers--;
+        m_stats.remove(pos);
+        delete stat;
+    }
 }
