@@ -149,6 +149,7 @@ struct RENDER_DLL AABox
     vec3 posVertex(const vec3 &normal) const;
     vec3 negVertex(const vec3 &normal) const;
     bool contains(const vec3 &p) const;
+    bool contains(const AABox &b) const;
     void cornersTo(vec3 *corners) const;
     void extendTo(const vec3 &p);
     void translate(const vec3 &trans);

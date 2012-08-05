@@ -362,6 +362,11 @@ vec3 AABox::negVertex(const vec3 &normal) const
     return res;
 }
 
+bool AABox::contains(const AABox &b) const
+{
+    return contains(b.low) && contains(b.high);
+}
+
 bool AABox::contains(const vec3 &p) const
 {
     return (low.x <= p.x) && (p.x <= high.x)
