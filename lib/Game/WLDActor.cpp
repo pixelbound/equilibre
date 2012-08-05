@@ -218,6 +218,25 @@ void ActorIndex::clear()
     m_actors.clear();
 }
 
+void ActorIndex::findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull)
+{
+    findVisible(objects, f, cull);
+}
+
+void ActorIndex::findVisible(QVector<const WLDZoneActor *> &objects, ActorIndexNode *node, const Frustum &f, bool cull)
+{
+    if(!node)
+        return;
+    Frustum::TestResult r = cull ? f.containsAABox(node->bounds()) : Frustum::INSIDE;
+    if(r == Frustum::OUTSIDE)
+        return;
+    cull = (r != Frustum::INSIDE);
+    for(int i = 0; i < 8; i++)
+        findVisible(objects, node->children()[i], f, cull);
+    foreach(int actorIndex, node->actors())
+        objects.append(&m_actors[actorIndex]);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 ActorIndexNode::ActorIndexNode(const AABox &bounds)

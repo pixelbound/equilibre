@@ -312,6 +312,7 @@ bool MeshDefFragment::unpack(WLDReader *s)
     s->unpackArray("f", 3, &m_center);
     s->unpackArray("I", 3, &m_param2);
     s->unpackField('f', &m_maxDist);
+    // This is not always defined, we will calculate it later on.
     s->unpackArray("f", 3, &m_boundsAA.low);
     s->unpackArray("f", 3, &m_boundsAA.high);
     s->unpackFields("hhhhhhhhhh", &vertexCount, &texCoordsCount, &normalCount,
@@ -322,10 +323,15 @@ bool MeshDefFragment::unpack(WLDReader *s)
     int16_t vertex[3], texCoord[2];
     int8_t normal[3], color[4];
     uint16_t polygon[4], vertexPiece[2], polyTex[2], vertexTex[2];
-    for(uint16_t i = 0; i < vertexCount; i++)
+    s->unpackStruct("hhh", vertex);
+    vec3 scaledVertex = vec3(vertex[0] * scale, vertex[1] * scale, vertex[2] * scale);
+    m_boundsAA = AABox(scaledVertex, scaledVertex);
+    for(uint16_t i = 1; i < vertexCount; i++)
     {
         s->unpackStruct("hhh", vertex);
-        m_vertices.append(vec3(vertex[0] * scale, vertex[1] * scale, vertex[2] * scale));
+        scaledVertex = vec3(vertex[0] * scale, vertex[1] * scale, vertex[2] * scale);
+        m_boundsAA.extendTo(scaledVertex);
+        m_vertices.append(scaledVertex);
     }
     for(uint16_t i = 0; i < texCoordsCount; i++)
     {

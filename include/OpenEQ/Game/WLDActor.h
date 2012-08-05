@@ -113,8 +113,11 @@ public:
 
     void add(const WLDZoneActor &actor);
     void clear();
+    void findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull);
 
 private:
+    void findVisible(QVector<const WLDZoneActor *> &objects, ActorIndexNode *node, const Frustum &f, bool cull);
+    
     ActorIndexNode *m_root;
     QList<WLDZoneActor> m_actors;
 };
