@@ -431,6 +431,12 @@ void AABox::scale(const vec3 &scale)
     high.z = high.z * scale.z;
 }
 
+void AABox::scaleCenter(float s)
+{
+    low = ((low + high) + (low - high) * s) * 0.5f;
+    high = ((low + high) + (high - low) * s) * 0.5f;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Frustum::Frustum()

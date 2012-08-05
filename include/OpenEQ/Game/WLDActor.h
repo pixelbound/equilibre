@@ -123,4 +123,23 @@ private:
     QList<WLDZoneActor> m_actors;
 };
 
+class GAME_DLL Octree
+{
+public:
+    Octree(AABox bounds, Octree *root);
+    const AABox & strictBounds() const;
+    AABox looseBounds() const;
+    void add(WLDZoneActor *actor);
+    
+private:
+    void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
+    static Octree * findBestFittingOctant(Octree *root, int x, int y, int z, int depth);
+    void split();
+    
+    AABox m_bounds;
+    Octree *m_root;
+    Octree *m_children[8];
+    QVector<WLDZoneActor *> m_actors;
+};
+
 #endif

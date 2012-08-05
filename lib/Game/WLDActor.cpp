@@ -1,3 +1,4 @@
+#include <math.h>
 #include "OpenEQ/Game/WLDActor.h"
 #include "OpenEQ/Game/WLDModel.h"
 #include "OpenEQ/Game/Fragments.h"
@@ -338,4 +339,132 @@ int ActorIndexNode::locate(const vec3 &pos) const
 bool ActorIndexNode::contains(const vec3 &pos) const
 {
     return m_bounds.contains(pos);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+Octree::Octree(AABox bounds, Octree *root)
+{
+    m_bounds = bounds;
+    m_root = root;
+    for(int i = 0; i < 8; i++)
+        m_children[i] = NULL;
+}
+
+const AABox & Octree::strictBounds() const
+{
+    return m_bounds;
+}
+
+AABox Octree::looseBounds() const
+{
+    AABox loose = m_bounds;
+    loose.scaleCenter(2.0f);
+    return loose;
+}
+
+void Octree::add(WLDZoneActor *actor)
+{
+    m_actors.append(actor);
+    if(!m_children[0] && (m_actors.count() >= 20))
+        split();
+}
+
+void Octree::split()
+{
+    // Create children octants.
+    vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
+    m_children[0] = new Octree(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)), m_root);
+    m_children[1] = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_root);
+    m_children[2] = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_root);
+    m_children[3] = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_root);
+    m_children[4] = new Octree(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)), m_root);
+    m_children[5] = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_root);
+    m_children[6] = new Octree(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)), m_root);
+    m_children[7] = new Octree(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)), m_root);
+    
+    // Try to insert actors in children octants.
+    for(int i = m_actors.count() - 1; i >= 0; i--)
+    {
+        WLDZoneActor *actor = m_actors[i];
+        int x = 0, y = 0, z = 0, depth = 0;
+        m_root->findIdealInsertion(actor->boundsAA, x, y, z, depth);
+        Octree *octant = findBestFittingOctant(m_root, x, y, z, depth);
+        if(octant != this)
+        {
+            octant->add(actor);
+            m_actors.remove(i);
+        }
+    }
+}
+
+void Octree::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
+{
+    AABox sb = strictBounds();
+    float sbRadius = (sb.high.x - sb.low.x);
+    vec3 bbExtent = (bb.high - bb.low) * 0.5f;
+    float bbRadius = qMax(bbExtent.x, qMax(bbExtent.y, bbExtent.z));
+    depth = 0;
+ 
+    while(true)
+    {
+        sbRadius *= 0.5f;
+        if(sbRadius < bbRadius)
+            break;
+        depth++;
+    }
+ 
+    //we're off by one
+    depth--;
+    sbRadius *= 2.0f;
+    
+    //get the index of the node
+    vec3 bbCenter = bb.center();
+    vec3 sbSize = (sb.high - sb.low);
+    x = (int)floor(depth * (bbCenter.x / sbSize.x));
+    y = (int)floor(depth * (bbCenter.y / sbSize.y));
+    z = (int)floor(depth * (bbCenter.z / sbSize.z));
+}
+
+Octree * Octree::findBestFittingOctant(Octree *root, int x, int y, int z, int depth)
+{
+    Octree *octant = root;
+    for(int currentDepth = 0; currentDepth != depth; ++currentDepth)
+    {
+        if(!octant->m_children[0])
+        {
+            // Octant not split.
+            return octant;
+        }
+        else
+        {
+            /*
+                We can find the exact child without any comparisons
+                For example, we're looking for an octant at depth 2 with x,y,z = (2,1,3)
+                This will be a child of the octant at depth 1 with x,y,z = (1,0,1)
+ 
+                We take the convention that childOctants are layed out as:
+ 
+                local index                1D index
+                [(0,1,0) (1,1,0)]        [2 3]
+                [(0,0,0) (1,0,0)]        [0 1]
+                                    =
+                [(0,1,0) (1,1,0)]        [6 7]
+                [(0,0,0) (1,0,0)]        [4 5]
+ 
+                To find the local index of an octant in the frame of it's direct parent, we have to divide the index by two.
+                To find the local index of an octant in the frame of it's  parent x times up, we have to divide the index by 2^x
+ 
+            */
+            //this generates the local index of the child octant at (currentDepth - 1)
+            int currentDepthX = x >> (depth - (currentDepth+1));
+            int currentDepthY = y >> (depth - (currentDepth+1));
+            int currentDepthZ = z >> (depth - (currentDepth+1));
+            int childIndex = currentDepthX + (currentDepthY << 1) + (currentDepthZ << 2);
+            octant = octant->m_children[childIndex];
+        }
+    }
+ 
+    //if we make it here, we're at the minimum depth. and we found our octant
+    return octant;
 }

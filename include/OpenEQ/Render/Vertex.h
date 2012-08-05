@@ -155,6 +155,7 @@ struct RENDER_DLL AABox
     void translate(const vec3 &trans);
     void rotate(const vec3 &rot);
     void scale(const vec3 &scale);
+    void scaleCenter(float s);
 };
 
 #ifdef _WIN32
