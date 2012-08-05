@@ -72,7 +72,6 @@ private:
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull);
     void createGPUBuffer(VertexGroup *vg, RenderState *state);
     void drawObjects(RenderState *state);
     void uploadZone(RenderState *state);

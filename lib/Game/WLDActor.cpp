@@ -220,7 +220,7 @@ void ActorIndex::clear()
 
 void ActorIndex::findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull)
 {
-    findVisible(objects, f, cull);
+    findVisible(objects, m_root, f, cull);
 }
 
 void ActorIndex::findVisible(QVector<const WLDZoneActor *> &objects, ActorIndexNode *node, const Frustum &f, bool cull)

@@ -389,8 +389,7 @@ void Zone::drawObjects(RenderState *state)
         m_objectsGeometry = uploadObjects(state);
     
     // Build a list of visible objects and sort them by mesh.
-    Frustum &frustum = state->viewFrustum();
-    findVisibleObjects(m_index->root(), frustum, m_cullObjects);
+    m_index->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
     qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
     
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
@@ -532,21 +531,6 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
         }
         materials->upload(state);
     }
-}
-
-void Zone::findVisibleObjects(ActorIndexNode *node, const Frustum &f, bool cull)
-{
-    if(!node)
-        return;
-    Frustum::TestResult r = cull ? f.containsAABox(node->bounds()) : Frustum::INSIDE;
-    if(r == Frustum::OUTSIDE)
-        return;
-    cull = (r != Frustum::INSIDE);
-    for(int i = 0; i < 8; i++)
-        findVisibleObjects(node->children()[i], f, cull);
-    const QList<WLDZoneActor> &actors = m_index->actors();
-    foreach(int actorIndex, node->actors())
-        m_visibleObjects.append(&actors[actorIndex]);
 }
 
 const vec3 & Zone::playerPos() const

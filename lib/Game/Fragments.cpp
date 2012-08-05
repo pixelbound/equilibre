@@ -326,6 +326,7 @@ bool MeshDefFragment::unpack(WLDReader *s)
     s->unpackStruct("hhh", vertex);
     vec3 scaledVertex = vec3(vertex[0] * scale, vertex[1] * scale, vertex[2] * scale);
     m_boundsAA = AABox(scaledVertex, scaledVertex);
+    m_vertices.append(scaledVertex);
     for(uint16_t i = 1; i < vertexCount; i++)
     {
         s->unpackStruct("hhh", vertex);
