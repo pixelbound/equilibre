@@ -33,6 +33,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_zoneStatGPU = NULL;
     m_objectsStatGPU = NULL;
     m_objectsGeometry = NULL;
+    m_drawnObjectsStat = NULL;
     m_index = new ActorIndex();
 }
 
@@ -434,6 +435,9 @@ void Zone::drawObjects(RenderState *state)
         }
         state->endDrawMesh();
     }
+    if(m_drawnObjectsStat == NULL)
+        m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
+    m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
     m_visibleObjects.clear();
 }
 

@@ -286,29 +286,34 @@ void ActorIndexNode::add(uint16_t index, const vec3 &pos, ActorIndex *tree)
     }
     else
     {
-        // split node into 8 children
-        vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
-        m_children[0] = new ActorIndexNode(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)));
-        m_children[1] = new ActorIndexNode(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)));
-        m_children[2] = new ActorIndexNode(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)));
-        m_children[3] = new ActorIndexNode(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)));
-        m_children[4] = new ActorIndexNode(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)));
-        m_children[5] = new ActorIndexNode(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)));
-        m_children[6] = new ActorIndexNode(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)));
-        m_children[7] = new ActorIndexNode(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)));
-        m_leaf = false;
-
-        // add actors to the children nodes
-        const QList<WLDZoneActor> &actors = tree->actors();
-        foreach(int actorIndex, m_actors)
-        {
-            vec3 pos = actors[actorIndex].location;
-            int childIndex = locate(pos);
-            m_children[childIndex]->add(actorIndex, pos, tree);
-        }
-        m_actors.clear();
+        split(tree);
         add(index, pos, tree);
     }
+}
+
+void ActorIndexNode::split(ActorIndex *tree)
+{
+    // split node into 8 children
+    vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
+    m_children[0] = new ActorIndexNode(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)));
+    m_children[1] = new ActorIndexNode(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)));
+    m_children[2] = new ActorIndexNode(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)));
+    m_children[3] = new ActorIndexNode(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)));
+    m_children[4] = new ActorIndexNode(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)));
+    m_children[5] = new ActorIndexNode(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)));
+    m_children[6] = new ActorIndexNode(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)));
+    m_children[7] = new ActorIndexNode(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)));
+    m_leaf = false;
+
+    // add actors to the children nodes
+    const QList<WLDZoneActor> &actors = tree->actors();
+    foreach(int actorIndex, m_actors)
+    {
+        vec3 pos = actors[actorIndex].location;
+        int childIndex = locate(pos);
+        m_children[childIndex]->add(actorIndex, pos, tree);
+    }
+    m_actors.clear();
 }
 
 int ActorIndexNode::locate(const vec3 &pos) const

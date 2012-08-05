@@ -93,6 +93,7 @@ public:
     bool contains(const vec3 &pos) const;
 
 private:
+    void split(ActorIndex *tree);
     int locate(const vec3 &pos) const;
 
     //TODO optimize to: int count, union { ActorIndexNode *, WLDActor * }
