@@ -337,8 +337,8 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
     QVector<Material *> groupMats;
     for(int i = 0; i < vg->matGroups.count(); i++)
     {
-        QString matName = vg->matGroups[i].matName;
-        Material *mat = m_meshData.materials->material(matName);
+        uint32_t matID = vg->matGroups[i].matID;
+        Material *mat = m_meshData.materials->material(matID);
         // skip meshes that don't have a material
         // XXX fix rendering non-opaque polygons
         if(!mat || !mat->isOpaque())

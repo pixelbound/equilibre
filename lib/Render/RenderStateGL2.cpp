@@ -113,7 +113,7 @@ void RenderStateGL2::createCube()
     mg.count = 24;
     mg.offset = 0;
     mg.id = 0;
-    mg.matName = "cube";
+    mg.matID = 1;
     m_cube->matGroups.push_back(mg);
     
     m_cubeMats = new MaterialMap();
@@ -121,7 +121,7 @@ void RenderStateGL2::createCube()
     mat->setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
     mat->setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
     mat->setOpaque(false);
-    m_cubeMats->setMaterial("cube", mat);
+    m_cubeMats->setMaterial(mg.matID, mat);
 }
 
 void RenderStateGL2::drawBox(const AABox &box)

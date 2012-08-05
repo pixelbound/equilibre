@@ -60,9 +60,9 @@ class RENDER_DLL MaterialMap
 public:
     MaterialMap();
     ~MaterialMap();
-    const QMap<QString, Material *> & materials() const;
-    Material * material(QString name) const;
-    void setMaterial(QString name, Material *mat);
+    const QMap<uint32_t, Material *> &materials() const;
+    Material * material(uint32_t matID) const;
+    void setMaterial(uint32_t matID, Material *mat);
     
     texture_t arrayTexture() const;
     bool uploaded() const;
@@ -73,7 +73,7 @@ public:
     void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:
-    QMap<QString, Material *> m_materials;
+    QMap<uint32_t, Material *> m_materials;
     texture_t m_arrayTexture;
     bool m_uploaded;
 };

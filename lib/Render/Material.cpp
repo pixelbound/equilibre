@@ -147,19 +147,19 @@ MaterialMap::~MaterialMap()
         delete mat;
 }
 
-const QMap<QString, Material *> & MaterialMap::materials() const
+const QMap<uint32_t, Material *> & MaterialMap::materials() const
 {
     return m_materials;
 }
 
-Material * MaterialMap::material(QString name) const
+Material * MaterialMap::material(uint32_t matID) const
 {
-    return m_materials.value(name);
+    return m_materials.value(matID);
 }
 
-void MaterialMap::setMaterial(QString name, Material *mat)
+void MaterialMap::setMaterial(uint32_t matID, Material *mat)
 {
-    m_materials[name] = mat;
+    m_materials[matID] = mat;
 }
 
 texture_t MaterialMap::arrayTexture() const
@@ -251,7 +251,7 @@ void MaterialMap::updateTexCoords(const QVector<MaterialGroup> &groups, VertexDa
     textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
     foreach(MaterialGroup mg, groups)
     {
-        Material *mat = material(mg.matName);
+        Material *mat = material(mg.matID);
         if(!mat)
             continue;
         float matScalingX = (float)mat->image().width() / (float)maxWidth;

@@ -102,6 +102,7 @@ public:
       */
     static QString materialName(QString defName);
     static QString materialName(MaterialDefFragment *def);
+    static uint32_t materialHash(QString matName);
 
     static bool explodeName(QString defName, QString &charName,
                             QString &palName, QString &partName);

@@ -186,19 +186,19 @@ void WLDMesh::importMaterialGroups(VertexGroup *vg)
         mg.offset = meshOffset;
         mg.count = vertexCount;
         // invisible groups have no material
-        if(matDef->m_param1 == 0)
-            mg.matName = QString::null;
-        else
-            mg.matName = WLDMaterialPalette::materialName(palDef->m_materials[g.second]);
+        QString matName;
+        if(matDef->m_param1 != 0)
+            matName = WLDMaterialPalette::materialName(palDef->m_materials[g.second]);
+        mg.matID = WLDMaterialPalette::materialHash(matName);
+        
         vg->matGroups.append(mg);
         meshOffset += vertexCount;
     }
-    //XXX sort groups by offset
 }
 
 static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b)
 {
-    return a.matName < b.matName;
+    return a.matID < b.matID;
 }
 
 VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
@@ -236,18 +236,18 @@ VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
     group.id = vg->matGroups[0].id;
     group.offset = 0;
     group.count = 0;
-    group.matName = vg->matGroups[0].matName;
+    group.matID = vg->matGroups[0].matID;
     for(int i = 0; i < vg->matGroups.count(); i++)
     {
         MaterialGroup &mg(vg->matGroups[i]);
-        if(mg.matName != group.matName)
+        if(mg.matID != group.matID)
         {
             // new material - output the current group
             newGroups.append(group);
             group.id = mg.id;
             group.offset += group.count;
             group.count = 0;
-            group.matName = mg.matName;
+            group.matID = mg.matID;
         }
         group.count += mg.count;
     }
@@ -319,14 +319,26 @@ QString WLDMaterialPalette::materialName(MaterialDefFragment *def)
     return materialName(def->name());
 }
 
+uint32_t WLDMaterialPalette::materialHash(QString matName)
+{
+    uint32_t hash = 2166136261u;
+    for(int i = 0; i < matName.length(); i++)
+    {
+        hash ^= matName[i].toLatin1();
+        hash *= 16777619u;
+    }
+    return hash;
+}
+
 MaterialMap * WLDMaterialPalette::loadMaterials()
 {
     MaterialMap *materials = new MaterialMap();
     foreach(MaterialDefFragment *frag, m_materialDefs)
     {
         QString canName = materialName(frag);
+        uint32_t canID = materialHash(canName);
         Material *mat = loadMaterial(frag);
-        materials->setMaterial(canName, mat);
+        materials->setMaterial(canID, mat);
     }
     return materials;
 }
