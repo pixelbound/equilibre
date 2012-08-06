@@ -15,6 +15,7 @@ class WLDActor;
 class WLDZoneActor;
 class ActorIndex;
 class ActorIndexNode;
+class Octree;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialMap;
@@ -33,7 +34,6 @@ public:
 
     const QMap<QString, WLDMesh *> & objectModels() const;
     const QMap<QString, WLDActor *> & charModels() const;
-    const QList<WLDZoneActor> & actors() const;
 
     bool load(QString path, QString name);
     bool loadCharacters(QString archivePath, QString wldName = QString::null);
@@ -94,6 +94,7 @@ private:
     // zone objects
     VertexGroup *m_objectsGeometry;
     ActorIndex *m_index;
+    Octree *m_objectTree;
     bool m_showZone;
     bool m_showObjects;
     bool m_cullObjects;

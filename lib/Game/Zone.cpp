@@ -33,6 +33,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_zoneStatGPU = NULL;
     m_objectsStatGPU = NULL;
     m_objectsGeometry = NULL;
+    m_objectTree = NULL;
     m_drawnObjectsStat = NULL;
     m_index = new ActorIndex();
 }
@@ -51,11 +52,6 @@ const QMap<QString, WLDMesh *> & Zone::objectModels() const
 const QMap<QString, WLDActor *> & Zone::charModels() const
 {
     return m_charModels;
-}
-
-const QList<WLDZoneActor> & Zone::actors() const
-{
-    return m_index->actors();
 }
 
 bool Zone::load(QString path, QString name)
@@ -126,6 +122,7 @@ void Zone::clear()
         delete actor;
     m_objModels.clear();
     m_charModels.clear();
+    delete m_objectTree;
     delete m_objectsGeometry;
     delete m_zoneGeometry;
     delete m_zoneMaterials;
@@ -136,6 +133,7 @@ void Zone::clear()
     delete m_mainArchive;
     delete m_objMeshArchive;
     delete m_charArchive;
+    m_objectTree = 0;
     m_objectsGeometry = 0;
     m_zoneGeometry = 0;
     m_zoneMaterials = 0;
@@ -176,14 +174,18 @@ void Zone::importObjects()
     importObjectsMeshes(m_objMeshArchive, m_objMeshWld);
 
     // import actors through Actor fragments
+    //TODO provide boundaries somewhere
+    vec3 low(-1e4, -1e4, -1e4), high(1e4, 1e4, 1e4);
+    m_objectTree = new Octree(AABox(low, high), NULL);
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();
         WLDMesh *model = m_objModels.value(actorName);
         if(model)
         {
-            WLDZoneActor actor(actorFrag, model);
-            m_index->add(actor);
+            WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
+            m_index->add(*actor);
+            m_objectTree->add(actor);
         }
         else
         {
@@ -390,7 +392,8 @@ void Zone::drawObjects(RenderState *state)
         m_objectsGeometry = uploadObjects(state);
     
     // Build a list of visible objects and sort them by mesh.
-    m_index->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
+    //m_index->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
+    m_objectTree->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
     qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
     
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
