@@ -343,9 +343,10 @@ bool ActorIndexNode::contains(const vec3 &pos) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-OctreeIndex::OctreeIndex(AABox bounds)
+OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)
 {
     m_root = new Octree(bounds, this);
+    m_maxDepth = maxDepth;
 }
 
 Octree * OctreeIndex::add(WLDZoneActor *actor)
@@ -353,7 +354,7 @@ Octree * OctreeIndex::add(WLDZoneActor *actor)
     int x = 0, y = 0, z = 0, depth = 0;
     findIdealInsertion(actor->boundsAA, x, y, z, depth);
     Octree *octant = findBestFittingOctant(x, y, z, depth);
-    octant->add(actor);
+    octant->actors().append(actor);
     return octant;
 }
 
@@ -413,24 +414,23 @@ Octree * OctreeIndex::findBestFittingOctant(int x, int y, int z, int depth)
 {
     Octree *octant = m_root;
     int highBit = 1 << (depth - 1);
-    for(int i = 0; i < depth; i++)
+    for(int i = 0; i < qMin(depth, m_maxDepth); i++)
     {
-        if(!octant->child(0))
+        // Determine the octant at this depth using the index's current high bit.
+        int localX = (x & highBit) > 0;
+        int localY = (y & highBit) > 0;
+        int localZ = (z & highBit) > 0;
+        int childIndex = localX + (localY << 1) + (localZ << 2);
+        Q_ASSERT(childIndex >= 0 && childIndex <= 7);
+        Octree *newOctant = octant->child(childIndex);
+        if(!newOctant)
         {
-            // Octant not split.
-            return octant;
+            // Create children octants as needed.
+            newOctant = octant->createChild(childIndex);
+            Q_ASSERT(newOctant);
         }
-        else
-        {
-            // Determine the octant at this depth using the index's current high bit.
-            int localX = (x & highBit) > 0;
-            int localY = (y & highBit) > 0;
-            int localZ = (z & highBit) > 0;
-            int childIndex = localX + (localY << 1) + (localZ << 2);
-            Q_ASSERT(childIndex >= 0 && childIndex <= 7);
-            octant = octant->child(childIndex);
-            highBit >>= 1;
-        }
+        octant = newOctant;
+        highBit >>= 1;
     }
     return octant;
 }
@@ -462,43 +462,54 @@ const QVector<WLDZoneActor *> & Octree::actors() const
     return m_actors;
 }
 
+QVector<WLDZoneActor *> & Octree::actors()
+{
+    return m_actors;
+}
+
 Octree *Octree::child(int index) const
 {
     return ((index >= 0) && (index < 8)) ? m_children[index] : NULL;
 }
 
-void Octree::add(WLDZoneActor *actor)
+void Octree::setChild(int index, Octree *octant)
 {
-    m_actors.append(actor);
-    if(!m_children[0] && (m_actors.count() >= 20))
-        split();
+    if((index >= 0) && (index < 8))
+        m_children[index] = octant;
 }
 
-void Octree::split()
+Octree * Octree::createChild(int index)
 {
-    // Create children octants.
+    Octree *octant = NULL;
     vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
-    m_children[0] = new Octree(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)), m_index);
-    m_children[1] = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_index);
-    m_children[2] = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_index);
-    m_children[3] = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_index);
-    m_children[4] = new Octree(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)), m_index);
-    m_children[5] = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_index);
-    m_children[6] = new Octree(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)), m_index);
-    m_children[7] = new Octree(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)), m_index);
-    
-    // Try to insert actors in children octants.
-    for(int i = m_actors.count() - 1; i >= 0; i--)
+    switch(index)
     {
-        WLDZoneActor *actor = m_actors[i];
-        //int x = 0, y = 0, z = 0, depth = 0;
-        //m_index->findIdealInsertion(actor->boundsAA, x, y, z, depth);
-        //Octree *octant = m_index->findBestFittingOctant(x, y, z, depth);
-        Octree *octant = m_index->add(actor);
-        if(octant != this)
-        {
-            //octant->addInternal(actor);
-            m_actors.remove(i);
-        }
+    case 0:
+        octant = new Octree(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)), m_index);
+        break;
+    case 1:
+        octant = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_index);
+        break;
+    case 2:
+        octant = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_index);
+        break;
+    case 3:
+        octant = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_index);
+        break;
+    case 4:
+        octant = new Octree(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)), m_index);
+        break;
+    case 5:
+        octant = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_index);
+        break;
+    case 6:
+        octant = new Octree(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)), m_index);
+        break;
+    case 7:
+        octant = new Octree(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)), m_index);
+        break;
     }
+    if(octant)
+        m_children[index] = octant;
+    return octant;
 }
