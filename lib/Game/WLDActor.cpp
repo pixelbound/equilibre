@@ -179,181 +179,29 @@ WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDMesh *mesh)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ActorIndex::ActorIndex()
-{
-    m_root = 0;
-}
-
-ActorIndex::~ActorIndex()
-{
-    clear();
-}
-
-const QList<WLDZoneActor> & ActorIndex::actors() const
-{
-    return m_actors;
-}
-
-ActorIndexNode *ActorIndex::root() const
-{
-    return m_root;
-}
-
-void ActorIndex::add(const WLDZoneActor &actor)
-{
-    if(!m_root)
-    {
-        //TODO provide boundaries somewhere
-        vec3 low(-1e4, -1e4, -1e4), high(1e4, 1e4, 1e4);
-        m_root = new ActorIndexNode(AABox(low, high));
-    }
-    uint16_t index = (uint16_t)m_actors.count();
-    m_actors.append(actor);
-    m_root->add(index, actor.location, this);
-}
-
-void ActorIndex::clear()
-{
-    delete m_root;
-    m_root = 0;
-    m_actors.clear();
-}
-
-void ActorIndex::findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull)
-{
-    findVisible(objects, m_root, f, cull);
-}
-
-void ActorIndex::findVisible(QVector<const WLDZoneActor *> &objects, ActorIndexNode *node, const Frustum &f, bool cull)
-{
-    if(!node)
-        return;
-    Frustum::TestResult r = cull ? f.containsAABox(node->bounds()) : Frustum::INSIDE;
-    if(r == Frustum::OUTSIDE)
-        return;
-    cull = (r != Frustum::INSIDE);
-    for(int i = 0; i < 8; i++)
-        findVisible(objects, node->children()[i], f, cull);
-    foreach(int actorIndex, node->actors())
-        objects.append(&m_actors[actorIndex]);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-ActorIndexNode::ActorIndexNode(const AABox &bounds)
-{
-    for(int i = 0; i < 8; i++)
-        m_children[i] = 0;
-    m_leaf = true;
-    m_bounds = bounds;
-}
-
-ActorIndexNode::~ActorIndexNode()
-{
-    if(!m_leaf)
-    {
-        for(int i = 0; i < 8; i++)
-            delete m_children[i];
-    }
-}
-
-QVector<uint16_t> & ActorIndexNode::actors()
-{
-    return m_actors;
-}
-
-ActorIndexNode ** ActorIndexNode::children()
-{
-    return m_children;
-}
-
-const AABox & ActorIndexNode::bounds() const
-{
-    return m_bounds;
-}
-
-void ActorIndexNode::add(uint16_t index, const vec3 &pos, ActorIndex *tree)
-{
-    if(!contains(pos))
-        return;
-    else if(!m_leaf)
-    {
-        int childIndex = locate(pos);
-        m_children[childIndex]->add(index, pos, tree);
-    }
-    else if(m_actors.count() <= 20)
-    {
-        m_actors.append(index);
-    }
-    else
-    {
-        split(tree);
-        add(index, pos, tree);
-    }
-}
-
-void ActorIndexNode::split(ActorIndex *tree)
-{
-    // split node into 8 children
-    vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
-    m_children[0] = new ActorIndexNode(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)));
-    m_children[1] = new ActorIndexNode(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)));
-    m_children[2] = new ActorIndexNode(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)));
-    m_children[3] = new ActorIndexNode(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)));
-    m_children[4] = new ActorIndexNode(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)));
-    m_children[5] = new ActorIndexNode(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)));
-    m_children[6] = new ActorIndexNode(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)));
-    m_children[7] = new ActorIndexNode(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)));
-    m_leaf = false;
-
-    // add actors to the children nodes
-    const QList<WLDZoneActor> &actors = tree->actors();
-    foreach(int actorIndex, m_actors)
-    {
-        vec3 pos = actors[actorIndex].location;
-        int childIndex = locate(pos);
-        m_children[childIndex]->add(actorIndex, pos, tree);
-    }
-    m_actors.clear();
-}
-
-int ActorIndexNode::locate(const vec3 &pos) const
-{
-    vec3 center = m_bounds.center();
-    if(pos.x < center.x)
-    {
-        if(pos.y < center.y)
-            return (pos.z < center.z) ? 0 : 1;
-        else
-            return (pos.z < center.z) ? 2 : 3;
-    }
-    else
-    {
-        if(pos.y < center.y)
-            return (pos.z < center.z) ? 4 : 5;
-        else
-            return (pos.z < center.z) ? 6 : 7;
-    }
-}
-
-bool ActorIndexNode::contains(const vec3 &pos) const
-{
-    return m_bounds.contains(pos);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)
 {
-    m_root = new Octree(bounds, this);
+    // Convert the bounds to a cube.
+    float cubeLow = qMin(bounds.low.x, qMin(bounds.low.y, bounds.low.z));
+    float cubeHigh = qMax(bounds.high.x, qMax(bounds.high.y, bounds.high.z));
+    AABox cubeBounds(vec3(cubeLow, cubeLow, cubeLow), vec3(cubeHigh, cubeHigh, cubeHigh));
+    m_root = new Octree(cubeBounds, this);
     m_maxDepth = maxDepth;
 }
 
 Octree * OctreeIndex::add(WLDZoneActor *actor)
 {
+    AABox actorBounds = actor->boundsAA;
     int x = 0, y = 0, z = 0, depth = 0;
-    findIdealInsertion(actor->boundsAA, x, y, z, depth);
+    findIdealInsertion(actorBounds, x, y, z, depth);
     Octree *octant = findBestFittingOctant(x, y, z, depth);
+#ifndef NDEBUG
+    vec3 actorCenter = actorBounds.center();
+    AABox octantSBounds = octant->strictBounds();
+    AABox octantLBounds = octant->looseBounds();
+    Q_ASSERT(octantSBounds.contains(actorCenter));
+    Q_ASSERT(octantLBounds.contains(actorBounds));
+#endif
     octant->actors().append(actor);
     return octant;
 }
@@ -475,28 +323,28 @@ Octree * Octree::createChild(int index)
     vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
     switch(index)
     {
-    case 0:
+    case 0: // x = 0, y = 0, z = 0
         octant = new Octree(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)), m_index);
         break;
-    case 1:
-        octant = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_index);
-        break;
-    case 2:
-        octant = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_index);
-        break;
-    case 3:
-        octant = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_index);
-        break;
-    case 4:
+    case 1: // x = 1, y = 0, z = 0
         octant = new Octree(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)), m_index);
         break;
-    case 5:
-        octant = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_index);
+    case 2: // x = 0, y = 1, z = 0
+        octant = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_index);
         break;
-    case 6:
+    case 3: // x = 1, y = 1, z = 0
         octant = new Octree(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)), m_index);
         break;
-    case 7:
+    case 4: // x = 0, y = 0, z = 1
+        octant = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_index);
+        break;
+    case 5: // x = 1, y = 0, z = 1
+        octant = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_index);
+        break;
+    case 6: // x = 0, y = 1, z = 1
+        octant = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_index);
+        break;
+    case 7: // x = 1, y = 1, z = 1
         octant = new Octree(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)), m_index);
         break;
     }

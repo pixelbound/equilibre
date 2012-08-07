@@ -82,6 +82,7 @@ private:
     QString m_name;
     VertexGroup *m_zoneGeometry;
     MaterialMap *m_zoneMaterials;
+    AABox m_zoneBounds;
     PFSArchive *m_mainArchive;
     PFSArchive *m_objMeshArchive;
     PFSArchive *m_charArchive;
@@ -93,7 +94,6 @@ private:
     QVector<buffer_t> m_gpuBuffers;
     // zone objects
     VertexGroup *m_objectsGeometry;
-    ActorIndex *m_index;
     OctreeIndex *m_objectTree;
     bool m_showZone;
     bool m_showObjects;

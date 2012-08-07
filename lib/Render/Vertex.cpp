@@ -397,6 +397,12 @@ void AABox::extendTo(const vec3 &p)
     high.z = max(high.z, p.z);
 }
 
+void AABox::extendTo(const AABox &b)
+{
+    extendTo(b.low);
+    extendTo(b.high);
+}
+
 static vec3 rotate_by_quat(vec3 v, QQuaternion q)
 {
     QVector3D res = q.rotatedVector(QVector3D(v.x, v.y, v.z));

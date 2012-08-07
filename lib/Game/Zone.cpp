@@ -35,13 +35,11 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_objectsGeometry = NULL;
     m_objectTree = NULL;
     m_drawnObjectsStat = NULL;
-    m_index = new ActorIndex();
 }
 
 Zone::~Zone()
 {
     clear();
-    delete m_index;
 }
 
 const QMap<QString, WLDMesh *> & Zone::objectModels() const
@@ -115,7 +113,6 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
 
 void Zone::clear()
 {
-    m_index->clear();
     foreach(WLDMesh *model, m_objModels)
         delete model;
     foreach(WLDActor *actor, m_charModels)
@@ -151,8 +148,13 @@ void Zone::importGeometry()
     // load zone regions as model parts
     QList<WLDMesh *> parts;
     int partID = 0;
+    m_zoneBounds = AABox();
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
-        parts.append(new WLDMesh(meshDef, partID++));
+    {
+        WLDMesh *mesh = new WLDMesh(meshDef, partID++);
+        m_zoneBounds.extendTo(mesh->boundsAA());
+        parts.append(mesh);
+    }
     // load zone textures into the material palette
     WLDMaterialPalette zonePalette(m_mainArchive, this);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
@@ -174,18 +176,14 @@ void Zone::importObjects()
     importObjectsMeshes(m_objMeshArchive, m_objMeshWld);
 
     // import actors through Actor fragments
-    //TODO provide boundaries somewhere
-    vec3 low(-1e4, -1e4, -1e4), high(1e4, 1e4, 1e4);
-    m_objectTree = new OctreeIndex(AABox(low, high), 8);
+    m_objectTree = new OctreeIndex(m_zoneBounds, 8);
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();
         WLDMesh *model = m_objModels.value(actorName);
         if(model)
         {
-            WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
-            m_index->add(*actor);
-            m_objectTree->add(actor);
+            m_objectTree->add(new WLDZoneActor(actorFrag, model));
         }
         else
         {

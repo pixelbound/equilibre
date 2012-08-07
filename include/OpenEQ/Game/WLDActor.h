@@ -78,51 +78,6 @@ public:
     WLDMesh *mesh;
 };
 
-class ActorIndex;
-
-class GAME_DLL ActorIndexNode
-{
-public:
-    ActorIndexNode(const AABox &bounds);
-    ~ActorIndexNode();
-
-    QVector<uint16_t> & actors();
-    ActorIndexNode ** children();
-    const AABox & bounds() const;
-    void add(uint16_t index, const vec3 &pos, ActorIndex *tree);
-    bool contains(const vec3 &pos) const;
-
-private:
-    void split(ActorIndex *tree);
-    int locate(const vec3 &pos) const;
-
-    //TODO optimize to: int count, union { ActorIndexNode *, WLDActor * }
-    bool m_leaf;
-    ActorIndexNode *m_children[8];
-    QVector<uint16_t> m_actors;
-    AABox m_bounds;
-};
-
-class GAME_DLL ActorIndex
-{
-public:
-    ActorIndex();
-    virtual ~ActorIndex();
-
-    const QList<WLDZoneActor> & actors() const;
-    ActorIndexNode *root() const;
-
-    void add(const WLDZoneActor &actor);
-    void clear();
-    void findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull);
-
-private:
-    void findVisible(QVector<const WLDZoneActor *> &objects, ActorIndexNode *node, const Frustum &f, bool cull);
-    
-    ActorIndexNode *m_root;
-    QList<WLDZoneActor> m_actors;
-};
-
 class Octree;
 
 class GAME_DLL OctreeIndex

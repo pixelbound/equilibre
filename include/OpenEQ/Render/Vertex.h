@@ -152,6 +152,7 @@ struct RENDER_DLL AABox
     bool contains(const AABox &b) const;
     void cornersTo(vec3 *corners) const;
     void extendTo(const vec3 &p);
+    void extendTo(const AABox &b);
     void translate(const vec3 &trans);
     void rotate(const vec3 &rot);
     void scale(const vec3 &scale);
