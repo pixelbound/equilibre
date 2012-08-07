@@ -123,24 +123,38 @@ private:
     QList<WLDZoneActor> m_actors;
 };
 
-class GAME_DLL Octree
+class Octree;
+
+class GAME_DLL OctreeIndex
 {
 public:
-    Octree(AABox bounds, Octree *root);
-    const AABox & strictBounds() const;
-    AABox looseBounds() const;
-    void add(WLDZoneActor *actor);
+    OctreeIndex(AABox bounds);
+    Octree * add(WLDZoneActor *actor);
     void findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull);
+    void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
+    Octree * findBestFittingOctant(int x, int y, int z, int depth);
     
 private:
     void findVisible(QVector<const WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull);
-    void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
-    static Octree * findBestFittingOctant(Octree *root, int x, int y, int z, int depth);
+    
+    Octree *m_root;
+};
+
+class GAME_DLL Octree
+{
+public:
+    Octree(AABox bounds, OctreeIndex *index);
+    const AABox & strictBounds() const;
+    AABox looseBounds() const;
+    const QVector<WLDZoneActor *> & actors() const;
+    Octree *child(int index) const;
+    void add(WLDZoneActor *actor);
+    
+private:
     void split();
-    void addInternal(WLDZoneActor *actor);
     
     AABox m_bounds;
-    Octree *m_root;
+    OctreeIndex *m_index;
     Octree *m_children[8];
     QVector<WLDZoneActor *> m_actors;
 };

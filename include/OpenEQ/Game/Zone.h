@@ -15,7 +15,7 @@ class WLDActor;
 class WLDZoneActor;
 class ActorIndex;
 class ActorIndexNode;
-class Octree;
+class OctreeIndex;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialMap;
@@ -94,7 +94,7 @@ private:
     // zone objects
     VertexGroup *m_objectsGeometry;
     ActorIndex *m_index;
-    Octree *m_objectTree;
+    OctreeIndex *m_objectTree;
     bool m_showZone;
     bool m_showObjects;
     bool m_cullObjects;

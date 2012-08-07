@@ -176,7 +176,7 @@ void Zone::importObjects()
     // import actors through Actor fragments
     //TODO provide boundaries somewhere
     vec3 low(-1e4, -1e4, -1e4), high(1e4, 1e4, 1e4);
-    m_objectTree = new Octree(AABox(low, high), NULL);
+    m_objectTree = new OctreeIndex(AABox(low, high));
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();

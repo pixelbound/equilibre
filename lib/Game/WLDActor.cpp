@@ -343,73 +343,46 @@ bool ActorIndexNode::contains(const vec3 &pos) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Octree::Octree(AABox bounds, Octree *root)
+OctreeIndex::OctreeIndex(AABox bounds)
 {
-    m_bounds = bounds;
-    m_root = root ? root : this;
-    for(int i = 0; i < 8; i++)
-        m_children[i] = NULL;
+    m_root = new Octree(bounds, this);
 }
 
-const AABox & Octree::strictBounds() const
-{
-    return m_bounds;
-}
-
-AABox Octree::looseBounds() const
-{
-    AABox loose = m_bounds;
-    loose.scaleCenter(2.0f);
-    return loose;
-}
-
-void Octree::add(WLDZoneActor *actor)
+Octree * OctreeIndex::add(WLDZoneActor *actor)
 {
     int x = 0, y = 0, z = 0, depth = 0;
-    m_root->findIdealInsertion(actor->boundsAA, x, y, z, depth);
-    Octree *octant = findBestFittingOctant(m_root, x, y, z, depth);
-    octant->addInternal(actor);
+    findIdealInsertion(actor->boundsAA, x, y, z, depth);
+    Octree *octant = findBestFittingOctant(x, y, z, depth);
+    octant->add(actor);
+    return octant;
 }
 
-void Octree::addInternal(WLDZoneActor *actor)
+void OctreeIndex::findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull)
 {
-    m_actors.append(actor);
-    if(!m_children[0] && (m_actors.count() >= 20))
-        split();
+    findVisible(objects, m_root, f, cull);
 }
 
-void Octree::split()
+void OctreeIndex::findVisible(QVector<const WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull)
 {
-    // Create children octants.
-    vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
-    m_children[0] = new Octree(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)), m_root);
-    m_children[1] = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_root);
-    m_children[2] = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_root);
-    m_children[3] = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_root);
-    m_children[4] = new Octree(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)), m_root);
-    m_children[5] = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_root);
-    m_children[6] = new Octree(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)), m_root);
-    m_children[7] = new Octree(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)), m_root);
-    
-    // Try to insert actors in children octants.
-    for(int i = m_actors.count() - 1; i >= 0; i--)
+    if(!octant)
+        return;
+    Frustum::TestResult r = cull ? f.containsAABox(octant->looseBounds()) : Frustum::INSIDE;
+    if(r == Frustum::OUTSIDE)
+        return;
+    cull = (r != Frustum::INSIDE);
+    if(octant->child(0))
     {
-        WLDZoneActor *actor = m_actors[i];
-        int x = 0, y = 0, z = 0, depth = 0;
-        m_root->findIdealInsertion(actor->boundsAA, x, y, z, depth);
-        Octree *octant = findBestFittingOctant(m_root, x, y, z, depth);
-        if(octant != this)
-        {
-            octant->add(actor);
-            m_actors.remove(i);
-        }
+        for(int i = 0; i < 8; i++)
+            findVisible(objects, octant->child(i), f, cull);
     }
+    foreach(WLDZoneActor *actor, octant->actors())
+        objects.append(actor);
 }
 
-void Octree::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
+void OctreeIndex::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
 {
     // Determine the maximum depth at which the bounds fit the octant.
-    AABox sb = strictBounds();
+    AABox sb = m_root->strictBounds();
     float sbRadius = (sb.high.x - sb.low.x);
     vec3 bbExtent = (bb.high - bb.low) * 0.5f;
     float bbRadius = qMax(bbExtent.x, qMax(bbExtent.y, bbExtent.z));
@@ -436,13 +409,13 @@ void Octree::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
     Q_ASSERT(z >= 0 && z < scale);
 }
 
-Octree * Octree::findBestFittingOctant(Octree *root, int x, int y, int z, int depth)
+Octree * OctreeIndex::findBestFittingOctant(int x, int y, int z, int depth)
 {
-    Octree *octant = root;
+    Octree *octant = m_root;
     int highBit = 1 << (depth - 1);
     for(int i = 0; i < depth; i++)
     {
-        if(!octant->m_children[0])
+        if(!octant->child(0))
         {
             // Octant not split.
             return octant;
@@ -455,31 +428,77 @@ Octree * Octree::findBestFittingOctant(Octree *root, int x, int y, int z, int de
             int localZ = (z & highBit) > 0;
             int childIndex = localX + (localY << 1) + (localZ << 2);
             Q_ASSERT(childIndex >= 0 && childIndex <= 7);
-            octant = octant->m_children[childIndex];
+            octant = octant->child(childIndex);
             highBit >>= 1;
         }
     }
     return octant;
 }
 
-void Octree::findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull)
+////////////////////////////////////////////////////////////////////////////////
+
+Octree::Octree(AABox bounds, OctreeIndex *index)
 {
-    findVisible(objects, m_root, f, cull);
+    m_bounds = bounds;
+    m_index = index;
+    for(int i = 0; i < 8; i++)
+        m_children[i] = NULL;
 }
 
-void Octree::findVisible(QVector<const WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull)
+const AABox & Octree::strictBounds() const
 {
-    if(!octant)
-        return;
-    Frustum::TestResult r = cull ? f.containsAABox(octant->looseBounds()) : Frustum::INSIDE;
-    if(r == Frustum::OUTSIDE)
-        return;
-    cull = (r != Frustum::INSIDE);
-    if(octant->m_children[0])
+    return m_bounds;
+}
+
+AABox Octree::looseBounds() const
+{
+    AABox loose = m_bounds;
+    loose.scaleCenter(2.0f);
+    return loose;
+}
+
+const QVector<WLDZoneActor *> & Octree::actors() const
+{
+    return m_actors;
+}
+
+Octree *Octree::child(int index) const
+{
+    return ((index >= 0) && (index < 8)) ? m_children[index] : NULL;
+}
+
+void Octree::add(WLDZoneActor *actor)
+{
+    m_actors.append(actor);
+    if(!m_children[0] && (m_actors.count() >= 20))
+        split();
+}
+
+void Octree::split()
+{
+    // Create children octants.
+    vec3 l = m_bounds.low, c = m_bounds.center(), h = m_bounds.high;
+    m_children[0] = new Octree(AABox(vec3(l.x, l.y, l.z), vec3(c.x, c.y, c.z)), m_index);
+    m_children[1] = new Octree(AABox(vec3(l.x, l.y, c.z), vec3(c.x, c.y, h.z)), m_index);
+    m_children[2] = new Octree(AABox(vec3(l.x, c.y, l.z), vec3(c.x, h.y, c.z)), m_index);
+    m_children[3] = new Octree(AABox(vec3(l.x, c.y, c.z), vec3(c.x, h.y, h.z)), m_index);
+    m_children[4] = new Octree(AABox(vec3(c.x, l.y, l.z), vec3(h.x, c.y, c.z)), m_index);
+    m_children[5] = new Octree(AABox(vec3(c.x, l.y, c.z), vec3(h.x, c.y, h.z)), m_index);
+    m_children[6] = new Octree(AABox(vec3(c.x, c.y, l.z), vec3(h.x, h.y, c.z)), m_index);
+    m_children[7] = new Octree(AABox(vec3(c.x, c.y, c.z), vec3(h.x, h.y, h.z)), m_index);
+    
+    // Try to insert actors in children octants.
+    for(int i = m_actors.count() - 1; i >= 0; i--)
     {
-        for(int i = 0; i < 8; i++)
-            findVisible(objects, octant->m_children[i], f, cull);
+        WLDZoneActor *actor = m_actors[i];
+        //int x = 0, y = 0, z = 0, depth = 0;
+        //m_index->findIdealInsertion(actor->boundsAA, x, y, z, depth);
+        //Octree *octant = m_index->findBestFittingOctant(x, y, z, depth);
+        Octree *octant = m_index->add(actor);
+        if(octant != this)
+        {
+            //octant->addInternal(actor);
+            m_actors.remove(i);
+        }
     }
-    foreach(WLDZoneActor *actor, octant->m_actors)
-        objects.append(actor);
 }
