@@ -408,12 +408,12 @@ void Octree::split()
 
 void Octree::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
 {
+    // Determine the maximum depth at which the bounds fit the octant.
     AABox sb = strictBounds();
     float sbRadius = (sb.high.x - sb.low.x);
     vec3 bbExtent = (bb.high - bb.low) * 0.5f;
     float bbRadius = qMax(bbExtent.x, qMax(bbExtent.y, bbExtent.z));
     depth = 0;
- 
     while(true)
     {
         sbRadius *= 0.5f;
@@ -421,33 +421,26 @@ void Octree::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
             break;
         depth++;
     }
- 
-    //we're off by one
     depth--;
     sbRadius *= 2.0f;
     
-    //get the index of the node
+    // Get the index of the node at this depth.
     vec3 bbCenter = bb.center() - sb.low;
-    //vec3 bbCenter = bb.center();
     vec3 sbSize = (sb.high - sb.low);
-    x = (int)floor(bbCenter.x / sbSize.x);
-    y = (int)floor(bbCenter.y / sbSize.y);
-    z = (int)floor(bbCenter.z / sbSize.z);
-    //x = (int)floor(depth * (bbCenter.x / sbSize.x));
-    //y = (int)floor(depth * (bbCenter.y / sbSize.y));
-    //z = (int)floor(depth * (bbCenter.z / sbSize.z));
-    //x = (int)floor(depth * (bbCenter.x / sbRadius));
-    //y = (int)floor(depth * (bbCenter.y / sbRadius));
-    //z = (int)floor(depth * (bbCenter.z / sbRadius));
-    Q_ASSERT(x >= 0 && x <= 1);
-    Q_ASSERT(y >= 0 && y <= 1);
-    Q_ASSERT(z >= 0 && z <= 1);
+    int scale = 1 << depth;
+    x = (int)floor((scale * bbCenter.x) / sbSize.x);
+    y = (int)floor((scale * bbCenter.y) / sbSize.y);
+    z = (int)floor((scale * bbCenter.z) / sbSize.z);
+    Q_ASSERT(x >= 0 && x < scale);
+    Q_ASSERT(y >= 0 && y < scale);
+    Q_ASSERT(z >= 0 && z < scale);
 }
 
 Octree * Octree::findBestFittingOctant(Octree *root, int x, int y, int z, int depth)
 {
     Octree *octant = root;
-    for(int currentDepth = 0; currentDepth != depth; ++currentDepth)
+    int highBit = 1 << (depth - 1);
+    for(int i = 0; i < depth; i++)
     {
         if(!octant->m_children[0])
         {
@@ -456,35 +449,16 @@ Octree * Octree::findBestFittingOctant(Octree *root, int x, int y, int z, int de
         }
         else
         {
-            /*
-                We can find the exact child without any comparisons
-                For example, we're looking for an octant at depth 2 with x,y,z = (2,1,3)
-                This will be a child of the octant at depth 1 with x,y,z = (1,0,1)
- 
-                We take the convention that childOctants are layed out as:
- 
-                local index                1D index
-                [(0,1,0) (1,1,0)]        [2 3]
-                [(0,0,0) (1,0,0)]        [0 1]
-                                    =
-                [(0,1,0) (1,1,0)]        [6 7]
-                [(0,0,0) (1,0,0)]        [4 5]
- 
-                To find the local index of an octant in the frame of it's direct parent, we have to divide the index by two.
-                To find the local index of an octant in the frame of it's  parent x times up, we have to divide the index by 2^x
- 
-            */
-            //this generates the local index of the child octant at (currentDepth - 1)
-            int currentDepthX = x >> (depth - (currentDepth+1));
-            int currentDepthY = y >> (depth - (currentDepth+1));
-            int currentDepthZ = z >> (depth - (currentDepth+1));
-            int childIndex = currentDepthX + (currentDepthY << 1) + (currentDepthZ << 2);
-            Q_ASSERT(childIndex >= 0 && x <= 7);
+            // Determine the octant at this depth using the index's current high bit.
+            int localX = (x & highBit) > 0;
+            int localY = (y & highBit) > 0;
+            int localZ = (z & highBit) > 0;
+            int childIndex = localX + (localY << 1) + (localZ << 2);
+            Q_ASSERT(childIndex >= 0 && childIndex <= 7);
             octant = octant->m_children[childIndex];
+            highBit >>= 1;
         }
     }
- 
-    //if we make it here, we're at the minimum depth. and we found our octant
     return octant;
 }
 

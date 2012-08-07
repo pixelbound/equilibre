@@ -216,6 +216,9 @@ bool ActorFragment::unpack(WLDReader *s)
     s->unpackFields("ff", &scaleX, &scaleY);
     m_scale = vec3(scaleX, scaleY, 1.0);
     s->unpackField('r', &m_fragment2);
+    // Fix pathological z locations.
+    if((m_location.z > -32768.0f) && (m_location.z < -32767.0f))
+        m_location.z = 0.0f;
     return true;
 }
 
