@@ -371,11 +371,8 @@ void OctreeIndex::findVisible(QVector<const WLDZoneActor *> &objects, Octree *oc
     if(r == Frustum::OUTSIDE)
         return;
     cull = (r != Frustum::INSIDE);
-    if(octant->child(0))
-    {
-        for(int i = 0; i < 8; i++)
-            findVisible(objects, octant->child(i), f, cull);
-    }
+    for(int i = 0; i < 8; i++)
+        findVisible(objects, octant->child(i), f, cull);
     foreach(WLDZoneActor *actor, octant->actors())
         objects.append(actor);
 }
@@ -470,12 +467,6 @@ QVector<WLDZoneActor *> & Octree::actors()
 Octree *Octree::child(int index) const
 {
     return ((index >= 0) && (index < 8)) ? m_children[index] : NULL;
-}
-
-void Octree::setChild(int index, Octree *octant)
-{
-    if((index >= 0) && (index < 8))
-        m_children[index] = octant;
 }
 
 Octree * Octree::createChild(int index)

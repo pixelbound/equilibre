@@ -150,7 +150,6 @@ public:
     const QVector<WLDZoneActor *> & actors() const;
     QVector<WLDZoneActor *> & actors();
     Octree *child(int index) const;
-    void setChild(int index, Octree *octant);
     Octree *createChild(int index);
     
 private:
