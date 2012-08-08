@@ -106,8 +106,8 @@ private:
     FrameStat *m_zoneStatGPU;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
-    QVector<const WLDZoneActor *> m_visibleZoneParts;
-    QVector<const WLDZoneActor *> m_visibleObjects;
+    QVector<WLDZoneActor *> m_visibleZoneParts;
+    QVector<WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;
     float m_playerOrient;

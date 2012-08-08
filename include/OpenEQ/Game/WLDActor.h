@@ -85,12 +85,12 @@ class GAME_DLL OctreeIndex
 public:
     OctreeIndex(AABox bounds, int maxDepth=5);
     Octree * add(WLDZoneActor *actor);
-    void findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull);
+    void findVisible(QVector<WLDZoneActor *> &objects, const Frustum &f, bool cull);
     void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
     Octree * findBestFittingOctant(int x, int y, int z, int depth);
     
 private:
-    void findVisible(QVector<const WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull);
+    void findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull);
     
     Octree *m_root;
     int m_maxDepth;

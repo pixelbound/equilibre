@@ -206,12 +206,12 @@ Octree * OctreeIndex::add(WLDZoneActor *actor)
     return octant;
 }
 
-void OctreeIndex::findVisible(QVector<const WLDZoneActor *> &objects, const Frustum &f, bool cull)
+void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, const Frustum &f, bool cull)
 {
     findVisible(objects, m_root, f, cull);
 }
 
-void OctreeIndex::findVisible(QVector<const WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull)
+void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull)
 {
     if(!octant)
         return;
