@@ -145,30 +145,26 @@ void Zone::clear()
 
 void Zone::importGeometry()
 {
-    // load zone regions as model parts
-    QList<WLDMesh *> parts;
+    // Load zone regions as model parts, computing the zone's bounding box.
     int partID = 0;
     m_zoneBounds = AABox();
     foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
     {
-        WLDMesh *mesh = new WLDMesh(meshDef, partID++);
-        m_zoneBounds.extendTo(mesh->boundsAA());
-        parts.append(mesh);
+        WLDMesh *meshPart = new WLDMesh(meshDef, partID++);
+        m_zoneBounds.extendTo(meshPart->boundsAA());
+        m_zoneParts.append(meshPart);
     }
-    // load zone textures into the material palette
+    
+    // Load zone textures into the material palette.
     WLDMaterialPalette zonePalette(m_mainArchive, this);
     foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
         zonePalette.addMaterialDef(matDef);
     m_zoneMaterials = zonePalette.loadMaterials();
-    // combine all regions into a single mesh
-    m_zoneGeometry = WLDMesh::combine(parts);
-    foreach(WLDMesh *part, parts)
-        delete part;
-    int maxWidth = 0, maxHeight = 0;
-    size_t totalMem = 0, usedMem = 0;
-    m_zoneMaterials->textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
-    float usage = (float)usedMem / (float)totalMem;
-    qDebug("Zone texture array: %d used / %d allocated (%f)", usedMem, totalMem, usage);
+    
+    // Add zone regions to the zone octree index.
+    m_zoneTree = new OctreeIndex(m_zoneBounds, 8);
+    foreach(WLDMesh *meshPart, m_zoneParts)
+        m_zoneTree->add(new WLDZoneActor(NULL, meshPart));
 }
 
 void Zone::importObjects()
@@ -367,20 +363,44 @@ void Zone::draw(RenderState *state)
         m_zoneStat = state->createStat("Zone CPU (ms)", FrameStat::CPUTime);
     if(!m_zoneStatGPU)
         m_zoneStatGPU = state->createStat("Zone GPU (ms)", FrameStat::GPUTime);
-    if(m_showZone && m_zoneGeometry)
+    if(m_showZone && (m_mainWld != NULL))
     {
         m_zoneStat->beginTime();
         m_zoneStatGPU->beginTime();
-        uploadZone(state);
-        state->setRenderMode(RenderState::Basic);
-        state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
-        state->drawMesh();
-        state->endDrawMesh();
+        drawGeometry(state);
         m_zoneStatGPU->endTime();
         m_zoneStat->endTime();
     }
     
     state->popMatrix();
+}
+
+void Zone::drawGeometry(RenderState *state)
+{
+    // Create a GPU buffer for the zone's vertices and indices if needed.
+    if(m_zoneGeometry == NULL)
+        m_zoneGeometry = uploadZone(state);
+    
+    // Build a list of visible zone parts.
+    m_zoneTree->findVisible(m_visibleZoneParts, state->viewFrustum(), m_cullObjects);
+    
+    // Import material groups from the visible parts.
+    m_zoneGeometry->matGroups.clear();
+    foreach(const WLDZoneActor *actor, m_visibleZoneParts)
+    {
+        VertexGroup *data = actor->mesh->data();
+        foreach(MaterialGroup mg, data->matGroups)
+        {
+            mg.offset += data->indexBuffer.offset;
+            m_zoneGeometry->matGroups.append(mg);
+        }
+    }
+    
+    // Draw the visible parts as one big vertex group.
+    state->beginDrawMesh(m_zoneGeometry, m_zoneMaterials);
+    state->drawMesh();
+    state->endDrawMesh();
+    m_visibleZoneParts.clear();
 }
 
 void Zone::drawObjects(RenderState *state)
@@ -390,7 +410,6 @@ void Zone::drawObjects(RenderState *state)
         m_objectsGeometry = uploadObjects(state);
     
     // Build a list of visible objects and sort them by mesh.
-    //m_index->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
     m_objectTree->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
     qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
     
@@ -442,20 +461,50 @@ void Zone::drawObjects(RenderState *state)
     m_visibleObjects.clear();
 }
 
-void Zone::uploadZone(RenderState *state)
+VertexGroup * Zone::uploadZone(RenderState *state)
 {
-    if(!m_zoneMaterials->uploaded())
+    // Upload the materials as a texture array, assigning z coordinates to materials.
+    m_zoneMaterials->uploadArray(state);
+    
+    VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
+    
+    // Import vertices and indices for each mesh.
+    foreach(WLDMesh *mesh, m_zoneParts)
     {
-        // Upload the materials as a texture array, assigning z coordinates to materials.
-        m_zoneMaterials->uploadArray(state);
+        VertexGroup *meshVg = mesh->data();
+        mesh->importVertexData(geom, meshVg->vertexBuffer);
+        mesh->importIndexData(geom, meshVg->indexBuffer,
+                              meshVg->vertexBuffer,
+                              0, (uint32_t)mesh->def()->m_indices.count());
+        mesh->importMaterialGroups();
         
-        // Update the texture coordinates in the vertex buffer before uploading to the GPU.
-        VertexData *vertices = m_zoneGeometry->vertices.data();
-        const uint32_t *indices = m_zoneGeometry->indices.constData();
-        m_zoneMaterials->updateTexCoords(m_zoneGeometry->matGroups, vertices, indices);
+        // Update texture coordinates.
+        VertexData *vertices = geom->vertices.data();
+        const uint32_t *indices = geom->indices.constData() + meshVg->indexBuffer.offset;
+        m_zoneMaterials->updateTexCoords(meshVg->matGroups, vertices, indices);
     }
     
-    createGPUBuffer(m_zoneGeometry, state);
+    // Create the GPU buffers.
+    geom->vertexBuffer.elementSize = sizeof(VertexData);
+    geom->vertexBuffer.count = geom->vertices.count();
+    geom->indexBuffer.elementSize = sizeof(uint32_t);
+    geom->indexBuffer.count = geom->indices.count();
+    createGPUBuffer(geom, state);
+    
+    // Set the buffer handles for each mesh.
+    foreach(WLDMesh *mesh, m_zoneParts)
+    {
+        mesh->data()->vertexBuffer.buffer = geom->vertexBuffer.buffer;
+        mesh->data()->indexBuffer.buffer = geom->indexBuffer.buffer;
+    }
+
+    // Free the memory used for vertices and indices.
+    geom->vertices.clear();
+    geom->indices.clear();
+    geom->vertices.squeeze();
+    geom->indices.squeeze();
+    
+    return geom;
 }
 
 VertexGroup * Zone::uploadObjects(RenderState *state)

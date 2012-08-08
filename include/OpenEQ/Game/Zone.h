@@ -73,14 +73,17 @@ private:
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
     void createGPUBuffer(VertexGroup *vg, RenderState *state);
+    void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
-    void uploadZone(RenderState *state);
+    VertexGroup * uploadZone(RenderState *state);
     VertexGroup * uploadObjects(RenderState *state);
     void uploadCharacters(RenderState *state);
 
     //TODO refactor this into data container classes
     QString m_name;
+    QVector<WLDMesh *> m_zoneParts;
     VertexGroup *m_zoneGeometry;
+    OctreeIndex *m_zoneTree;
     MaterialMap *m_zoneMaterials;
     AABox m_zoneBounds;
     PFSArchive *m_mainArchive;
@@ -103,6 +106,7 @@ private:
     FrameStat *m_zoneStatGPU;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
+    QVector<const WLDZoneActor *> m_visibleZoneParts;
     QVector<const WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;
