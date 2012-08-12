@@ -134,14 +134,14 @@ void Windows_MidiOut::set_state(PlayerState newState)
 	LeaveCriticalSection(&stateLock);
 }
 
-void Windows_MidiOut::start_play_thread()
+bool Windows_MidiOut::start_play_thread()
 {
-	BOOL started = false;
+	bool started = false;
 	EnterCriticalSection(&stateLock);
-	if(state == PlayerState::NotAvailable)
+	if(state == NotAvailable)
 	{
 		started = true;
-		state = PlayerState::Starting;
+		state = Starting;
 		WakeAllConditionVariable(&stateCond);
 	}
 	LeaveCriticalSection(&stateLock);
@@ -156,8 +156,10 @@ void Windows_MidiOut::start_play_thread()
 		{
 			cerr << "Failier to initialize midi playing thread" << endl;
 			set_state(NotAvailable);
+			return false;
 		}
 	}
+	return true;
 }
 
 DWORD __stdcall Windows_MidiOut::thread_start(void *data)
@@ -225,18 +227,8 @@ void Windows_MidiOut::thread_play ()
 	double		Ippqn_next = 1;
 	midi_event	*evntlist_next = NULL;
 
-	unsigned char	volume[16];
-	unsigned char	pan[16];
-	unsigned char	notechr[16][127];
-	int		notecol[16][127];
-	int		first[16][127];
+	note_data nd;
 
-	memset (volume, 64, sizeof (volume));
-	memset (pan, 64, sizeof (pan));
-
-	memset (notechr, 0, sizeof (notechr));
-	memset (notecol, 0, sizeof (notecol));
-	memset (first, 0, sizeof (first));
 	double	outnext = GetTickCount() + 50.0F;
 	bool	outed = false;
 
@@ -287,104 +279,8 @@ void Windows_MidiOut::thread_play ()
 			}	
 			else if (event->status < 0xF0)
 			{
-				midiOutShortMsg (midi_port, event->status + (event->data[0] << 8) + (event->data[1] << 16));
-
-				//if ((event->status >> 4) == MIDI_STATUS_NOTE_ON && event->data[1] && (event->status &0xF) != 9)
-				//	printf ("Note On:  Channel %2i  Pitch %3i  Velocity %3i\n", (event->status & 0xF)+1, event->data[0], event->data[1]);
-				//else if ((event->status >> 4) == MIDI_STATUS_NOTE_OFF || (!event->data[1] && (event->status >> 4) == MIDI_STATUS_NOTE_ON))
-				//	printf ("Note Off: Channel %2i  Pitch %3i  Velocity %3i\r", (event->status & 0xF)+1, event->data[0], event->data[1]);
-
-				if ((event->status >> 4) == MIDI_STATUS_CONTROLLER && event->data[0] == 7)
-				{
-					volume[event->status&0xF] = event->data[1];
-				}
-				else if ((event->status >> 4) == MIDI_STATUS_CONTROLLER && event->data[0] == 10)
-				{
-					pan[event->status&0xF] = event->data[1];
-				}
-				else if ((event->status >> 4) == MIDI_STATUS_NOTE_OFF || ((event->status >> 4) == MIDI_STATUS_NOTE_ON && !event->data[1]))
-				{
-					notechr[event->status & 0xF][event->data[0]] = 0;
-					notecol[event->status & 0xF][event->data[0]] = 0;
-					first[event->status & 0xF][event->data[0]] = 0;
-				}
-				else if ((event->status >> 4) == MIDI_STATUS_NOTE_ON && event->data[1])	
-				{
-					//printf ("Note On:  Channel %2i - ", (event->status & 0xF)+1);
-
-					float fore = (event->data[1] * volume[event->status & 0xF])/127.0F;
-					float back = fore;
-
-					int lr = 'C';
-					if (pan[event->status & 0xF] < 52)
-					{
-						lr = 'L';
-						back *= pan[event->status & 0xF] / 64.0F;
-					}
-					else if (pan[event->status & 0xF] > 76)
-					{
-						lr = 'R';
-						back *= (127-pan[event->status & 0xF]) / 64.0F;
-					}
-					else
-					{
-						int c = (int) fore;
-
-						if (fore >= 84)
-						{
-							back = 43;
-							c -= 84;
-							c /= 11;
-						}
-						else if (fore >= 43)
-						{
-							back = 5;
-							c -= 43;
-							c /= 11;
-						}
-						else if (fore >= 5)
-						{
-							back = 0;
-							c -= 5;
-						}
-						else
-						{
-							back = fore = 0;
-							c = 3;
-						}
-
-						if (c == 0) lr = 0xB2;
-						else if (c == 1) lr = 0xB0;
-						else if (c == 2) lr = 0xB1;
-						else lr = 0xDB;
-					}
-
-					int fore_col;
-					if (fore < 5)
-						fore_col = 0;
-					else if (fore < 43)
-						fore_col = FOREGROUND_INTENSITY;
-					else if (fore < 84)
-						fore_col = FOREGROUND_RED|FOREGROUND_BLUE|FOREGROUND_GREEN;
-					else
-						fore_col = FOREGROUND_RED|FOREGROUND_BLUE|FOREGROUND_GREEN|FOREGROUND_INTENSITY;
-
-					int back_col;
-					if (back < 5)
-						back_col = 0;
-					else if (back < 43)
-						back_col = BACKGROUND_INTENSITY;
-					else if (back < 84)
-						back_col = BACKGROUND_RED|BACKGROUND_BLUE|BACKGROUND_GREEN;
-					else
-						back_col = BACKGROUND_RED|BACKGROUND_BLUE|BACKGROUND_GREEN|BACKGROUND_INTENSITY;
-
-					notechr[event->status & 0xF][event->data[0]] = lr;
-					notecol[event->status & 0xF][event->data[0]] = fore_col|back_col;
-					first[event->status & 0xF][event->data[0]] = 1;
-				}
-
-
+				midiOutShortMsg(midi_port, event->status + (event->data[0] << 8) + (event->data[1] << 16));
+				nd.handle_event(event);
 			}
 		
 		 	if (event) event = event->next;
@@ -401,7 +297,7 @@ void Windows_MidiOut::thread_play ()
 					evntlist = NULL;
 					event = NULL;
 					if (!evntlist_next)
-						set_state(PlayerState::FinishedPlaying);
+						set_state(FinishedPlaying);
 					// If stop was requested, we are ready to receive another song
 					if (!evntlist_next && thread_com == W32MO_THREAD_COM_STOP)
 						InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
@@ -438,62 +334,14 @@ void Windows_MidiOut::thread_play ()
 								loop_num--;
 					}
 				}
-				for (int chan = 0; chan < 16; chan++)
-				for (int note = 0; note < 128; note++)
-				if (notechr[chan][note])
-				{
-					midiOutShortMsg (midi_port, chan + (MIDI_STATUS_NOTE_ON<<4) + (note << 8));
-					notechr[chan][note] = 0;
-					notecol[chan][note] = 0;
-					first[chan][note] = 0;
-				}
+
+				nd.play(midi_port);
 		 	}
 		}
 
 		if (show_notes && outnext < GetTickCount())
 		{
-			//putchar ('\n');
-			outed = false;
-			outnext += tempo/(vis_speed*1000.0F);
-
-			if (max_width > 128) max_width = 128;
-			for (int i = 0; i < max_width; i++)
-			{
-				int ch = ' ';
-				int co = FOREGROUND_RED|FOREGROUND_BLUE|FOREGROUND_GREEN;
-				int chan = -1, pit = -1;
-				int was_first = false;
-
-				for (int k = i*128/max_width; k < (i+1)*128/max_width; k++)
-				{
-					for (int j = 0; j < 16; j++)
-					{
-						if (was_first) break;
-						if (j == 9 && !show_drum) continue;
-
-						if (notechr[j][k])
-						{
-							chan = j;
-							pit = k;
-							ch = notechr[chan][pit];
-							co = notecol[chan][pit];
-							was_first = first[chan][pit];
-							outed = true;
-						}
-					}
-				}
-
-				if (chan != -1 && pit != -1)
-				{
-					//notechr[chan][pit] = 0;
-					//notecol[chan][pit] = 0;
-					first[chan][pit] = 0;
-				}
-				SetConsoleTextAttribute (out, co);
-				putchar (ch);
-				SetConsoleTextAttribute (out, info.wAttributes);
-			}
-			putchar ('\r');
+			nd.show(outed, outnext, tempo);
 		}
 
 		// Got issued a music play command
@@ -522,7 +370,7 @@ void Windows_MidiOut::thread_play ()
 			repeat = thread_data->repeat;
 
 			ppqn = thread_data->ppqn;
-			set_state(PlayerState::Playing);
+			set_state(Playing);
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
 			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 			
@@ -585,9 +433,7 @@ void Windows_MidiOut::thread_play ()
 
 void Windows_MidiOut::start_track (midi_event *evntlist, const int ppqn, BOOL repeat)
 {
-	start_play_thread();
-
-	if (get_state() == NotAvailable)
+	if(!start_play_thread())
 		return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
@@ -604,9 +450,7 @@ void Windows_MidiOut::start_track (midi_event *evntlist, const int ppqn, BOOL re
 
 void Windows_MidiOut::add_track (midi_event *evntlist, const int ppqn, BOOL repeat)
 {
-	start_play_thread();
-
-	if (get_state() == NotAvailable)
+	if(!start_play_thread())
 		return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
@@ -635,3 +479,179 @@ const char *Windows_MidiOut::copyright(void)
 	return "Internal Win32 Midiout Midi Player for Exult.";
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+note_data::note_data()
+{
+	clear();
+}
+
+void note_data::clear()
+{
+	memset(notechr, 0, sizeof(notechr));
+	memset(notecol, 0, sizeof(notecol));
+	memset(first, 0, sizeof(first));
+	memset(volume, 64, sizeof(volume));
+	memset(pan, 64, sizeof(pan));
+}
+
+void note_data::play(HMIDIOUT midi_port)
+{
+	for(int chan = 0; chan < 16; chan++)
+	{
+		for(int note = 0; note < 128; note++)
+		{
+			if(notechr[chan][note])
+			{
+				midiOutShortMsg(midi_port, chan + (MIDI_STATUS_NOTE_ON<<4) + (note << 8));
+				notechr[chan][note] = 0;
+				notecol[chan][note] = 0;
+				first[chan][note] = 0;
+			}
+		}
+	}
+}
+
+void note_data::show(bool &outed, double &outnext, int tempo)
+{
+	//putchar ('\n');
+	outed = false;
+	outnext += tempo/(vis_speed*1000.0F);
+
+	if (max_width > 128) max_width = 128;
+	for (int i = 0; i < max_width; i++)
+	{
+		int ch = ' ';
+		int co = FOREGROUND_RED|FOREGROUND_BLUE|FOREGROUND_GREEN;
+		int chan = -1, pit = -1;
+		int was_first = false;
+
+		for (int k = i*128/max_width; k < (i+1)*128/max_width; k++)
+		{
+			for (int j = 0; j < 16; j++)
+			{
+				if (was_first) break;
+				if (j == 9 && !show_drum) continue;
+
+				if (notechr[j][k])
+				{
+					chan = j;
+					pit = k;
+					ch = notechr[chan][pit];
+					co = notecol[chan][pit];
+					was_first = first[chan][pit];
+					outed = true;
+				}
+			}
+		}
+
+		if (chan != -1 && pit != -1)
+		{
+			//notechr[chan][pit] = 0;
+			//notecol[chan][pit] = 0;
+			first[chan][pit] = 0;
+		}
+		SetConsoleTextAttribute (out, co);
+		putchar (ch);
+		SetConsoleTextAttribute (out, info.wAttributes);
+	}
+	putchar ('\r');
+}
+
+void note_data::handle_event(midi_event *e)
+{
+	//if ((event->status >> 4) == MIDI_STATUS_NOTE_ON && event->data[1] && (event->status &0xF) != 9)
+	//	printf ("Note On:  Channel %2i  Pitch %3i  Velocity %3i\n", (event->status & 0xF)+1, event->data[0], event->data[1]);
+	//else if ((event->status >> 4) == MIDI_STATUS_NOTE_OFF || (!event->data[1] && (event->status >> 4) == MIDI_STATUS_NOTE_ON))
+	//	printf ("Note Off: Channel %2i  Pitch %3i  Velocity %3i\r", (event->status & 0xF)+1, event->data[0], event->data[1]);
+
+	if ((e->status >> 4) == MIDI_STATUS_CONTROLLER && e->data[0] == 7)
+	{
+		volume[e->status&0xF] = e->data[1];
+	}
+	else if ((e->status >> 4) == MIDI_STATUS_CONTROLLER && e->data[0] == 10)
+	{
+		pan[e->status&0xF] = e->data[1];
+	}
+	else if ((e->status >> 4) == MIDI_STATUS_NOTE_OFF || ((e->status >> 4) == MIDI_STATUS_NOTE_ON && !e->data[1]))
+	{
+		notechr[e->status & 0xF][e->data[0]] = 0;
+		notecol[e->status & 0xF][e->data[0]] = 0;
+		first[e->status & 0xF][e->data[0]] = 0;
+	}
+	else if ((e->status >> 4) == MIDI_STATUS_NOTE_ON && e->data[1])	
+	{
+		//printf ("Note On:  Channel %2i - ", (event->status & 0xF)+1);
+
+		float fore = (e->data[1] * volume[e->status & 0xF])/127.0F;
+		float back = fore;
+
+		int lr = 'C';
+		if (pan[e->status & 0xF] < 52)
+		{
+			lr = 'L';
+			back *= pan[e->status & 0xF] / 64.0F;
+		}
+		else if (pan[e->status & 0xF] > 76)
+		{
+			lr = 'R';
+			back *= (127-pan[e->status & 0xF]) / 64.0F;
+		}
+		else
+		{
+			int c = (int) fore;
+
+			if (fore >= 84)
+			{
+				back = 43;
+				c -= 84;
+				c /= 11;
+			}
+			else if (fore >= 43)
+			{
+				back = 5;
+				c -= 43;
+				c /= 11;
+			}
+			else if (fore >= 5)
+			{
+				back = 0;
+				c -= 5;
+			}
+			else
+			{
+				back = fore = 0;
+				c = 3;
+			}
+
+			if (c == 0) lr = 0xB2;
+			else if (c == 1) lr = 0xB0;
+			else if (c == 2) lr = 0xB1;
+			else lr = 0xDB;
+		}
+
+		int fore_col;
+		if (fore < 5)
+			fore_col = 0;
+		else if (fore < 43)
+			fore_col = FOREGROUND_INTENSITY;
+		else if (fore < 84)
+			fore_col = FOREGROUND_RED|FOREGROUND_BLUE|FOREGROUND_GREEN;
+		else
+			fore_col = FOREGROUND_RED|FOREGROUND_BLUE|FOREGROUND_GREEN|FOREGROUND_INTENSITY;
+
+		int back_col;
+		if (back < 5)
+			back_col = 0;
+		else if (back < 43)
+			back_col = BACKGROUND_INTENSITY;
+		else if (back < 84)
+			back_col = BACKGROUND_RED|BACKGROUND_BLUE|BACKGROUND_GREEN;
+		else
+			back_col = BACKGROUND_RED|BACKGROUND_BLUE|BACKGROUND_GREEN|BACKGROUND_INTENSITY;
+
+		notechr[e->status & 0xF][e->data[0]] = lr;
+		notecol[e->status & 0xF][e->data[0]] = fore_col|back_col;
+		first[e->status & 0xF][e->data[0]] = 1;
+	}
+}

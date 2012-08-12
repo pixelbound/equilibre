@@ -25,6 +25,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <windows.h>
 #include <mmsystem.h>
 
+class note_data
+{
+public:
+	note_data();
+	void clear();
+	void play(HMIDIOUT midi_port);
+	void show(bool &outed, double &outnext, int tempo);
+	void handle_event(midi_event *e);
+
+private:
+	unsigned char volume[16];
+	unsigned char pan[16];
+    unsigned char notechr[16][127];
+    int notecol[16][127];
+    int first[16][127];
+};
+
 class	Windows_MidiOut
 {
 public:
@@ -77,7 +94,7 @@ private:
 
 	// Methods
 	static DWORD __stdcall thread_start(void *data);
-	void start_play_thread();
+	bool start_play_thread();
 	void set_state(PlayerState newState);
 	DWORD thread_main();
 	void thread_play ();
