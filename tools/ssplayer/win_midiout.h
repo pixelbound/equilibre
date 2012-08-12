@@ -45,7 +45,6 @@ public:
 	virtual void add_track(midi_event *evntlist, int ppqn, BOOL repeat);
 	virtual void stop_track(void);
 	virtual BOOL is_playing(void);
-	virtual BOOL is_waiting(void);
 	virtual PlayerState get_state();
 	virtual void wait_state(PlayerState waitState);
 	virtual PlayerState wait_any_state(PlayerState *waitStates, int count);
@@ -68,7 +67,6 @@ private:
 
 	// Thread communications
 	LONG		playing;
-	LONG		waiting;
 	LONG		thread_com;
 	PlayerState state;
 	CRITICAL_SECTION stateLock;

@@ -51,7 +51,6 @@ Windows_MidiOut::Windows_MidiOut()
 	InitializeConditionVariable(&stateCond);
 	set_state(NotAvailable);
 	InterlockedExchange (&playing, FALSE);
-	InterlockedExchange (&waiting, FALSE);
 	start_play_thread();
 }
 
@@ -172,7 +171,6 @@ DWORD Windows_MidiOut::thread_main()
 {
 	thread_data = NULL;
 	InterlockedExchange (&playing, FALSE);
-	InterlockedExchange (&waiting, FALSE);
 
 	UINT mmsys_err = midiOutOpen (&midi_port, MIDI_MAPPER, 0, 0, 0);
 
@@ -409,7 +407,6 @@ void Windows_MidiOut::thread_play ()
 						InterlockedExchange (&playing, FALSE);
 						set_state(PlayerState::FinishedPlaying);
 					}
-					InterlockedExchange (&waiting, FALSE);
 					// If stop was requested, we are ready to receive another song
 					if (!evntlist_next && thread_com == W32MO_THREAD_COM_STOP)
 						InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
@@ -532,7 +529,6 @@ void Windows_MidiOut::thread_play ()
 			ppqn = thread_data->ppqn;
 			set_state(PlayerState::Playing);
 			InterlockedExchange (&playing, TRUE);
-			InterlockedExchange (&waiting, FALSE);
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
 			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 			
@@ -570,7 +566,6 @@ void Windows_MidiOut::thread_play ()
 			repeat_next = thread_data->repeat;
 
 			ppqn_next = thread_data->ppqn;
-			InterlockedExchange (&waiting, TRUE);
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
 			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 			
@@ -645,11 +640,6 @@ void Windows_MidiOut::stop_track(void)
 BOOL Windows_MidiOut::is_playing(void)
 {
 	return playing;
-}
-
-BOOL Windows_MidiOut::is_waiting(void)
-{
-	return waiting;
 }
 
 const char *Windows_MidiOut::copyright(void)

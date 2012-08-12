@@ -475,8 +475,7 @@ int main (int argc, char **argv)
 
 		is_transition = false;
 
-		while (player->is_waiting())
-			Sleep(100);
+		player->wait_state(Windows_MidiOut::Playing);
 
 		char title[256];
 		_snprintf (title, 255, "System Shock Random Song Generator Playing: %s  Part %i/%i (%i)", filename, i+1, maxlen, current);
