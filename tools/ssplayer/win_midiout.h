@@ -74,6 +74,7 @@ struct play_data
 	int loop_num;
 
 	void reset();
+	void at_end(mid_data &mid);
 };
 
 class	Windows_MidiOut

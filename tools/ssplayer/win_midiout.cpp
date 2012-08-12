@@ -266,32 +266,32 @@ void Windows_MidiOut::thread_play ()
 	{
 		if (thread_com == W32MO_THREAD_COM_EXIT && (get_state() != Playing)) break;
 		
-		while (pd.event)
+		while(pd.event)
 		{
 			if(!play_event(pd, current, nd))
 				break;
 
 			// no more event OR thread stop/exit
-	 		if (!pd.event || (thread_com != W32MO_THREAD_COM_READY && thread_com != W32MO_THREAD_COM_PLAY_NEXT && thread_com != W32MO_THREAD_COM_PLAY))
+	 		if(!pd.event || (thread_com != W32MO_THREAD_COM_READY && thread_com != W32MO_THREAD_COM_PLAY_NEXT && thread_com != W32MO_THREAD_COM_PLAY))
 		 	{
 				bool clean = !current.repeat || (thread_com != W32MO_THREAD_COM_READY);
 
-				if (clean || next.list)
+				if(clean || next.list)
 		 		{
 		 			// Clean up
 					//midiOutReset (midi_port);
 					current.deleteList();
 					pd.event = NULL;
-					if (!next.list)
+					if(!next.list)
 						set_state(FinishedPlaying);
 					// If stop was requested, we are ready to receive another song
-					if (!next.list && thread_com == W32MO_THREAD_COM_STOP)
-						InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
+					if(!next.list && thread_com == W32MO_THREAD_COM_STOP)
+						InterlockedExchange(&thread_com, W32MO_THREAD_COM_READY);
 
 					pd.loop_num = -1;
 		 		}
 
-				wmoInitClock ();
+				wmoInitClock();
 				pd.last_tick = 0;
 				pd.last_time = 0;
 
@@ -306,19 +306,7 @@ void Windows_MidiOut::thread_play ()
 				}
 				else if(current.list)
 				{
-	 				if(pd.loop_num == -1)
-					{
-						pd.event = current.list;
-					}
-					else
-					{
-						pd.event = pd.loop_event[pd.loop_num];
-						pd.last_tick = pd.loop_ticks[pd.loop_num];
-
-						if (pd.loop_count[pd.loop_num])
-							if (!--pd.loop_count[pd.loop_num])
-								pd.loop_num--;
-					}
+					pd.at_end(current);
 				}
 
 				nd.play(midi_port);
@@ -661,4 +649,21 @@ void play_data::reset()
 	diff = 0;
 	event = NULL;
 	loop_num = -1;
+}
+
+void play_data::at_end(mid_data &mid)
+{
+	if(loop_num == -1)
+	{
+		event = mid.list;
+	}
+	else
+	{
+		event = loop_event[loop_num];
+		last_tick = loop_ticks[loop_num];
+
+		if (loop_count[loop_num])
+			if (!--loop_count[loop_num])
+				loop_num--;
+	}
 }
