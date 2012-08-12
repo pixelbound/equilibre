@@ -47,6 +47,9 @@ HANDLE out;
 
 Windows_MidiOut::Windows_MidiOut()
 {
+	InitializeCriticalSection(&stateLock);
+	InitializeConditionVariable(&stateCond);
+	set_state(PlayerState::Created);
 	InterlockedExchange (&playing, FALSE);
 	InterlockedExchange (&waiting, FALSE);
 	InterlockedExchange (&is_available, FALSE);
@@ -80,6 +83,22 @@ Windows_MidiOut::~Windows_MidiOut()
 		TerminateThread (thread_handle, 1);
 
 	InterlockedExchange (&is_available, FALSE);
+}
+
+void Windows_MidiOut::wait_state(PlayerState waitState)
+{
+	EnterCriticalSection(&stateLock);
+	while(state != waitState)
+		SleepConditionVariableCS(&stateCond, &stateLock, INFINITE);
+	LeaveCriticalSection(&stateLock);
+}
+
+void Windows_MidiOut::set_state(PlayerState newState)
+{
+	EnterCriticalSection(&stateLock);
+	state = newState;
+	WakeAllConditionVariable(&stateCond);
+	LeaveCriticalSection(&stateLock);
 }
 
 void Windows_MidiOut::init_device()
@@ -130,6 +149,8 @@ DWORD Windows_MidiOut::thread_main()
 
 	midiOutClose (midi_port);
 	InterlockedExchange (&is_available, FALSE);
+	
+	set_state(PlayerState::Terminated);
 	return 0;
 }
 
@@ -335,7 +356,11 @@ void Windows_MidiOut::thread_play ()
 					if (evntlist) XMIDI::DeleteEventList (evntlist);
 					evntlist = NULL;
 					event = NULL;
-					if (!evntlist_next) InterlockedExchange (&playing, FALSE);
+					if (!evntlist_next)
+					{
+						InterlockedExchange (&playing, FALSE);
+						set_state(PlayerState::FinishedPlaying);
+					}
 					InterlockedExchange (&waiting, FALSE);
 					// If stop was requested, we are ready to receive another song
 					if (!evntlist_next && thread_com == W32MO_THREAD_COM_STOP)
@@ -457,6 +482,7 @@ void Windows_MidiOut::thread_play ()
 			repeat = thread_data->repeat;
 
 			ppqn = thread_data->ppqn;
+			set_state(PlayerState::Playing);
 			InterlockedExchange (&playing, TRUE);
 			InterlockedExchange (&waiting, FALSE);
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);

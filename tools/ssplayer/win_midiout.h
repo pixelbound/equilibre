@@ -28,6 +28,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class	Windows_MidiOut
 {
 public:
+	enum PlayerState
+	{
+		Created = 0,
+		Playing,
+		FinishedPlaying,
+		Terminated
+	};
+
 	// Do we accept events, YES!
 	virtual BOOL accepts_events(void) { return TRUE; }
 
@@ -36,12 +44,15 @@ public:
 	virtual void stop_track(void);
 	virtual BOOL is_playing(void);
 	virtual BOOL is_waiting(void);
+	virtual void wait_state(PlayerState waitState);
 	virtual const char *copyright(void);
 
 	Windows_MidiOut();
 	virtual ~Windows_MidiOut();
 
 private:
+	void set_state(PlayerState newState);
+
 	struct mid_data {
 		midi_event	*list;
 		int 		ppqn;
@@ -58,6 +69,9 @@ private:
 	LONG		playing;
 	LONG		waiting;
 	LONG		thread_com;
+	PlayerState state;
+	CRITICAL_SECTION stateLock;
+	CONDITION_VARIABLE stateCond;
 
 	mid_data *thread_data;
 	mid_data *sfx_data;

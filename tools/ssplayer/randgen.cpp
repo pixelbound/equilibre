@@ -370,7 +370,7 @@ int main (int argc, char **argv)
 
 	if (current == 0)
 	{
-		repeat = true;
+		//repeat = true;
 		maxlen = 1;
 
 		// Ask for track number
@@ -485,7 +485,10 @@ int main (int argc, char **argv)
 		usage[current]++;
 
 		//Choose next one
-		for (nextamount = 0; nextamount < 32 && alldata[current][nextamount]; nextamount++) nextones[nextamount] = usage[alldata[current][nextamount]];
+		for (nextamount = 0; nextamount < 32 && alldata[current][nextamount]; nextamount++)
+		{
+			nextones[nextamount] = usage[alldata[current][nextamount]];
+		}
 		
 		next = weighted_random (nextamount, nextones);
 		
@@ -502,7 +505,8 @@ int main (int argc, char **argv)
 		if (rand() < 100) is_transition = true;
 	}
 	
-	while (player->is_playing()) Sleep(100);
+	player->wait_state(Windows_MidiOut::FinishedPlaying);
+	//player->wait_state(Windows_MidiOut::Terminated);
 	delete player;
 	delete xmi;
 	return 0;
