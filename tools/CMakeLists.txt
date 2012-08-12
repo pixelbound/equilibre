@@ -1,2 +1,5 @@
 subdirs(CharacterViewer)
 subdirs(ZoneViewer)
+if(WIN32)
+    subdirs(ssplayer)
+endif(WIN32)
