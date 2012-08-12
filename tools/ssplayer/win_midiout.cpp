@@ -202,17 +202,12 @@ DWORD Windows_MidiOut::thread_main()
 
 void Windows_MidiOut::thread_play ()
 {
-	int	ppqn = 1;
-	int	repeat = FALSE;
-	int	tempo = 0x07A120;
-	double	Ippqn = 1;
 	double	tick = 1;
 	double	last_tick = 0;
 	double	last_time = 0;
 	double	aim = 0;
 	double	diff = 0;
 	
-	midi_event *evntlist = NULL;
 	midi_event *event = NULL;
 
 	// Xmidi Looping
@@ -221,11 +216,10 @@ void Windows_MidiOut::thread_play ()
 	int		loop_ticks[XMIDI_MAX_FOR_LOOP_COUNT];
 	int		loop_num = -1;
 
-	int		ppqn_next = 1;
-	int		repeat_next = FALSE;
-	int		tempo_next = 0x07A120;
-	double		Ippqn_next = 1;
-	midi_event	*evntlist_next = NULL;
+	mid_data current;
+	mid_data next;
+	current.reset();
+	next.reset();
 
 	note_data nd;
 
@@ -271,11 +265,8 @@ void Windows_MidiOut::thread_play ()
 			}	// Tempo Change
 			else if (event->status == 0xFF && event->data[0] == 0x51) // Tempo change
 			{
-				tempo = (event->buffer[0] << 16) +
-					(event->buffer[1] << 8) +
-					event->buffer[2];
-					
-				tick = tempo*Ippqn;
+				current.tempo = (event->buffer[0] << 16) + (event->buffer[1] << 8) + event->buffer[2];
+				tick = current.tempo * current.ippqn;
 			}	
 			else if (event->status < 0xF0)
 			{
@@ -284,22 +275,32 @@ void Windows_MidiOut::thread_play ()
 			}
 		
 		 	if (event) event = event->next;
+
+			/*
+			#define W32MO_THREAD_COM_READY		0
+			#define W32MO_THREAD_COM_PLAY		1
+			#define W32MO_THREAD_COM_PLAY_NEXT	5
+
+			#define W32MO_THREAD_COM_STOP		2
+			#define W32MO_THREAD_COM_INIT		3
+			#define W32MO_THREAD_COM_INIT_FAILED	4
+			#define W32MO_THREAD_COM_EXIT		-1
+			*/
 	
 	 		if (!event || (thread_com != W32MO_THREAD_COM_READY && thread_com != W32MO_THREAD_COM_PLAY_NEXT && thread_com != W32MO_THREAD_COM_PLAY))
 		 	{
-				bool clean = !repeat || (thread_com != W32MO_THREAD_COM_READY);
+				bool clean = !current.repeat || (thread_com != W32MO_THREAD_COM_READY);
 
-		 		if (clean || evntlist_next)
+				if (clean || next.list)
 		 		{
 		 			// Clean up
 					//midiOutReset (midi_port);
-					if (evntlist) XMIDI::DeleteEventList (evntlist);
-					evntlist = NULL;
+					current.deleteList();
 					event = NULL;
-					if (!evntlist_next)
+					if (!next.list)
 						set_state(FinishedPlaying);
 					// If stop was requested, we are ready to receive another song
-					if (!evntlist_next && thread_com == W32MO_THREAD_COM_STOP)
+					if (!next.list && thread_com == W32MO_THREAD_COM_STOP)
 						InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 
 					loop_num = -1;
@@ -309,21 +310,21 @@ void Windows_MidiOut::thread_play ()
 				last_tick = 0;
 				last_time = 0;
 
-				if (evntlist_next)
+				if(next.list)
 				{
-					ppqn = ppqn_next;
-					repeat = repeat_next;
-					tempo = tempo_next;
-					Ippqn = Ippqn_next;
-					event = evntlist = evntlist_next;
-					evntlist_next = NULL;
+					current = next;
+					event = current.list;
+					next.reset();
 
 					// Reset XMIDI Looping
 					loop_num = -1;
 				}
-				else if (evntlist)
+				else if(current.list)
 				{
-	 				if (loop_num == -1) event = evntlist;
+	 				if(loop_num == -1)
+					{
+						event = current.list;
+					}
 					else
 					{
 						event = loop_event[loop_num];
@@ -341,44 +342,32 @@ void Windows_MidiOut::thread_play ()
 
 		if (show_notes && outnext < GetTickCount())
 		{
-			nd.show(outed, outnext, tempo);
+			nd.show(outed, outnext, current.tempo);
 		}
 
 		// Got issued a music play command
 		// set up the music playing routine
 		while (thread_com == W32MO_THREAD_COM_PLAY || (thread_com == W32MO_THREAD_COM_PLAY_NEXT && (get_state() != Playing)))
 		{
-			if (evntlist)
+			if (current.list)
 			{
 				midiOutReset (midi_port);
-				XMIDI::DeleteEventList (evntlist);
-				evntlist = NULL;
+				current.deleteList();
 				event = NULL;
-				//InterlockedExchange (&playing, FALSE);
 			}
 
-			if (evntlist_next) 
-			{
-				XMIDI::DeleteEventList (evntlist_next);
-				evntlist_next = NULL;
-			}
+			next.deleteList();
 			
 			// Make sure that the data exists
 			if (!thread_data) break;
 			
-			evntlist = thread_data->list;
-			repeat = thread_data->repeat;
-
-			ppqn = thread_data->ppqn;
+			current = *thread_data;
 			set_state(Playing);
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
 			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 			
-			event = evntlist;
-			tempo = 0x07A120;
-			
-			Ippqn = 1.0/ppqn;
-			tick = tempo*Ippqn;
+			event = current.list;
+			tick = current.tempo * current.ippqn;
 
 			last_tick = 0;
 			last_time = 0;
@@ -395,24 +384,14 @@ void Windows_MidiOut::thread_play ()
 		while (thread_com == W32MO_THREAD_COM_PLAY_NEXT)
 		{	
 			//printf ("add %i %i\n", playing, thread_com);
-			if (evntlist_next)
-			{
-				XMIDI::DeleteEventList (evntlist_next);
-				evntlist_next = NULL;
-			}
+			next.deleteList();
 			
 			// Make sure that the data exists
 			if (!thread_data) break;
 			
-			evntlist_next = thread_data->list;
-			repeat_next = thread_data->repeat;
-
-			ppqn_next = thread_data->ppqn;
+			next = *thread_data;
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
 			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
-			
-			tempo_next = 0x07A120;
-			Ippqn_next = 1.0/ppqn;
 
 			break;
 		}
@@ -438,9 +417,11 @@ void Windows_MidiOut::start_track (midi_event *evntlist, const int ppqn, BOOL re
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
 	
+	data.reset();
 	data.list = evntlist;
 	data.ppqn = ppqn;
 	data.repeat = repeat;
+	data.ippqn = 1.0 / ppqn;
 	
 	InterlockedExchange ((LONG*) &thread_data, (LONG) &data);
 	InterlockedExchange (&thread_com, W32MO_THREAD_COM_PLAY);
@@ -455,9 +436,11 @@ void Windows_MidiOut::add_track (midi_event *evntlist, const int ppqn, BOOL repe
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
 	
+	data.reset();
 	data.list = evntlist;
 	data.ppqn = ppqn;
 	data.repeat = repeat;
+	data.ippqn = 1.0 / ppqn;
 	
 	InterlockedExchange ((LONG*) &thread_data, (LONG) &data);
 	InterlockedExchange (&thread_com, W32MO_THREAD_COM_PLAY_NEXT);
@@ -653,5 +636,25 @@ void note_data::handle_event(midi_event *e)
 		notechr[e->status & 0xF][e->data[0]] = lr;
 		notecol[e->status & 0xF][e->data[0]] = fore_col|back_col;
 		first[e->status & 0xF][e->data[0]] = 1;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void mid_data::reset()
+{
+	ppqn = 1;
+	repeat = false;
+	tempo = 0x07A120;
+	list = NULL;
+	ippqn = 1.0;
+}
+
+void mid_data::deleteList()
+{
+	if(list) 
+	{
+		XMIDI::DeleteEventList(list);
+		list = NULL;
 	}
 }

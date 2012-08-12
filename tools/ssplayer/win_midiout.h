@@ -42,6 +42,18 @@ private:
     int first[16][127];
 };
 
+struct mid_data
+{
+	midi_event	*list;
+	int 		ppqn;
+	BOOL		repeat;
+	int		    tempo;
+	double		ippqn;
+
+	void reset();
+	void deleteList();
+};
+
 class	Windows_MidiOut
 {
 public:
@@ -70,12 +82,6 @@ public:
 	virtual ~Windows_MidiOut();
 
 private:
-	struct mid_data {
-		midi_event	*list;
-		int 		ppqn;
-		BOOL		repeat;
-	};
-
 	HMIDIOUT	midi_port;
 	
 	HANDLE	 	*thread_handle;
@@ -88,7 +94,6 @@ private:
 	CONDITION_VARIABLE stateCond;
 
 	mid_data *thread_data;
-	mid_data *sfx_data;
 
 	mid_data data;
 
