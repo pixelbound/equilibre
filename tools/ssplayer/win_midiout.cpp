@@ -206,12 +206,10 @@ void Windows_MidiOut::thread_play ()
 {
 	play_data pd;
 	mid_data current;
-	mid_data next;
 	note_data nd;
 
 	pd.reset();
 	current.reset();
-	next.reset();
 
 	// Play while there isn't a message waiting
 	while(1)
@@ -228,16 +226,15 @@ void Windows_MidiOut::thread_play ()
 		 	{
 				bool clean = !current.repeat || (thread_com != W32MO_THREAD_COM_READY);
 
-				if(clean || next.list)
+				if(clean)
 		 		{
 		 			// Clean up
 					//midiOutReset (midi_port);
 					current.deleteList();
 					pd.event = NULL;
-					if(!next.list)
-						set_state(FinishedPlaying);
+					set_state(FinishedPlaying);
 					// If stop was requested, we are ready to receive another song
-					if(!next.list && thread_com == W32MO_THREAD_COM_STOP)
+					if(thread_com == W32MO_THREAD_COM_STOP)
 						InterlockedExchange(&thread_com, W32MO_THREAD_COM_READY);
 
 					pd.loop_num = -1;
@@ -245,19 +242,8 @@ void Windows_MidiOut::thread_play ()
 
 				pd.wmoInitClock();
 
-				if(next.list)
-				{
-					current = next;
-					pd.event = current.list;
-					next.reset();
-
-					// Reset XMIDI Looping
-					pd.loop_num = -1;
-				}
-				else if(current.list)
-				{
+				if(current.list)
 					pd.at_end(current);
-				}
 
 				nd.play(midi_port);
 		 	}
@@ -277,8 +263,6 @@ void Windows_MidiOut::thread_play ()
 				pd.event = NULL;
 			}
 
-			next.deleteList();
-			
 			// Make sure that the data exists
 			if (!thread_data) break;
 			
@@ -294,23 +278,6 @@ void Windows_MidiOut::thread_play ()
 
 			// Reset XMIDI Looping
 			pd.loop_num = -1;
-
-			break;
-		}
-
-		// Got issued a music play command
-		// set up the music playing routine
-		while (thread_com == W32MO_THREAD_COM_PLAY_NEXT)
-		{	
-			//printf ("add %i %i\n", playing, thread_com);
-			next.deleteList();
-			
-			// Make sure that the data exists
-			if (!thread_data) break;
-			
-			next = *thread_data;
-			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
-			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 
 			break;
 		}
