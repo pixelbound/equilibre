@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "xmidi.h"
 #include <windows.h>
 #include <mmsystem.h>
+#include <vector>
 
 class note_data
 {
@@ -54,6 +55,25 @@ struct mid_data
 
 	void reset();
 	void deleteList();
+};
+
+struct play_data
+{
+	double tick;
+	double last_tick;
+	double last_time;
+	double aim;
+	double diff;
+	
+	midi_event *event;
+
+	// Xmidi Looping
+	midi_event *loop_event[XMIDI_MAX_FOR_LOOP_COUNT];
+	int loop_count[XMIDI_MAX_FOR_LOOP_COUNT];
+	int loop_ticks[XMIDI_MAX_FOR_LOOP_COUNT];
+	int loop_num;
+
+	void reset();
 };
 
 class	Windows_MidiOut
@@ -94,6 +114,9 @@ private:
 	PlayerState state;
 	CRITICAL_SECTION stateLock;
 	CONDITION_VARIABLE stateCond;
+	std::vector<mid_data> midList;
+	bool midListClosed;
+	CONDITION_VARIABLE midCond;
 
 	mid_data *thread_data;
 
@@ -103,8 +126,10 @@ private:
 	static DWORD __stdcall thread_start(void *data);
 	bool start_play_thread();
 	void set_state(PlayerState newState);
+	bool dequeue_mid(mid_data *data);
 	DWORD thread_main();
-	void thread_play ();
+	void thread_play();
+	bool play_event(play_data &pd, mid_data &current, note_data &nd);
 
 	// Microsecond Clock
 	unsigned int start;
