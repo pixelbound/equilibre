@@ -49,16 +49,17 @@ Windows_MidiOut::Windows_MidiOut()
 {
 	InitializeCriticalSection(&stateLock);
 	InitializeConditionVariable(&stateCond);
-	set_state(PlayerState::Created);
+	set_state(NotAvailable);
 	InterlockedExchange (&playing, FALSE);
 	InterlockedExchange (&waiting, FALSE);
-	InterlockedExchange (&is_available, FALSE);
-	init_device();
+	start_play_thread();
 }
 
 Windows_MidiOut::~Windows_MidiOut()
 {
-	if (!is_available) return;
+	PlayerState currentState = get_state();
+	if(currentState == NotAvailable)
+		return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
 	
@@ -79,10 +80,11 @@ Windows_MidiOut::~Windows_MidiOut()
 	}
 
 	// We waited a second and it still didn't terminate
-	if (count == 100 && is_available)
+	currentState = get_state();
+	if (count == 100 && (currentState != NotAvailable))
 		TerminateThread (thread_handle, 1);
-
-	InterlockedExchange (&is_available, FALSE);
+	
+	set_state(NotAvailable);
 }
 
 void Windows_MidiOut::wait_state(PlayerState waitState)
@@ -93,6 +95,39 @@ void Windows_MidiOut::wait_state(PlayerState waitState)
 	LeaveCriticalSection(&stateLock);
 }
 
+Windows_MidiOut::PlayerState Windows_MidiOut::wait_any_state(PlayerState *waitStates, int count)
+{
+	bool found = false;
+	PlayerState newState;
+	EnterCriticalSection(&stateLock);
+	while(true)
+	{
+		for(int i = 0; i < count; i++)
+		{
+			if(state == waitStates[i])
+			{
+				newState = state;
+				found = true;
+				break;
+			}
+		}
+		if(found)
+			break;
+		else
+			SleepConditionVariableCS(&stateCond, &stateLock, INFINITE);
+	}	
+	LeaveCriticalSection(&stateLock);
+	return newState;
+}
+
+Windows_MidiOut::PlayerState Windows_MidiOut::get_state()
+{
+	EnterCriticalSection(&stateLock);
+	PlayerState currentState = state;
+	LeaveCriticalSection(&stateLock);
+	return currentState;
+}
+
 void Windows_MidiOut::set_state(PlayerState newState)
 {
 	EnterCriticalSection(&stateLock);
@@ -101,16 +136,30 @@ void Windows_MidiOut::set_state(PlayerState newState)
 	LeaveCriticalSection(&stateLock);
 }
 
-void Windows_MidiOut::init_device()
+void Windows_MidiOut::start_play_thread()
 {
-	// Opened, lets open the thread
-	InterlockedExchange (&thread_com, W32MO_THREAD_COM_INIT);
-	
-	thread_handle = (HANDLE*) CreateThread (NULL, 0, thread_start, this, 0, &thread_id);
-	
-	while (thread_com == W32MO_THREAD_COM_INIT) Sleep (1);
-	
-	if (thread_com == W32MO_THREAD_COM_INIT_FAILED) cerr << "Failier to initialize midi playing thread" << endl;
+	BOOL started = false;
+	EnterCriticalSection(&stateLock);
+	if(state == PlayerState::NotAvailable)
+	{
+		started = true;
+		state = PlayerState::Starting;
+		WakeAllConditionVariable(&stateCond);
+	}
+	LeaveCriticalSection(&stateLock);
+
+	if(started)
+	{
+		thread_handle = (HANDLE*) CreateThread (NULL, 0, thread_start, this, 0, &thread_id);
+		
+		PlayerState states[] = {Available, InitializationFailed};
+		PlayerState newState = wait_any_state(states, 2);
+		if (newState == InitializationFailed)
+		{
+			cerr << "Failier to initialize midi playing thread" << endl;
+			set_state(NotAvailable);
+		}
+	}
 }
 
 DWORD __stdcall Windows_MidiOut::thread_start(void *data)
@@ -136,10 +185,10 @@ DWORD Windows_MidiOut::thread_main()
 
 		mciGetErrorString(mmsys_err, buf, 512);
 		cerr << "Unable to open device: " << buf << endl;
-		InterlockedExchange (&thread_com, W32MO_THREAD_COM_INIT_FAILED);
+		set_state(InitializationFailed);
 		return 1;
 	}
-	InterlockedExchange (&is_available, TRUE);
+	set_state(Available);
 	
 	SetThreadPriority (thread_handle, THREAD_PRIORITY_HIGHEST);
 	
@@ -148,9 +197,8 @@ DWORD Windows_MidiOut::thread_main()
 	thread_play();
 
 	midiOutClose (midi_port);
-	InterlockedExchange (&is_available, FALSE);
 	
-	set_state(PlayerState::Terminated);
+	set_state(NotAvailable);
 	return 0;
 }
 
@@ -548,10 +596,9 @@ void Windows_MidiOut::thread_play ()
 
 void Windows_MidiOut::start_track (midi_event *evntlist, const int ppqn, BOOL repeat)
 {
-	if (!is_available)
-		init_device();
+	start_play_thread();
 
-	if (!is_available)
+	if (get_state() == NotAvailable)
 		return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
@@ -568,10 +615,9 @@ void Windows_MidiOut::start_track (midi_event *evntlist, const int ppqn, BOOL re
 
 void Windows_MidiOut::add_track (midi_event *evntlist, const int ppqn, BOOL repeat)
 {
-	if (!is_available)
-		init_device();
+	start_play_thread();
 
-	if (!is_available)
+	if (get_state() == NotAvailable)
 		return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
@@ -588,10 +634,9 @@ void Windows_MidiOut::add_track (midi_event *evntlist, const int ppqn, BOOL repe
 
 void Windows_MidiOut::stop_track(void)
 {
-	if (!is_available)
+	PlayerState currentState = get_state();
+	if(currentState != Playing);
 		return;
-
-	if (!playing) return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
 	InterlockedExchange (&thread_com, W32MO_THREAD_COM_STOP);

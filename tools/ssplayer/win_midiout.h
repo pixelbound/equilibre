@@ -30,10 +30,12 @@ class	Windows_MidiOut
 public:
 	enum PlayerState
 	{
-		Created = 0,
+		NotAvailable = 0,
+		Starting,
+		InitializationFailed,
+		Available,
 		Playing,
-		FinishedPlaying,
-		Terminated
+		FinishedPlaying
 	};
 
 	// Do we accept events, YES!
@@ -44,15 +46,15 @@ public:
 	virtual void stop_track(void);
 	virtual BOOL is_playing(void);
 	virtual BOOL is_waiting(void);
+	virtual PlayerState get_state();
 	virtual void wait_state(PlayerState waitState);
+	virtual PlayerState wait_any_state(PlayerState *waitStates, int count);
 	virtual const char *copyright(void);
 
 	Windows_MidiOut();
 	virtual ~Windows_MidiOut();
 
 private:
-	void set_state(PlayerState newState);
-
 	struct mid_data {
 		midi_event	*list;
 		int 		ppqn;
@@ -64,8 +66,7 @@ private:
 	HANDLE	 	*thread_handle;
 	DWORD		thread_id;
 
-	// Thread communicatoins
-	LONG		is_available;
+	// Thread communications
 	LONG		playing;
 	LONG		waiting;
 	LONG		thread_com;
@@ -80,7 +81,8 @@ private:
 
 	// Methods
 	static DWORD __stdcall thread_start(void *data);
-	void init_device();
+	void start_play_thread();
+	void set_state(PlayerState newState);
 	DWORD thread_main();
 	void thread_play ();
 
