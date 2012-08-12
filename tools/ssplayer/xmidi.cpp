@@ -357,7 +357,7 @@ int XMIDI::retrieve (unsigned int track, DataSource *dest)
 	{
 		list = events[track];
 		MovePatchVolAndPan ();
-		fixed[track] = TRUE;
+		fixed[track] = true;
 		events[track] = list;
 	}
 
@@ -773,7 +773,7 @@ int XMIDI::ConvertEvent (const int time, const unsigned char status, DataSource 
 	{
 		data = source->read1();
 		
-		bank127[status&0xF] = FALSE;
+		bank127[status&0xF] = false;
 		
 		if (convert_type == XMIDI_CONVERT_MT32_TO_GM || convert_type == XMIDI_CONVERT_MT32_TO_GS
 			|| convert_type == XMIDI_CONVERT_MT32_TO_GS127 ||
@@ -786,7 +786,7 @@ int XMIDI::ConvertEvent (const int time, const unsigned char status, DataSource 
 		current->data[1] = data;
 
 		if (convert_type == XMIDI_CONVERT_GS127_TO_GS && data == 127)
-			bank127[status&0xF] = TRUE;
+			bank127[status&0xF] = true;
 
 		return 2;
 	}
@@ -880,7 +880,7 @@ int XMIDI::ConvertSystemMessage (const int time, const unsigned char status, Dat
 
 // XMIDI and Midi to List
 // Returns XMIDI PPQN
-int XMIDI::ConvertFiletoList (DataSource *source, const BOOL is_xmi)
+int XMIDI::ConvertFiletoList (DataSource *source, const bool is_xmi)
 {
 	int 		time = 0;
 	unsigned int 	data;
@@ -998,7 +998,7 @@ unsigned int XMIDI::ConvertListToMTrk (DataSource *dest, midi_event *mlist)
 	unsigned int 	i = 8;
 	unsigned int 	j;
 	unsigned int	size_pos=0;
-	BOOL end = FALSE;
+	bool end = false;
 
 	if (dest)
 	{
@@ -1053,7 +1053,7 @@ unsigned int XMIDI::ConvertListToMTrk (DataSource *dest, midi_event *mlist)
 			case 0xF:
 			if (event->status == 0xFF)
 			{
-				if (event->data[0] == 0x2f) end = TRUE;
+				if (event->data[0] == 0x2f) end = true;
 				if (dest) dest->write1(event->data[0]);
 				i++;
 			}
@@ -1121,7 +1121,7 @@ int XMIDI::ExtractTracksFromXmi (DataSource *source)
 		int begin = source->getPos ();
 		
 		// Convert it
-		if (!(ppqn = ConvertFiletoList (source, TRUE)))
+		if (!(ppqn = ConvertFiletoList (source, true)))
 		{
 			cerr << "Unable to convert data" << endl;
 			break;
@@ -1163,7 +1163,7 @@ int XMIDI::ExtractTracksFromMid (DataSource *source)
 		int begin = source->getPos ();
 
 		// Convert it
-		if (!ConvertFiletoList (source, FALSE))
+		if (!ConvertFiletoList (source, false))
 		{
 			cerr << "Unable to convert data" << endl;
 			break;
@@ -1288,13 +1288,13 @@ int XMIDI::ExtractTracks (DataSource *source)
 
 		events = new midi_event *[info.tracks];
 		timing = new short[info.tracks];
-		fixed = new BOOL[info.tracks];
+		fixed = new bool[info.tracks];
 		info.type = 0;
 		
 		for (i = 0; i < info.tracks; i++)
 		{
 			events[i] = NULL;
-			fixed[i] = FALSE;
+			fixed[i] = false;
 		}
 
 		count = ExtractTracksFromXmi (source);
@@ -1334,13 +1334,13 @@ int XMIDI::ExtractTracks (DataSource *source)
 		
 		events = new midi_event *[info.tracks];
 		timing = new short[info.tracks];
-		fixed = new BOOL[info.tracks];
+		fixed = new bool[info.tracks];
 		timing[0] = source->read2high();
 		for (i = 0; i < info.tracks; i++)
 		{
 			timing[i] = timing[0];
 			events[i] = NULL;
-			fixed[i] = FALSE;
+			fixed[i] = false;
 		}
 
 		count = ExtractTracksFromMid (source);

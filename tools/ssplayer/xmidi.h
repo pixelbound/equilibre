@@ -22,7 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define RANDGEN_XMIDI_H
 
 #include <string.h>
-#include <windows.h>
 #include "databuf.h"
 
 // Conversion types for Midi files
@@ -95,9 +94,9 @@ private:
 	
 	const static char	mt32asgm[128];
 	const static char	mt32asgs[256];
-	BOOL 			bank127[16];
+	bool    			bank127[16];
 	int			convert_type;
-	BOOL			*fixed;
+	bool			*fixed;
 
 public:
 	XMIDI(DataSource *source, int pconvert);
@@ -138,7 +137,7 @@ private:
 	int ConvertEvent (const int time, const unsigned char status, DataSource *source, const int size);
 	int ConvertSystemMessage (const int time, const unsigned char status, DataSource *source);
 
-	int ConvertFiletoList (DataSource *source, BOOL is_xmi);
+	int ConvertFiletoList (DataSource *source, bool is_xmi);
 	unsigned int ConvertListToMTrk (DataSource *dest, midi_event *mlist);
 
 	int ExtractTracksFromXmi (DataSource *source);
