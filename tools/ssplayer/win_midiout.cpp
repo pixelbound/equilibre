@@ -50,7 +50,6 @@ Windows_MidiOut::Windows_MidiOut()
 	InitializeCriticalSection(&stateLock);
 	InitializeConditionVariable(&stateCond);
 	set_state(NotAvailable);
-	InterlockedExchange (&playing, FALSE);
 	start_play_thread();
 }
 
@@ -170,7 +169,6 @@ DWORD __stdcall Windows_MidiOut::thread_start(void *data)
 DWORD Windows_MidiOut::thread_main()
 {
 	thread_data = NULL;
-	InterlockedExchange (&playing, FALSE);
 
 	UINT mmsys_err = midiOutOpen (&midi_port, MIDI_MAPPER, 0, 0, 0);
 
@@ -245,7 +243,7 @@ void Windows_MidiOut::thread_play ()
 	// Play while there isn't a message waiting
 	while (1)
 	{
-		if (thread_com == W32MO_THREAD_COM_EXIT && !playing) break;
+		if (thread_com == W32MO_THREAD_COM_EXIT && (get_state() != Playing)) break;
 		
 		while (event)
 		{
@@ -403,10 +401,7 @@ void Windows_MidiOut::thread_play ()
 					evntlist = NULL;
 					event = NULL;
 					if (!evntlist_next)
-					{
-						InterlockedExchange (&playing, FALSE);
 						set_state(PlayerState::FinishedPlaying);
-					}
 					// If stop was requested, we are ready to receive another song
 					if (!evntlist_next && thread_com == W32MO_THREAD_COM_STOP)
 						InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
@@ -503,7 +498,7 @@ void Windows_MidiOut::thread_play ()
 
 		// Got issued a music play command
 		// set up the music playing routine
-		while (thread_com == W32MO_THREAD_COM_PLAY || (thread_com == W32MO_THREAD_COM_PLAY_NEXT && !playing))
+		while (thread_com == W32MO_THREAD_COM_PLAY || (thread_com == W32MO_THREAD_COM_PLAY_NEXT && (get_state() != Playing)))
 		{
 			if (evntlist)
 			{
@@ -528,7 +523,6 @@ void Windows_MidiOut::thread_play ()
 
 			ppqn = thread_data->ppqn;
 			set_state(PlayerState::Playing);
-			InterlockedExchange (&playing, TRUE);
 			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
 			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
 			
@@ -629,17 +623,11 @@ void Windows_MidiOut::add_track (midi_event *evntlist, const int ppqn, BOOL repe
 
 void Windows_MidiOut::stop_track(void)
 {
-	PlayerState currentState = get_state();
-	if(currentState != Playing);
+	if(get_state() != Playing)
 		return;
 
 	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
 	InterlockedExchange (&thread_com, W32MO_THREAD_COM_STOP);
-}
-
-BOOL Windows_MidiOut::is_playing(void)
-{
-	return playing;
 }
 
 const char *Windows_MidiOut::copyright(void)
