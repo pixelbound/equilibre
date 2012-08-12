@@ -67,6 +67,13 @@ struct play_data
 	
 	midi_event *event;
 
+	// Microsecond Clock
+	unsigned int start;
+
+	void wmoInitClock();
+	double wmoGetTime();
+	void wmoDelay(double mcs_delay);
+
 	// Xmidi Looping
 	midi_event *loop_event[XMIDI_MAX_FOR_LOOP_COUNT];
 	int loop_count[XMIDI_MAX_FOR_LOOP_COUNT];
@@ -75,6 +82,8 @@ struct play_data
 
 	void reset();
 	void at_end(mid_data &mid);
+	void end_loop_delay();
+	bool play_event(HMIDIOUT midi_port, mid_data &current, note_data &nd);
 };
 
 class	Windows_MidiOut
@@ -130,27 +139,6 @@ private:
 	bool dequeue_mid(mid_data *data);
 	DWORD thread_main();
 	void thread_play();
-	bool play_event(play_data &pd, mid_data &current, note_data &nd);
-
-	// Microsecond Clock
-	unsigned int start;
-	unsigned int sfx_start;
-
-	inline void wmoInitClock ()
-	{ start = GetTickCount(); }
-
-	inline double wmoGetTime ()
-	{ return (GetTickCount() - start) * 1000.0; }
-
-	inline void wmoInitSFXClock ()
-	{ sfx_start = GetTickCount(); }
-
-	inline double wmoGetSFXTime ()
-	{ return (GetTickCount() - sfx_start) * 1000.0; }
-
-	inline void wmoDelay (const double mcs_delay)
-	{ if (mcs_delay >= 0) Sleep ((int) (mcs_delay / 1000.0)); }
-
 };
 
 #endif // RANDGEN_WIN_MIDIOUT_H

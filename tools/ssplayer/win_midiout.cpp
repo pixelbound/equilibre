@@ -202,54 +202,6 @@ DWORD Windows_MidiOut::thread_main()
 	return 0;
 }
 
-bool Windows_MidiOut::play_event(play_data &pd, mid_data &current, note_data &nd)
-{
-	pd.aim = pd.last_time + (pd.event->time - pd.last_tick) * pd.tick;
-	pd.diff = pd.aim - wmoGetTime();
-
-	if(pd.diff > 0)
-		return false;
-
-	pd.last_tick = pd.event->time;
-	pd.last_time = pd.aim;
-		
-		// XMIDI For Loop
-	if ((pd.event->status >> 4) == MIDI_STATUS_CONTROLLER && pd.event->data[0] == XMIDI_CONTROLLER_FOR_LOOP)
-	{
-		if (pd.loop_num < XMIDI_MAX_FOR_LOOP_COUNT) pd.loop_num++;
-
-		pd.loop_count[pd.loop_num] = pd.event->data[1];
-		pd.loop_ticks[pd.loop_num] = pd.event->time;
-		pd.loop_event[pd.loop_num] = pd.event->next;
-
-	}	// XMIDI Next/Break
-	else if ((pd.event->status >> 4) == MIDI_STATUS_CONTROLLER && pd.event->data[0] == XMIDI_CONTROLLER_NEXT_BREAK)
-	{
-		if (pd.loop_num != -1)
-		{
-			if (pd.event->data[1] < 64)
-			{
-				pd.loop_num--;
-			}
-		}
-		pd.event = NULL;
-
-	}	// Tempo Change
-	else if (pd.event->status == 0xFF && pd.event->data[0] == 0x51) // Tempo change
-	{
-		current.tempo = (pd.event->buffer[0] << 16) + (pd.event->buffer[1] << 8) + pd.event->buffer[2];
-		pd.tick = current.tempo * current.ippqn;
-	}	
-	else if (pd.event->status < 0xF0)
-	{
-		midiOutShortMsg(midi_port, pd.event->status + (pd.event->data[0] << 8) + (pd.event->data[1] << 16));
-		nd.handle_event(pd.event);
-	}
-		
-	pd.event = pd.event->next;
-	return true;
-}
-
 void Windows_MidiOut::thread_play ()
 {
 	play_data pd;
@@ -262,13 +214,13 @@ void Windows_MidiOut::thread_play ()
 	next.reset();
 
 	// Play while there isn't a message waiting
-	while (1)
+	while(1)
 	{
 		if (thread_com == W32MO_THREAD_COM_EXIT && (get_state() != Playing)) break;
 		
 		while(pd.event)
 		{
-			if(!play_event(pd, current, nd))
+			if(!pd.play_event(midi_port, current, nd))
 				break;
 
 			// no more event OR thread stop/exit
@@ -291,9 +243,7 @@ void Windows_MidiOut::thread_play ()
 					pd.loop_num = -1;
 		 		}
 
-				wmoInitClock();
-				pd.last_tick = 0;
-				pd.last_time = 0;
+				pd.wmoInitClock();
 
 				if(next.list)
 				{
@@ -340,9 +290,7 @@ void Windows_MidiOut::thread_play ()
 			pd.event = current.list;
 			pd.tick = current.tempo * current.ippqn;
 
-			pd.last_tick = 0;
-			pd.last_time = 0;
-			wmoInitClock();
+			pd.wmoInitClock();
 
 			// Reset XMIDI Looping
 			pd.loop_num = -1;
@@ -367,20 +315,8 @@ void Windows_MidiOut::thread_play ()
 			break;
 		}
 
-	 	if (pd.event)
-	 	{
-	 		pd.aim = pd.last_time + (pd.event->time - pd.last_tick) * pd.tick;
-			pd.diff = pd.aim - wmoGetTime();
-	 	}
-	 	else 
-		{
-	 		pd.diff = 1000;
-		}
+		pd.end_loop_delay();
 
-		if(pd.diff >= 1000)
-			wmoDelay(1000);
-		else if(pd.diff >= 200)
-			wmoDelay(0);
 	}
 	midiOutReset (midi_port);
 }
@@ -647,8 +583,58 @@ void play_data::reset()
 	last_time = 0;
 	aim = 0;
 	diff = 0;
+	start = 0;
 	event = NULL;
 	loop_num = -1;
+}
+
+bool play_data::play_event(HMIDIOUT midi_port, mid_data &current, note_data &nd)
+{
+	aim = last_time + (event->time - last_tick) * tick;
+	diff = aim - wmoGetTime();
+
+	if(diff > 0)
+		return false;
+
+	last_tick = event->time;
+	last_time = aim;
+		
+		// XMIDI For Loop
+	if((event->status >> 4) == MIDI_STATUS_CONTROLLER && event->data[0] == XMIDI_CONTROLLER_FOR_LOOP)
+	{
+		if(loop_num < XMIDI_MAX_FOR_LOOP_COUNT)
+			loop_num++;
+
+		loop_count[loop_num] = event->data[1];
+		loop_ticks[loop_num] = event->time;
+		loop_event[loop_num] = event->next;
+
+	}	// XMIDI Next/Break
+	else if((event->status >> 4) == MIDI_STATUS_CONTROLLER && event->data[0] == XMIDI_CONTROLLER_NEXT_BREAK)
+	{
+		if(loop_num != -1)
+		{
+			if(event->data[1] < 64)
+			{
+				loop_num--;
+			}
+		}
+		event = NULL;
+
+	}	// Tempo Change
+	else if(event->status == 0xFF && event->data[0] == 0x51) // Tempo change
+	{
+		current.tempo = (event->buffer[0] << 16) + (event->buffer[1] << 8) + event->buffer[2];
+		tick = current.tempo * current.ippqn;
+	}	
+	else if(event->status < 0xF0)
+	{
+		midiOutShortMsg(midi_port, event->status + (event->data[0] << 8) + (event->data[1] << 16));
+		nd.handle_event(event);
+	}
+		
+	event = event->next;
+	return true;
 }
 
 void play_data::at_end(mid_data &mid)
@@ -666,4 +652,40 @@ void play_data::at_end(mid_data &mid)
 			if (!--loop_count[loop_num])
 				loop_num--;
 	}
+}
+
+void play_data::end_loop_delay()
+{
+	if(event)
+	{
+	 	aim = last_time + (event->time - last_tick) * tick;
+		diff = aim - wmoGetTime();
+	}
+	else 
+	{
+	 	diff = 1000;
+	}
+
+	if(diff >= 1000)
+		wmoDelay(1000);
+	else if(diff >= 200)
+		wmoDelay(0);
+}
+
+void play_data::wmoInitClock()
+{
+	last_tick = 0;		
+	last_time = 0;
+	start = GetTickCount();
+}
+
+double play_data::wmoGetTime()
+{
+	return (GetTickCount() - start) * 1000.0;
+}
+
+void play_data::wmoDelay(double mcs_delay)
+{
+	if(mcs_delay >= 0)
+		Sleep((int)(mcs_delay / 1000.0));
 }
