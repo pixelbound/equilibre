@@ -19,9 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // XMIDI/MIDI Converter/Loader
 
 #include <stdio.h>
-#include <iostream.h>
+#include <iostream>
 #include "randgen.h"
 #include "xmidi.h"
+
+using namespace std;
 
 // This is used to correct incorrect patch, vol and pan changes in midi files
 // The bias is just a value to used to work out if a vol and pan belong with a 

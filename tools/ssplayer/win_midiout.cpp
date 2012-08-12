@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <windows.h>
 #include <winbase.h>
 #include <mmsystem.h>
-#include <iostream.h>
+#include <iostream>
 
 #include "randgen.h"
 #include "xmidi.h"
@@ -40,6 +40,7 @@ bool	show_drum = false;
 bool	show_notes = true;
 int	vis_speed= 8;
 
+using namespace std;
 
 CONSOLE_SCREEN_BUFFER_INFO info;
 HANDLE out;
