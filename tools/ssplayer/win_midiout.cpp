@@ -223,9 +223,6 @@ void Windows_MidiOut::thread_play ()
 
 	note_data nd;
 
-	double	outnext = GetTickCount() + 50.0F;
-	bool	outed = false;
-
 	// Play while there isn't a message waiting
 	while (1)
 	{
@@ -340,10 +337,8 @@ void Windows_MidiOut::thread_play ()
 		 	}
 		}
 
-		if (show_notes && outnext < GetTickCount())
-		{
-			nd.show(outed, outnext, current.tempo);
-		}
+		if(show_notes)
+			nd.show(current.tempo);
 
 		// Got issued a music play command
 		// set up the music playing routine
@@ -476,6 +471,8 @@ void note_data::clear()
 	memset(first, 0, sizeof(first));
 	memset(volume, 64, sizeof(volume));
 	memset(pan, 64, sizeof(pan));
+	outed = false;
+	outnext = GetTickCount() + 50.0F;
 }
 
 void note_data::play(HMIDIOUT midi_port)
@@ -495,8 +492,10 @@ void note_data::play(HMIDIOUT midi_port)
 	}
 }
 
-void note_data::show(bool &outed, double &outnext, int tempo)
+void note_data::show(int tempo)
 {
+	if(outnext >= GetTickCount())
+		return;
 	//putchar ('\n');
 	outed = false;
 	outnext += tempo/(vis_speed*1000.0F);

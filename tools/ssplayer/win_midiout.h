@@ -31,7 +31,7 @@ public:
 	note_data();
 	void clear();
 	void play(HMIDIOUT midi_port);
-	void show(bool &outed, double &outnext, int tempo);
+	void show(int tempo);
 	void handle_event(midi_event *e);
 
 private:
@@ -40,6 +40,8 @@ private:
     unsigned char notechr[16][127];
     int notecol[16][127];
     int first[16][127];
+	bool outed;
+	double outnext;
 };
 
 struct mid_data
