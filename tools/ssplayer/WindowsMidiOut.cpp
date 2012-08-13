@@ -27,11 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "xmidi.h"
 #include "WindowsMidiOut.h"
 
-int max_width = 79;
-bool show_drum = false;
-bool show_notes = true;
-int vis_speed = 8;
-
 using namespace std;
 
 CONSOLE_SCREEN_BUFFER_INFO info;
@@ -43,6 +38,7 @@ Windows_MidiOut::Windows_MidiOut()
     InitializeConditionVariable(&stateCond);
     InitializeConditionVariable(&partListCond);
     partListClosed = false;
+    setState(NotAvailable);
 }
 
 Windows_MidiOut::~Windows_MidiOut()

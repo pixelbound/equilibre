@@ -20,10 +20,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _WIN32
 #include <windows.h>
-
+#include "WindowsMidiOut.h"
+#define _snprintf snprintf
+#else
+#define MAX_PATH 260
+#endif
 #include "randgen.h"
-#include "win_midiout.h"
+#include "MidiOut.h"
 
 int checkheader (unsigned char *data)
 {
@@ -111,7 +116,9 @@ int main (int argc, char **argv)
 	memset (filename, 0, sizeof(filename));
 	memset (headdata, 0, sizeof(headdata));
 
+#ifdef _WIN32
 	SetConsoleTitle ("System Shock Random Song Generator");
+#endif
 
 	printf ("System Shock Random Song Generator by Cless.\n");
 	printf ("Version "VERSION_STRING"\n", VERSION_MAJOR, VERSION_MINOR);
@@ -417,7 +424,7 @@ int main (int argc, char **argv)
 
 				if (fn_out[i] == '.') fn_out[i] = 0;
 
-				_snprintf (fn_out+i, MAX_PATH-i, "-%02i.mid", current);
+        snprintf (fn_out+i, MAX_PATH-i, "-%02i.mid", current);
 
 				printf ("Attempting to write sequence %i to '%s'\n", current, fn_out);
 
@@ -446,8 +453,11 @@ int main (int argc, char **argv)
 	midi_event *events;
 	int ppqn;
 
-	Windows_MidiOut	*player = new Windows_MidiOut;
-	//printf ("%s\n", player->copyright());
+  MidiOut *player = NULL;
+#ifdef _WIN32
+  player = new Windows_MidiOut();
+#endif
+  player->setShowNotes(show_notes);
 
 	int usage[32];
 	int nextones[32];
@@ -458,7 +468,9 @@ int main (int argc, char **argv)
 		xmi->retrieve(i, &events, ppqn);
 	}
 
+#ifdef _WIN32
 	SetPriorityClass (GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+#endif
 
 	bool is_transition = false;
 
@@ -470,16 +482,18 @@ int main (int argc, char **argv)
 			break;
 		}
 
-		player->add_track(events, ppqn, repeat);
+    player->addTrack(events, ppqn, repeat);
 		//printf ("%s: %2i  PPQN: %i\n", filename, current, ppqn);
 
 		is_transition = false;
 
-		player->wait_state(Windows_MidiOut::Playing);
+    player->waitState(MidiOut::Playing);
 
+#ifdef _WIN32
 		char title[256];
 		_snprintf (title, 255, "System Shock Random Song Generator Playing: %s  Part %i/%i (%i)", filename, i+1, maxlen, current);
 		SetConsoleTitle (title);
+#endif
 
 		usage[current]++;
 
@@ -504,7 +518,7 @@ int main (int argc, char **argv)
 		if (rand() < 100) is_transition = true;
 	}
 	
-	player->wait_state(Windows_MidiOut::Available);
+  player->waitState(MidiOut::Available);
 	delete player;
 	delete xmi;
 	return 0;

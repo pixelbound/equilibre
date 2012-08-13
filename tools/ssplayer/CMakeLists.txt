@@ -12,10 +12,10 @@ set(SSPLAYER_HEADERS
     databuf.h
 )
 
-#if(WIN32)
+if(WIN32)
     set(SSPLAYER_SOURCES ${SSPLAYER_SOURCES} WindowsMidiOut.cpp)
     set(SSPLAYER_HEADERS ${SSPLAYER_HEADERS} WindowsMidiOut.h)
-#endif(WIN32)
+endif(WIN32)
 
 include_directories(include)
 

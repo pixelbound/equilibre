@@ -59,6 +59,9 @@ public:
     MidiOut();
     virtual ~MidiOut();
 
+    bool showNotes();
+    void setShowNotes(bool show);
+
     virtual void addTrack(midi_event *evntlist, int ppqn, bool repeat) = 0;
     virtual PlayerState getState() = 0;
     virtual void waitState(PlayerState waitState) = 0;
@@ -87,6 +90,7 @@ private:
     int loop_count[XMIDI_MAX_FOR_LOOP_COUNT];
     int loop_ticks[XMIDI_MAX_FOR_LOOP_COUNT];
     int loop_num;
+    bool show_notes;
 
     void resetPlayData();
     void popLoop();

@@ -24,13 +24,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 using namespace std;
 
+int max_width = 79;
+bool show_drum = false;
+bool show_notes = true;
+int vis_speed = 8;
+
 MidiOut::MidiOut()
 {
-    setState(NotAvailable);
+    show_notes = false;
 }
 
 MidiOut::~MidiOut()
 {
+}
+
+bool MidiOut::showNotes()
+{
+    return show_notes;
+}
+
+void MidiOut::setShowNotes(bool show)
+{
+    show_notes = show;
 }
 
 void MidiOut::playLoop()
@@ -104,7 +119,6 @@ void MidiOut::resetPlayData()
     last_time = 0;
     aim = 0;
     diff = 0;
-    start = 0;
     event = NULL;
     loop_num = -1;
 }
