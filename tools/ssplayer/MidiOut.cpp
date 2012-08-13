@@ -203,6 +203,18 @@ void MidiOut::endLoopDelay()
         wait(0);
 }
 
+void MidiOut::addTrack(midi_event *evntlist, int ppqn, bool repeat)
+{
+	mid_data data;
+    data.reset();
+    data.list = evntlist;
+    data.ppqn = ppqn;
+    data.repeat = repeat;
+    data.ippqn = 1.0 / ppqn;
+
+	enqueuePart(&data);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void mid_data::reset()

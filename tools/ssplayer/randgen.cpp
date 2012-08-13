@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifdef _WIN32
 #include <windows.h>
 #include "WindowsMidiOut.h"
-#define _snprintf snprintf
+#define snprintf _snprintf
 #else
 #define MAX_PATH 260
 #endif
@@ -424,7 +424,7 @@ int main (int argc, char **argv)
 
 				if (fn_out[i] == '.') fn_out[i] = 0;
 
-        snprintf (fn_out+i, MAX_PATH-i, "-%02i.mid", current);
+				snprintf (fn_out+i, MAX_PATH-i, "-%02i.mid", current);
 
 				printf ("Attempting to write sequence %i to '%s'\n", current, fn_out);
 

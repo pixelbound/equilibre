@@ -126,6 +126,14 @@ void Windows_MidiOut::setState(PlayerState newState)
     LeaveCriticalSection(&stateLock);
 }
 
+void Windows_MidiOut::enqueuePart(mid_data *part)
+{
+	EnterCriticalSection(&stateLock);
+    partList.push_back(*part);
+    WakeAllConditionVariable(&partListCond);
+    LeaveCriticalSection(&stateLock);
+}
+
 bool Windows_MidiOut::dequeuePart(mid_data *part)
 {
     bool dequeued = false;
@@ -222,20 +230,8 @@ void Windows_MidiOut::wait(double usec)
 
 void Windows_MidiOut::addTrack(midi_event *evntlist, int ppqn, bool repeat)
 {
-    if(!startPlayThread())
-        return;
-
-    mid_data data;
-    data.reset();
-    data.list = evntlist;
-    data.ppqn = ppqn;
-    data.repeat = repeat;
-    data.ippqn = 1.0 / ppqn;
-
-    EnterCriticalSection(&stateLock);
-    partList.push_back(data);
-    WakeAllConditionVariable(&partListCond);
-    LeaveCriticalSection(&stateLock);
+    if(startPlayThread())
+		MidiOut::addTrack(evntlist, ppqn, repeat);
 }
 
 NoteData * Windows_MidiOut::createNoteData()
