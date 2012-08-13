@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "randgen.h"
 #include "xmidi.h"
-#include "win_midiout.h"
+#include "midiout.h"
 
 int	max_width = 79;
 bool show_drum = false;
