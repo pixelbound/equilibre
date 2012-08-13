@@ -69,19 +69,23 @@ void MidiOut::playPart(mid_data &part)
         }
         else
         {
-            // We played the last event. Repeat the last part or exit.
-            if(part.repeat)
+            if(loop_num >= 0)
             {
+                popLoop();
+            }
+            else if(part.repeat)
+            {
+                // Repeat the part.
                 last_tick = 0;
                 last_time = 0;
                 initClock();
-                atEnd(part);
+                event = part.list;
                 // Handle note-offs?
                 nd->play();
             }
             else
             {
-                // XXX handle XMIDI loop break.
+                // We played the last event, exit.
                 break;
             }
         }
@@ -154,13 +158,9 @@ bool MidiOut::playEvent(mid_data &current, NoteData *nd)
     return true;
 }
 
-void MidiOut::atEnd(mid_data &mid)
+void MidiOut::popLoop()
 {
-    if(loop_num == -1)
-    {
-        event = mid.list;
-    }
-    else
+    if(loop_num >= 0)
     {
         event = loop_event[loop_num];
         last_tick = loop_ticks[loop_num];

@@ -89,7 +89,7 @@ private:
     int loop_num;
 
     void resetPlayData();
-    void atEnd(mid_data &mid);
+    void popLoop();
     void endLoopDelay();
     bool playEvent(mid_data &current, NoteData *nd);
 };
