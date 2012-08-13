@@ -229,19 +229,17 @@ void Windows_MidiOut::play_part(mid_data &part)
 
 	while(1)
 	{
-		while(pd.event)
+		if(pd.event)
 		{
-			if(!pd.play_event(midi_port, part, nd))
+			if(pd.play_event(midi_port, part, nd))
 			{
-				// It's too early to play this event. Wait a bit before re-trying.
-				break;
+				// We managed to play the event without having to wait. Move to the next one.
+				pd.event = pd.event->next;
 			}
-			pd.event = pd.event->next;
 		}
-
-		// We played the last event. Repeat the last part or exit.
-	 	if(!pd.event)
+		else
 		{
+			// We played the last event. Repeat the last part or exit.
 			if(part.repeat)
 			{
 				pd.wmoInitClock();
@@ -251,7 +249,7 @@ void Windows_MidiOut::play_part(mid_data &part)
 			}
 			else
 			{
-				return;
+				break;
 			}
 		}
 
