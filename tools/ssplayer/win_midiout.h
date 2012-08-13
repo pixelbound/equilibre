@@ -47,11 +47,11 @@ private:
 
 struct mid_data
 {
-	midi_event	*list;
-	int 		ppqn;
-	BOOL		repeat;
-	int		    tempo;
-	double		ippqn;
+	midi_event *list;
+	int ppqn;
+	bool repeat;
+	int tempo;
+	double ippqn;
 
 	void reset();
 	void deleteList();
@@ -86,7 +86,7 @@ struct play_data
 	bool play_event(HMIDIOUT midi_port, mid_data &current, note_data &nd);
 };
 
-class	Windows_MidiOut
+class Windows_MidiOut
 {
 public:
 	enum PlayerState
@@ -95,18 +95,13 @@ public:
 		Starting,
 		InitializationFailed,
 		Available,
-		Playing,
-		FinishedPlaying
+		Playing
 	};
 
-	// Do we accept events, YES!
-	virtual BOOL accepts_events(void) { return TRUE; }
-
-	virtual void add_track(midi_event *evntlist, int ppqn, BOOL repeat);
+	virtual void add_track(midi_event *evntlist, int ppqn, bool repeat);
 	virtual PlayerState get_state();
 	virtual void wait_state(PlayerState waitState);
 	virtual PlayerState wait_any_state(PlayerState *waitStates, int count);
-	virtual const char *copyright(void);
 
 	Windows_MidiOut();
 	virtual ~Windows_MidiOut();

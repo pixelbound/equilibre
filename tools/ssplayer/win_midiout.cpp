@@ -28,8 +28,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "win_midiout.h"
 
 int	max_width = 79;
-bool	show_drum = false;
-bool	show_notes = true;
+bool show_drum = false;
+bool show_notes = true;
 int	vis_speed = 8;
 
 using namespace std;
@@ -173,18 +173,16 @@ bool Windows_MidiOut::start_play_thread()
 
 DWORD __stdcall Windows_MidiOut::thread_start(void *data)
 {
-	Windows_MidiOut *ptr=static_cast<Windows_MidiOut *>(data);
+	Windows_MidiOut *ptr = static_cast<Windows_MidiOut *>(data);
 	return ptr->thread_main();
 }
 
 DWORD Windows_MidiOut::thread_main()
 {
-
-	UINT mmsys_err = midiOutOpen(&midi_port, MIDI_MAPPER, 0, 0, 0);
-
 	out = GetStdHandle(STD_OUTPUT_HANDLE);
 	GetConsoleScreenBufferInfo(out, &info);
 
+	UINT mmsys_err = midiOutOpen(&midi_port, MIDI_MAPPER, 0, 0, 0);
 	if(mmsys_err != MMSYSERR_NOERROR)
 	{
 		char buf[512];
@@ -194,14 +192,11 @@ DWORD Windows_MidiOut::thread_main()
 		set_state(InitializationFailed);
 		return 1;
 	}
-	set_state(Available);
-	
-	SetThreadPriority(thread_handle, THREAD_PRIORITY_HIGHEST);
-	
-	thread_play();
 
+	set_state(Available);
+	SetThreadPriority(thread_handle, THREAD_PRIORITY_HIGHEST);
+	thread_play();
 	midiOutClose(midi_port);
-	
 	set_state(NotAvailable);
 	return 0;
 }
@@ -218,7 +213,6 @@ void Windows_MidiOut::thread_play()
 		play_part(part);
 		part.deleteList();
 		midiOutReset(midi_port);
-		set_state(FinishedPlaying);
 	}
 }
 
@@ -242,6 +236,7 @@ void Windows_MidiOut::play_part(mid_data &part)
 				// It's too early to play this event. Wait a bit before re-trying.
 				break;
 			}
+			pd.event = pd.event->next;
 		}
 
 		// We played the last event. Repeat the last part or exit.
@@ -266,7 +261,7 @@ void Windows_MidiOut::play_part(mid_data &part)
 	}
 }
 
-void Windows_MidiOut::add_track(midi_event *evntlist, const int ppqn, BOOL repeat)
+void Windows_MidiOut::add_track(midi_event *evntlist, int ppqn, bool repeat)
 {
 	if(!start_play_thread())
 		return;
@@ -282,11 +277,6 @@ void Windows_MidiOut::add_track(midi_event *evntlist, const int ppqn, BOOL repea
 	partList.push_back(data);
 	WakeAllConditionVariable(&partListCond);
 	LeaveCriticalSection(&stateLock);
-}
-
-const char *Windows_MidiOut::copyright(void)
-{
-	return "Internal Win32 Midiout Midi Player for Exult.";
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -515,7 +505,7 @@ bool play_data::play_event(HMIDIOUT midi_port, mid_data &current, note_data &nd)
 	last_tick = event->time;
 	last_time = aim;
 		
-		// XMIDI For Loop
+	// XMIDI For Loop
 	if((event->status >> 4) == MIDI_STATUS_CONTROLLER && event->data[0] == XMIDI_CONTROLLER_FOR_LOOP)
 	{
 		if(loop_num < XMIDI_MAX_FOR_LOOP_COUNT)
@@ -548,8 +538,6 @@ bool play_data::play_event(HMIDIOUT midi_port, mid_data &current, note_data &nd)
 		midiOutShortMsg(midi_port, event->status + (event->data[0] << 8) + (event->data[1] << 16));
 		nd.handle_event(event);
 	}
-		
-	event = event->next;
 	return true;
 }
 

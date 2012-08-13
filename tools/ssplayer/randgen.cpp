@@ -504,8 +504,7 @@ int main (int argc, char **argv)
 		if (rand() < 100) is_transition = true;
 	}
 	
-	player->wait_state(Windows_MidiOut::FinishedPlaying);
-	//player->wait_state(Windows_MidiOut::Terminated);
+	player->wait_state(Windows_MidiOut::Available);
 	delete player;
 	delete xmi;
 	return 0;
