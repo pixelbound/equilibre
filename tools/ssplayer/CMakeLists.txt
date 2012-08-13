@@ -15,6 +15,9 @@ set(SSPLAYER_HEADERS
 if(WIN32)
     set(SSPLAYER_SOURCES ${SSPLAYER_SOURCES} WindowsMidiOut.cpp)
     set(SSPLAYER_HEADERS ${SSPLAYER_HEADERS} WindowsMidiOut.h)
+elseif(UNIX)
+    set(SSPLAYER_SOURCES ${SSPLAYER_SOURCES} LinuxMidiOut.cpp)
+    set(SSPLAYER_HEADERS ${SSPLAYER_HEADERS} LinuxMidiOut.h)
 endif(WIN32)
 
 include_directories(include)
@@ -26,4 +29,6 @@ add_executable(SSPlayer
 
 if(WIN32)
     target_link_libraries(SSPlayer winmm.lib)
+elseif(UNIX)
+    target_link_libraries(SSPlayer pthread)
 endif(WIN32)
