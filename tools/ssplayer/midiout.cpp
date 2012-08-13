@@ -50,23 +50,21 @@ void MidiOut::playLoop()
 
 void MidiOut::playPart(mid_data &part)
 {
-    play_data pd;
     NoteData *nd = createNoteData();
 
-    pd.reset();
-    pd.event = part.list;
-    pd.tick = part.tempo * part.ippqn;
-    pd.wmoInitClock();
-    pd.loop_num = -1;
+    resetPlayData();
+    event = part.list;
+    tick = part.tempo * part.ippqn;
+    initClock();
 
     while(1)
     {
-        if(pd.event)
+        if(event)
         {
-            if(pd.playEvent(part, nd))
+            if(playEvent(part, nd))
             {
                 // We managed to play the event without having to wait. Move to the next one.
-                pd.event = pd.event->next;
+                event = event->next;
             }
         }
         else
@@ -74,47 +72,28 @@ void MidiOut::playPart(mid_data &part)
             // We played the last event. Repeat the last part or exit.
             if(part.repeat)
             {
-                pd.wmoInitClock();
-                pd.atEnd(part);
+                last_tick = 0;
+                last_time = 0;
+                initClock();
+                atEnd(part);
                 // Handle note-offs?
                 nd->play();
             }
             else
             {
+                // XXX handle XMIDI loop break.
                 break;
             }
         }
 
         if(show_notes)
-            nd.show(part.tempo);
-        pd.endLoopDelay();
+            nd->show(part.tempo);
+        endLoopDelay();
     }
     delete nd;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-void mid_data::reset()
-{
-    ppqn = 1;
-    repeat = false;
-    tempo = 0x07A120;
-    list = NULL;
-    ippqn = 1.0;
-}
-
-void mid_data::deleteList()
-{
-    if(list)
-    {
-        XMIDI::DeleteEventList(list);
-        list = NULL;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-void play_data::reset()
+void MidiOut::resetPlayData()
 {
     tick = 1;
     last_tick = 0;
@@ -126,10 +105,10 @@ void play_data::reset()
     loop_num = -1;
 }
 
-bool play_data::playEvent(mid_data &current, NoteData *nd)
+bool MidiOut::playEvent(mid_data &current, NoteData *nd)
 {
     aim = last_time + (event->time - last_tick) * tick;
-    diff = aim - wmoGetTime();
+    diff = aim - elapsed();
 
     if(diff > 0)
         return false;
@@ -172,7 +151,7 @@ bool play_data::playEvent(mid_data &current, NoteData *nd)
     return true;
 }
 
-void play_data::atEnd(mid_data &mid)
+void MidiOut::atEnd(mid_data &mid)
 {
     if(loop_num == -1)
     {
@@ -189,12 +168,12 @@ void play_data::atEnd(mid_data &mid)
     }
 }
 
-void play_data::endLoopDelay()
+void MidiOut::endLoopDelay()
 {
     if(event)
     {
         aim = last_time + (event->time - last_tick) * tick;
-        diff = aim - wmoGetTime();
+        diff = aim - elapsed();
     }
     else
     {
@@ -202,25 +181,27 @@ void play_data::endLoopDelay()
     }
 
     if(diff >= 1000)
-        wmoDelay(1000);
+        wait(1000);
     else if(diff >= 200)
-        wmoDelay(0);
+        wait(0);
 }
 
-void play_data::wmoInitClock()
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void mid_data::reset()
 {
-    last_tick = 0;
-    last_time = 0;
-    start = GetTickCount();
+    ppqn = 1;
+    repeat = false;
+    tempo = 0x07A120;
+    list = NULL;
+    ippqn = 1.0;
 }
 
-double play_data::wmoGetTime()
+void mid_data::deleteList()
 {
-    return (GetTickCount() - start) * 1000.0;
-}
-
-void play_data::wmoDelay(double mcs_delay)
-{
-    if(mcs_delay >= 0)
-        Sleep((int)(mcs_delay / 1000.0));
+    if(list)
+    {
+        XMIDI::DeleteEventList(list);
+        list = NULL;
+    }
 }

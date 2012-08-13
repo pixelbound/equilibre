@@ -44,35 +44,6 @@ struct mid_data
     void deleteList();
 };
 
-struct play_data
-{
-    double tick;
-    double last_tick;
-    double last_time;
-    double aim;
-    double diff;
-
-    midi_event *event;
-
-    // Microsecond Clock
-    unsigned int start;
-
-    void wmoInitClock();
-    double wmoGetTime();
-    void wmoDelay(double mcs_delay);
-
-    // Xmidi Looping
-    midi_event *loop_event[XMIDI_MAX_FOR_LOOP_COUNT];
-    int loop_count[XMIDI_MAX_FOR_LOOP_COUNT];
-    int loop_ticks[XMIDI_MAX_FOR_LOOP_COUNT];
-    int loop_num;
-
-    void reset();
-    void atEnd(mid_data &mid);
-    void endLoopDelay();
-    bool playEvent(mid_data &current, NoteData *nd);
-};
-
 class MidiOut
 {
 public:
@@ -101,8 +72,26 @@ protected:
     virtual NoteData * createNoteData() = 0;
     virtual void playLoop();
     virtual void playPart(mid_data &part);
+    virtual void initClock() = 0;
+    virtual double elapsed() = 0;
+    virtual void wait(double usec) = 0;
 
 private:
+    double tick;
+    double last_tick;
+    double last_time;
+    double aim;
+    double diff;
+    midi_event *event;
+    midi_event *loop_event[XMIDI_MAX_FOR_LOOP_COUNT];
+    int loop_count[XMIDI_MAX_FOR_LOOP_COUNT];
+    int loop_ticks[XMIDI_MAX_FOR_LOOP_COUNT];
+    int loop_num;
+
+    void resetPlayData();
+    void atEnd(mid_data &mid);
+    void endLoopDelay();
+    bool playEvent(mid_data &current, NoteData *nd);
 };
 
 #endif // RANDGEN_WIN_MIDIOUT_H

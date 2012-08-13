@@ -160,21 +160,21 @@ bool Windows_MidiOut::startPlayThread()
 
     if(started)
     {
-        thread_handle = (HANDLE*)CreateThread(NULL, 0, thread_start, this, 0, &thread_id);
+        thread_handle = (HANDLE*)CreateThread(NULL, 0, threadStart, this, 0, &thread_id);
 
         PlayerState states[] = {Available, InitializationFailed};
-        PlayerState newState = wait_any_state(states, 2);
+        PlayerState newState = waitAnyState(states, 2);
         if (newState == InitializationFailed)
         {
             cerr << "Failier to initialize midi playing thread" << endl;
-            set_state(NotAvailable);
+            setState(NotAvailable);
             return false;
         }
     }
     return true;
 }
 
-DWORD __stdcall Windows_MidiOut::thread_start(void *data)
+DWORD __stdcall Windows_MidiOut::threadStart(void *data)
 {
     Windows_MidiOut *ptr = static_cast<Windows_MidiOut *>(data);
     return ptr->threadMain();
@@ -192,7 +192,7 @@ DWORD Windows_MidiOut::threadMain()
 
         mciGetErrorString(mmsys_err, buf, 512);
         cerr << "Unable to open device: " << buf << endl;
-        set_state(InitializationFailed);
+        setState(InitializationFailed);
         return 1;
     }
 
@@ -206,6 +206,22 @@ void Windows_MidiOut::finishPart(mid_data &part)
 {
     part.deleteList();
     midiOutReset(midi_port);
+}
+
+void Windows_MidiOut::initClock()
+{
+    start = GetTickCount();
+}
+
+double Windows_MidiOut::elapsed()
+{
+    return (GetTickCount() - start) * 1000.0;
+}
+
+void Windows_MidiOut::wait(double usec)
+{
+    if(usec >= 0)
+        Sleep((int)(usec / 1000.0));
 }
 
 void Windows_MidiOut::addTrack(midi_event *evntlist, int ppqn, bool repeat)

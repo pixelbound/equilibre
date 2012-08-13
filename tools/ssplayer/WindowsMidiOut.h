@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "xmidi.h"
 #include "midiout.h"
 
-class Windows_MidiOut
+class Windows_MidiOut : public MidiOut
 {
 public:
     Windows_MidiOut();
@@ -47,12 +47,17 @@ protected:
     virtual void enqueuePart(mid_data *part);
     virtual bool dequeuePart(mid_data *part);
     virtual void finishPart(mid_data &part);
+    virtual void initClock();
+    virtual double elapsed();
+    virtual void wait(double usec);
 
 private:
     HMIDIOUT midi_port;
 
     HANDLE *thread_handle;
     DWORD thread_id;
+
+    unsigned int start;
 
     // Thread communications
     PlayerState state;
