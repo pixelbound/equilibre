@@ -30,21 +30,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define VERSION_STRING "%i.%i Debug Build"
 #endif
 
-
-#include "resource.h"
-
 typedef char THEME[32][32];
 
-static const unsigned char	header[] = { 255, 255, 255, 243, 0, 0, 12, 32, 'R'+128, 'S'+128, 'G'+128 };
+static const unsigned char header[] = { 255, 255, 255, 243, 0, 0, 12, 32, 'R'+128, 'S'+128, 'G'+128 };
 
 #define random(a)	((a)*(rand() / ((float)RAND_MAX+1)))
 
-extern int	max_width;
+extern int max_width;
 extern bool	show_drum;
 extern bool	show_notes;
-extern int	vis_speed;
+extern int vis_speed;
 
-int rsgcreate (int argc, char **argv);
+int rsgcreate(int argc, char **argv);
 
 
 #endif //RANDGEN_H
