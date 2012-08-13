@@ -94,4 +94,4 @@ private:
     bool playEvent(mid_data &current, NoteData *nd);
 };
 
-#endif // RANDGEN_WIN_MIDIOUT_H
+#endif // RANDGEN_MIDIOUT_H

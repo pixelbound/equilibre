@@ -1,13 +1,13 @@
 set(SSPLAYER_SOURCES
     randgen.cpp
     rsgcreate.cpp
-    midiout.cpp
+    MidiOut.cpp
     xmidi.cpp
 )
 
 set(SSPLAYER_HEADERS
     randgen.h
-    midiout.h
+    MidiOut.h
     xmidi.h
     databuf.h
 )

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <iostream>
 #include "xmidi.h"
-#include "midiout.h"
+#include "MidiOut.h"
 
 using namespace std;
 
@@ -107,11 +107,14 @@ void MidiOut::resetPlayData()
 
 bool MidiOut::playEvent(mid_data &current, NoteData *nd)
 {
+    // Determine how long to wait before playing this event.
     aim = last_time + (event->time - last_tick) * tick;
     diff = aim - elapsed();
-
     if(diff > 0)
+    {
+        // It is too early to play this event.
         return false;
+    }
 
     last_tick = event->time;
     last_time = aim;
