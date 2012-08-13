@@ -27,18 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "xmidi.h"
 #include "win_midiout.h"
 
-#define W32MO_THREAD_COM_READY		0
-#define W32MO_THREAD_COM_PLAY		1
-#define W32MO_THREAD_COM_STOP		2
-#define W32MO_THREAD_COM_INIT		3
-#define W32MO_THREAD_COM_INIT_FAILED	4
-#define W32MO_THREAD_COM_PLAY_NEXT	5
-#define W32MO_THREAD_COM_EXIT		-1
-
 int	max_width = 79;
 bool	show_drum = false;
 bool	show_notes = true;
-int	vis_speed= 8;
+int	vis_speed = 8;
 
 using namespace std;
 
@@ -49,42 +41,41 @@ Windows_MidiOut::Windows_MidiOut()
 {
 	InitializeCriticalSection(&stateLock);
 	InitializeConditionVariable(&stateCond);
-	InitializeConditionVariable(&midCond);
-	midListClosed = false;
+	InitializeConditionVariable(&partListCond);
+	partListClosed = false;
 	set_state(NotAvailable);
 	start_play_thread();
 }
 
 Windows_MidiOut::~Windows_MidiOut()
 {
-	PlayerState currentState = get_state();
-	if(currentState == NotAvailable)
-		return;
-
-	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
-	
-	InterlockedExchange (&thread_com, W32MO_THREAD_COM_EXIT);
-
-	int count = 0;
-	
-	while (count < 100)
+	// If the thread is alive, notify it that it should terminate.
+	bool threadAlive = false;
+	EnterCriticalSection(&stateLock);
+	if(state != NotAvailable)
 	{
-		DWORD code;
-		GetExitCodeThread (thread_handle, &code);
-		
-		// Wait 1 MS before trying again
-		if (code == STILL_ACTIVE) Sleep (10);
-		else break;
-		
-		count++;
+		threadAlive = true;
+		partListClosed = true;
+		WakeAllConditionVariable(&partListCond);
 	}
+	LeaveCriticalSection(&stateLock);
 
-	// We waited a second and it still didn't terminate
-	currentState = get_state();
-	if (count == 100 && (currentState != NotAvailable))
-		TerminateThread (thread_handle, 1);
-	
-	set_state(NotAvailable);
+	if(threadAlive)
+	{
+		// Wait one second for the thread to terminate.
+		WaitForSingleObject(thread_handle, 1000);
+
+		// Kill the thread if it hasn't terminated yet.
+		EnterCriticalSection(&stateLock);
+		if(state != NotAvailable)
+		{
+			TerminateThread(thread_handle, 1);
+			partList.clear();
+			partListClosed = false;
+			state = NotAvailable;
+		}
+		LeaveCriticalSection(&stateLock);
+	}
 }
 
 void Windows_MidiOut::wait_state(PlayerState waitState)
@@ -136,6 +127,22 @@ void Windows_MidiOut::set_state(PlayerState newState)
 	LeaveCriticalSection(&stateLock);
 }
 
+bool Windows_MidiOut::dequeue_part(mid_data *part)
+{
+	bool dequeued = false;
+	EnterCriticalSection(&stateLock);
+	while((partList.size() == 0) && !partListClosed)
+		SleepConditionVariableCS(&partListCond, &stateLock, INFINITE);
+	if(!partListClosed)
+	{
+		*part = partList.front();
+		partList.erase(partList.begin());
+		dequeued = true;
+	}
+	LeaveCriticalSection(&stateLock);
+	return dequeued;
+}
+
 bool Windows_MidiOut::start_play_thread()
 {
 	bool started = false;
@@ -150,7 +157,7 @@ bool Windows_MidiOut::start_play_thread()
 
 	if(started)
 	{
-		thread_handle = (HANDLE*) CreateThread (NULL, 0, thread_start, this, 0, &thread_id);
+		thread_handle = (HANDLE*) CreateThread(NULL, 0, thread_start, this, 0, &thread_id);
 		
 		PlayerState states[] = {Available, InitializationFailed};
 		PlayerState newState = wait_any_state(states, 2);
@@ -172,14 +179,13 @@ DWORD __stdcall Windows_MidiOut::thread_start(void *data)
 
 DWORD Windows_MidiOut::thread_main()
 {
-	thread_data = NULL;
 
-	UINT mmsys_err = midiOutOpen (&midi_port, MIDI_MAPPER, 0, 0, 0);
+	UINT mmsys_err = midiOutOpen(&midi_port, MIDI_MAPPER, 0, 0, 0);
 
 	out = GetStdHandle(STD_OUTPUT_HANDLE);
-	GetConsoleScreenBufferInfo (out, &info);
+	GetConsoleScreenBufferInfo(out, &info);
 
-	if (mmsys_err != MMSYSERR_NOERROR)
+	if(mmsys_err != MMSYSERR_NOERROR)
 	{
 		char buf[512];
 
@@ -190,149 +196,92 @@ DWORD Windows_MidiOut::thread_main()
 	}
 	set_state(Available);
 	
-	SetThreadPriority (thread_handle, THREAD_PRIORITY_HIGHEST);
+	SetThreadPriority(thread_handle, THREAD_PRIORITY_HIGHEST);
 	
-	InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
-
 	thread_play();
 
-	midiOutClose (midi_port);
+	midiOutClose(midi_port);
 	
 	set_state(NotAvailable);
 	return 0;
 }
 
-void Windows_MidiOut::thread_play ()
+void Windows_MidiOut::thread_play()
+{
+	mid_data part;
+	while(true)
+	{
+		set_state(Available);
+		if(!dequeue_part(&part))
+			break;
+		set_state(Playing);
+		play_part(part);
+		part.deleteList();
+		midiOutReset(midi_port);
+		set_state(FinishedPlaying);
+	}
+}
+
+void Windows_MidiOut::play_part(mid_data &part)
 {
 	play_data pd;
-	mid_data current;
 	note_data nd;
 
 	pd.reset();
-	current.reset();
+	pd.event = part.list;
+	pd.tick = part.tempo * part.ippqn;
+	pd.wmoInitClock();
+	pd.loop_num = -1;
 
-	// Play while there isn't a message waiting
 	while(1)
 	{
-		if (thread_com == W32MO_THREAD_COM_EXIT && (get_state() != Playing)) break;
-		
 		while(pd.event)
 		{
-			if(!pd.play_event(midi_port, current, nd))
+			if(!pd.play_event(midi_port, part, nd))
+			{
+				// It's too early to play this event. Wait a bit before re-trying.
 				break;
+			}
+		}
 
-			// no more event OR thread stop/exit
-	 		if(!pd.event || (thread_com != W32MO_THREAD_COM_READY && thread_com != W32MO_THREAD_COM_PLAY_NEXT && thread_com != W32MO_THREAD_COM_PLAY))
-		 	{
-				bool clean = !current.repeat || (thread_com != W32MO_THREAD_COM_READY);
-
-				if(clean)
-		 		{
-		 			// Clean up
-					//midiOutReset (midi_port);
-					current.deleteList();
-					pd.event = NULL;
-					set_state(FinishedPlaying);
-					// If stop was requested, we are ready to receive another song
-					if(thread_com == W32MO_THREAD_COM_STOP)
-						InterlockedExchange(&thread_com, W32MO_THREAD_COM_READY);
-
-					pd.loop_num = -1;
-		 		}
-
+		// We played the last event. Repeat the last part or exit.
+	 	if(!pd.event)
+		{
+			if(part.repeat)
+			{
 				pd.wmoInitClock();
-
-				if(current.list)
-					pd.at_end(current);
-
+				pd.at_end(part);
+				// Handle note-offs?
 				nd.play(midi_port);
-		 	}
+			}
+			else
+			{
+				return;
+			}
 		}
 
 		if(show_notes)
-			nd.show(current.tempo);
-
-		// Got issued a music play command
-		// set up the music playing routine
-		while (thread_com == W32MO_THREAD_COM_PLAY || (thread_com == W32MO_THREAD_COM_PLAY_NEXT && (get_state() != Playing)))
-		{
-			if (current.list)
-			{
-				midiOutReset (midi_port);
-				current.deleteList();
-				pd.event = NULL;
-			}
-
-			// Make sure that the data exists
-			if (!thread_data) break;
-			
-			current = *thread_data;
-			set_state(Playing);
-			InterlockedExchange ((LONG*) &thread_data, (LONG) NULL);
-			InterlockedExchange (&thread_com, W32MO_THREAD_COM_READY);
-			
-			pd.event = current.list;
-			pd.tick = current.tempo * current.ippqn;
-
-			pd.wmoInitClock();
-
-			// Reset XMIDI Looping
-			pd.loop_num = -1;
-
-			break;
-		}
-
+			nd.show(part.tempo);
 		pd.end_loop_delay();
-
 	}
-	midiOutReset (midi_port);
 }
 
-void Windows_MidiOut::start_track (midi_event *evntlist, const int ppqn, BOOL repeat)
+void Windows_MidiOut::add_track(midi_event *evntlist, const int ppqn, BOOL repeat)
 {
 	if(!start_play_thread())
 		return;
 
-	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
-	
+	mid_data data;
 	data.reset();
 	data.list = evntlist;
 	data.ppqn = ppqn;
 	data.repeat = repeat;
 	data.ippqn = 1.0 / ppqn;
-	
-	InterlockedExchange ((LONG*) &thread_data, (LONG) &data);
-	InterlockedExchange (&thread_com, W32MO_THREAD_COM_PLAY);
 
-	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
-}
-
-void Windows_MidiOut::add_track (midi_event *evntlist, const int ppqn, BOOL repeat)
-{
-	if(!start_play_thread())
-		return;
-
-	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
-	
-	data.reset();
-	data.list = evntlist;
-	data.ppqn = ppqn;
-	data.repeat = repeat;
-	data.ippqn = 1.0 / ppqn;
-	
-	InterlockedExchange ((LONG*) &thread_data, (LONG) &data);
-	InterlockedExchange (&thread_com, W32MO_THREAD_COM_PLAY_NEXT);
-
-	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
-}
-
-void Windows_MidiOut::stop_track(void)
-{
-	if(get_state() != Playing)
-		return;
-
-	while (thread_com != W32MO_THREAD_COM_READY) Sleep (1);
-	InterlockedExchange (&thread_com, W32MO_THREAD_COM_STOP);
+	EnterCriticalSection(&stateLock);
+	partList.push_back(data);
+	WakeAllConditionVariable(&partListCond);
+	LeaveCriticalSection(&stateLock);
 }
 
 const char *Windows_MidiOut::copyright(void)

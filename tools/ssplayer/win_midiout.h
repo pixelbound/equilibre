@@ -102,9 +102,7 @@ public:
 	// Do we accept events, YES!
 	virtual BOOL accepts_events(void) { return TRUE; }
 
-	virtual void start_track(midi_event *evntlist, int ppqn, BOOL repeat);
 	virtual void add_track(midi_event *evntlist, int ppqn, BOOL repeat);
-	virtual void stop_track(void);
 	virtual PlayerState get_state();
 	virtual void wait_state(PlayerState waitState);
 	virtual PlayerState wait_any_state(PlayerState *waitStates, int count);
@@ -114,31 +112,27 @@ public:
 	virtual ~Windows_MidiOut();
 
 private:
-	HMIDIOUT	midi_port;
+	HMIDIOUT midi_port;
 	
-	HANDLE	 	*thread_handle;
-	DWORD		thread_id;
+	HANDLE *thread_handle;
+	DWORD thread_id;
 
 	// Thread communications
-	LONG		thread_com;
 	PlayerState state;
 	CRITICAL_SECTION stateLock;
 	CONDITION_VARIABLE stateCond;
-	std::vector<mid_data> midList;
-	bool midListClosed;
-	CONDITION_VARIABLE midCond;
-
-	mid_data *thread_data;
-
-	mid_data data;
+	std::vector<mid_data> partList;
+	bool partListClosed;
+	CONDITION_VARIABLE partListCond;
 
 	// Methods
 	static DWORD __stdcall thread_start(void *data);
 	bool start_play_thread();
 	void set_state(PlayerState newState);
-	bool dequeue_mid(mid_data *data);
+	bool dequeue_part(mid_data *part);
 	DWORD thread_main();
 	void thread_play();
+	void play_part(mid_data &part);
 };
 
 #endif // RANDGEN_WIN_MIDIOUT_H
