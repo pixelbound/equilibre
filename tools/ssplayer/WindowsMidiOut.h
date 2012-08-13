@@ -75,7 +75,7 @@ public:
     virtual void clear();
     virtual void play();
     virtual void show(int tempo);
-    virtual void handle_event(midi_event *e);
+    virtual void handleEvent(midi_event *e);
 
 private:
     Windows_MidiOut *player;
