@@ -30,5 +30,5 @@ add_executable(SSPlayer
 if(WIN32)
     target_link_libraries(SSPlayer winmm.lib)
 elseif(UNIX)
-    target_link_libraries(SSPlayer pthread)
+    target_link_libraries(SSPlayer pthread fluidsynth)
 endif(WIN32)

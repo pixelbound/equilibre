@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 class NoteData
 {
 public:
+    virtual ~NoteData();
     virtual void clear() = 0;
     virtual void play() = 0;
     virtual void show(int tempo) = 0;

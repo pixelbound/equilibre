@@ -19,9 +19,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #ifndef RANDGEN_LINUX_MIDIOUT_H
 #define RANDGEN_LINUX_MIDIOUT_H
 
-#include <vector>
 #include <pthread.h>
 #include <inttypes.h>
+#include <fluidsynth.h>
+#include <vector>
+#include <string>
 #include "xmidi.h"
 #include "MidiOut.h"
 
@@ -30,6 +32,9 @@ class LinuxMidiOut : public MidiOut
 public:
     LinuxMidiOut();
     virtual ~LinuxMidiOut();
+    
+    std::string fontPath() const;
+    void setFontPath(std::string path);
 
     virtual void addTrack(midi_event *evntlist, int ppqn, bool repeat);
 
@@ -50,6 +55,7 @@ protected:
 private:
     pthread_t thread;
     uint64_t start;
+    std::string m_fontPath;
 
     // Thread communications
     PlayerState state;
@@ -69,13 +75,18 @@ class LinuxNoteData : public NoteData
 {
 public:
     LinuxNoteData(LinuxMidiOut *player);
+    virtual ~LinuxNoteData();
     virtual void clear();
     virtual void play();
     virtual void show(int tempo);
     virtual void handleEvent(midi_event *e);
 
 private:
-    LinuxMidiOut *player;
+    LinuxMidiOut *m_player;
+    fluid_settings_t *m_synthSettings;
+    fluid_synth_t *m_synth;
+    fluid_audio_driver_t *m_driver;
+    int m_fontID;
 };
 
 #endif // RANDGEN_WIN_MIDIOUT_H
