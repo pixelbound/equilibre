@@ -454,11 +454,10 @@ int main (int argc, char **argv)
     midi_event *events;
     int ppqn;
 
-    MidiOut *player = NULL;
 #ifdef _WIN32
-    player = new Windows_MidiOut();
+    Windows_MidiOut *player = new Windows_MidiOut();
 #else
-    player = new LinuxMidiOut();
+    LinuxMidiOut *player = new LinuxMidiOut();
 #endif
     player->setShowNotes(show_notes);
 
