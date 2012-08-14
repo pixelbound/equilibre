@@ -235,6 +235,7 @@ LinuxNoteData::LinuxNoteData(LinuxMidiOut *player)
     m_synthSettings = new_fluid_settings();
     m_synth = new_fluid_synth(m_synthSettings);
     fluid_settings_setstr(m_synthSettings, "audio.driver", "pulseaudio");
+    fluid_settings_setstr(m_synthSettings, "synth.chorus.active", "0");
     m_driver = new_fluid_audio_driver(m_synthSettings, m_synth);
     if(player->fontPath().size() > 0)
         m_fontID = fluid_synth_sfload(m_synth, player->fontPath().c_str(), 0);
