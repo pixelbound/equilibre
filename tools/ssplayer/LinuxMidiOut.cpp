@@ -397,7 +397,7 @@ void LinuxNoteData::handleEvent(midi_event *e)
     }
     else if(status == MIDI_STATUS_PITCH_WHEEL)
     {
-        fluid_synth_pitch_bend(m_synth, chan, e->data[0] | (e->data[1] << 7)); // XXX right one to shift?
+        fluid_synth_pitch_bend(m_synth, chan, e->data[0] | (e->data[1] << 7));
     }
     else
     {
