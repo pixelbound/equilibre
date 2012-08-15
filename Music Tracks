@@ -27,6 +27,12 @@ crushbone.xmi
   04 ???
   05 Neriak theme?
 
+
+erudnext.xmi
+  00 Erudin theme 1?
+  01 Short (???)
+  02
+
 gfaydark.xmi
   00 'Good' fanfare?
   01 'Good' fanfare?
@@ -95,14 +101,37 @@ qeynos.xmi
   01 Qeynos theme 1
   02 ???
   03 ???
-  04 ???
+  04 String/chorus theme
   05 Human bard guild
   06 EverQuest theme
   07 ???
   08 ???
-  09 ???
-  10 Qeynos Hills theme?
+  09 Guild music 4?
+  10 Qeynos Hills theme
   11 Human docks theme or sea journey?
+  12 Short sequence (???)
+
+qeynos2.xmi
+  00 Guild music 1?
+  01 Qeynos theme 2
+  02 ???
+  03 ???
+  04 String/chorus theme
+  05 Humand bard guild
+
+qey2hh1.xmi
+  00 Qeynos Hills theme
+  01 Flute theme
+
+qeytoqrg.xmi
+  00 Guild music 1?
+  01 Qeynos theme 3
+  02 ???
+  03 ???
+  04 ???
+  05 Qeynos Hills theme
+  06 ???
+  07 'Good' fanfare?
 
 rathemtn.xmi
   00 Short sound effect (???)
@@ -110,7 +139,7 @@ rathemtn.xmi
   02 Gypsy theme
   03 'Good' fanfare?
   04 'Good' fanfare?
-  05 ???
+  05 Evil theme 1?
   06 Some Neriak theme?
 
 steamfont.xmi
@@ -119,5 +148,5 @@ steamfont.xmi
   02 'Good' fanfare?
   03 Gnome theme
   04 ???
-  05 ???
-  06 ???
+  05 Evil theme 1?
+  06 Evil theme 1?
