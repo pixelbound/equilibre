@@ -1,0 +1,17 @@
+List of entries (each 84 bytes) with fields:
+- Offset1 (uint): Looks like a memory address or file offset. For the last entry this is always zero.
+- Field2 (uint): Almost always zero. Found 35420640 for the last entry of 'oot'.
+- Field3 (uint): Always zero.
+- ID (uint): Increases by one for each entry. Does not seem unique across all *_sounds.eff files.
+- X (float): X coordinate of sphere where the sound is heard.
+- Y (float): Y coordinate of sphere where the sound is heard.
+- Z (float): Z coordinate of sphere where the sound is heard.
+- Radius (float): Radius of sphere where the sound is heard.
+- Offset2 (uint): Usually zero, although this can contain a large offset in Kunark or Velious zones. Seems to be set only when Duration and Offset3 are also set (exception: 'frozenshadow').
+- Field10 (uint): Almost always zero. Found 6000 in 'wakening'.
+- Duration (uint): Usually zero. Sometimes, a few thousands (most often n000, few occurences of n500). Unit could be ms. Found 2 in 'befallen'.
+- Offset3 (uint): Usually zero. When set, large number that looks like a memory address. Seems to be set only when Duration and Offset2 are set.
+- SoundID1 (uint): Either zero, 1-30ish or >=162. In the second case this is an index into the 'EMIT' entries of the zone's *_sndbnk.eff file. In the third case this is an index into the 'LOOP' entries of the same file.
+- SoundID2 (uint): Usually either zero or the same value than SoundID1.
+- Offset4 (uint): XXX could be two ushort fields?
+- Flags1 (uint): Usually zero or 64.
