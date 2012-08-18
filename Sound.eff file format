@@ -13,5 +13,6 @@ List of entries (each 84 bytes) with fields:
 - Offset3 (uint): Usually zero. When set, large number that looks like a memory address. Seems to be set only when Duration and Offset2 are set.
 - SoundID1 (uint): Either zero, 1-30ish or >=162. In the second case this is an index into the 'EMIT' entries of the zone's *_sndbnk.eff file. In the third case this is an index into the 'LOOP' entries of the same file.
 - SoundID2 (uint): Usually either zero or the same value than SoundID1.
-- Offset4 (uint): XXX could be two ushort fields?
-- Flags1 (uint): Usually zero or 64.
+- Flags1 (ushort): Zero when SoundID1 >= 162. One or two when 1 <= SoundID1 < 160. Sometimes 0x0100 is ORd with this field. This could mean SoundID1 is an index into the zone's *.xmi file.
+- Field16 (ushort): Unknown.
+- Flags2 (uint): Usually zero or 0x64.
