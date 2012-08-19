@@ -337,8 +337,8 @@ void Zone::draw(RenderState *state)
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
     Frustum &frustum = state->viewFrustum();
-    frustum.setEye(-m_playerPos);
-    frustum.setFocus(-m_playerPos + viewMat.map(vec3(0.0, 1.0, 0.0)));
+    frustum.setEye(m_playerPos);
+    frustum.setFocus(m_playerPos + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
     frustum.update();
     state->pushMatrix();
@@ -656,5 +656,5 @@ void Zone::step(float distForward, float distSideways, float distUpDown)
     else
         m.setIdentity();
     m = m * matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
-    m_playerPos = m_playerPos + m.map(vec3(distSideways, -distForward, distUpDown));
+    m_playerPos = m_playerPos + m.map(vec3(-distSideways, distForward, distUpDown));
 }
