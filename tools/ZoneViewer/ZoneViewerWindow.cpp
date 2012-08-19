@@ -65,7 +65,7 @@ void ZoneViewerWindow::initMenus()
     skinningActions->addAction(m_hardwareSkinningUniformAction);
     skinningActions->addAction(m_hardwareSkinningTextureAction);
 
-    m_showFpsAction = new QAction("Show stats", this);
+    m_showFpsAction = new QAction("Show Stats", this);
     m_showFpsAction->setCheckable(true);
     m_showZoneAction = new QAction("Show Zone", this);
     m_showZoneAction->setCheckable(true);
@@ -76,6 +76,8 @@ void ZoneViewerWindow::initMenus()
     m_cullZoneObjectsAction = new QAction("Frustum Culling of Zone Objects", this);
     m_cullZoneObjectsAction->setCheckable(true);
     m_cullZoneObjectsAction->setChecked(m_scene->zone()->cullObjects());
+    m_showSoundTriggersAction = new QAction("Show Sound Triggers", this);
+    m_showSoundTriggersAction->setCheckable(true);
 
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningUniformAction);
@@ -84,6 +86,7 @@ void ZoneViewerWindow::initMenus()
     renderMenu->addAction(m_showZoneAction);
     renderMenu->addAction(m_showZoneObjectsAction);
     renderMenu->addAction(m_cullZoneObjectsAction);
+    renderMenu->addAction(m_showSoundTriggersAction);
 
     menuBar()->addMenu(fileMenu);
     menuBar()->addMenu(renderMenu);
@@ -101,6 +104,7 @@ void ZoneViewerWindow::initMenus()
     connect(m_showZoneAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZone(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
     connect(m_cullZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(setFrustumCulling(bool)));
+    connect(m_showSoundTriggersAction, SIGNAL(toggled(bool)), m_scene, SLOT(showSoundTriggers(bool)));
 }
 
 void ZoneViewerWindow::openArchive()
@@ -208,6 +212,11 @@ void ZoneScene::showZoneObjects(bool show)
 void ZoneScene::setFrustumCulling(bool enabled)
 {
     m_zone->setCullObjects(enabled);
+}
+
+void ZoneScene::showSoundTriggers(bool show)
+{
+    m_zone->setShowSoundTriggers(show);
 }
 
 void ZoneScene::init()

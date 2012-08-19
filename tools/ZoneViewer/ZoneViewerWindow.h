@@ -47,6 +47,7 @@ private:
     QAction *m_showZoneAction;
     QAction *m_showZoneObjectsAction;
     QAction *m_cullZoneObjectsAction;
+    QAction *m_showSoundTriggersAction;
 };
 
 class ZoneScene : public Scene
@@ -72,6 +73,7 @@ public slots:
     void showZone(bool show);
     void showZoneObjects(bool show);
     void setFrustumCulling(bool enabled);
+    void showSoundTriggers(bool show);
 
 private:
     double m_started;

@@ -7,6 +7,7 @@
 #include "OpenEQ/Game/WLDActor.h"
 #include "OpenEQ/Game/WLDSkeleton.h"
 #include "OpenEQ/Game/Fragments.h"
+#include "OpenEQ/Game/SoundTrigger.h"
 #include "OpenEQ/Render/RenderState.h"
 #include "OpenEQ/Render/Material.h"
 #include "OpenEQ/Render/FrameStat.h"
@@ -28,6 +29,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_showZone = true;
     m_showObjects = true;
     m_cullObjects = true;
+    m_showSoundTriggers = false;
     m_zoneStat = NULL;
     m_objectsStat = NULL;
     m_zoneStatGPU = NULL;
@@ -89,6 +91,10 @@ bool Zone::load(QString path, QString name)
         importCharacterPalettes(m_charArchive, m_charWld);
         importSkeletons(m_charArchive, m_charWld);
     }
+    
+    // import sound triggers
+    QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
+    SoundEntry::fromFile(m_soundTriggers, triggersFile);
     return true;
 }
 
@@ -380,6 +386,19 @@ void Zone::draw(RenderState *state)
         m_zoneStat->endTime();
     }
     
+    // draw sound trigger volumes
+    if(m_showSoundTriggers)
+    {
+        AABox triggerBox;
+        foreach(SoundEntry *e, m_soundTriggers)
+        {
+            vec3 extent(e->Radius * 0.5f, e->Radius * 0.5f, e->Radius * 0.5f);
+            triggerBox.low = e->Pos - extent;
+            triggerBox.high = e->Pos + extent;
+            state->drawBox(triggerBox);
+        }
+    }
+    
     state->popMatrix();
 }
 
@@ -648,6 +667,16 @@ void Zone::setShowObjects(bool show)
 bool Zone::cullObjects() const
 {
     return m_cullObjects;
+}
+
+bool Zone::showSoundTriggers() const
+{
+    return m_showSoundTriggers;
+}
+
+void Zone::setShowSoundTriggers(bool show)
+{
+    m_showSoundTriggers = show;
 }
 
 void Zone::setCullObjects(bool enabled)

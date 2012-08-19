@@ -120,7 +120,7 @@ void RenderStateGL2::createCube()
     Material *mat = new Material();
     mat->setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
     mat->setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
-    mat->setOpaque(false);
+    //mat->setOpaque(false);
     m_cubeMats->setMaterial(mg.matID, mat);
 }
 

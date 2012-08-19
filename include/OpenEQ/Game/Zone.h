@@ -20,6 +20,7 @@ class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialMap;
 class ActorDefFragment;
+class SoundEntry;
 class RenderState;
 class FrameStat;
 
@@ -58,10 +59,12 @@ public:
     bool showZone() const;
     bool showObjects() const;
     bool cullObjects() const;
+    bool showSoundTriggers() const;
 
     void setShowZone(bool show);
     void setShowObjects(bool show);
     void setCullObjects(bool enabled);
+    void setShowSoundTriggers(bool show);
     
     void uploadCharacter(RenderState *state, WLDActor *actor);
 
@@ -99,9 +102,11 @@ private:
     VertexGroup *m_objectsGeometry;
     QVector<WLDZoneActor *> m_objects;
     OctreeIndex *m_objectTree;
+    QVector<SoundEntry *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
     bool m_cullObjects;
+    bool m_showSoundTriggers;
     FrameStat *m_zoneStat;
     FrameStat *m_objectsStat;
     FrameStat *m_zoneStatGPU;
