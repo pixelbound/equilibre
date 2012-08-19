@@ -13,18 +13,34 @@ void SoundEntry::read(StreamReader &reader)
     reader.unpackFields("IIIIII", &Flags2, &Field18, &Field19, &Field20, &Field21, &Field22);
 }
 
-bool SoundEntry::fromFile(QVector<SoundEntry *> &entries, QString path)
+////////////////////////////////////////////////////////////////////////////////
+
+SoundTrigger::SoundTrigger(SoundEntry entry)
 {
-    SoundEntry *e = NULL;
+    m_entry = entry;
+    
+    // Compute trigger volume.
+    vec3 extent(entry.Radius * 0.5f, entry.Radius * 0.5f, entry.Radius * 0.5f);
+    m_bounds.low = entry.Pos - extent;
+    m_bounds.high = entry.Pos + extent;
+}
+
+const AABox & SoundTrigger::bounds() const
+{
+    return m_bounds;
+}
+
+bool SoundTrigger::fromFile(QVector<SoundTrigger *> &triggers, QString path)
+{
+    SoundEntry entry;
     QFile f(path);
     if(f.open(QFile::ReadOnly))
     {
         StreamReader reader(&f);
         while(!f.atEnd())
         {
-            e = new SoundEntry();
-            e->read(reader);
-            entries.append(e);
+            entry.read(reader);
+            triggers.append(new SoundTrigger(entry));
         }
         return true;
     }

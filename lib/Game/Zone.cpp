@@ -94,7 +94,7 @@ bool Zone::load(QString path, QString name)
     
     // import sound triggers
     QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
-    SoundEntry::fromFile(m_soundTriggers, triggersFile);
+    SoundTrigger::fromFile(m_soundTriggers, triggersFile);
     return true;
 }
 
@@ -389,14 +389,8 @@ void Zone::draw(RenderState *state)
     // draw sound trigger volumes
     if(m_showSoundTriggers)
     {
-        AABox triggerBox;
-        foreach(SoundEntry *e, m_soundTriggers)
-        {
-            vec3 extent(e->Radius * 0.5f, e->Radius * 0.5f, e->Radius * 0.5f);
-            triggerBox.low = e->Pos - extent;
-            triggerBox.high = e->Pos + extent;
-            state->drawBox(triggerBox);
-        }
+        foreach(SoundTrigger *trigger, m_soundTriggers)
+            state->drawBox(trigger->bounds());
     }
     
     state->popMatrix();

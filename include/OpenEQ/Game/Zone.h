@@ -20,7 +20,7 @@ class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialMap;
 class ActorDefFragment;
-class SoundEntry;
+class SoundTrigger;
 class RenderState;
 class FrameStat;
 
@@ -102,7 +102,7 @@ private:
     VertexGroup *m_objectsGeometry;
     QVector<WLDZoneActor *> m_objects;
     OctreeIndex *m_objectTree;
-    QVector<SoundEntry *> m_soundTriggers;
+    QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
     bool m_cullObjects;

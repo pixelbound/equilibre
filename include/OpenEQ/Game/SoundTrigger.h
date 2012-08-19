@@ -98,11 +98,24 @@ public:
      */
     uint32_t Field22;
     
-    static const uint32_t Size;
-    
     void read(StreamReader &reader);
     
-    static bool fromFile(QVector<SoundEntry *> &entries, QString path);
+    static const uint32_t Size;
+};
+
+class GAME_DLL SoundTrigger
+{
+public:
+    SoundTrigger(SoundEntry entry);
+    
+    const SoundEntry & entry() const;
+    const AABox & bounds() const;
+    
+    static bool fromFile(QVector<SoundTrigger *> &triggers, QString path);
+    
+private:
+    SoundEntry m_entry;
+    AABox m_bounds;
 };
 
 #endif
