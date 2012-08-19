@@ -33,11 +33,13 @@ public:
 
     QString assetPath() const;
     void setAssetPath(QString path);
+    
+    virtual QString frameLog() const;
+    virtual void log(QString text);
+    virtual void clearLog();
 
     virtual void init();
     virtual void draw() = 0;
-    
-    virtual vec3 cameraPos() const;
 
     virtual void keyReleaseEvent(QKeyEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *e);
@@ -48,6 +50,7 @@ public:
 protected:
     RenderState *m_state;
     QSettings *m_settings;
+    QString m_frameLog;
 };
 
 #endif

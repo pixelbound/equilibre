@@ -30,6 +30,11 @@ const AABox & SoundTrigger::bounds() const
     return m_bounds;
 }
 
+const SoundEntry & SoundTrigger::entry() const
+{
+    return m_entry;
+}
+
 bool SoundTrigger::fromFile(QVector<SoundTrigger *> &triggers, QString path)
 {
     SoundEntry entry;

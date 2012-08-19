@@ -43,6 +43,7 @@ private slots:
 
 private:
     void paintStats(QPainter *p);
+    void paintFrameLog(QPainter *p);
     void startStats();
     void updateAnimationState();
     void toggleAnimation();

@@ -62,8 +62,6 @@ public:
     virtual void init();
     virtual void draw();
     
-    virtual vec3 cameraPos() const;
-
     virtual void keyReleaseEvent(QKeyEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *e);
     virtual void mousePressEvent(QMouseEvent *e);

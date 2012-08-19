@@ -18,6 +18,7 @@
 #include "OpenEQ/Game/WLDActor.h"
 #include "OpenEQ/Game/WLDSkeleton.h"
 #include "OpenEQ/Game/Zone.h"
+#include "OpenEQ/Game/SoundTrigger.h"
 
 ZoneViewerWindow::ZoneViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
 {
@@ -224,14 +225,25 @@ void ZoneScene::init()
     m_started = currentTime();
 }
 
-vec3 ZoneScene::cameraPos() const
-{
-    return m_zone->playerPos() + m_zone->cameraPos();
-}
-
 void ZoneScene::draw()
 {
+    vec3 camPos = m_zone->playerPos() + m_zone->cameraPos();
+    log(QString("%1 %2 %3\n")
+        .arg(camPos.x, 0, 'f', 2)
+        .arg(camPos.y, 0, 'f', 2)
+        .arg(camPos.z, 0, 'f', 2));
     m_zone->draw(m_state);
+    
+    if(m_zone->showSoundTriggers())
+    {
+        QVector<SoundTrigger *> triggers;
+        m_zone->currentSoundTriggers(triggers);
+        foreach(SoundTrigger *trigger, triggers)
+        {
+            SoundEntry e = trigger->entry();
+            log(QString("Sound Trigger %1 (%2-%3)").arg(e.ID).arg(e.SoundID1).arg(e.SoundID2));
+        }
+    }
 }
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)

@@ -30,13 +30,24 @@ void Scene::setAssetPath(QString path)
      m_settings->setValue("assetPath", path);
 }
 
-void Scene::init()
+QString Scene::frameLog() const
 {
+    return m_frameLog;
 }
 
-vec3 Scene::cameraPos() const
+void Scene::log(QString text)
 {
-    return vec3();
+    m_frameLog += text;
+    m_frameLog += "\n";
+}
+
+void Scene::clearLog()
+{
+    m_frameLog.clear();
+}
+
+void Scene::init()
+{
 }
 
 void Scene::keyReleaseEvent(QKeyEvent *e)

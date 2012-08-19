@@ -678,6 +678,16 @@ void Zone::setCullObjects(bool enabled)
     m_cullObjects = enabled;
 }
 
+void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
+{
+    vec3 pos = m_playerPos + m_cameraPos;
+    foreach(SoundTrigger *trigger, m_soundTriggers)
+    {
+        if(trigger->bounds().contains(pos))
+            triggers.append(trigger);
+    }
+}
+
 void Zone::step(float distForward, float distSideways, float distUpDown)
 {
     const bool ghost = true;

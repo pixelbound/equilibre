@@ -66,6 +66,8 @@ public:
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
     
+    void currentSoundTriggers(QVector<SoundTrigger *> &triggers) const;
+    
     void uploadCharacter(RenderState *state, WLDActor *actor);
 
 private:

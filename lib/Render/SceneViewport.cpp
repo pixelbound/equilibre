@@ -65,12 +65,16 @@ void SceneViewport::paintEvent(QPaintEvent *)
     paintGL();
     if(m_statsTimer->isActive())
         paintStats(&painter);
+    paintFrameLog(&painter);
 }
 
 void SceneViewport::paintGL()
 {
     if(m_state->beginFrame())
+    {
+        m_scene->clearLog();
         m_scene->draw();
+    }
     m_state->endFrame();
 }
 
@@ -131,8 +135,6 @@ void SceneViewport::paintStats(QPainter *p)
     f.setWeight(QFont::Bold);
     p->setFont(f);
     QString text;
-    vec3 camPos = m_scene->cameraPos();
-    text += QString("%1 %2 %3\n").arg(camPos.x, 0, 'f', 2).arg(camPos.y, 0, 'f', 2).arg(camPos.z, 0, 'f', 2);
     const QVector<FrameStat *> stats = m_state->stats();
     for(int i = 0; i < stats.count(); i++)
     {
@@ -142,6 +144,21 @@ void SceneViewport::paintStats(QPainter *p)
     }
     p->setPen(QPen(Qt::white));
     p->drawText(QRectF(QPointF(10, 5), QSizeF(800, 400)), text);
+}
+
+void SceneViewport::paintFrameLog(QPainter *p)
+{
+    QFont f;
+    f.setPointSizeF(16.0);
+    f.setWeight(QFont::Bold);
+    p->setFont(f);
+    p->setPen(QPen(Qt::white));
+    QString text = m_scene->frameLog();
+    QFontMetrics fm(f);
+    QSizeF size(fm.size(0, text));
+    QPointF pos(width() - size.width() - 10, 5);
+    if(!text.isEmpty())
+        p->drawText(QRectF(pos, size), text);
 }
 
 void SceneViewport::updateAnimationState()
