@@ -10,7 +10,14 @@ akanon.xmi
 
 butcher.xmi
   00 'Good' fanfare?
-  01 'Good' fanfare?
+  01 'Good' fanfare? (heard near the entrance to Kaladim)
+  **The following are referenced but missing:
+  02 Close to the Chess Board, entrance to Dagnor's Cauldron.
+  03 Close to Bandit Camp 10.
+  04 Butcherblock Docks.
+  05 In many places, close to dwarf houses.
+  06 Close to Goblin Warrior Camp 11.
+  07 Close to Ancient Stone Ring.
 
 cauldron.xmi
   00 'Good' fanfare?
@@ -27,7 +34,6 @@ crushbone.xmi
   04 ???
   05 Neriak theme?
 
-
 erudnext.xmi
   00 Erudin theme 1?
   01 Short (???)
@@ -40,6 +46,16 @@ gfaydark.xmi
   03 'Good' fanfare? (heard around the Wizard Spires)
   04 Faydark theme (heard around Kelethin)
   05 Dungeon theme 1? (heard around Crushbone)
+
+freporte.xmi
+  00 East Freeport Theme (heard at the docks)
+  01 Inn theme?
+  02 Tavern theme? (heard at Freeport Inn)
+  03 Qeynos Hills theme (heard at Seafarer's Roost)
+  04 Gypsy theme?
+  05 ??? (heard in Freeport Tunnels from hidden wall close to the gates)
+  06 ??? (heard in Freeport Tunnels)
+  07 ??? (heard in Freeport Tunnels, Gord's Smithy) 
 
 freportn.xmi
   00 Some sea theme?
@@ -58,6 +74,15 @@ freportn.xmi
   13 Not gypsy theme
   14 ???
 
+freportw.xmi
+  00 Freeport West theme (heard at the gates)
+  01 Inn theme 2? (heard at Hogcaller's Inn)
+  02 Guild musix X? (heard at the Ashen Order)
+  03 Guild music 1? (heard near the gallows)
+  04 'Good' fanfare? (heard when entering the courtyard leading to the Casters' Guild)
+  05
+  06 ??? (heard at the Casters' Guild)
+
 lfaydark.xmi
   00 Short sound effect 1?
   01 Faydark theme (heard near Gnome Huts, Brownie Compound)
@@ -73,7 +98,7 @@ kaladima.xmi (also used for kaladimb.xmi)
   03 Short sound effect 1? (heard behind the Castle)
   04 Tavern theme 2? (heard at Pub Kal)
   05 Inn theme? (heard at Irontoe's Eats)
-  06 ??? (not heard)
+  06 ??? (not heard in kaladima/b)
   07 Butcherblock Mountains theme (heard at the Castle)
 
 gl.xml
