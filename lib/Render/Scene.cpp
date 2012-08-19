@@ -34,6 +34,11 @@ void Scene::init()
 {
 }
 
+vec3 Scene::cameraPos() const
+{
+    return vec3();
+}
+
 void Scene::keyReleaseEvent(QKeyEvent *e)
 {
     e->ignore();

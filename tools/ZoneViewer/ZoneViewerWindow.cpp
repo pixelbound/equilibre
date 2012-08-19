@@ -215,6 +215,11 @@ void ZoneScene::init()
     m_started = currentTime();
 }
 
+vec3 ZoneScene::cameraPos() const
+{
+    return m_zone->playerPos() + m_zone->cameraPos();
+}
+
 void ZoneScene::draw()
 {
     m_zone->draw(m_state);

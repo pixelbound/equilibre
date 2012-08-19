@@ -131,6 +131,8 @@ void SceneViewport::paintStats(QPainter *p)
     f.setWeight(QFont::Bold);
     p->setFont(f);
     QString text;
+    vec3 camPos = m_scene->cameraPos();
+    text += QString("%1 %2 %3\n").arg(camPos.x, 0, 'f', 2).arg(camPos.y, 0, 'f', 2).arg(camPos.z, 0, 'f', 2);
     const QVector<FrameStat *> stats = m_state->stats();
     for(int i = 0; i < stats.count(); i++)
     {
