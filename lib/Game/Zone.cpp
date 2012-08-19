@@ -172,20 +172,28 @@ void Zone::importObjects()
     importObjectsMeshes(m_objMeshArchive, m_objMeshWld);
 
     // import actors through Actor fragments
-    m_objectTree = new OctreeIndex(m_zoneBounds, 8);
+    AABox bounds = m_zoneBounds;
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();
         WLDMesh *model = m_objModels.value(actorName);
         if(model)
         {
-            m_objectTree->add(new WLDZoneActor(actorFrag, model));
+            WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
+            bounds.extendTo(actor->boundsAA);
+            m_objects.append(actor);
         }
         else
         {
             qDebug("Actor '%s' not found", actorName.toLatin1().constData());
         }
     }
+    
+    // Add actors to the actors octree index.
+    // XXX use the same octree than for the geometry?
+    m_objectTree = new OctreeIndex(bounds, 8);
+    foreach(WLDZoneActor *actor, m_objects)
+        m_objectTree->add(actor);   
 }
 
 void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)

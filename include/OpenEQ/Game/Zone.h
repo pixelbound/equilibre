@@ -97,6 +97,7 @@ private:
     QVector<buffer_t> m_gpuBuffers;
     // zone objects
     VertexGroup *m_objectsGeometry;
+    QVector<WLDZoneActor *> m_objects;
     OctreeIndex *m_objectTree;
     bool m_showZone;
     bool m_showObjects;
