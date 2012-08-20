@@ -1,3 +1,4 @@
+fix octree assert (lfaydark, qeynos)
 one frame latency for querying GL timers and remove glFinish
     is it still an issue with vsync disabled?
 Material type, can specify material mask when rendering
@@ -8,6 +9,8 @@ sort non-solid items front to back
 cache modelview matrix of zone object
 have an uniform array of material state
 CharacterData, ZoneData
+physics/collisions
+play XMI music and WAV sounds
 Load file for mapping animations to characters
 start animation when selecting it (remember the time when it was first selected)
 mimic character selection screen (load character selection background and rotate, random animation)

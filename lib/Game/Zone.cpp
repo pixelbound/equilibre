@@ -638,10 +638,8 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
             mesh->data()->indexBuffer.buffer = geom->indexBuffer.buffer;
         }
     }
-    // Free the memory used for vertices and indices.
-    geom->vertices.clear();
+    // Free the memory used for indices. We need to keep the vertices around for software skinning.
     geom->indices.clear();
-    geom->vertices.squeeze();
     geom->indices.squeeze();
 }
 
