@@ -273,6 +273,8 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         }
     }
 
+    // XXX Currently broken.
+#if 0
     // look for alternate meshes (e.g. heads)
     foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
     {
@@ -290,9 +292,10 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             QString actorName2, meshName2, skinName2;
             WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
             if(meshName2 == meshName)
-                skin->addPart(meshDef, false);
+                skin->addPart(meshDef);
         }
     }
+#endif
 }
 
 void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
@@ -304,7 +307,10 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
         WLDActor *actor = new WLDActor(model, this);
         WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
+        {
             skin->addPart(meshDef);
+            skin->palette()->addPaletteDef(meshDef->m_palette);
+        }
         foreach(WLDFragment *frag, actorDef->m_models)
         {
             switch(frag->kind())
@@ -582,18 +588,26 @@ void Zone::uploadCharacters(RenderState *state)
 
 void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
 {
+    // Make sure we haven't uploaded this character before.
     WLDModel *model = actor->model();
+    if(model->data())
+        return;
+
+    // Import mesh geometry.
+    VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
+    model->setData(geom);
     foreach(WLDModelSkin *skin, model->skins())
     {
-        // Import mesh geometry.
         foreach(WLDMesh *mesh, skin->parts())
         {
-            if(mesh->data()->vertices.count() == 0)
+            VertexGroup *meshVg = mesh->data();
+            if(meshVg->matGroups.count() == 0)
             {
-                mesh->importVertexData();
-                mesh->importIndexData();
+                mesh->importVertexData(geom, meshVg->vertexBuffer);
+                mesh->importIndexData(geom, meshVg->indexBuffer,
+                                      meshVg->vertexBuffer,
+                                      0, (uint32_t)mesh->def()->m_indices.count());
                 mesh->importMaterialGroups();
-                createGPUBuffer(mesh->data(), state);
             }
         }
 
@@ -606,6 +620,29 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
         }
         materials->upload(state);
     }
+
+    // Create the GPU buffers.
+    geom->vertexBuffer.elementSize = sizeof(VertexData);
+    geom->vertexBuffer.count = geom->vertices.count();
+    geom->indexBuffer.elementSize = sizeof(uint32_t);
+    geom->indexBuffer.count = geom->indices.count();
+    createGPUBuffer(geom, state);
+
+    // Set the buffer handles for each mesh.
+    foreach(WLDModelSkin *skin, model->skins())
+    {
+        // Import mesh geometry.
+        foreach(WLDMesh *mesh, skin->parts())
+        {
+            mesh->data()->vertexBuffer.buffer = geom->vertexBuffer.buffer;
+            mesh->data()->indexBuffer.buffer = geom->indexBuffer.buffer;
+        }
+    }
+    // Free the memory used for vertices and indices.
+    geom->vertices.clear();
+    geom->indices.clear();
+    geom->vertices.squeeze();
+    geom->indices.squeeze();
 }
 
 const vec3 & Zone::playerPos() const

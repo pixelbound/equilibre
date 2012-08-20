@@ -9,6 +9,7 @@
 
 WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 {
+    m_data = 0;
     m_skel = 0;
     m_skin = 0;
     m_skin = newSkin("00", archive);
@@ -16,6 +17,16 @@ WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 
 WLDModel::~WLDModel()
 {
+}
+
+VertexGroup * WLDModel::data() const
+{
+    return m_data;
+}
+
+void WLDModel::setData(VertexGroup *newData)
+{
+    m_data = newData;
 }
 
 WLDSkeleton * WLDModel::skeleton() const
@@ -452,7 +463,10 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
     if(defaultSkin)
     {
         foreach(WLDMesh *part, defaultSkin->parts())
-            addPart(part->def());
+        {
+            m_parts.append(part);
+            m_palette->addPaletteDef(part->def()->m_palette);
+        }
     }
 }
 
@@ -490,12 +504,10 @@ const QList<WLDMesh *> & WLDModelSkin::parts() const
     return m_parts;
 }
 
-void WLDModelSkin::addPart(MeshDefFragment *frag, bool importPalette)
+void WLDModelSkin::addPart(MeshDefFragment *frag)
 {
     if(!frag)
         return;
-    if(importPalette)
-        m_palette->addPaletteDef(frag->m_palette);
     uint32_t partID = m_parts.count();
     m_parts.append(new WLDMesh(frag, partID, m_model));
 }
@@ -520,10 +532,24 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
 
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
+    VertexGroup *modelVg = m_model->data();
+    if(!modelVg)
+        return;
+
+    // Gather material groups from all the mesh parts we want to draw.
+    modelVg->matGroups.clear();
     foreach(WLDMesh *mesh, m_parts)
     {
-        state->beginDrawMesh(mesh->data(), m_materials, bones, boneCount);
-        state->drawMesh();
-        state->endDrawMesh();
+        VertexGroup *partVg = mesh->data();
+        foreach(MaterialGroup mg, partVg->matGroups)
+        {
+            mg.offset += partVg->indexBuffer.offset;
+            modelVg->matGroups.append(mg);
+        }
     }
+
+    // Draw all the material groups in one draw call.
+    state->beginDrawMesh(modelVg, m_materials, bones, boneCount);
+    state->drawMesh();
+    state->endDrawMesh();
 }

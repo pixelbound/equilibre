@@ -35,6 +35,9 @@ public:
 
     static QList<MeshDefFragment *> listMeshes(ActorDefFragment *def);
 
+    VertexGroup * data() const;
+    void setData(VertexGroup *newData);
+
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
 
@@ -45,6 +48,7 @@ public:
     WLDModelSkin * newSkin(QString name, PFSArchive *archive);
 
 private:
+    VertexGroup *m_data;
     WLDSkeleton *m_skel;
     WLDModelSkin *m_skin;
     QMap<QString, WLDModelSkin *> m_skins;
@@ -136,7 +140,7 @@ public:
     
     const QList<WLDMesh *> & parts() const;
 
-    void addPart(MeshDefFragment *frag, bool importPalette = true);
+    void addPart(MeshDefFragment *frag);
 
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
