@@ -113,6 +113,11 @@ MeshDefFragment * WLDMesh::def() const
     return m_meshDef;
 }
 
+uint32_t WLDMesh::partID() const
+{
+    return m_partID;
+}
+
 const AABox & WLDMesh::boundsAA() const
 {
     return m_boundsAA;
@@ -289,6 +294,15 @@ QString WLDMaterialPalette::addMaterialDef(MaterialDefFragment *def)
     QString name = materialName(def);
     m_materialDefs.insert(name, def);
     return name;
+}
+
+void WLDMaterialPalette::copyFrom(WLDMaterialPalette *pal)
+{
+    for(QMap<QString, MaterialDefFragment *>::iterator i = pal->m_materialDefs.begin(),
+            e = pal->m_materialDefs.end(); i != e; ++i)
+    {
+        m_materialDefs.insert(i.key(), i.value());
+    }
 }
 
 bool WLDMaterialPalette::explodeName(QString defName, QString &charName,
@@ -510,6 +524,15 @@ void WLDModelSkin::addPart(MeshDefFragment *frag)
         return;
     uint32_t partID = m_parts.count();
     m_parts.append(new WLDMesh(frag, partID, m_model));
+}
+
+void WLDModelSkin::replacePart(WLDMesh *basePart, MeshDefFragment *frag)
+{
+    uint32_t partID = basePart->partID();
+    if(partID >= m_parts.size())
+        return;
+    if((basePart == m_parts[partID]) && (basePart->def() != frag))
+        m_parts[partID] = new WLDMesh(frag, partID, m_model);
 }
 
 bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,

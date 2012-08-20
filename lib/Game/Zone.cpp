@@ -268,13 +268,12 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             {
                 skin = model->newSkin(palName, archive);
                 skin->setPalette(new WLDMaterialPalette(archive));
+                skin->palette()->copyFrom(model->skin()->palette());
             }
             skin->palette()->addMaterialDef(matDef);
         }
     }
 
-    // XXX Currently broken.
-#if 0
     // look for alternate meshes (e.g. heads)
     foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
     {
@@ -291,11 +290,10 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         {
             QString actorName2, meshName2, skinName2;
             WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
-            if(meshName2 == meshName)
-                skin->addPart(meshDef);
+            if((meshName2 == meshName) && (skinName2 != skinName))
+                skin->replacePart(part, meshDef);
         }
     }
-#endif
 }
 
 void Zone::importCharacters(PFSArchive *archive, WLDData *wld)

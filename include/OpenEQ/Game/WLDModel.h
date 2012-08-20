@@ -65,6 +65,7 @@ public:
 
     VertexGroup * data() const;
     MeshDefFragment *def() const;
+    uint32_t partID() const;
     MaterialMap *materials() const;
     void setMaterials(MaterialMap *materials);
     const AABox & boundsAA() const;
@@ -98,6 +99,8 @@ public:
     
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
+    
+    void copyFrom(WLDMaterialPalette *pal);
     
     MaterialMap * loadMaterials();
 
@@ -141,6 +144,7 @@ public:
     const QList<WLDMesh *> & parts() const;
 
     void addPart(MeshDefFragment *frag);
+    void replacePart(WLDMesh *basePart, MeshDefFragment *frag);
 
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
