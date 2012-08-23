@@ -502,19 +502,9 @@ MeshBuffer * Zone::uploadZone(RenderState *state)
     }
     
     // Create the GPU buffers.
-    meshBuf->vertexBufferSize = meshBuf->vertices.count() * sizeof(Vertex);
-    meshBuf->indexBufferSize = meshBuf->indices.count() * sizeof(uint32_t);
-    meshBuf->vertexBuffer = state->createBuffer(meshBuf->vertices.constData(), meshBuf->vertexBufferSize);
-    meshBuf->indexBuffer = state->createBuffer(meshBuf->indices.constData(), meshBuf->indexBufferSize);
+    meshBuf->upload(state, true);
     m_gpuBuffers.append(meshBuf->vertexBuffer);
     m_gpuBuffers.append(meshBuf->indexBuffer);
-
-    // Free the memory used for vertices and indices.
-    meshBuf->vertices.clear();
-    meshBuf->indices.clear();
-    meshBuf->vertices.squeeze();
-    meshBuf->indices.squeeze();
-    
     return meshBuf;
 }
 
@@ -539,19 +529,9 @@ MeshBuffer * Zone::uploadObjects(RenderState *state)
     }
     
     // Create the GPU buffers.
-    meshBuf->vertexBufferSize = meshBuf->vertices.count() * sizeof(Vertex);
-    meshBuf->indexBufferSize = meshBuf->indices.count() * sizeof(uint32_t);
-    meshBuf->vertexBuffer = state->createBuffer(meshBuf->vertices.constData(), meshBuf->vertexBufferSize);
-    meshBuf->indexBuffer = state->createBuffer(meshBuf->indices.constData(), meshBuf->indexBufferSize);
+    meshBuf->upload(state, true);
     m_gpuBuffers.append(meshBuf->vertexBuffer);
     m_gpuBuffers.append(meshBuf->indexBuffer);
-    
-    // Free the memory used for vertices and indices.
-    meshBuf->vertices.clear();
-    meshBuf->indices.clear();
-    meshBuf->vertices.squeeze();
-    meshBuf->indices.squeeze();
-    
     return meshBuf;
 }
 

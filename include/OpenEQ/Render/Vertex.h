@@ -7,6 +7,7 @@
 
 class MeshBuffer;
 class MaterialMap;
+class RenderState;
 
 class RENDER_DLL Vertex
 {
@@ -60,6 +61,7 @@ public:
     ~MeshBuffer();
     MeshData *createMesh(uint32_t groups);
     void addMaterialGroups(MeshData *mesh);
+    void upload(RenderState *state, bool clearVertices);
     
     QVector<Vertex> vertices;
     QVector<uint32_t> indices;

@@ -1,5 +1,6 @@
 #include "OpenEQ/Render/Vertex.h"
 #include "OpenEQ/Render/Material.h"
+#include "OpenEQ/Render/RenderState.h"
 
 using namespace std;
 
@@ -99,4 +100,22 @@ void MeshBuffer::addMaterialGroups(MeshData *mesh)
         mg.offset += mesh->indexSegment.offset;
         matGroups.append(mg);
     }
+}
+
+void MeshBuffer::upload(RenderState *state, bool clearVertices)
+{
+    // Create the GPU buffers.
+    vertexBufferSize = vertices.count() * sizeof(Vertex);
+    indexBufferSize = indices.count() * sizeof(uint32_t);
+    vertexBuffer = state->createBuffer(vertices.constData(), vertexBufferSize);
+    indexBuffer = state->createBuffer(indices.constData(), indexBufferSize);
+    
+    // Free the memory used for vertices and indices.
+    if(clearVertices)
+    {
+        vertices.clear();
+        vertices.squeeze();
+    }
+    indices.clear();
+    indices.squeeze();
 }
