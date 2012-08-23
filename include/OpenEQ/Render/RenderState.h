@@ -15,6 +15,7 @@ class AABox;
 class Material;
 class MaterialMap;
 class FrameStat;
+class MeshBuffer;
 
 class RENDER_DLL RenderState
 {
@@ -32,7 +33,7 @@ public:
      * @param bones Array of bone transformations or NULL if the mesh is not skinned.
      * @param boneCount Number of bone transformations.
      */
-    virtual void beginDrawMesh(const VertexGroup *geom, MaterialMap *materials,
+    virtual void beginDrawMesh(const MeshBuffer *geom, MaterialMap *materials,
                                const BoneTransform *bones = 0, int boneCount = 0) = 0;
     /**
      * @brief Draw a mesh whose geometry was passed to @ref beginDrawMesh.

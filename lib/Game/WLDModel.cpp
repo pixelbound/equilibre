@@ -91,7 +91,8 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
     m_partID = partID;
     m_meshDef = meshDef;
     m_materials = NULL;
-    m_data = new VertexGroup();
+    m_data = NULL;
+    m_mesh = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
@@ -100,12 +101,26 @@ WLDMesh::~WLDMesh()
 {
     // One mesh -> one palette of materials.
     delete m_materials;
-    delete m_data;
 }
 
-VertexGroup * WLDMesh::data() const
+MeshBuffer * WLDMesh::data() const
 {
     return m_data;
+}
+
+void WLDMesh::setBuffer(MeshBuffer *buffer)
+{
+    m_data = buffer;
+}
+
+MeshData * WLDMesh::meshData() const
+{
+    return m_mesh;
+}
+
+void WLDMesh::setMeshData(MeshData *mesh)
+{
+    m_mesh = mesh;
 }
 
 MeshDefFragment * WLDMesh::def() const
@@ -135,20 +150,20 @@ void WLDMesh::setMaterials(MaterialMap *materials)
 
 void WLDMesh::importVertexData()
 {
-    importVertexData(m_data, m_data->vertexBuffer);
+    importVertexData(m_data, m_mesh->vertexSegment);
 }
 
-void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
+void WLDMesh::importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc)
 {
-    // update the mesh location
-    QVector<Vertex> &vertices(vg->vertices);
+    // Update the location of the mesh in the buffer.
+    QVector<Vertex> &vertices(buffer->vertices);
     uint32_t vertexCount = (uint32_t)m_meshDef->m_vertices.count();
     uint32_t vertexIndex = vertices.count();
     dataLoc.offset = vertexIndex;
     dataLoc.count = vertexCount;
     dataLoc.elementSize = sizeof(Vertex);
     
-    // load vertices, texCoords, normals, faces
+    // Load vertices, texCoords, normals, faces.
     for(uint32_t i = 0; i < vertexCount; i++)
     {
         Vertex v;
@@ -158,7 +173,8 @@ void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
         v.bone = 0;
         vertices.append(v);
     }
-    // load bone indices
+    
+    // Load bone indices.
     foreach(vec2us g, m_meshDef->m_vertexPieces)
     {
         uint16_t count = g.first, pieceID = g.second;
@@ -169,18 +185,19 @@ void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
 
 void WLDMesh::importIndexData()
 {
-    importIndexData(m_data, m_data->indexBuffer, m_data->vertexBuffer,
+    importIndexData(m_data, m_mesh->indexSegment, m_mesh->vertexSegment,
         0, (uint32_t)m_meshDef->m_indices.count());
 }
 
-void WLDMesh::importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
+void WLDMesh::importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
                                    const BufferSegment &dataLoc, uint32_t offset, uint32_t count)
 {
-    indexLoc.offset = vg->indices.count();
+    QVector<uint32_t> &indices = buffer->indices;
+    indexLoc.offset = indices.count();
     indexLoc.count = count;
     indexLoc.elementSize = sizeof(uint32_t);
     for(uint32_t i = 0; i < count; i++)
-        vg->indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
+        indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
 void WLDMesh::importMaterialGroups()
@@ -188,16 +205,18 @@ void WLDMesh::importMaterialGroups()
     importMaterialGroups(m_data);
 }
 
-void WLDMesh::importMaterialGroups(VertexGroup *vg)
+MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer)
 {
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
     uint32_t meshOffset = 0;
-    foreach(vec2us g, m_meshDef->m_polygonsByTex)
+    m_mesh = buffer->createMesh(m_meshDef->m_polygonsByTex.count());
+    for(int i = 0; i < m_meshDef->m_polygonsByTex.count(); i++)
     {
+        vec2us g = m_meshDef->m_polygonsByTex[i];
         MaterialDefFragment *matDef = palDef->m_materials[g.second];
         uint32_t vertexCount = g.first * 3;
-        MaterialGroup mg;
+        MaterialGroup &mg(m_mesh->matGroups[i]);
         mg.id = m_partID;
         mg.offset = meshOffset;
         mg.count = vertexCount;
@@ -206,10 +225,9 @@ void WLDMesh::importMaterialGroups(VertexGroup *vg)
         if(matDef->m_param1 != 0)
             matName = WLDMaterialPalette::materialName(palDef->m_materials[g.second]);
         mg.matID = WLDMaterialPalette::materialHash(matName);
-        
-        vg->matGroups.append(mg);
         meshOffset += vertexCount;
     }
+    return m_mesh;
 }
 
 static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b)
@@ -217,6 +235,7 @@ static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b
     return a.matID < b.matID;
 }
 
+#if 0
 VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
 {
     // import each part (vertices and material groups) into a single vertex group
@@ -271,6 +290,7 @@ VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
     vg->matGroups = newGroups;
     return vg;
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -555,6 +575,7 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
 
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
+#if 0
     VertexGroup *modelVg = m_model->data();
     if(!modelVg)
         return;
@@ -575,4 +596,5 @@ void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t
     state->beginDrawMesh(modelVg, m_materials, bones, boneCount);
     state->drawMesh();
     state->endDrawMesh();
+#endif
 }

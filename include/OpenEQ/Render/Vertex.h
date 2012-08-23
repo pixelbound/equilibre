@@ -5,6 +5,9 @@
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/LinearMath.h"
 
+class MeshBuffer;
+class MaterialMap;
+
 class RENDER_DLL Vertex
 {
 public:
@@ -34,6 +37,38 @@ struct RENDER_DLL BufferSegment
     BufferSegment();
     size_t size() const;
     size_t address() const;
+};
+
+class RENDER_DLL MeshData
+{
+public:
+    MeshData(MeshBuffer *buffer, uint32_t groups);
+    ~MeshData();
+    void updateTexCoords(MaterialMap *map);
+    
+    MeshBuffer *buffer;
+    BufferSegment vertexSegment;
+    BufferSegment indexSegment;
+    MaterialGroup *matGroups;
+    uint32_t groupCount;
+};
+
+class RENDER_DLL MeshBuffer
+{
+public:
+    MeshBuffer();
+    ~MeshBuffer();
+    MeshData *createMesh(uint32_t groups);
+    void addMaterialGroups(MeshData *mesh);
+    
+    QVector<Vertex> vertices;
+    QVector<uint32_t> indices;
+    QVector<MaterialGroup> matGroups;
+    QVector<MeshData *> meshes;
+    buffer_t vertexBuffer;
+    buffer_t indexBuffer;
+    uint32_t vertexBufferSize;
+    uint32_t indexBufferSize;
 };
 
 class RENDER_DLL VertexGroup

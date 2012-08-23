@@ -32,7 +32,7 @@ class MeshDataGL2
 public:
     void clear();
     
-    const VertexGroup *vg;
+    const MeshBuffer *meshBuf;
     const BoneTransform *bones;
     uint32_t boneCount;
     MaterialMap *materials;
@@ -58,7 +58,7 @@ public:
 
     virtual bool init();
     
-    virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
+    virtual void beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
     virtual void endDrawMesh();
@@ -70,14 +70,14 @@ public:
 
     void enableVertexAttribute(int attr, int index = 0);
     void disableVertexAttribute(int attr, int index = 0);
-    void uploadVertexAttributes(const VertexGroup *vg);
+    void uploadVertexAttributes(const MeshBuffer *meshBuf);
 
 protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
-    void drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg);
+    void drawMaterialGroup(const MaterialGroup &mg);
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
 

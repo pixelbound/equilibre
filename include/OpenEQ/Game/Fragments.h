@@ -253,8 +253,6 @@ public:
     MeshDefFragment(QString name);
     virtual bool unpack(WLDReader *s);
 
-    VertexGroup *toGroup() const;
-
     const static uint32_t ID = 0x36;
     uint32_t m_flags;
     MaterialPaletteFragment *m_palette;

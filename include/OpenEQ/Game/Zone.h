@@ -24,6 +24,7 @@ class ActorDefFragment;
 class SoundTrigger;
 class RenderState;
 class FrameStat;
+class MeshBuffer;
 
 /*!
   \brief Describes a zone of the world.
@@ -81,14 +82,14 @@ private:
     void createGPUBuffer(VertexGroup *vg, RenderState *state);
     void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
-    VertexGroup * uploadZone(RenderState *state);
-    VertexGroup * uploadObjects(RenderState *state);
+    MeshBuffer * uploadZone(RenderState *state);
+    MeshBuffer * uploadObjects(RenderState *state);
     void uploadCharacters(RenderState *state);
 
     //TODO refactor this into data container classes
     QString m_name;
     QVector<WLDMesh *> m_zoneParts;
-    VertexGroup *m_zoneGeometry;
+    MeshBuffer *m_zoneBuffer;
     OctreeIndex *m_zoneTree;
     MaterialMap *m_zoneMaterials;
     AABox m_zoneBounds;
@@ -102,7 +103,7 @@ private:
     QMap<QString, WLDActor *> m_charModels;
     QVector<buffer_t> m_gpuBuffers;
     // zone objects
-    VertexGroup *m_objectsGeometry;
+    MeshBuffer *m_objectsBuffer;
     QVector<WLDZoneActor *> m_objects;
     OctreeIndex *m_objectTree;
     QVector<SoundTrigger *> m_soundTriggers;

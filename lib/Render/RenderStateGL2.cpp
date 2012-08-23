@@ -40,7 +40,7 @@ ShaderProgramGL2 * RenderStateGL2::program() const
     return m_programs[(int)m_shader];
 }
 
-void RenderStateGL2::beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
+void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
                                    const BoneTransform *bones, int boneCount)
 {
     ShaderProgramGL2 *prog = program();
@@ -95,7 +95,7 @@ void RenderStateGL2::createCube()
         {4, 5, 7}, {7, 5, 6}, {0, 1, 4}, {4, 1, 5}
     };
     
-    m_cube = new VertexGroup();
+    m_cube = new MeshBuffer();
     m_cube->vertices.resize(36);
     Vertex *v = m_cube->vertices.data();
     for(uint32_t i = 0; i < 12; i++)

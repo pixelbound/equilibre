@@ -249,16 +249,16 @@ void ShaderProgramGL2::disableVertexAttribute(int attr, int index)
         glDisableVertexAttribArray(m_attr[attr] + index);
 }
 
-void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
+void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
 {
-    const Vertex *vd = vg->vertices.constData();
+    const Vertex *vd = meshBuf->vertices.constData();
     const uint8_t *posPointer = (const uint8_t *)&vd->position;
     const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
     const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
     const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
-    if(vg->vertexBuffer.buffer != 0)
+    if(meshBuf->vertexBuffer != 0)
     {
-        glBindBuffer(GL_ARRAY_BUFFER, vg->vertexBuffer.buffer);
+        glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
         texCoordsPointer = normalPointer + sizeof(vec3);
@@ -275,18 +275,18 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
             sizeof(Vertex), bonePointer);
-    if(vg->vertexBuffer.buffer != 0)
+    if(meshBuf->vertexBuffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materials,
+void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
                                      const BoneTransform *bones, int boneCount)
 {
-    if(m_meshData.pending || !vg)
+    if(m_meshData.pending || !meshBuf)
         return;
     // XXX make the caller pass this structure to be reentrant
     m_meshData.pending = true;
-    m_meshData.vg = vg;
+    m_meshData.meshBuf = meshBuf;
     m_meshData.materials = materials;
     m_meshData.bones = bones;
     m_meshData.boneCount = boneCount;
@@ -298,19 +298,19 @@ void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materia
         enableVertexAttribute(A_BONE_INDEX);
         setBoneTransforms(bones, boneCount);
     }
-    if(vg->indexBuffer.buffer != 0)
+    if(meshBuf->indexBuffer != 0)
     {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vg->indexBuffer.buffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshBuf->indexBuffer);
         m_meshData.haveIndices = true;
     }
-    else if(vg->indices.count() > 0)
+    else if(meshBuf->indices.count() > 0)
     {
-        m_meshData.indices = vg->indices.constData();
+        m_meshData.indices = meshBuf->indices.constData();
         m_meshData.haveIndices = true;
     }
     if(bones && (boneCount > 0))
         beginSkinMesh();
-    uploadVertexAttributes(vg);
+    uploadVertexAttributes(meshBuf);
 }
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
@@ -320,18 +320,18 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
         return;
 
     // Get a Material pointer for each material group.
-    const VertexGroup *vg = m_meshData.vg;
+    const MeshBuffer *meshBuf = m_meshData.meshBuf;
     QVector<MaterialGroup> groups;
     QVector<Material *> groupMats;
-    for(int i = 0; i < vg->matGroups.count(); i++)
+    for(int i = 0; i < meshBuf->matGroups.count(); i++)
     {
-        uint32_t matID = vg->matGroups[i].matID;
+        uint32_t matID = meshBuf->matGroups[i].matID;
         Material *mat = m_meshData.materials->material(matID);
         // skip meshes that don't have a material
         // XXX fix rendering non-opaque polygons
         if(!mat || !mat->isOpaque())
             continue;
-        groups.append(vg->matGroups[i]);
+        groups.append(meshBuf->matGroups[i]);
         groupMats.append(mat);
     }
 
@@ -372,12 +372,12 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
                 }
                 else
                 {
-                    drawMaterialGroup(vg, merged);
+                    drawMaterialGroup(merged);
                     merged.offset = groups[j].offset;
                     merged.count = groups[j].count;
                 }
             }
-            drawMaterialGroup(vg, merged);
+            drawMaterialGroup(merged);
         }
         endApplyMaterial(m_meshData.materials, arrayMat);
     }
@@ -391,26 +391,20 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
             for(uint32_t j = 0; j < instances; j++)
             {
                 setModelViewMatrix(mvMatrices[j]);
-                drawMaterialGroup(vg, groups[i]);
+                drawMaterialGroup(groups[i]);
             }
             endApplyMaterial(m_meshData.materials, mat);
         }
     }
 }
 
-void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg)
+void ShaderProgramGL2::drawMaterialGroup(const MaterialGroup &mg)
 {
     const GLuint mode = GL_TRIANGLES;
     if(m_meshData.haveIndices)
-    {
-        const uint32_t *indices = m_meshData.indices + vg->indexBuffer.offset + mg.offset;
-        glDrawElements(mode, mg.count, GL_UNSIGNED_INT, indices);
-    }
+        glDrawElements(mode, mg.count, GL_UNSIGNED_INT, m_meshData.indices + mg.offset);
     else
-    {
-        uint32_t offset = vg->vertexBuffer.offset + mg.offset;
-        glDrawArrays(mode, offset, mg.count);
-    }
+        glDrawArrays(mode, mg.offset, mg.count);
     m_drawCalls++;
 }
 
@@ -434,19 +428,19 @@ void ShaderProgramGL2::endDrawMesh()
 void ShaderProgramGL2::beginSkinMesh()
 {
     // We can only do mesh skinning in software with a VBO as we can't overwrite the VG data.
-    const VertexGroup *vg = m_meshData.vg;
-    if(vg->vertexBuffer.buffer == 0)
+    const MeshBuffer *meshBuf = m_meshData.meshBuf;
+    if(meshBuf->vertexBuffer == 0)
         return;
-    glBindBuffer(GL_ARRAY_BUFFER, vg->vertexBuffer.buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
     // Discard the previous data.
-    glBufferData(GL_ARRAY_BUFFER, vg->vertexBuffer.size(), NULL, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, meshBuf->vertexBufferSize, NULL, GL_STREAM_DRAW);
     // Map the VBO in memory and copy skinned vertices directly to it.
     void *buffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     if(!buffer)
         return;
-    const Vertex *src = vg->vertices.constData();
+    const Vertex *src = meshBuf->vertices.constData();
     Vertex *dst = (Vertex *)buffer;
-    for(uint32_t i = 0; i < vg->vertices.count(); i++, src++, dst++)
+    for(uint32_t i = 0; i < meshBuf->vertices.count(); i++, src++, dst++)
     {
         BoneTransform transform;
         if((int)src->bone < MAX_TRANSFORMS)
@@ -463,11 +457,11 @@ void ShaderProgramGL2::beginSkinMesh()
 void ShaderProgramGL2::endSkinMesh()
 {
     // Restore the old mesh data that was overwritten by beginSkinMesh.
-    const VertexGroup *vg = m_meshData.vg;
-    if(vg->vertexBuffer.buffer == 0)
+    const MeshBuffer *meshBuf = m_meshData.meshBuf;
+    if(meshBuf->vertexBuffer == 0)
         return;
-    glBindBuffer(GL_ARRAY_BUFFER, vg->vertexBuffer.buffer);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, vg->vertexBuffer.size(), vg->vertices.constData());
+    glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, meshBuf->vertexBufferSize, meshBuf->vertices.constData());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -564,7 +558,7 @@ void TextureSkinningProgram::endSkinMesh()
 
 void MeshDataGL2::clear()
 {
-    vg = NULL;
+    meshBuf = NULL;
     bones = NULL;
     boneCount = 0;
     materials = NULL;

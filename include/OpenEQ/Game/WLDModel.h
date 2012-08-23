@@ -8,7 +8,6 @@
 #include "OpenEQ/Render/Vertex.h"
 #include "OpenEQ/Render/Geometry.h"
 
-class Mesh;
 class MeshDefFragment;
 class HierSpriteDefFragment;
 class MaterialDefFragment;
@@ -19,6 +18,8 @@ class MaterialMap;
 class PFSArchive;
 class RenderState;
 class VertexGroup;
+class MeshData;
+class MeshBuffer;
 class WLDMesh;
 class WLDModelSkin;
 class WLDSkeleton;
@@ -64,7 +65,10 @@ public:
     WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
     virtual ~WLDMesh();
 
-    VertexGroup * data() const;
+    MeshBuffer * data() const;
+    void setBuffer(MeshBuffer *buffer);
+    MeshData * meshData() const;
+    void setMeshData(MeshData *meshData);
     MeshDefFragment *def() const;
     uint32_t partID() const;
     MaterialMap *materials() const;
@@ -74,16 +78,17 @@ public:
     void importVertexData();
     void importIndexData();
     void importMaterialGroups();
-    void importVertexData(VertexGroup *vg, BufferSegment &dataLoc);
-    void importIndexData(VertexGroup *vg, BufferSegment &indexLoc,
+    void importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc);
+    void importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
-    void importMaterialGroups(VertexGroup *vg);
+    MeshData * importMaterialGroups(MeshBuffer *buffer);
 
     static VertexGroup * combine(const QList<WLDMesh *> &meshes);
 
 private:
     uint32_t m_partID;
-    VertexGroup *m_data;
+    MeshBuffer *m_data;
+    MeshData *m_mesh;
     MeshDefFragment *m_meshDef;
     MaterialMap *m_materials;
     AABox m_boundsAA;

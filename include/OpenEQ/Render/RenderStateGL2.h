@@ -18,7 +18,7 @@ public:
 
     virtual void init();
     
-    virtual void beginDrawMesh(const VertexGroup *m, MaterialMap *materials,
+    virtual void beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMesh();
     virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
@@ -89,7 +89,7 @@ private:
     RenderMode m_renderMode;
     SkinningMode m_skinningMode;
     Shader m_shader;
-    VertexGroup *m_cube;
+    MeshBuffer *m_cube;
     MaterialMap *m_cubeMats;
     QVector<FrameStat *> m_stats;
     int m_gpuTimers;
