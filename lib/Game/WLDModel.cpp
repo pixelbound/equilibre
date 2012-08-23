@@ -9,7 +9,7 @@
 
 WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 {
-    m_data = 0;
+    m_buffer = 0;
     m_skel = 0;
     m_skin = 0;
     m_skin = newSkin("00", archive);
@@ -19,14 +19,14 @@ WLDModel::~WLDModel()
 {
 }
 
-VertexGroup * WLDModel::data() const
+MeshBuffer * WLDModel::buffer() const
 {
-    return m_data;
+    return m_buffer;
 }
 
-void WLDModel::setData(VertexGroup *newData)
+void WLDModel::setBuffer(MeshBuffer *newBuffer)
 {
-    m_data = newData;
+    m_buffer = newBuffer;
 }
 
 WLDSkeleton * WLDModel::skeleton() const
@@ -568,26 +568,17 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
 
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
 {
-#if 0
-    VertexGroup *modelVg = m_model->data();
-    if(!modelVg)
+    MeshBuffer *meshBuf = m_model->buffer();
+    if(!meshBuf)
         return;
 
     // Gather material groups from all the mesh parts we want to draw.
-    modelVg->matGroups.clear();
+    meshBuf->matGroups.clear();
     foreach(WLDMesh *mesh, m_parts)
-    {
-        VertexGroup *partVg = mesh->data();
-        foreach(MaterialGroup mg, partVg->matGroups)
-        {
-            mg.offset += partVg->indexBuffer.offset;
-            modelVg->matGroups.append(mg);
-        }
-    }
+        meshBuf->addMaterialGroups(mesh->meshData());
 
     // Draw all the material groups in one draw call.
-    state->beginDrawMesh(modelVg, m_materials, bones, boneCount);
+    state->beginDrawMesh(meshBuf, m_materials, bones, boneCount);
     state->drawMesh();
     state->endDrawMesh();
-#endif
 }

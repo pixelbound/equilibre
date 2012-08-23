@@ -37,8 +37,8 @@ public:
 
     static QList<MeshDefFragment *> listMeshes(ActorDefFragment *def);
 
-    VertexGroup * data() const;
-    void setData(VertexGroup *newData);
+    MeshBuffer * buffer() const;
+    void setBuffer(MeshBuffer *newBuffer);
 
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
@@ -50,7 +50,7 @@ public:
     WLDModelSkin * newSkin(QString name, PFSArchive *archive);
 
 private:
-    VertexGroup *m_data;
+    MeshBuffer *m_buffer;
     WLDSkeleton *m_skel;
     WLDModelSkin *m_skin;
     QMap<QString, WLDModelSkin *> m_skins;

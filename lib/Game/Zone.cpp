@@ -555,28 +555,23 @@ void Zone::uploadCharacters(RenderState *state)
 
 void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
 {
-#if 0
     // Make sure we haven't uploaded this character before.
     WLDModel *model = actor->model();
-    if(model->data())
+    if(model->buffer())
         return;
 
     // Import mesh geometry.
-    VertexGroup *geom = new VertexGroup();
-    model->setData(geom);
+    MeshBuffer *meshBuf = new MeshBuffer();
+    model->setBuffer(meshBuf);
     foreach(WLDModelSkin *skin, model->skins())
     {
         foreach(WLDMesh *mesh, skin->parts())
         {
-            VertexGroup *meshVg = mesh->data();
-            if(meshVg->matGroups.count() == 0)
-            {
-                mesh->importVertexData(geom, meshVg->vertexBuffer);
-                mesh->importIndexData(geom, meshVg->indexBuffer,
-                                      meshVg->vertexBuffer,
-                                      0, (uint32_t)mesh->def()->m_indices.count());
-                mesh->importMaterialGroups();
-            }
+            MeshData *meshData = mesh->importMaterialGroups(meshBuf);
+            mesh->importVertexData(meshBuf, meshData->vertexSegment);
+            mesh->importIndexData(meshBuf, meshData->indexSegment,
+                                  meshData->vertexSegment,
+                                  0, (uint32_t)mesh->def()->m_indices.count());
         }
 
         // Upload materials (textures).
@@ -590,27 +585,12 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
     }
 
     // Create the GPU buffers.
-    geom->vertexBuffer.elementSize = sizeof(Vertex);
-    geom->vertexBuffer.count = geom->vertices.count();
-    geom->indexBuffer.elementSize = sizeof(uint32_t);
-    geom->indexBuffer.count = geom->indices.count();
-    createGPUBuffer(geom, state);
+    meshBuf->upload(state);
+    m_gpuBuffers.append(meshBuf->vertexBuffer);
+    m_gpuBuffers.append(meshBuf->indexBuffer);
 
-    // Set the buffer handles for each mesh.
-    foreach(WLDModelSkin *skin, model->skins())
-    {
-        // Import mesh geometry.
-        foreach(WLDMesh *mesh, skin->parts())
-        {
-            mesh->data()->vertexBuffer.buffer = geom->vertexBuffer.buffer;
-            mesh->data()->indexBuffer.buffer = geom->indexBuffer.buffer;
-        }
-    }
     // Free the memory used for indices. We need to keep the vertices around for software skinning.
-    geom->indices.clear();
-    geom->indices.squeeze();
-    
-#endif
+    meshBuf->clearIndices();
 }
 
 const vec3 & Zone::playerPos() const
