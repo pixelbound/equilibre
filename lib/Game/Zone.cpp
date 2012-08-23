@@ -327,22 +327,6 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
     }
 }
 
-void Zone::createGPUBuffer(VertexGroup *vg, RenderState *state)
-{
-    if(!vg->vertexBuffer.buffer)
-    {
-        vg->vertexBuffer.buffer = state->createBuffer(vg->vertices.constData(), vg->vertexBuffer.size());
-        if(vg->vertexBuffer.buffer)
-            m_gpuBuffers.append(vg->vertexBuffer.buffer);
-    }
-    if(!vg->indexBuffer.buffer)
-    {
-        vg->indexBuffer.buffer = state->createBuffer(vg->indices.constData(), vg->indexBuffer.size());
-        if(vg->indexBuffer.buffer)
-            m_gpuBuffers.append(vg->indexBuffer.buffer);
-    }
-}
-
 static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
 {
     return a->mesh->def()->name() < b->mesh->def()->name();

@@ -79,7 +79,6 @@ private:
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void createGPUBuffer(VertexGroup *vg, RenderState *state);
     void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
     MeshBuffer * uploadZone(RenderState *state);

@@ -427,7 +427,7 @@ void ShaderProgramGL2::endDrawMesh()
 
 void ShaderProgramGL2::beginSkinMesh()
 {
-    // We can only do mesh skinning in software with a VBO as we can't overwrite the VG data.
+    // We can only do mesh skinning in software with a VBO as we can't overwrite the Mesh data.
     const MeshBuffer *meshBuf = m_meshData.meshBuf;
     if(meshBuf->vertexBuffer == 0)
         return;

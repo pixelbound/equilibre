@@ -2,11 +2,8 @@
 #include "OpenEQ/Render/Material.h"
 #include "OpenEQ/Render/RenderState.h"
 
-using namespace std;
-
 BufferSegment::BufferSegment()
 {
-    buffer = 0;
     elementSize = 0;
     offset = 0;
     count = 0;

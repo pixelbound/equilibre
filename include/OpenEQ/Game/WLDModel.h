@@ -17,7 +17,6 @@ class Material;
 class MaterialMap;
 class PFSArchive;
 class RenderState;
-class VertexGroup;
 class MeshData;
 class MeshBuffer;
 class WLDMesh;

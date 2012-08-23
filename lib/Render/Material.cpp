@@ -241,32 +241,3 @@ void MaterialMap::uploadArray(RenderState *state)
     }
     m_uploaded = true;
 }
-
-void MaterialMap::updateTexCoords(const QVector<MaterialGroup> &groups, Vertex *vertices, const uint32_t *indices)
-{
-    if(!uploaded())
-        return;
-    int maxWidth, maxHeight;
-    size_t totalMem, usedMem;
-    textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
-    foreach(MaterialGroup mg, groups)
-    {
-        Material *mat = material(mg.matID);
-        if(!mat)
-            continue;
-        float matScalingX = (float)mat->image().width() / (float)maxWidth;
-        float matScalingY = (float)mat->image().height() / (float)maxHeight;
-        float z = mat->subTexture();
-        const uint32_t *mgIndices = indices + mg.offset;
-        for(uint32_t i = 0; i < mg.count; i++)
-        {
-            uint32_t vertexID = mgIndices[i];
-            if(vertices[vertexID].texCoords.z == 0)
-            {
-                vertices[vertexID].texCoords.x *= matScalingX;
-                vertices[vertexID].texCoords.y *= matScalingY;
-                vertices[vertexID].texCoords.z = z;
-            }
-        }
-    }
-}

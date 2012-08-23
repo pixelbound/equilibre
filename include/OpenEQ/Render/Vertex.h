@@ -30,7 +30,6 @@ public:
 
 struct RENDER_DLL BufferSegment
 {
-    buffer_t buffer; //XXX remove
     uint32_t elementSize;
     uint32_t offset;
     uint32_t count;
@@ -75,16 +74,6 @@ public:
     buffer_t indexBuffer;
     uint32_t vertexBufferSize;
     uint32_t indexBufferSize;
-};
-
-class RENDER_DLL VertexGroup
-{
-public:
-    QVector<Vertex> vertices;
-    QVector<uint32_t> indices;
-    QVector<MaterialGroup> matGroups;
-    BufferSegment vertexBuffer;
-    BufferSegment indexBuffer;
 };
 
 #endif
