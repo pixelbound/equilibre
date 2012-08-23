@@ -30,7 +30,7 @@ public:
 
 struct RENDER_DLL BufferSegment
 {
-    buffer_t buffer;
+    buffer_t buffer; //XXX remove
     uint32_t elementSize;
     uint32_t offset;
     uint32_t count;
@@ -61,7 +61,11 @@ public:
     ~MeshBuffer();
     MeshData *createMesh(uint32_t groups);
     void addMaterialGroups(MeshData *mesh);
-    void upload(RenderState *state, bool clearVertices);
+    void updateTexCoords(MaterialMap *map);
+    void updateTexCoords(MaterialMap *map, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex);
+    void upload(RenderState *state);
+    void clearVertices();
+    void clearIndices();
     
     QVector<Vertex> vertices;
     QVector<uint32_t> indices;

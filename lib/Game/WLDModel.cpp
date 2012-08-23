@@ -235,46 +235,40 @@ static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b
     return a.matID < b.matID;
 }
 
-#if 0
-VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
+MeshBuffer * WLDMesh::combine(const QVector<WLDMesh *> &meshes)
 {
     // import each part (vertices and material groups) into a single vertex group
-    VertexGroup *vg = new VertexGroup();
+    MeshBuffer *meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, meshes)
     {
-        mesh->importMaterialGroups(vg);
-        mesh->importVertexData(vg, mesh->data()->vertexBuffer);
+        MeshData *meshData = mesh->importMaterialGroups(meshBuf);
+        meshBuf->addMaterialGroups(meshData);
+        mesh->importVertexData(meshBuf, meshData->vertexSegment);
     }
-    vg->vertexBuffer.offset = 0;
-    vg->vertexBuffer.count = vg->vertices.count();
-    vg->vertexBuffer.elementSize = sizeof(Vertex);
 
     // sort the polygons per material and import indices
-    qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);
+    qSort(meshBuf->matGroups.begin(), meshBuf->matGroups.end(), materialGroupLessThan);
     uint32_t indiceOffset = 0;
-    for(int i = 0; i < vg->matGroups.count(); i++)
+    for(int i = 0; i < meshBuf->matGroups.count(); i++)
     {
-        MaterialGroup &mg(vg->matGroups[i]);
+        MaterialGroup &mg(meshBuf->matGroups[i]);
         WLDMesh *mesh = meshes[mg.id];
-        mesh->importIndexData(vg, mesh->data()->indexBuffer, mesh->data()->vertexBuffer,
+        mesh->importIndexData(meshBuf, mesh->meshData()->indexSegment, mesh->meshData()->vertexSegment,
                               mg.offset, mg.count);
         mg.offset = indiceOffset;
         indiceOffset += mg.count;
     }
-    vg->indexBuffer.offset = 0;
-    vg->indexBuffer.count = indiceOffset;
-    vg->indexBuffer.elementSize = sizeof(uint32_t);
 
     // merge material groups with common material
     QVector<MaterialGroup> newGroups;
     MaterialGroup group;
-    group.id = vg->matGroups[0].id;
+    group.id = meshBuf->matGroups[0].id;
     group.offset = 0;
     group.count = 0;
-    group.matID = vg->matGroups[0].matID;
-    for(int i = 0; i < vg->matGroups.count(); i++)
+    group.matID = meshBuf->matGroups[0].matID;
+    for(int i = 0; i < meshBuf->matGroups.count(); i++)
     {
-        MaterialGroup &mg(vg->matGroups[i]);
+        MaterialGroup &mg(meshBuf->matGroups[i]);
         if(mg.matID != group.matID)
         {
             // new material - output the current group
@@ -287,10 +281,9 @@ VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
         group.count += mg.count;
     }
     newGroups.append(group);
-    vg->matGroups = newGroups;
-    return vg;
+    meshBuf->matGroups = newGroups;
+    return meshBuf;
 }
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 

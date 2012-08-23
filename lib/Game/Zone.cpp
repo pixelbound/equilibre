@@ -406,21 +406,21 @@ void Zone::drawGeometry(RenderState *state)
     if(m_zoneBuffer == NULL)
         m_zoneBuffer = uploadZone(state);
     
+#if !defined(COMBINE_ZONE_PARTS)
     // Build a list of visible zone parts.
     m_zoneTree->findVisible(m_visibleZoneParts, state->viewFrustum(), m_cullObjects);
     
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
     foreach(const WLDZoneActor *actor, m_visibleZoneParts)
-    {
         m_zoneBuffer->addMaterialGroups(actor->mesh->meshData());
-    }
+    m_visibleZoneParts.clear();
+#endif
     
-    // Draw the visible parts as one big vertex group.
+    // Draw the visible parts as one big mesh.
     state->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
     state->drawMesh();
     state->endDrawMesh();
-    m_visibleZoneParts.clear();
 }
 
 void Zone::drawObjects(RenderState *state)
@@ -485,10 +485,13 @@ void Zone::drawObjects(RenderState *state)
 
 MeshBuffer * Zone::uploadZone(RenderState *state)
 {
+    MeshBuffer *meshBuf = NULL;
+    
     // Upload the materials as a texture array, assigning z coordinates to materials.
     m_zoneMaterials->uploadArray(state);
     
-    MeshBuffer *meshBuf = new MeshBuffer();
+#if !defined(COMBINE_ZONE_PARTS)
+    meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_zoneParts)
@@ -500,9 +503,16 @@ MeshBuffer * Zone::uploadZone(RenderState *state)
                               0, (uint32_t)mesh->def()->m_indices.count());
         meshData->updateTexCoords(m_zoneMaterials);
     }
+#else
+    meshBuf = WLDMesh::combine(m_zoneParts);
+    meshBuf->updateTexCoords(m_zoneMaterials);
+#endif
     
-    // Create the GPU buffers.
-    meshBuf->upload(state, true);
+    // Create the GPU buffers and free the memory used for vertices and indices.
+    meshBuf->upload(state);
+    meshBuf->clearVertices();
+    meshBuf->clearIndices();
+    
     m_gpuBuffers.append(meshBuf->vertexBuffer);
     m_gpuBuffers.append(meshBuf->indexBuffer);
     return meshBuf;
@@ -529,7 +539,9 @@ MeshBuffer * Zone::uploadObjects(RenderState *state)
     }
     
     // Create the GPU buffers.
-    meshBuf->upload(state, true);
+    meshBuf->upload(state);
+    meshBuf->clearVertices();
+    meshBuf->clearIndices();
     m_gpuBuffers.append(meshBuf->vertexBuffer);
     m_gpuBuffers.append(meshBuf->indexBuffer);
     return meshBuf;

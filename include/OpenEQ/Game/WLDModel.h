@@ -83,7 +83,7 @@ public:
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
     MeshData * importMaterialGroups(MeshBuffer *buffer);
 
-    static VertexGroup * combine(const QList<WLDMesh *> &meshes);
+    static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
 
 private:
     uint32_t m_partID;
