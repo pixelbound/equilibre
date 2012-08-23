@@ -91,7 +91,7 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
     m_partID = partID;
     m_meshDef = meshDef;
     m_materials = NULL;
-    m_data = new VertexGroup(VertexGroup::Triangle);
+    m_data = new VertexGroup();
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
@@ -220,7 +220,7 @@ static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b
 VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
 {
     // import each part (vertices and material groups) into a single vertex group
-    VertexGroup *vg = new VertexGroup(VertexGroup::Triangle);
+    VertexGroup *vg = new VertexGroup();
     foreach(WLDMesh *mesh, meshes)
     {
         mesh->importMaterialGroups(vg);

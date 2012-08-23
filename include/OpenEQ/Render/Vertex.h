@@ -1,5 +1,5 @@
-#ifndef OPENEQ_VERTEX_H
-#define OPENEQ_VERTEX_H
+#ifndef OPENEQ_RENDER_VERTEX_H
+#define OPENEQ_RENDER_VERTEX_H
 
 #include <QVector>
 #include "OpenEQ/Render/Platform.h"
@@ -39,16 +39,6 @@ struct RENDER_DLL BufferSegment
 class RENDER_DLL VertexGroup
 {
 public:
-    enum Primitive
-    {
-        Triangle,
-        Quad
-    };
-    
-    VertexGroup(Primitive mode);
-    virtual ~VertexGroup();
-
-    Primitive mode;
     QVector<Vertex> vertices;
     QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;

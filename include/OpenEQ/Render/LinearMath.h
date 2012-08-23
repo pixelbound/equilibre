@@ -7,9 +7,6 @@
 
 bool fequal(double a, double b);
 
-typedef unsigned int buffer_t;
-typedef unsigned int texture_t;
-
 class RENDER_DLL vec2
 {
 public:

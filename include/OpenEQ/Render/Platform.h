@@ -26,6 +26,9 @@
  
 #endif // _WIN32
 
+typedef unsigned int buffer_t;
+typedef unsigned int texture_t;
+
 char RENDER_DLL * loadFileData(std::string path);
 void RENDER_DLL freeFileData(char *data);
 double RENDER_DLL currentTime();

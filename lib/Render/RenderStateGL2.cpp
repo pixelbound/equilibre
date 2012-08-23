@@ -90,27 +90,27 @@ void RenderStateGL2::createCube()
 
     static const GLuint faces_indices[][4] =
     {
-        {0, 3, 2, 1}, {2, 3, 7, 6},
-        {0, 4, 7, 3}, {1, 2, 6, 5},
-        {4, 5, 6, 7}, {0, 1, 5, 4}
+        {0, 3, 1}, {1, 3, 2}, {2, 3, 6}, {6, 3, 7},
+        {0, 4, 3}, {3, 4, 7}, {1, 2, 5}, {5, 2, 6},
+        {4, 5, 7}, {7, 5, 6}, {0, 1, 4}, {4, 1, 5}
     };
     
-    m_cube = new VertexGroup(VertexGroup::Quad);
-    m_cube->vertices.resize(24);
-    Vertex *vd = m_cube->vertices.data();
-    for(uint32_t i = 0; i < 6; i++)
+    m_cube = new VertexGroup();
+    m_cube->vertices.resize(36);
+    Vertex *v = m_cube->vertices.data();
+    for(uint32_t i = 0; i < 12; i++)
     {
         const GLuint *face = faces_indices[i];
-        const GLfloat *normal = faces_normals[i];
-        for(uint32_t j = 0; j < 4; j++, vd++)
+        const GLfloat *normal = faces_normals[i/2];
+        for(uint32_t j = 0; j < 3; j++, v++)
         {
             const GLfloat *vertex = vertices[face[j]];
-            vd->position = vec3(vertex[0], vertex[1], vertex[2]);
-            vd->normal = vec3(normal[0], normal[1], normal[2]);
+            v->position = vec3(vertex[0], vertex[1], vertex[2]);
+            v->normal = vec3(normal[0], normal[1], normal[2]);
         }
     }
     MaterialGroup mg;
-    mg.count = 24;
+    mg.count = 36;
     mg.offset = 0;
     mg.id = 0;
     mg.matID = 1;

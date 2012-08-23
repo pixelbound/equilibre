@@ -19,14 +19,3 @@ size_t BufferSegment::address() const
 {
     return offset * elementSize;
 }
-
-////////////////////////////////////////////////////////////////////////////////
-
-VertexGroup::VertexGroup(VertexGroup::Primitive mode)
-{
-    this->mode = mode;
-}
-
-VertexGroup::~VertexGroup()
-{
-}

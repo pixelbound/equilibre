@@ -279,18 +279,6 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-static GLuint primitiveToGLMode(VertexGroup::Primitive mode)
-{
-    switch(mode)
-    {
-    case VertexGroup::Triangle:
-        return GL_TRIANGLES;
-    case VertexGroup::Quad:
-        return GL_QUADS;
-    }
-    return 0;
-}
-
 void ShaderProgramGL2::beginDrawMesh(const VertexGroup *vg, MaterialMap *materials,
                                      const BoneTransform *bones, int boneCount)
 {
@@ -412,7 +400,7 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
 
 void ShaderProgramGL2::drawMaterialGroup(const VertexGroup *vg, const MaterialGroup &mg)
 {
-    GLuint mode = primitiveToGLMode(vg->mode);
+    const GLuint mode = GL_TRIANGLES;
     if(m_meshData.haveIndices)
     {
         const uint32_t *indices = m_meshData.indices + vg->indexBuffer.offset + mg.offset;

@@ -491,7 +491,7 @@ VertexGroup * Zone::uploadZone(RenderState *state)
     // Upload the materials as a texture array, assigning z coordinates to materials.
     m_zoneMaterials->uploadArray(state);
     
-    VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
+    VertexGroup *geom = new VertexGroup();
     
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_zoneParts)
@@ -534,7 +534,7 @@ VertexGroup * Zone::uploadZone(RenderState *state)
 
 VertexGroup * Zone::uploadObjects(RenderState *state)
 {
-    VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
+    VertexGroup *geom = new VertexGroup();
     
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_objModels.values())
@@ -592,7 +592,7 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
         return;
 
     // Import mesh geometry.
-    VertexGroup *geom = new VertexGroup(VertexGroup::Triangle);
+    VertexGroup *geom = new VertexGroup();
     model->setData(geom);
     foreach(WLDModelSkin *skin, model->skins())
     {
