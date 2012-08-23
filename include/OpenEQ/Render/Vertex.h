@@ -5,7 +5,7 @@
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/LinearMath.h"
 
-class RENDER_DLL VertexData
+class RENDER_DLL Vertex
 {
 public:
     vec3 position;
@@ -49,7 +49,7 @@ public:
     virtual ~VertexGroup();
 
     Primitive mode;
-    QVector<VertexData> vertices;
+    QVector<Vertex> vertices;
     QVector<uint32_t> indices;
     QVector<MaterialGroup> matGroups;
     BufferSegment vertexBuffer;

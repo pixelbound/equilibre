@@ -251,7 +251,7 @@ void ShaderProgramGL2::disableVertexAttribute(int attr, int index)
 
 void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
 {
-    const VertexData *vd = vg->vertices.constData();
+    const Vertex *vd = vg->vertices.constData();
     const uint8_t *posPointer = (const uint8_t *)&vd->position;
     const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
     const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
@@ -265,16 +265,16 @@ void ShaderProgramGL2::uploadVertexAttributes(const VertexGroup *vg)
         bonePointer = texCoordsPointer + sizeof(vec3);
     }
     glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
-        sizeof(VertexData), posPointer);
+        sizeof(Vertex), posPointer);
     if(m_attr[A_NORMAL] >= 0)
         glVertexAttribPointer(m_attr[A_NORMAL], 3, GL_FLOAT, GL_FALSE,
-            sizeof(VertexData), normalPointer);
+            sizeof(Vertex), normalPointer);
     if(m_attr[A_TEX_COORDS] >= 0)
         glVertexAttribPointer(m_attr[A_TEX_COORDS], 3, GL_FLOAT, GL_FALSE,
-            sizeof(VertexData), texCoordsPointer);
+            sizeof(Vertex), texCoordsPointer);
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
-            sizeof(VertexData), bonePointer);
+            sizeof(Vertex), bonePointer);
     if(vg->vertexBuffer.buffer != 0)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -456,8 +456,8 @@ void ShaderProgramGL2::beginSkinMesh()
     void *buffer = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     if(!buffer)
         return;
-    const VertexData *src = vg->vertices.constData();
-    VertexData *dst = (VertexData *)buffer;
+    const Vertex *src = vg->vertices.constData();
+    Vertex *dst = (Vertex *)buffer;
     for(uint32_t i = 0; i < vg->vertices.count(); i++, src++, dst++)
     {
         BoneTransform transform;

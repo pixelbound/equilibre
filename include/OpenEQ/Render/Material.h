@@ -69,7 +69,7 @@ public:
     
     void upload(RenderState *state);
     void uploadArray(RenderState *state);
-    void updateTexCoords(const QVector<MaterialGroup> &groups, VertexData *vd, const uint32_t *indices);
+    void updateTexCoords(const QVector<MaterialGroup> &groups, Vertex *vd, const uint32_t *indices);
     void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:

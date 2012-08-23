@@ -97,7 +97,7 @@ void RenderStateGL2::createCube()
     
     m_cube = new VertexGroup(VertexGroup::Quad);
     m_cube->vertices.resize(24);
-    VertexData *vd = m_cube->vertices.data();
+    Vertex *vd = m_cube->vertices.data();
     for(uint32_t i = 0; i < 6; i++)
     {
         const GLuint *face = faces_indices[i];

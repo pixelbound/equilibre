@@ -504,13 +504,13 @@ VertexGroup * Zone::uploadZone(RenderState *state)
         mesh->importMaterialGroups();
         
         // Update texture coordinates.
-        VertexData *vertices = geom->vertices.data();
+        Vertex *vertices = geom->vertices.data();
         const uint32_t *indices = geom->indices.constData() + meshVg->indexBuffer.offset;
         m_zoneMaterials->updateTexCoords(meshVg->matGroups, vertices, indices);
     }
     
     // Create the GPU buffers.
-    geom->vertexBuffer.elementSize = sizeof(VertexData);
+    geom->vertexBuffer.elementSize = sizeof(Vertex);
     geom->vertexBuffer.count = geom->vertices.count();
     geom->indexBuffer.elementSize = sizeof(uint32_t);
     geom->indexBuffer.count = geom->indices.count();
@@ -548,7 +548,7 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
         MaterialMap *materials = mesh->materials();
         if(materials)
         {
-            VertexData *vertices = geom->vertices.data();
+            Vertex *vertices = geom->vertices.data();
             const uint32_t *indices = geom->indices.constData() + meshVg->indexBuffer.offset;
             materials->uploadArray(state);
             materials->updateTexCoords(meshVg->matGroups, vertices, indices);
@@ -556,7 +556,7 @@ VertexGroup * Zone::uploadObjects(RenderState *state)
     }
     
     // Create the GPU buffers.
-    geom->vertexBuffer.elementSize = sizeof(VertexData);
+    geom->vertexBuffer.elementSize = sizeof(Vertex);
     geom->vertexBuffer.count = geom->vertices.count();
     geom->indexBuffer.elementSize = sizeof(uint32_t);
     geom->indexBuffer.count = geom->indices.count();
@@ -620,7 +620,7 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
     }
 
     // Create the GPU buffers.
-    geom->vertexBuffer.elementSize = sizeof(VertexData);
+    geom->vertexBuffer.elementSize = sizeof(Vertex);
     geom->vertexBuffer.count = geom->vertices.count();
     geom->indexBuffer.elementSize = sizeof(uint32_t);
     geom->indexBuffer.count = geom->indices.count();

@@ -141,22 +141,22 @@ void WLDMesh::importVertexData()
 void WLDMesh::importVertexData(VertexGroup *vg, BufferSegment &dataLoc)
 {
     // update the mesh location
-    QVector<VertexData> &vertices(vg->vertices);
+    QVector<Vertex> &vertices(vg->vertices);
     uint32_t vertexCount = (uint32_t)m_meshDef->m_vertices.count();
     uint32_t vertexIndex = vertices.count();
     dataLoc.offset = vertexIndex;
     dataLoc.count = vertexCount;
-    dataLoc.elementSize = sizeof(VertexData);
+    dataLoc.elementSize = sizeof(Vertex);
     
     // load vertices, texCoords, normals, faces
     for(uint32_t i = 0; i < vertexCount; i++)
     {
-        VertexData vd;
-        vd.position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
-        vd.normal = m_meshDef->m_normals.value(i);
-        vd.texCoords = vec3(m_meshDef->m_texCoords.value(i), 0.0f);
-        vd.bone = 0;
-        vertices.append(vd);
+        Vertex v;
+        v.position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
+        v.normal = m_meshDef->m_normals.value(i);
+        v.texCoords = vec3(m_meshDef->m_texCoords.value(i), 0.0f);
+        v.bone = 0;
+        vertices.append(v);
     }
     // load bone indices
     foreach(vec2us g, m_meshDef->m_vertexPieces)
@@ -228,7 +228,7 @@ VertexGroup * WLDMesh::combine(const QList<WLDMesh *> &meshes)
     }
     vg->vertexBuffer.offset = 0;
     vg->vertexBuffer.count = vg->vertices.count();
-    vg->vertexBuffer.elementSize = sizeof(VertexData);
+    vg->vertexBuffer.elementSize = sizeof(Vertex);
 
     // sort the polygons per material and import indices
     qSort(vg->matGroups.begin(), vg->matGroups.end(), materialGroupLessThan);

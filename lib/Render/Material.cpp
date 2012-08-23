@@ -242,7 +242,7 @@ void MaterialMap::uploadArray(RenderState *state)
     m_uploaded = true;
 }
 
-void MaterialMap::updateTexCoords(const QVector<MaterialGroup> &groups, VertexData *vertices, const uint32_t *indices)
+void MaterialMap::updateTexCoords(const QVector<MaterialGroup> &groups, Vertex *vertices, const uint32_t *indices)
 {
     if(!uploaded())
         return;
