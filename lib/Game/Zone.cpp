@@ -480,11 +480,7 @@ MeshBuffer * Zone::uploadZone(RenderState *state)
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_zoneParts)
     {
-        MeshData *meshData = mesh->importMaterialGroups(meshBuf);
-        mesh->importVertexData(meshBuf, meshData->vertexSegment);
-        mesh->importIndexData(meshBuf, meshData->indexSegment,
-                              meshData->vertexSegment,
-                              0, (uint32_t)mesh->def()->m_indices.count());
+        MeshData *meshData = mesh->importFrom(meshBuf);
         meshData->updateTexCoords(m_zoneMaterials);
     }
 #else
@@ -509,11 +505,7 @@ MeshBuffer * Zone::uploadObjects(RenderState *state)
     // Import vertices and indices for each mesh.
     foreach(WLDMesh *mesh, m_objModels.values())
     {
-        MeshData *meshData = mesh->importMaterialGroups(meshBuf);
-        mesh->importVertexData(meshBuf, meshData->vertexSegment);
-        mesh->importIndexData(meshBuf, meshData->indexSegment,
-                              meshData->vertexSegment,
-                              0, (uint32_t)mesh->def()->m_indices.count());
+        MeshData *meshData = mesh->importFrom(meshBuf);
         MaterialMap *materials = mesh->materials();
         if(materials)
         {
@@ -550,13 +542,7 @@ void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
     foreach(WLDModelSkin *skin, model->skins())
     {
         foreach(WLDMesh *mesh, skin->parts())
-        {
-            MeshData *meshData = mesh->importMaterialGroups(meshBuf);
-            mesh->importVertexData(meshBuf, meshData->vertexSegment);
-            mesh->importIndexData(meshBuf, meshData->indexSegment,
-                                  meshData->vertexSegment,
-                                  0, (uint32_t)mesh->def()->m_indices.count());
-        }
+            mesh->importFrom(meshBuf);
 
         // Upload materials (textures).
         MaterialMap *materials = skin->materials();

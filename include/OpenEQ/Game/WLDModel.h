@@ -72,14 +72,15 @@ public:
     void setMaterials(MaterialMap *materials);
     const AABox & boundsAA() const;
 
+    MeshData * importFrom(MeshBuffer *meshBuf);
+    static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
+
+private:
     void importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc);
     void importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
     MeshData * importMaterialGroups(MeshBuffer *buffer);
-
-    static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
-
-private:
+    
     uint32_t m_partID;
     MeshData *m_data;
     MeshDefFragment *m_meshDef;

@@ -137,6 +137,15 @@ void WLDMesh::setMaterials(MaterialMap *materials)
     m_materials = materials;
 }
 
+MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf)
+{
+    MeshData *meshData = importMaterialGroups(meshBuf);
+    importVertexData(meshBuf, meshData->vertexSegment);
+    importIndexData(meshBuf, meshData->indexSegment, meshData->vertexSegment,
+                    0, (uint32_t)m_meshDef->m_indices.count());
+    return meshData;
+}
+
 void WLDMesh::importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc)
 {
     // Update the location of the mesh in the buffer.
