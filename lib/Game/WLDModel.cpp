@@ -92,7 +92,6 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
     m_meshDef = meshDef;
     m_materials = NULL;
     m_data = NULL;
-    m_mesh = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
@@ -103,24 +102,14 @@ WLDMesh::~WLDMesh()
     delete m_materials;
 }
 
-MeshBuffer * WLDMesh::data() const
+MeshData * WLDMesh::data() const
 {
     return m_data;
 }
 
-void WLDMesh::setBuffer(MeshBuffer *buffer)
+void WLDMesh::setData(MeshData *mesh)
 {
-    m_data = buffer;
-}
-
-MeshData * WLDMesh::meshData() const
-{
-    return m_mesh;
-}
-
-void WLDMesh::setMeshData(MeshData *mesh)
-{
-    m_mesh = mesh;
+    m_data = mesh;
 }
 
 MeshDefFragment * WLDMesh::def() const
@@ -146,11 +135,6 @@ MaterialMap * WLDMesh::materials() const
 void WLDMesh::setMaterials(MaterialMap *materials)
 {
     m_materials = materials;
-}
-
-void WLDMesh::importVertexData()
-{
-    importVertexData(m_data, m_mesh->vertexSegment);
 }
 
 void WLDMesh::importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc)
@@ -183,12 +167,6 @@ void WLDMesh::importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc)
     }
 }
 
-void WLDMesh::importIndexData()
-{
-    importIndexData(m_data, m_mesh->indexSegment, m_mesh->vertexSegment,
-        0, (uint32_t)m_meshDef->m_indices.count());
-}
-
 void WLDMesh::importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
                                    const BufferSegment &dataLoc, uint32_t offset, uint32_t count)
 {
@@ -200,23 +178,18 @@ void WLDMesh::importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
         indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
-void WLDMesh::importMaterialGroups()
-{
-    importMaterialGroups(m_data);
-}
-
 MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer)
 {
     // load material groups
     MaterialPaletteFragment *palDef = m_meshDef->m_palette;
     uint32_t meshOffset = 0;
-    m_mesh = buffer->createMesh(m_meshDef->m_polygonsByTex.count());
+    m_data = buffer->createMesh(m_meshDef->m_polygonsByTex.count());
     for(int i = 0; i < m_meshDef->m_polygonsByTex.count(); i++)
     {
         vec2us g = m_meshDef->m_polygonsByTex[i];
         MaterialDefFragment *matDef = palDef->m_materials[g.second];
         uint32_t vertexCount = g.first * 3;
-        MaterialGroup &mg(m_mesh->matGroups[i]);
+        MaterialGroup &mg(m_data->matGroups[i]);
         mg.id = m_partID;
         mg.offset = meshOffset;
         mg.count = vertexCount;
@@ -227,7 +200,7 @@ MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer)
         mg.matID = WLDMaterialPalette::materialHash(matName);
         meshOffset += vertexCount;
     }
-    return m_mesh;
+    return m_data;
 }
 
 static bool materialGroupLessThan(const MaterialGroup &a, const MaterialGroup &b)
@@ -253,7 +226,7 @@ MeshBuffer * WLDMesh::combine(const QVector<WLDMesh *> &meshes)
     {
         MaterialGroup &mg(meshBuf->matGroups[i]);
         WLDMesh *mesh = meshes[mg.id];
-        mesh->importIndexData(meshBuf, mesh->meshData()->indexSegment, mesh->meshData()->vertexSegment,
+        mesh->importIndexData(meshBuf, mesh->data()->indexSegment, mesh->data()->vertexSegment,
                               mg.offset, mg.count);
         mg.offset = indiceOffset;
         indiceOffset += mg.count;
@@ -575,7 +548,7 @@ void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t
     // Gather material groups from all the mesh parts we want to draw.
     meshBuf->matGroups.clear();
     foreach(WLDMesh *mesh, m_parts)
-        meshBuf->addMaterialGroups(mesh->meshData());
+        meshBuf->addMaterialGroups(mesh->data());
 
     // Draw all the material groups in one draw call.
     state->beginDrawMesh(meshBuf, m_materials, bones, boneCount);

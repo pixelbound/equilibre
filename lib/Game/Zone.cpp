@@ -413,7 +413,7 @@ void Zone::drawGeometry(RenderState *state)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
     foreach(const WLDZoneActor *actor, m_visibleZoneParts)
-        m_zoneBuffer->addMaterialGroups(actor->mesh->meshData());
+        m_zoneBuffer->addMaterialGroups(actor->mesh->data());
     m_visibleZoneParts.clear();
 #endif
     
@@ -452,7 +452,7 @@ void Zone::drawObjects(RenderState *state)
                 state->endDrawMesh();
             }
             m_objectsBuffer->matGroups.clear();
-            m_objectsBuffer->addMaterialGroups(currentMesh->meshData());
+            m_objectsBuffer->addMaterialGroups(currentMesh->data());
             state->beginDrawMesh(m_objectsBuffer, currentMesh->materials());
             previousMesh = currentMesh;
             meshCount++;
