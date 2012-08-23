@@ -10,6 +10,8 @@ class QImage;
 class QVector3D;
 class QQuaternion;
 class BoneTransform;
+class Frustum;
+class AABox;
 class Material;
 class MaterialMap;
 class FrameStat;

@@ -6,6 +6,7 @@
 #include <QPair>
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Render/Geometry.h"
 
 class PFSArchive;
 class ActorFragment;

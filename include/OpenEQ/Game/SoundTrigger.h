@@ -4,7 +4,7 @@
 #include <QString>
 #include <QVector>
 #include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Render/Geometry.h"
 
 class StreamReader;
 

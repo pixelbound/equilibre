@@ -3,8 +3,9 @@
 
 #include <QObject>
 #include <QMap>
+#include <QVector>
 #include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Render/Geometry.h"
 #include "WLDFragment.h"
 
 class HierSpriteDefFragment;

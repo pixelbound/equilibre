@@ -7,6 +7,7 @@
 #include <QPair>
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/Vertex.h"
+#include "OpenEQ/Render/Geometry.h"
 #include "OpenEQ/Game/WLDFragment.h"
 #include "OpenEQ/Game/WLDSkeleton.h"
 

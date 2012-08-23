@@ -5,6 +5,7 @@
 #include <string>
 #include "OpenEQ/Render/Platform.h"
 #include "OpenEQ/Render/RenderState.h"
+#include "OpenEQ/Render/Geometry.h"
 
 class ShaderProgramGL2;
 class MaterialMap;
