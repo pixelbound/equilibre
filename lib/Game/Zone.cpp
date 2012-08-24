@@ -390,11 +390,20 @@ void Zone::draw(RenderState *state)
             state->drawBox(trigger->bounds());
     }
     
-    // Draw the viewing frustum if frozen.
+    // Draw the viewing frustum and bounding boxes of visible zone parts. if frozen.
     if(m_frustumIsFrozen)
+    {
         state->drawFrustum(m_frozenFrustum);
+        //foreach(WLDZoneActor *actor, m_visibleZoneParts)
+        //    state->drawBox(actor->boundsAA);
+        //foreach(WLDZoneActor *actor, m_visibleObjects)
+        //    state->drawBox(actor->boundsAA);
+    }
     
     state->popMatrix();
+    
+    m_visibleZoneParts.clear();
+    m_visibleObjects.clear();
 }
 
 void Zone::drawGeometry(RenderState *state)
@@ -412,7 +421,6 @@ void Zone::drawGeometry(RenderState *state)
     m_zoneBuffer->matGroups.clear();
     foreach(const WLDZoneActor *actor, m_visibleZoneParts)
         m_zoneBuffer->addMaterialGroups(actor->mesh->data());
-    m_visibleZoneParts.clear();
 #endif
     
     // Draw the visible parts as one big mesh.
@@ -479,7 +487,6 @@ void Zone::drawObjects(RenderState *state)
     if(m_drawnObjectsStat == NULL)
         m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
     m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
-    m_visibleObjects.clear();
 }
 
 MeshBuffer * Zone::uploadZone(RenderState *state)

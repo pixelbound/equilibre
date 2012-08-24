@@ -222,7 +222,10 @@ void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, 
     for(int i = 0; i < 8; i++)
         findVisible(objects, octant->child(i), f, cull);
     foreach(WLDZoneActor *actor, octant->actors())
-        objects.append(actor);
+    {
+        if((r == Frustum::INSIDE) || (f.containsAABox(actor->boundsAA) != Frustum::OUTSIDE))
+            objects.append(actor);
+    }
 }
 
 void OctreeIndex::findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth)
