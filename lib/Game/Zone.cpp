@@ -30,6 +30,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_showObjects = true;
     m_cullObjects = true;
     m_showSoundTriggers = false;
+    m_frustumIsFrozen = false;
     m_zoneStat = NULL;
     m_objectsStat = NULL;
     m_zoneStatGPU = NULL;
@@ -335,17 +336,22 @@ static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
     return a->mesh->def()->name() < b->mesh->def()->name();
 }
 
-void Zone::draw(RenderState *state)
+void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
-    Frustum &frustum = state->viewFrustum();
     frustum.setEye(m_playerPos);
     frustum.setFocus(m_playerPos + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
     frustum.update();
+}
+
+void Zone::draw(RenderState *state)
+{
+    Frustum &frustum = state->viewFrustum();
+    setPlayerViewFrustum(frustum);
     state->pushMatrix();
     state->multiplyMatrix(frustum.camera());
     
@@ -395,7 +401,8 @@ void Zone::drawGeometry(RenderState *state)
     
 #if !defined(COMBINE_ZONE_PARTS)
     // Build a list of visible zone parts.
-    m_zoneTree->findVisible(m_visibleZoneParts, state->viewFrustum(), m_cullObjects);
+    Frustum &frustum(m_frustumIsFrozen ? m_frozenFrustum : state->viewFrustum());
+    m_zoneTree->findVisible(m_visibleZoneParts, frustum, m_cullObjects);
     
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
@@ -417,7 +424,8 @@ void Zone::drawObjects(RenderState *state)
         m_objectsBuffer = uploadObjects(state);
     
     // Build a list of visible objects and sort them by mesh.
-    m_objectTree->findVisible(m_visibleObjects, state->viewFrustum(), m_cullObjects);
+    Frustum &frustum(m_frustumIsFrozen ? m_frozenFrustum : state->viewFrustum());
+    m_objectTree->findVisible(m_visibleObjects, frustum, m_cullObjects);
     qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
     
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
@@ -617,6 +625,31 @@ bool Zone::cullObjects() const
     return m_cullObjects;
 }
 
+void Zone::setCullObjects(bool enabled)
+{
+    m_cullObjects = enabled;
+}
+
+bool Zone::frustumIsFrozen() const
+{
+    return m_frustumIsFrozen;
+}
+
+void Zone::freezeFrustum(RenderState *state)
+{
+    if(!m_frustumIsFrozen)
+    {
+        m_frozenFrustum = state->viewFrustum();
+        setPlayerViewFrustum(m_frozenFrustum);
+        m_frustumIsFrozen = true;    
+    }
+}
+
+void Zone::unFreezeFrustum()
+{
+    m_frustumIsFrozen = false;
+}
+
 bool Zone::showSoundTriggers() const
 {
     return m_showSoundTriggers;
@@ -625,11 +658,6 @@ bool Zone::showSoundTriggers() const
 void Zone::setShowSoundTriggers(bool show)
 {
     m_showSoundTriggers = show;
-}
-
-void Zone::setCullObjects(bool enabled)
-{
-    m_cullObjects = enabled;
 }
 
 void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const

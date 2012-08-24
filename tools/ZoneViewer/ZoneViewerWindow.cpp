@@ -258,6 +258,13 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
         m_zone->step(dist, 0.0, 0.0);
     else if(key == Qt::Key_S)
         m_zone->step(-dist, 0.0, 0.0);
+    else if(key == Qt::Key_Space)
+    {
+        if(m_zone->frustumIsFrozen())
+            m_zone->unFreezeFrustum();
+        else
+            m_zone->freezeFrustum(m_state);
+    }
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)

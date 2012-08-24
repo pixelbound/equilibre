@@ -62,11 +62,15 @@ public:
     bool showObjects() const;
     bool cullObjects() const;
     bool showSoundTriggers() const;
-
+    bool frustumIsFrozen() const;
+    
     void setShowZone(bool show);
     void setShowObjects(bool show);
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
+    
+    void freezeFrustum(RenderState *state);
+    void unFreezeFrustum();
     
     void currentSoundTriggers(QVector<SoundTrigger *> &triggers) const;
     
@@ -84,6 +88,7 @@ private:
     MeshBuffer * uploadZone(RenderState *state);
     MeshBuffer * uploadObjects(RenderState *state);
     void uploadCharacters(RenderState *state);
+    void setPlayerViewFrustum(Frustum &frustum) const;
 
     //TODO refactor this into data container classes
     QString m_name;
@@ -111,6 +116,8 @@ private:
     bool m_showObjects;
     bool m_cullObjects;
     bool m_showSoundTriggers;
+    bool m_frustumIsFrozen;
+    Frustum m_frozenFrustum;
     FrameStat *m_zoneStat;
     FrameStat *m_objectsStat;
     FrameStat *m_zoneStatGPU;
