@@ -258,50 +258,76 @@ static void setTextureParams(GLenum target, bool mipmaps)
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
 }
 
-static void defineImage(uint32_t target, int width, int height, uint32_t depth)
+static void defineImage(uint32_t target, int width, int height, uint32_t depth, int maxLevel)
 {
     const GLenum format = GL_RGBA;
     const GLenum type = GL_UNSIGNED_BYTE;
-    switch(target)
+    int level = 0;
+    while((level <= maxLevel) && ((width > 0) || (height > 0)))
     {
-    default:
-    case GL_TEXTURE_2D:
-    case GL_TEXTURE_RECTANGLE:
-        glTexImage2D(target, 0, format, width, height, 0, format, type, NULL);
-        break;
-    case GL_TEXTURE_3D:
-    case GL_TEXTURE_2D_ARRAY:
-        glTexImage3D(target, 0, format, width, height, depth, 0, format, type, NULL);
-        break;
+        // The last mipmap level is 1x1, even when original width and height are different.
+        width = qMax(width, 1);
+        height = qMax(height, 1);
+        switch(target)
+        {
+        default:
+        case GL_TEXTURE_2D:
+        case GL_TEXTURE_RECTANGLE:
+            glTexImage2D(target, level, format, width, height, 0, format, type, NULL);
+            break;
+        case GL_TEXTURE_3D:
+        case GL_TEXTURE_2D_ARRAY:
+            glTexImage3D(target, level, format, width, height, depth, 0, format, type, NULL);
+            break;
+        }
+        width >>= 1;
+        height >>= 1;
+        level++;
     }
 }
 
-static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeatX, uint32_t repeatY)
+static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeatX, uint32_t repeatY, int maxLevel)
 {
     const GLenum format = GL_RGBA;
     const GLenum type = GL_UNSIGNED_BYTE;
+    QImage levelImg = img;
     int width = img.width(), height = img.height();
     int level = 0;
     uint32_t i = 0, j = 0;
-    for(i = 0; i < repeatX; i++)
+    while((level <= maxLevel) && ((width > 0) || (height > 0)))
     {
-        for(j = 0; j < repeatY; j++)
+        // The last mipmap level is 1x1, even when original width and height are different.
+        width = qMax(width, 1);
+        height = qMax(height, 1);
+        if(level > 0)
         {
-            switch(target)
+            // create mipmap image
+            levelImg = levelImg.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        }
+        for(i = 0; i < repeatX; i++)
+        {
+            for(j = 0; j < repeatY; j++)
             {
-            default:
-            case GL_TEXTURE_2D:
-            case GL_TEXTURE_RECTANGLE:
-                glTexSubImage2D(target, level, i * width, j * height, width, height,
-                                format, type, img.bits());
-                break;
-            case GL_TEXTURE_3D:
-            case GL_TEXTURE_2D_ARRAY:
-                glTexSubImage3D(target, level, i * width, j * height, z, width, height, 1,
-                                format, type, img.bits());
-                break;
+                switch(target)
+                {
+                default:
+                case GL_TEXTURE_2D:
+                case GL_TEXTURE_RECTANGLE:
+                    glTexSubImage2D(target, level, i * width, j * height, width, height,
+                                    format, type, levelImg.bits());    
+                    break;
+                case GL_TEXTURE_3D:
+                case GL_TEXTURE_2D_ARRAY:
+                    glTexSubImage3D(target, level, i * width, j * height, z, width, height, 1,
+                                    format, type, levelImg.bits());
+                    break;
+                }
             }
         }
+        
+        width >>= 1;
+        height >>= 1;
+        level++;
     }
 }
 
@@ -326,17 +352,21 @@ texture_t RenderStateGL2::loadTexture(QImage img)
     glBindTexture(target, texID);
 
     // Allocate the texture array.
-    defineImage(target, img.width(), img.height(), 1);
+    const bool useGenMipmaps = false;
+    uint32_t maxLevel = maxMipmapLevel(img.width(), img.height(), 1);
+    defineImage(target, img.width(), img.height(), 1, useGenMipmaps ? 0 : maxLevel);
     
     // Copy image data.
-    uploadImage(target, img, 0, 1, 1);
+    uploadImage(target, img, 0, 1, 1, useGenMipmaps ? 0 : maxLevel);
 
     // Set texture parameters.
+    glTexParameterf(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
     glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glGenerateMipmapEXT(GL_TEXTURE_2D_ARRAY);
+    if(useGenMipmaps)
+        glGenerateMipmapEXT(GL_TEXTURE_2D_ARRAY);
     glBindTexture(target, 0);
     return texID;
 }
@@ -357,6 +387,7 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
     }
 
     // Figure out what's the maximum mipmap level we can use.
+    const bool useGenMipmaps = false;
     int maxRepeat = 1, maxLevel = 0;
     for(size_t i = 0; i < count; i++)
     {
@@ -368,7 +399,7 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
     maxLevel = maxMipmapLevel(maxWidth, maxHeight, maxRepeat);
     
     // Allocate the texture array.
-    defineImage(target, maxWidth, maxHeight, count);
+    defineImage(target, maxWidth, maxHeight, count, useGenMipmaps ? 0 : maxLevel);
     
     // Copy image data.
     for(size_t i = 0; i < count; i++)
@@ -378,7 +409,7 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
         // so that we can easily use GL_REPEAT.
         uint32_t repeatX = maxWidth / img.width();
         uint32_t repeatY = maxHeight / img.height();
-        uploadImage(target, img, i, repeatX, repeatY);
+        uploadImage(target, img, i, repeatX, repeatY, useGenMipmaps ? 0 : maxLevel);
     }
     
     // Set texture parameters.
@@ -387,7 +418,8 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
     glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glGenerateMipmapEXT(GL_TEXTURE_2D_ARRAY);
+    if(useGenMipmaps)
+        glGenerateMipmapEXT(GL_TEXTURE_2D_ARRAY);
     glBindTexture(target, 0);
     return texID;
 }
