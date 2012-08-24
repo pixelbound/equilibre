@@ -25,6 +25,7 @@ public:
     virtual void endDrawMesh();
     
     virtual void drawBox(const AABox &box);
+    virtual void drawFrustum(const Frustum &frustum);
     ShaderProgramGL2 * program() const;
 
     virtual SkinningMode skinningMode() const;

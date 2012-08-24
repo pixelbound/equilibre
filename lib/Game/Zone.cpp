@@ -390,6 +390,10 @@ void Zone::draw(RenderState *state)
             state->drawBox(trigger->bounds());
     }
     
+    // Draw the viewing frustum if frozen.
+    if(m_frustumIsFrozen)
+        state->drawFrustum(m_frozenFrustum);
+    
     state->popMatrix();
 }
 

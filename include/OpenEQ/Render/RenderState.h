@@ -54,6 +54,7 @@ public:
     
     // debug operations
     virtual void drawBox(const AABox &box) = 0;
+    virtual void drawFrustum(const Frustum &frustum) = 0;
 
     enum SkinningMode
     {

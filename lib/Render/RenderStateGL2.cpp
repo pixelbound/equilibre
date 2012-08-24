@@ -71,56 +71,58 @@ void RenderStateGL2::endDrawMesh()
     prog->endDrawMesh();
 }
 
-void RenderStateGL2::createCube()
+static const vec3 cubeVertices[] =
 {
-    static const GLfloat vertices[][3] =
-    {
-        {-0.5, -0.5,  0.5}, {-0.5,  0.5,  0.5},
-        { 0.5,  0.5,  0.5}, { 0.5, -0.5,  0.5},
-        {-0.5, -0.5, -0.5}, {-0.5,  0.5, -0.5},
-        { 0.5,  0.5, -0.5}, { 0.5, -0.5, -0.5}
-    };
+    vec3(-0.5, -0.5,  0.5), vec3(  0.5, -0.5,  0.5),
+    vec3( 0.5,  0.5,  0.5), vec3( -0.5,  0.5,  0.5),
+    vec3(-0.5, -0.5, -0.5), vec3(  0.5, -0.5, -0.5),
+    vec3( 0.5,  0.5, -0.5), vec3( -0.5,  0.5, -0.5)
+};
 
-    static const GLfloat faces_normals[][3] =
+static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
+{
+    static const uint8_t faces_indices[] =
     {
-        { 0.0,  0.0,  1.0}, { 1.0,  0.0,  0.0},
-        { 0.0, -1.0,  0.0}, { 0.0,  1.0,  0.0},
-        { 0.0,  0.0, -1.0}, {-1.0,  0.0,  0.0},
-    };
-
-    static const GLuint faces_indices[][4] =
-    {
-        {0, 3, 1}, {1, 3, 2}, {2, 3, 6}, {6, 3, 7},
-        {0, 4, 3}, {3, 4, 7}, {1, 2, 5}, {5, 2, 6},
-        {4, 5, 7}, {7, 5, 6}, {0, 1, 4}, {4, 1, 5}
+        0, 1, 3,   3, 1, 2,   2, 1, 6,   6, 1, 5,
+        0, 4, 1,   1, 4, 5,   3, 2, 7,   7, 2, 6,
+        4, 7, 5,   5, 7, 6,   0, 3, 4,   4, 3, 7
     };
     
-    m_cube = new MeshBuffer();
-    m_cube->vertices.resize(36);
-    Vertex *v = m_cube->vertices.data();
+    Vertex *v = meshBuffer->vertices.data();
     for(uint32_t i = 0; i < 12; i++)
     {
-        const GLuint *face = faces_indices[i];
-        const GLfloat *normal = faces_normals[i/2];
-        for(uint32_t j = 0; j < 3; j++, v++)
-        {
-            const GLfloat *vertex = vertices[face[j]];
-            v->position = vec3(vertex[0], vertex[1], vertex[2]);
-            v->normal = vec3(normal[0], normal[1], normal[2]);
-        }
+        uint8_t idx1 = faces_indices[(i * 3) + 0];
+        uint8_t idx2 = faces_indices[(i * 3) + 1];
+        uint8_t idx3 = faces_indices[(i * 3) + 2];
+        Vertex &v1 = v[(i * 3) + 0];
+        Vertex &v2 = v[(i * 3) + 1];
+        Vertex &v3 = v[(i * 3) + 2];
+        v1.position = corners[idx1];
+        v2.position = corners[idx2];
+        v3.position = corners[idx3];
+        vec3 u = (v2.position - v1.position), v = (v3.position - v1.position);
+        v1.normal = v2.normal = v3.normal = vec3::cross(u, v).normalized();
     }
+}
+
+void RenderStateGL2::createCube()
+{   
     MaterialGroup mg;
     mg.count = 36;
     mg.offset = 0;
     mg.id = 0;
     mg.matID = 1;
+    
+    m_cube = new MeshBuffer();
+    m_cube->vertices.resize(36);
     m_cube->matGroups.push_back(mg);
     
-    m_cubeMats = new MaterialMap();
     Material *mat = new Material();
     mat->setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
     mat->setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
     //mat->setOpaque(false);
+    
+    m_cubeMats = new MaterialMap();
     m_cubeMats->setMaterial(mg.matID, mat);
 }
 
@@ -131,10 +133,19 @@ void RenderStateGL2::drawBox(const AABox &box)
     translate(box.low.x, box.low.y, box.low.z);
     scale(size.x, size.y, size.z);
     translate(0.5, 0.5, 0.5);
+    fromEightCorners(m_cube, cubeVertices);
     beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
     popMatrix();
+}
+
+void RenderStateGL2::drawFrustum(const Frustum &frustum)
+{
+    fromEightCorners(m_cube, frustum.corners());
+    beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
+    drawMesh();
+    endDrawMesh();
 }
 
 RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode render,
