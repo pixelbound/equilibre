@@ -90,7 +90,6 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
 {
     m_partID = partID;
     m_meshDef = meshDef;
-    m_materials = NULL;
     m_data = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
@@ -98,8 +97,6 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : Q
 
 WLDMesh::~WLDMesh()
 {
-    // One mesh -> one palette of materials.
-    delete m_materials;
 }
 
 MeshData * WLDMesh::data() const
@@ -125,16 +122,6 @@ uint32_t WLDMesh::partID() const
 const AABox & WLDMesh::boundsAA() const
 {
     return m_boundsAA;
-}
-
-MaterialMap * WLDMesh::materials() const
-{
-    return m_materials;
-}
-
-void WLDMesh::setMaterials(MaterialMap *materials)
-{
-    m_materials = materials;
 }
 
 MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf)

@@ -35,6 +35,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_zoneStatGPU = NULL;
     m_objectsStatGPU = NULL;
     m_objectsBuffer = NULL;
+    m_objectMaterials = NULL;
     m_objectTree = NULL;
     m_drawnObjectsStat = NULL;
 }
@@ -127,6 +128,7 @@ void Zone::clear()
     m_charModels.clear();
     delete m_objectTree;
     delete m_objectsBuffer;
+    delete m_objectMaterials;
     delete m_zoneBuffer;
     delete m_zoneMaterials;
     delete m_mainWld;
@@ -138,6 +140,7 @@ void Zone::clear()
     delete m_charArchive;
     m_objectTree = 0;
     m_objectsBuffer = 0;
+    m_objectMaterials = 0;
     m_zoneBuffer = 0;
     m_zoneMaterials = 0;
     m_mainWld = 0;
@@ -205,6 +208,7 @@ void Zone::importObjects()
 void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
 {
     // import models through ActorDef fragments
+    WLDMaterialPalette palette(archive, this);
     foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
         WLDFragment *subModel = actorDef->m_models.value(0);
@@ -219,11 +223,10 @@ void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
             continue;
         }
         WLDMesh *model = new WLDMesh(mesh->m_def, 0, this);
-        WLDMaterialPalette palette(archive, this);
         palette.addPaletteDef(mesh->m_def->m_palette);
-        model->setMaterials(palette.loadMaterials());
         m_objModels.insert(actorDef->name(), model);
     }
+    m_objectMaterials = palette.loadMaterials();
 }
 
 void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
@@ -437,7 +440,7 @@ void Zone::drawObjects(RenderState *state)
             }
             m_objectsBuffer->matGroups.clear();
             m_objectsBuffer->addMaterialGroups(currentMesh->data());
-            state->beginDrawMesh(m_objectsBuffer, currentMesh->materials());
+            state->beginDrawMesh(m_objectsBuffer, m_objectMaterials);
             previousMesh = currentMesh;
             meshCount++;
         }
@@ -500,18 +503,14 @@ MeshBuffer * Zone::uploadZone(RenderState *state)
 
 MeshBuffer * Zone::uploadObjects(RenderState *state)
 {
-    MeshBuffer *meshBuf = new MeshBuffer();
+    m_objectMaterials->uploadArray(state);
     
     // Import vertices and indices for each mesh.
+    MeshBuffer *meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, m_objModels.values())
     {
         MeshData *meshData = mesh->importFrom(meshBuf);
-        MaterialMap *materials = mesh->materials();
-        if(materials)
-        {
-            materials->uploadArray(state);
-            meshData->updateTexCoords(materials);
-        }
+        meshData->updateTexCoords(m_objectMaterials);
     }
     
     // Create the GPU buffers.

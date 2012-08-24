@@ -103,6 +103,7 @@ private:
     QVector<buffer_t> m_gpuBuffers;
     // zone objects
     MeshBuffer *m_objectsBuffer;
+    MaterialMap *m_objectMaterials;
     QVector<WLDZoneActor *> m_objects;
     OctreeIndex *m_objectTree;
     QVector<SoundTrigger *> m_soundTriggers;

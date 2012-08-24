@@ -68,8 +68,6 @@ public:
     void setData(MeshData *data);
     MeshDefFragment *def() const;
     uint32_t partID() const;
-    MaterialMap *materials() const;
-    void setMaterials(MaterialMap *materials);
     const AABox & boundsAA() const;
 
     MeshData * importFrom(MeshBuffer *meshBuf);
@@ -84,7 +82,6 @@ private:
     uint32_t m_partID;
     MeshData *m_data;
     MeshDefFragment *m_meshDef;
-    MaterialMap *m_materials;
     AABox m_boundsAA;
 };
 
