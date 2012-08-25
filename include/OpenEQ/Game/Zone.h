@@ -25,6 +25,7 @@ class SoundTrigger;
 class RenderState;
 class FrameStat;
 class MeshBuffer;
+class ZoneTerrain;
 
 /*!
   \brief Describes a zone of the world.
@@ -77,26 +78,19 @@ public:
     void uploadCharacter(RenderState *state, WLDActor *actor);
 
 private:
-    void importGeometry();
     void importObjects();
     void importObjectsMeshes(PFSArchive *archive, WLDData *wld);
     void importSkeletons(PFSArchive *archive, WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void drawGeometry(RenderState *state);
     void drawObjects(RenderState *state);
-    MeshBuffer * uploadZone(RenderState *state);
     MeshBuffer * uploadObjects(RenderState *state);
     void uploadCharacters(RenderState *state);
     void setPlayerViewFrustum(Frustum &frustum) const;
 
     //TODO refactor this into data container classes
     QString m_name;
-    QVector<WLDMesh *> m_zoneParts;
-    MeshBuffer *m_zoneBuffer;
-    OctreeIndex *m_zoneTree;
-    MaterialMap *m_zoneMaterials;
-    AABox m_zoneBounds;
+    ZoneTerrain *m_terrain;
     PFSArchive *m_mainArchive;
     PFSArchive *m_objMeshArchive;
     PFSArchive *m_charArchive;
@@ -118,18 +112,44 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     Frustum m_frozenFrustum;
-    FrameStat *m_zoneStat;
     FrameStat *m_objectsStat;
-    FrameStat *m_zoneStatGPU;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
-    QVector<WLDZoneActor *> m_visibleZoneParts;
     QVector<WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;
     float m_playerOrient;
     vec3 m_cameraOrient;
     vec3 m_cameraPos;
+};
+
+/*!
+  \brief Holds the resources needed to render a zone's terrain.
+  */
+class GAME_DLL ZoneTerrain
+{
+public:
+    ZoneTerrain(Zone *zone);
+    virtual ~ZoneTerrain();
+    
+    const AABox & bounds() const;
+
+    bool load(PFSArchive *archive, WLDData *wld);
+    void draw(RenderState *state, Frustum &frustum);
+    void clear();
+
+private:
+    MeshBuffer * upload(RenderState *state);
+
+    Zone *m_zone;
+    QVector<WLDMesh *> m_zoneParts;
+    MeshBuffer *m_zoneBuffer;
+    OctreeIndex *m_zoneTree;
+    MaterialMap *m_zoneMaterials;
+    AABox m_zoneBounds;
+    FrameStat *m_zoneStat;
+    FrameStat *m_zoneStatGPU;
+    QVector<WLDZoneActor *> m_visibleZoneParts;
 };
 
 #endif

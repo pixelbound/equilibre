@@ -20,8 +20,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_mainWld = 0;
     m_objMeshWld = m_objDefWld = 0;
     m_charWld = 0;
-    m_zoneBuffer = 0;
-    m_zoneMaterials = 0;
+    m_terrain = NULL;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
     m_cameraPos = vec3(0.0, 0.0, 0.0);
@@ -31,9 +30,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cullObjects = true;
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
-    m_zoneStat = NULL;
     m_objectsStat = NULL;
-    m_zoneStatGPU = NULL;
     m_objectsStatGPU = NULL;
     m_objectsBuffer = NULL;
     m_objectMaterials = NULL;
@@ -65,9 +62,15 @@ bool Zone::load(QString path, QString name)
     QString zoneFile = QString("%1.wld").arg(name);
     m_mainArchive = new PFSArchive(zonePath, this);
     m_mainWld = WLDData::fromArchive(m_mainArchive, zoneFile, this);
+    
+    m_terrain = new ZoneTerrain(this);
+    if(!m_terrain->load(m_mainArchive, m_mainWld))
+        return false;
+    
     m_objDefWld = WLDData::fromArchive(m_mainArchive, "objects.wld", this);
     if(!m_mainWld || !m_objDefWld)
         return false;
+    
     QString objMeshPath = QString("%1/%2_obj.s3d").arg(path).arg(name);
     QString objMeshFile = QString("%1_obj.wld").arg(name);
     m_objMeshArchive = new PFSArchive(objMeshPath, this);
@@ -84,8 +87,7 @@ bool Zone::load(QString path, QString name)
         m_charArchive = 0;
     }
 
-    // import geometry, objects, characters
-    importGeometry();
+    // import objects, characters
     importObjects();
     if(m_charWld)
     {
@@ -130,8 +132,7 @@ void Zone::clear()
     delete m_objectTree;
     delete m_objectsBuffer;
     delete m_objectMaterials;
-    delete m_zoneBuffer;
-    delete m_zoneMaterials;
+    delete m_terrain;
     delete m_mainWld;
     delete m_objMeshWld;
     delete m_objDefWld;
@@ -142,8 +143,7 @@ void Zone::clear()
     m_objectTree = 0;
     m_objectsBuffer = 0;
     m_objectMaterials = 0;
-    m_zoneBuffer = 0;
-    m_zoneMaterials = 0;
+    m_terrain = NULL;
     m_mainWld = 0;
     m_objMeshWld = 0;
     m_objDefWld = 0;
@@ -153,36 +153,12 @@ void Zone::clear()
     m_charArchive = 0;
 }
 
-void Zone::importGeometry()
-{
-    // Load zone regions as model parts, computing the zone's bounding box.
-    int partID = 0;
-    m_zoneBounds = AABox();
-    foreach(MeshDefFragment *meshDef, m_mainWld->fragmentsByType<MeshDefFragment>())
-    {
-        WLDMesh *meshPart = new WLDMesh(meshDef, partID++);
-        m_zoneBounds.extendTo(meshPart->boundsAA());
-        m_zoneParts.append(meshPart);
-    }
-    
-    // Load zone textures into the material palette.
-    WLDMaterialPalette zonePalette(m_mainArchive, this);
-    foreach(MaterialDefFragment *matDef, m_mainWld->fragmentsByType<MaterialDefFragment>())
-        zonePalette.addMaterialDef(matDef);
-    m_zoneMaterials = zonePalette.loadMaterials();
-    
-    // Add zone regions to the zone octree index.
-    m_zoneTree = new OctreeIndex(m_zoneBounds, 8);
-    foreach(WLDMesh *meshPart, m_zoneParts)
-        m_zoneTree->add(new WLDZoneActor(NULL, meshPart));
-}
-
 void Zone::importObjects()
 {
     importObjectsMeshes(m_objMeshArchive, m_objMeshWld);
 
     // import actors through Actor fragments
-    AABox bounds = m_zoneBounds;
+    AABox bounds = m_terrain->bounds();
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();
@@ -355,6 +331,8 @@ void Zone::draw(RenderState *state)
     state->pushMatrix();
     state->multiplyMatrix(frustum.camera());
     
+    Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
+    
     // draw objects
     if(!m_objectsStat)
         m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
@@ -369,19 +347,9 @@ void Zone::draw(RenderState *state)
         m_objectsStat->endTime();
     }
 
-    // draw geometry
-    if(!m_zoneStat)
-        m_zoneStat = state->createStat("Zone CPU (ms)", FrameStat::CPUTime);
-    if(!m_zoneStatGPU)
-        m_zoneStatGPU = state->createStat("Zone GPU (ms)", FrameStat::GPUTime);
-    if(m_showZone && (m_mainWld != NULL))
-    {
-        m_zoneStat->beginTime();
-        m_zoneStatGPU->beginTime();
-        drawGeometry(state);
-        m_zoneStatGPU->endTime();
-        m_zoneStat->endTime();
-    }
+    // Draw the zone's terrain.
+    if(m_showZone && m_terrain)
+        m_terrain->draw(state, realFrustum);
     
     // draw sound trigger volumes
     if(m_showSoundTriggers)
@@ -402,31 +370,7 @@ void Zone::draw(RenderState *state)
     
     state->popMatrix();
     
-    m_visibleZoneParts.clear();
     m_visibleObjects.clear();
-}
-
-void Zone::drawGeometry(RenderState *state)
-{
-    // Create a GPU buffer for the zone's vertices and indices if needed.
-    if(m_zoneBuffer == NULL)
-        m_zoneBuffer = uploadZone(state);
-    
-#if !defined(COMBINE_ZONE_PARTS)
-    // Build a list of visible zone parts.
-    Frustum &frustum(m_frustumIsFrozen ? m_frozenFrustum : state->viewFrustum());
-    m_zoneTree->findVisible(m_visibleZoneParts, frustum, m_cullObjects);
-    
-    // Import material groups from the visible parts.
-    m_zoneBuffer->matGroups.clear();
-    foreach(const WLDZoneActor *actor, m_visibleZoneParts)
-        m_zoneBuffer->addMaterialGroups(actor->mesh()->data());
-#endif
-    
-    // Draw the visible parts as one big mesh.
-    state->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
-    state->drawMesh();
-    state->endDrawMesh();
 }
 
 void Zone::drawObjects(RenderState *state)
@@ -483,37 +427,6 @@ void Zone::drawObjects(RenderState *state)
     if(m_drawnObjectsStat == NULL)
         m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
     m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
-}
-
-MeshBuffer * Zone::uploadZone(RenderState *state)
-{
-    MeshBuffer *meshBuf = NULL;
-    
-    // Upload the materials as a texture array, assigning z coordinates to materials.
-    m_zoneMaterials->uploadArray(state);
-    
-#if !defined(COMBINE_ZONE_PARTS)
-    meshBuf = new MeshBuffer();
-    
-    // Import vertices and indices for each mesh.
-    foreach(WLDMesh *mesh, m_zoneParts)
-    {
-        MeshData *meshData = mesh->importFrom(meshBuf);
-        meshData->updateTexCoords(m_zoneMaterials);
-    }
-#else
-    meshBuf = WLDMesh::combine(m_zoneParts);
-    meshBuf->updateTexCoords(m_zoneMaterials);
-#endif
-    
-    // Create the GPU buffers and free the memory used for vertices and indices.
-    meshBuf->upload(state);
-    meshBuf->clearVertices();
-    meshBuf->clearIndices();
-    
-    m_gpuBuffers.append(meshBuf->vertexBuffer);
-    m_gpuBuffers.append(meshBuf->indexBuffer);
-    return meshBuf;
 }
 
 MeshBuffer * Zone::uploadObjects(RenderState *state)
@@ -687,4 +600,128 @@ void Zone::step(float distForward, float distSideways, float distUpDown)
         m.setIdentity();
     m = m * matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
     m_playerPos = m_playerPos + m.map(vec3(-distSideways, distForward, distUpDown));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ZoneTerrain::ZoneTerrain(Zone *zone)
+{
+    m_zone = zone;
+    m_zoneBuffer = NULL;
+    m_zoneMaterials = NULL;
+    m_zoneStat = NULL;
+    m_zoneStatGPU = NULL;
+}
+
+ZoneTerrain::~ZoneTerrain()
+{
+    clear();
+}
+
+const AABox & ZoneTerrain::bounds() const
+{
+    return m_zoneBounds;
+}
+
+void ZoneTerrain::clear()
+{
+    delete m_zoneBuffer;
+    delete m_zoneMaterials;
+    m_zoneBuffer = NULL;
+    m_zoneMaterials = NULL;
+    m_zone = NULL;
+}
+
+bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
+{
+    if(!archive || !wld)
+        return false;
+    
+    // Load zone regions as model parts, computing the zone's bounding box.
+    int partID = 0;
+    m_zoneBounds = AABox();
+    foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
+    {
+        WLDMesh *meshPart = new WLDMesh(meshDef, partID++);
+        m_zoneBounds.extendTo(meshPart->boundsAA());
+        m_zoneParts.append(meshPart);
+    }
+    
+    // Load zone textures into the material palette.
+    WLDMaterialPalette zonePalette(archive);
+    foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
+        zonePalette.addMaterialDef(matDef);
+    m_zoneMaterials = zonePalette.loadMaterials();
+    
+    // Add zone regions to the zone octree index.
+    m_zoneTree = new OctreeIndex(m_zoneBounds, 8);
+    foreach(WLDMesh *meshPart, m_zoneParts)
+        m_zoneTree->add(new WLDZoneActor(NULL, meshPart));
+    
+    return true;
+}
+
+MeshBuffer * ZoneTerrain::upload(RenderState *state)
+{
+    MeshBuffer *meshBuf = NULL;
+    
+    // Upload the materials as a texture array, assigning z coordinates to materials.
+    m_zoneMaterials->uploadArray(state);
+    
+#if !defined(COMBINE_ZONE_PARTS)
+    meshBuf = new MeshBuffer();
+    
+    // Import vertices and indices for each mesh.
+    foreach(WLDMesh *mesh, m_zoneParts)
+    {
+        MeshData *meshData = mesh->importFrom(meshBuf);
+        meshData->updateTexCoords(m_zoneMaterials);
+    }
+#else
+    meshBuf = WLDMesh::combine(m_zoneParts);
+    meshBuf->updateTexCoords(m_zoneMaterials);
+#endif
+    
+    // Create the GPU buffers and free the memory used for vertices and indices.
+    meshBuf->upload(state);
+    meshBuf->clearVertices();
+    meshBuf->clearIndices();
+    
+    //m_gpuBuffers.append(meshBuf->vertexBuffer);
+    //m_gpuBuffers.append(meshBuf->indexBuffer);
+    return meshBuf;
+}
+
+void ZoneTerrain::draw(RenderState *state, Frustum &frustum)
+{
+    // draw geometry
+    if(!m_zoneStat)
+        m_zoneStat = state->createStat("Zone CPU (ms)", FrameStat::CPUTime);
+    if(!m_zoneStatGPU)
+        m_zoneStatGPU = state->createStat("Zone GPU (ms)", FrameStat::GPUTime);
+    m_zoneStat->beginTime();
+    m_zoneStatGPU->beginTime();
+    
+    // Create a GPU buffer for the zone's vertices and indices if needed.
+    if(m_zoneBuffer == NULL)
+        m_zoneBuffer = upload(state);
+    
+#if !defined(COMBINE_ZONE_PARTS)
+    // Build a list of visible zone parts.
+    m_zoneTree->findVisible(m_visibleZoneParts, frustum, m_zone->cullObjects());
+    
+    // Import material groups from the visible parts.
+    m_zoneBuffer->matGroups.clear();
+    foreach(const WLDZoneActor *actor, m_visibleZoneParts)
+        m_zoneBuffer->addMaterialGroups(actor->mesh()->data());
+#endif
+    
+    // Draw the visible parts as one big mesh.
+    state->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
+    state->drawMesh();
+    state->endDrawMesh();
+    
+    m_zoneStatGPU->endTime();
+    m_zoneStat->endTime();
+    m_visibleZoneParts.clear();
 }
