@@ -333,7 +333,7 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 
 static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
 {
-    return a->mesh()->def()->name() < b->mesh()->def()->name();
+    return a->mesh()->def() < b->mesh()->def();
 }
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
