@@ -52,11 +52,18 @@ CharacterViewerWindow::CharacterViewerWindow(RenderState *state, QWidget *parent
     connect(m_actorText, SIGNAL(activated(QString)), this, SLOT(loadActor(QString)));
     connect(m_paletteText, SIGNAL(activated(QString)), this, SLOT(loadPalette(QString)));
     connect(m_animationText, SIGNAL(activated(QString)), this, SLOT(loadAnimation(QString)));
+    connect(m_viewport, SIGNAL(initialized()), this, SLOT(initialized()));
 }
 
 CharacterScene * CharacterViewerWindow::scene() const
 {
     return m_scene;
+}
+
+void CharacterViewerWindow::initialized()
+{
+    updateLists();
+    m_viewport->setAnimation(true);
 }
 
 void CharacterViewerWindow::initMenus()
@@ -145,7 +152,7 @@ bool CharacterViewerWindow::loadZone(QString path, QString name)
 bool CharacterViewerWindow::loadCharacters(QString archivePath)
 {
     m_viewport->makeCurrent();
-    if(m_scene->zone()->loadCharacters(archivePath))
+    if(m_scene->loadCharacters(archivePath))
     {
         updateLists();
         return true;
@@ -190,13 +197,17 @@ void CharacterViewerWindow::copyAnimations()
     QDialog d;
     d.setWindowTitle("Select a character to copy animations from");
     QComboBox *charList = new QComboBox();
-    const QMap<QString, WLDActor *> &actors = m_scene->zone()->charModels();
-    foreach(QString charName, actors.keys())
+    foreach(CharacterPack *pack, m_scene->zone()->characterPacks())
     {
-        WLDSkeleton *skel = actors.value(charName)->complexModel()->skeleton();
-        if(skel)
-            charList->addItem(charName);
+        const QMap<QString, WLDActor *> &actors = pack->models();
+        foreach(QString charName, actors.keys())
+        {
+            WLDSkeleton *skel = actors.value(charName)->complexModel()->skeleton();
+            if(skel)
+                charList->addItem(charName);
+        }
     }
+    
     QDialogButtonBox *buttons = new QDialogButtonBox();
     buttons->setStandardButtons(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttons, SIGNAL(accepted()), &d, SLOT(accept()));
@@ -212,7 +223,7 @@ void CharacterViewerWindow::copyAnimations()
 
 void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar)
 {
-    WLDActor *actor = m_scene->zone()->charModels().value(fromChar);
+    WLDActor *actor = m_scene->zone()->findCharacter(fromChar);
     if(actor)
     {
         WLDSkeleton *fromSkel = actor->complexModel()->skeleton();
@@ -229,8 +240,12 @@ void CharacterViewerWindow::updateLists()
     m_actorText->clear();
     m_paletteText->clear();
     m_animationText->clear();
-    foreach(QString name, m_scene->charModels().keys())
-        m_actorText->addItem(name);
+    foreach(CharacterPack *pack, m_scene->zone()->characterPacks())
+    {
+        const QMap<QString, WLDActor *> &actors = pack->models();
+        foreach(QString name, actors.keys())
+            m_actorText->addItem(name);
+    }
 
     if(m_scene->selectedModelName().isEmpty() && m_actorText->count() > 0)
         m_scene->setSelectedModelName(m_actorText->itemText(0));
@@ -318,11 +333,6 @@ Zone * CharacterScene::zone() const
     return m_zone;
 }
 
-const QMap<QString, WLDActor *> & CharacterScene::charModels() const
-{
-    return m_zone->charModels();
-}
-
 QString CharacterScene::selectedModelName() const
 {
     return m_meshName;
@@ -335,12 +345,25 @@ void CharacterScene::setSelectedModelName(QString name)
 
 WLDActor * CharacterScene::selectedCharacter() const
 {
-    return charModels().value(m_meshName);
+    return m_zone->findCharacter(m_meshName);
 }
 
 void CharacterScene::init()
 {
     m_started = currentTime();
+    foreach(CharacterPack *charPack, m_zone->characterPacks())
+        charPack->uploadAll(m_state);
+}
+
+CharacterPack * CharacterScene::loadCharacters(QString archivePath)
+{
+    CharacterPack *charPack = m_zone->loadCharacters(archivePath);
+    if(charPack)
+    {
+        charPack->uploadAll(m_state);
+        return charPack;
+    }
+    return NULL;
 }
 
 void CharacterScene::draw()
@@ -355,7 +378,6 @@ void CharacterScene::draw()
     WLDActor *charModel = selectedCharacter();
     if(charModel)
     {
-        m_zone->uploadCharacter(m_state, charModel);
         charModel->setAnimTime(currentTime());
         charModel->draw(m_state);
     }

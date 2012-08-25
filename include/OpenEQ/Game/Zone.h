@@ -26,6 +26,7 @@ class FrameStat;
 class MeshBuffer;
 class ZoneTerrain;
 class ZoneObjects;
+class CharacterPack;
 
 /*!
   \brief Describes a zone of the world.
@@ -38,11 +39,14 @@ public:
 
     ZoneTerrain * terrain() const;
     ZoneObjects * objects() const;
+    QList<CharacterPack *> characterPacks() const;
     
     const QMap<QString, WLDActor *> & charModels() const;
 
     bool load(QString path, QString name);
-    bool loadCharacters(QString archivePath, QString wldName = QString::null);
+    CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
+    
+    WLDActor * findCharacter(QString name) const;
 
     void clear();
 
@@ -76,29 +80,20 @@ public:
     void unFreezeFrustum();
     
     void currentSoundTriggers(QVector<SoundTrigger *> &triggers) const;
-    
-    void uploadCharacter(RenderState *state, WLDActor *actor);
 
 private:
-    void importObjects();
-    void importObjectsMeshes(PFSArchive *archive, WLDData *wld);
-    void importSkeletons(PFSArchive *archive, WLDData *wld);
-    void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
-    void importCharacters(PFSArchive *archive, WLDData *wld);
-    void drawObjects(RenderState *state);
     MeshBuffer * uploadObjects(RenderState *state);
-    void uploadCharacters(RenderState *state);
+    
     void setPlayerViewFrustum(Frustum &frustum) const;
 
     //TODO refactor this into data container classes
+    // WLDObjects (with some code from ZoneObjects)
     QString m_name;
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;
+    QList<CharacterPack *> m_charPacks;
     PFSArchive *m_mainArchive;
-    PFSArchive *m_charArchive;
     WLDData *m_mainWld;
-    WLDData *m_charWld;
-    QMap<QString, WLDActor *> m_charModels;
     QVector<buffer_t> m_gpuBuffers;
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
@@ -107,7 +102,7 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     Frustum m_frozenFrustum;
-    // player and camera settings
+    // player and camera settings XXX replace by a WLDActor player
     vec3 m_playerPos;
     float m_playerOrient;
     vec3 m_cameraOrient;
@@ -175,6 +170,35 @@ private:
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
     QVector<WLDActor *> m_visibleObjects;
+};
+
+/*!
+  \brief Holds the resources needed to render characters.
+  */
+class GAME_DLL CharacterPack
+{
+public:
+    CharacterPack(Zone *zone);
+    virtual ~CharacterPack();
+    
+    const QMap<QString, WLDActor *> models() const;
+    
+    bool load(QString archivePath, QString wldName);
+    void draw(RenderState *state, Frustum &frustum);
+    void uploadAll(RenderState *state);
+    void upload(RenderState *state, WLDActor *actor);
+    void clear();
+    
+private:
+    void importSkeletons(WLDData *wld);
+    void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
+    void importCharacters(PFSArchive *archive, WLDData *wld);
+    
+    Zone *m_zone;
+    PFSArchive *m_archive;
+    WLDData *m_wld;
+    QMap<QString, WLDActor *> m_models;
+    bool m_uploaded;
 };
 
 #endif

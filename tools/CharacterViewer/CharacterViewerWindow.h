@@ -11,6 +11,7 @@ class RenderState;
 class SceneViewport;
 class WLDSkeleton;
 class CharacterScene;
+class CharacterPack;
 
 class CharacterViewerWindow : public QMainWindow
 {
@@ -25,6 +26,7 @@ public:
     bool loadCharacters(QString archivePath);
 
 private slots:
+    void initialized();
     void loadActor(QString name);
     void loadPalette(QString name);
     void loadAnimation(QString animName);
@@ -64,9 +66,10 @@ public:
     void init();
 
     Zone * zone() const;
-    const QMap<QString, WLDActor *> & charModels() const;
     WLDActor * selectedCharacter() const;
     QString selectedModelName() const;
+    
+    CharacterPack * loadCharacters(QString archivePath);
 
     virtual void draw();
 

@@ -27,6 +27,9 @@ public:
 
     void setAnimation(bool enabled);
     bool showStats() const;
+    
+signals:
+    void initialized();
 
 public slots:
     void setShowStats(bool show);

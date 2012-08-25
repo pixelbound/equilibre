@@ -54,6 +54,7 @@ void SceneViewport::initializeGL()
     
     m_state->init();
     m_scene->init();
+    emit initialized();
 }
 
 void SceneViewport::resizeGL(int w, int h)

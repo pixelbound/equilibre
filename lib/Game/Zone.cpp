@@ -15,9 +15,7 @@
 Zone::Zone(QObject *parent) : QObject(parent)
 {
     m_mainArchive = 0;
-    m_charArchive = 0;
     m_mainWld = 0;
-    m_charWld = 0;
     m_terrain = NULL;
     m_objects = NULL;
     m_playerPos = vec3(0.0, 0.0, 0.0);
@@ -46,21 +44,22 @@ ZoneObjects * Zone::objects() const
     return m_objects;
 }
 
-const QMap<QString, WLDActor *> & Zone::charModels() const
+QList<CharacterPack *> Zone::characterPacks() const
 {
-    return m_charModels;
+    return m_charPacks;
 }
 
 bool Zone::load(QString path, QString name)
 {
     m_name = name;
 
-    // load archives and WLD files
+    // Load the main archive and WLD file.
     QString zonePath = QString("%1/%2.s3d").arg(path).arg(name);
     QString zoneFile = QString("%1.wld").arg(name);
     m_mainArchive = new PFSArchive(zonePath, this);
     m_mainWld = WLDData::fromArchive(m_mainArchive, zoneFile, this);
     
+    // Load the zone's terrain.
     m_terrain = new ZoneTerrain(this);
     if(!m_terrain->load(m_mainArchive, m_mainWld))
     {
@@ -69,6 +68,7 @@ bool Zone::load(QString path, QString name)
         return false;
     }
     
+    // Load the zone's static objects.
     m_objects = new ZoneObjects(this);
     if(!m_objects->load(path, name, m_mainArchive))
     {
@@ -77,31 +77,18 @@ bool Zone::load(QString path, QString name)
         return false;
     }
     
+    // Load the zone's characters.
     QString charPath = QString("%1/%2_chr.s3d").arg(path).arg(name);
     QString charFile = QString("%1_chr.wld").arg(name);
-    m_charArchive = new PFSArchive(charPath, this);
-    m_charWld = WLDData::fromArchive(m_charArchive, charFile, this);
-    if(!m_charWld)
-    {
-        delete m_charArchive;
-        m_charArchive = 0;
-    }
-
-    // import characters
-    if(m_charWld)
-    {
-        importCharacters(m_charArchive, m_charWld);
-        importCharacterPalettes(m_charArchive, m_charWld);
-        importSkeletons(m_charArchive, m_charWld);
-    }
+    loadCharacters(charPath, charFile);
     
-    // import sound triggers
+    // Load the zone's sound triggers.
     QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
     SoundTrigger::fromFile(m_soundTriggers, triggersFile);
     return true;
 }
 
-bool Zone::loadCharacters(QString archivePath, QString wldName)
+CharacterPack * Zone::loadCharacters(QString archivePath, QString wldName)
 {
     if(wldName.isNull())
     {
@@ -110,134 +97,40 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
             baseName = "global_chr";
         wldName = baseName + ".wld";
     }
-    m_charArchive = new PFSArchive(archivePath, this);
-    m_charWld = WLDData::fromArchive(m_charArchive, wldName, this);
-    if(!m_charWld)
-        return false;
-    importCharacters(m_charArchive, m_charWld);
-    importCharacterPalettes(m_charArchive, m_charWld);
-    importSkeletons(m_charArchive, m_charWld);
-    return true;
+    
+    CharacterPack *charPack = new CharacterPack(this);
+    if(!charPack->load(archivePath, wldName))
+    {
+        delete charPack;
+        return NULL;
+    }
+    m_charPacks.append(charPack);
+    return charPack;
+}
+
+WLDActor * Zone::findCharacter(QString name) const
+{
+    foreach(CharacterPack *pack, m_charPacks)
+    {
+        if(pack->models().contains(name))
+            return pack->models().value(name);
+    }
+    return NULL;
 }
 
 void Zone::clear()
 {
-    foreach(WLDActor *actor, m_charModels)
-        delete actor;
-    m_charModels.clear();
+    foreach(CharacterPack *pack, m_charPacks)
+        delete pack;
+    m_charPacks.clear();
     delete m_objects;
     delete m_terrain;
     delete m_mainWld;
-    delete m_charWld;
     delete m_mainArchive;
-    delete m_charArchive;
     m_objects = NULL;
     m_terrain = NULL;
     m_mainWld = 0;
-    m_charWld = 0;
     m_mainArchive = 0;
-    m_charArchive = 0;
-}
-
-void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
-{
-    // import skeletons which contain the pose animation
-    foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
-    {
-        QString actorName = skelDef->name().replace("_HS_DEF", "");
-        WLDActor *actor = m_charModels.value(actorName);
-        if(!actor)
-            continue;
-        actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef, this));
-    }
-
-    // import other animations
-    foreach(TrackFragment *track, wld->fragmentsByType<TrackFragment>())
-    {
-        QString animName = track->name().left(3);
-        QString actorName = track->name().mid(3, 3);
-        WLDActor *actor = m_charModels.value(actorName);
-        if(!actor)
-            continue;
-        WLDSkeleton *skel = actor->complexModel()->skeleton();
-        if(skel && track->m_def)
-            skel->addTrack(animName, track->m_def);
-    }
-}
-
-void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
-{
-    foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
-    {
-        QString charName, palName, partName;
-        if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
-        {
-            WLDActor *actor = m_charModels.value(charName);
-            if(!actor)
-                continue;
-            WLDModel *model = actor->complexModel();
-            WLDModelSkin *skin = model->skins().value(palName);
-            if(!skin)
-            {
-                skin = model->newSkin(palName, archive);
-                skin->setPalette(new WLDMaterialPalette(archive));
-                skin->palette()->copyFrom(model->skin()->palette());
-            }
-            skin->palette()->addMaterialDef(matDef);
-        }
-    }
-
-    // look for alternate meshes (e.g. heads)
-    foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
-    {
-        QString actorName, meshName, skinName;
-        WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
-        WLDActor *actor = m_charModels.value(actorName);
-        if(!actor || meshName.isEmpty())
-            continue;
-        WLDModel *model = actor->complexModel();
-        WLDModelSkin *skin = model->skins().value(skinName);
-        if(!skin)
-            continue;
-        foreach(WLDMesh *part, model->skin()->parts())
-        {
-            QString actorName2, meshName2, skinName2;
-            WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
-            if((meshName2 == meshName) && (skinName2 != skinName))
-                skin->replacePart(part, meshDef);
-        }
-    }
-}
-
-void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
-{
-    foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
-    {
-        QString actorName = actorDef->name().replace("_ACTORDEF", "");
-        WLDModel *model = new WLDModel(archive, this);
-        WLDActor *actor = new WLDActor(model, this);
-        WLDModelSkin *skin = model->skin();
-        foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
-        {
-            skin->addPart(meshDef);
-            skin->palette()->addPaletteDef(meshDef->m_palette);
-        }
-        foreach(WLDFragment *frag, actorDef->m_models)
-        {
-            switch(frag->kind())
-            {
-            case HierSpriteFragment::ID:
-            case MeshFragment::ID:
-                break;
-            default:
-                qDebug("Unknown model fragment kind (0x%02x) %s",
-                       frag->kind(), actorName.toLatin1().constData());
-                break;
-            }
-        }
-
-        m_charModels.insert(actorName, actor);
-    }
 }
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
@@ -287,46 +180,6 @@ void Zone::draw(RenderState *state)
     }
     
     state->popMatrix();
-}
-
-void Zone::uploadCharacters(RenderState *state)
-{
-    foreach(WLDActor *actor, m_charModels)
-        uploadCharacter(state, actor);
-}
-
-void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
-{
-    // Make sure we haven't uploaded this character before.
-    WLDModel *model = actor->complexModel();
-    if(model->buffer())
-        return;
-
-    // Import mesh geometry.
-    MeshBuffer *meshBuf = new MeshBuffer();
-    model->setBuffer(meshBuf);
-    foreach(WLDModelSkin *skin, model->skins())
-    {
-        foreach(WLDMesh *mesh, skin->parts())
-            mesh->importFrom(meshBuf);
-
-        // Upload materials (textures).
-        MaterialMap *materials = skin->materials();
-        if(!materials)
-        {
-            materials = skin->palette()->loadMaterials();
-            skin->setMaterials(materials);
-        }
-        materials->upload(state);
-    }
-
-    // Create the GPU buffers.
-    meshBuf->upload(state);
-    m_gpuBuffers.append(meshBuf->vertexBuffer);
-    m_gpuBuffers.append(meshBuf->indexBuffer);
-
-    // Free the memory used for indices. We need to keep the vertices around for software skinning.
-    meshBuf->clearIndices();
 }
 
 const vec3 & Zone::playerPos() const
@@ -768,4 +621,196 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     m_visibleObjects.clear();
     m_objectsStatGPU->endTime();
     m_objectsStat->endTime();
+}
+
+CharacterPack::CharacterPack(Zone *zone)
+{
+    m_zone = zone;
+    m_uploaded = false;
+}
+
+CharacterPack::~CharacterPack()
+{
+    clear();
+}
+
+const QMap<QString, WLDActor *> CharacterPack::models() const
+{
+    return m_models;
+}
+
+void CharacterPack::clear()
+{
+    foreach(WLDActor *actor, m_models)
+        delete actor;
+    m_models.clear();
+    delete m_wld;
+    delete m_archive;
+    m_wld = 0;
+    m_archive = 0;
+    m_uploaded = false;
+}
+
+bool CharacterPack::load(QString archivePath, QString wldName)
+{
+    m_archive = new PFSArchive(archivePath, m_zone);
+    m_wld = WLDData::fromArchive(m_archive, wldName, m_zone);
+    if(!m_wld)
+    {
+        delete m_archive;
+        m_archive = 0;
+        return false;
+    }
+
+    importCharacters(m_archive, m_wld);
+    importCharacterPalettes(m_archive, m_wld);
+    importSkeletons(m_wld);
+    return true;
+}
+
+void CharacterPack::importSkeletons(WLDData *wld)
+{
+    // XXX add a actorName+animName -> WLDAnimation map that contains all animations in the pack (no duplicate).
+    // Makes it easier to free the resources even if some animations are shared between actors.
+    
+    // import skeletons which contain the pose animation
+    foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
+    {
+        QString actorName = skelDef->name().replace("_HS_DEF", "");
+        WLDActor *actor = m_models.value(actorName);
+        if(!actor)
+            continue;
+        actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef, m_zone));
+    }
+
+    // import other animations
+    foreach(TrackFragment *track, wld->fragmentsByType<TrackFragment>())
+    {
+        QString animName = track->name().left(3);
+        QString actorName = track->name().mid(3, 3);
+        WLDActor *actor = m_models.value(actorName);
+        if(!actor)
+            continue;
+        WLDSkeleton *skel = actor->complexModel()->skeleton();
+        if(skel && track->m_def)
+            skel->addTrack(animName, track->m_def);
+    }
+}
+
+void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
+{
+    foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
+    {
+        QString charName, palName, partName;
+        if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
+        {
+            WLDActor *actor = m_models.value(charName);
+            if(!actor)
+                continue;
+            WLDModel *model = actor->complexModel();
+            WLDModelSkin *skin = model->skins().value(palName);
+            if(!skin)
+            {
+                skin = model->newSkin(palName, archive);
+                skin->setPalette(new WLDMaterialPalette(archive));
+                skin->palette()->copyFrom(model->skin()->palette());
+            }
+            skin->palette()->addMaterialDef(matDef);
+        }
+    }
+
+    // look for alternate meshes (e.g. heads)
+    foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
+    {
+        QString actorName, meshName, skinName;
+        WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
+        WLDActor *actor = m_models.value(actorName);
+        if(!actor || meshName.isEmpty())
+            continue;
+        WLDModel *model = actor->complexModel();
+        WLDModelSkin *skin = model->skins().value(skinName);
+        if(!skin)
+            continue;
+        foreach(WLDMesh *part, model->skin()->parts())
+        {
+            QString actorName2, meshName2, skinName2;
+            WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
+            if((meshName2 == meshName) && (skinName2 != skinName))
+                skin->replacePart(part, meshDef);
+        }
+    }
+}
+
+void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
+{
+    foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
+    {
+        QString actorName = actorDef->name().replace("_ACTORDEF", "");
+        WLDModel *model = new WLDModel(archive, m_zone);
+        WLDActor *actor = new WLDActor(model, m_zone);
+        WLDModelSkin *skin = model->skin();
+        foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
+        {
+            skin->addPart(meshDef);
+            skin->palette()->addPaletteDef(meshDef->m_palette);
+        }
+        foreach(WLDFragment *frag, actorDef->m_models)
+        {
+            switch(frag->kind())
+            {
+            case HierSpriteFragment::ID:
+            case MeshFragment::ID:
+                break;
+            default:
+                qDebug("Unknown model fragment kind (0x%02x) %s",
+                       frag->kind(), actorName.toLatin1().constData());
+                break;
+            }
+        }
+
+        m_models.insert(actorName, actor);
+    }
+}
+
+void CharacterPack::uploadAll(RenderState *state)
+{
+    if(m_uploaded)
+        return;
+    foreach(WLDActor *actor, m_models)
+        upload(state, actor);
+    m_uploaded = true;
+}
+
+void CharacterPack::upload(RenderState *state, WLDActor *actor)
+{
+    // Make sure we haven't uploaded this character before.
+    WLDModel *model = actor->complexModel();
+    if(model->buffer())
+        return;
+
+    // Import mesh geometry.
+    MeshBuffer *meshBuf = new MeshBuffer();
+    model->setBuffer(meshBuf);
+    foreach(WLDModelSkin *skin, model->skins())
+    {
+        foreach(WLDMesh *mesh, skin->parts())
+            mesh->importFrom(meshBuf);
+
+        // Upload materials (textures).
+        MaterialMap *materials = skin->materials();
+        if(!materials)
+        {
+            materials = skin->palette()->loadMaterials();
+            skin->setMaterials(materials);
+        }
+        materials->upload(state);
+    }
+
+    // Create the GPU buffers.
+    meshBuf->upload(state);
+    //m_gpuBuffers.append(meshBuf->vertexBuffer);
+    //m_gpuBuffers.append(meshBuf->indexBuffer);
+
+    // Free the memory used for indices. We need to keep the vertices around for software skinning.
+    meshBuf->clearIndices();
 }

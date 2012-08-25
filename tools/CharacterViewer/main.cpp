@@ -18,13 +18,18 @@ QWidget * showCharViewer(RenderState *state)
     CharacterScene *scene = v->scene();
     Zone *z = scene->zone();
     QDir assetDir(scene->assetPath());
-    z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
-    z->loadCharacters(assetDir.absoluteFilePath("gequip.s3d"));
-
-    WLDActor *weaponActor = z->charModels().value("IT106");
-    WLDActor *weaponActor2 = z->charModels().value("IT113");
-    WLDActor *charActor = z->charModels().value("BAF");
-    WLDActor *skelActor = z->charModels().value("ELF");
+    
+    CharacterPack *charPack = z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
+    if(!charPack)
+        return v;
+    CharacterPack *itemPack = z->loadCharacters(assetDir.absoluteFilePath("gequip.s3d"));
+    if(!itemPack)
+        return v;
+    
+    WLDActor *charActor = charPack->models().value("BAF");
+    WLDActor *skelActor = charPack->models().value("ELF");
+    WLDActor *weaponActor = itemPack->models().value("IT106");
+    WLDActor *weaponActor2 = itemPack->models().value("IT113");
     if(charActor && weaponActor)
         charActor->addEquip(WLDActor::Right, weaponActor);
     if(charActor && weaponActor2)
