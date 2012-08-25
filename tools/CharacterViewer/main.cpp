@@ -22,18 +22,18 @@ QWidget * showCharViewer(RenderState *state)
     CharacterPack *charPack = z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
     if(!charPack)
         return v;
-    CharacterPack *itemPack = z->loadCharacters(assetDir.absoluteFilePath("gequip.s3d"));
+    ObjectPack *itemPack = z->loadObjects(assetDir.absoluteFilePath("gequip.s3d"));
     if(!itemPack)
         return v;
     
     WLDActor *charActor = charPack->models().value("BAF");
     WLDActor *skelActor = charPack->models().value("ELF");
-    WLDActor *weaponActor = itemPack->models().value("IT106");
-    WLDActor *weaponActor2 = itemPack->models().value("IT113");
+    WLDMesh *weaponActor = itemPack->models().value("IT106");
+    WLDMesh *weaponActor2 = itemPack->models().value("IT113");
     if(charActor && weaponActor)
-        charActor->addEquip(WLDActor::Right, weaponActor);
+        charActor->addEquip(WLDActor::Right, weaponActor, itemPack->materials());
     if(charActor && weaponActor2)
-        charActor->addEquip(WLDActor::Left, weaponActor2);
+        charActor->addEquip(WLDActor::Left, weaponActor2, itemPack->materials());
     if(charActor && skelActor)
     {
         charActor->complexModel()->skeleton()->copyAnimationsFrom(skelActor->complexModel()->skeleton());

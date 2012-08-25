@@ -15,7 +15,13 @@ class WLDMesh;
 class WLDActor;
 class RenderState;
 
-typedef QPair<int, WLDActor *> ActorEquip;
+class ActorEquip
+{
+public:
+    int TrackID;
+    WLDMesh *Mesh;
+    MaterialMap *Materials;
+};
 
 /*!
   \brief Describes an instance of a model (such as an object or a character).
@@ -61,7 +67,7 @@ public:
         Shield
     };
 
-    bool addEquip(EquipSlot slot, WLDActor *actor);
+    bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialMap *materials);
     
     void update();
 

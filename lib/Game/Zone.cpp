@@ -49,6 +49,11 @@ QList<CharacterPack *> Zone::characterPacks() const
     return m_charPacks;
 }
 
+QList<ObjectPack *> Zone::objectPacks() const
+{
+    return m_objectPacks;
+}
+
 bool Zone::load(QString path, QString name)
 {
     m_name = name;
@@ -108,6 +113,24 @@ CharacterPack * Zone::loadCharacters(QString archivePath, QString wldName)
     return charPack;
 }
 
+ObjectPack * Zone::loadObjects(QString archivePath, QString wldName)
+{
+    if(wldName.isNull())
+    {
+        QString baseName = QFileInfo(archivePath).baseName();
+        wldName = baseName + ".wld";
+    }
+    
+    ObjectPack *objPack = new ObjectPack();
+    if(!objPack->load(archivePath, wldName))
+    {
+        delete objPack;
+        return NULL;
+    }
+    m_objectPacks.append(objPack);
+    return objPack;
+}
+
 WLDActor * Zone::findCharacter(QString name) const
 {
     foreach(CharacterPack *pack, m_charPacks)
@@ -122,7 +145,10 @@ void Zone::clear()
 {
     foreach(CharacterPack *pack, m_charPacks)
         delete pack;
+    foreach(ObjectPack *pack, m_objectPacks)
+        delete pack;
     m_charPacks.clear();
+    m_objectPacks.clear();
     delete m_objects;
     delete m_terrain;
     delete m_mainWld;
@@ -634,9 +660,10 @@ bool ObjectPack::load(QString archivePath, QString wldName)
                        actorDef->name().toLatin1().constData());
             continue;
         }
+        QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDMesh *model = new WLDMesh(mesh->m_def, 0);
         palette.addPaletteDef(mesh->m_def->m_palette);
-        m_models.insert(actorDef->name(), model);
+        m_models.insert(actorName, model);
     }
     m_materials = palette.loadMaterials();
     return true;

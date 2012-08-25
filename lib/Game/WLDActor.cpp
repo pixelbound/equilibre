@@ -125,7 +125,7 @@ void WLDActor::setPaletteName(QString palName)
     m_palName = palName;
 }
 
-bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDActor *actor)
+bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDMesh *mesh, MaterialMap *materials)
 {
     QString name = slotName(slot);
     if(name.isEmpty() || !m_complexModel->skeleton())
@@ -136,7 +136,11 @@ bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDActor *actor)
     int trackIndex = anim->findTrack(name);
     if(trackIndex < 0)
         return false;
-    m_equip[slot] = QPair<int, WLDActor *>(trackIndex, actor);
+    ActorEquip eq;
+    eq.TrackID = trackIndex;
+    eq.Mesh = mesh;
+    eq.Materials = materials;
+    m_equip[slot] = eq;
     return true;
 }
 
@@ -211,11 +215,16 @@ void WLDActor::draw(RenderState *state)
     state->setRenderMode(RenderState::Basic);
     foreach(ActorEquip eq, m_equip)
     {
-        BoneTransform bone = bones.value(eq.first);
         state->pushMatrix();
+        BoneTransform bone = bones.value(eq.TrackID);
         state->translate(bone.location.toVector3D());
         state->rotate(bone.rotation);
-        eq.second->draw(state);
+        MeshBuffer *meshBuf = eq.Mesh->data()->buffer;
+        meshBuf->matGroups.clear();
+        meshBuf->addMaterialGroups(eq.Mesh->data());
+        state->beginDrawMesh(meshBuf, eq.Materials);
+        state->drawMesh();
+        state->endDrawMesh();
         state->popMatrix();
     }
     state->popMatrix();

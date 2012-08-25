@@ -41,12 +41,11 @@ public:
     ZoneTerrain * terrain() const;
     ZoneObjects * objects() const;
     QList<CharacterPack *> characterPacks() const;
+    QList<ObjectPack *> objectPacks() const;
     
-    const QMap<QString, WLDActor *> & charModels() const;
-
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
-    
+    ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     WLDActor * findCharacter(QString name) const;
 
     void clear();
@@ -83,14 +82,13 @@ public:
     void currentSoundTriggers(QVector<SoundTrigger *> &triggers) const;
 
 private:
-    MeshBuffer * uploadObjects(RenderState *state);
-    
     void setPlayerViewFrustum(Frustum &frustum) const;
 
     QString m_name;
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;
     QList<CharacterPack *> m_charPacks;
+    QList<ObjectPack *> m_objectPacks; // XXX this shouldn't be in Zone, maybe Game.
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
     QVector<buffer_t> m_gpuBuffers;
