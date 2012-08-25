@@ -83,6 +83,8 @@ public:
         this->z = z;
         this->w = w;
     }
+    
+    static float dot(const vec4 &a, const vec4 &b);
 };
 
 class RENDER_DLL matrix4
@@ -92,10 +94,9 @@ public:
     matrix4();
     matrix4(const QMatrix4x4 &m);
     
-    const float * data() const;
+    const vec4 * data() const;
 
     vec3 map(const vec3 &v) const;
-    vec3 mapNormal(const vec3 &v) const;
 
     void clear();
     void setIdentity();
@@ -110,7 +111,7 @@ public:
     matrix4 operator*(const matrix4 &b);
     
 private:
-    float d[16];
+    vec4 r[4];
 };
 
 class RENDER_DLL BoneTransform
