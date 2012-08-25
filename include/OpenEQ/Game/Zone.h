@@ -27,6 +27,7 @@ class MeshBuffer;
 class ZoneTerrain;
 class ZoneObjects;
 class CharacterPack;
+class ObjectPack;
 
 /*!
   \brief Describes a zone of the world.
@@ -86,8 +87,6 @@ private:
     
     void setPlayerViewFrustum(Frustum &frustum) const;
 
-    //TODO refactor this into data container classes
-    // WLDObjects (with some code from ZoneObjects)
     QString m_name;
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;
@@ -159,17 +158,39 @@ private:
     MeshBuffer * upload(RenderState *state);
     
     Zone *m_zone;
-    PFSArchive *m_objMeshArchive;
-    WLDData *m_objMeshWld, *m_objDefWld;
-    QMap<QString, WLDMesh *> m_objModels;
-    MeshBuffer *m_objectsBuffer;
-    MaterialMap *m_objectMaterials;
+    ObjectPack *m_pack;
+    WLDData *m_objDefWld;
     QVector<WLDActor *> m_objects;
+    QVector<WLDActor *> m_visibleObjects;
     OctreeIndex *m_objectTree;
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
-    QVector<WLDActor *> m_visibleObjects;
+};
+
+/*!
+  \brief Holds the resources needed to render static objects.
+  */
+class GAME_DLL ObjectPack
+{
+public:
+    ObjectPack();
+    virtual ~ObjectPack();
+    
+    const QMap<QString, WLDMesh *> models() const;
+    MeshBuffer * buffer() const;
+    MaterialMap * materials() const;
+    
+    bool load(QString archivePath, QString wldName);
+    MeshBuffer * upload(RenderState *state);
+    void clear();
+    
+private:
+    PFSArchive *m_archive;
+    WLDData *m_wld;
+    QMap<QString, WLDMesh *> m_models;
+    MeshBuffer *m_meshBuf;
+    MaterialMap *m_materials;
 };
 
 /*!
@@ -178,27 +199,24 @@ private:
 class GAME_DLL CharacterPack
 {
 public:
-    CharacterPack(Zone *zone);
+    CharacterPack();
     virtual ~CharacterPack();
     
     const QMap<QString, WLDActor *> models() const;
     
     bool load(QString archivePath, QString wldName);
-    void draw(RenderState *state, Frustum &frustum);
-    void uploadAll(RenderState *state);
-    void upload(RenderState *state, WLDActor *actor);
+    void upload(RenderState *state);
     void clear();
     
 private:
     void importSkeletons(WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
+    void upload(RenderState *state, WLDActor *actor);
     
-    Zone *m_zone;
     PFSArchive *m_archive;
     WLDData *m_wld;
     QMap<QString, WLDActor *> m_models;
-    bool m_uploaded;
 };
 
 #endif

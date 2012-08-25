@@ -98,7 +98,7 @@ CharacterPack * Zone::loadCharacters(QString archivePath, QString wldName)
         wldName = baseName + ".wld";
     }
     
-    CharacterPack *charPack = new CharacterPack(this);
+    CharacterPack *charPack = new CharacterPack();
     if(!charPack->load(archivePath, wldName))
     {
         delete charPack;
@@ -423,12 +423,10 @@ void ZoneTerrain::draw(RenderState *state, Frustum &frustum)
 ZoneObjects::ZoneObjects(Zone *zone)
 {
     m_zone = zone;
-    m_objMeshArchive = 0;
-    m_objMeshWld = m_objDefWld = 0;
+    m_pack = NULL;
+    m_objDefWld = 0;
     m_objectsStat = NULL;
     m_objectsStatGPU = NULL;
-    m_objectsBuffer = NULL;
-    m_objectMaterials = NULL;
     m_objectTree = NULL;
     m_drawnObjectsStat = NULL;
 }
@@ -440,26 +438,17 @@ ZoneObjects::~ZoneObjects()
 
 const QMap<QString, WLDMesh *> & ZoneObjects::models() const
 {
-    return m_objModels;
+    return m_pack->models();
 }
 
 void ZoneObjects::clear()
 {
-    foreach(WLDMesh *model, m_objModels)
-        delete model;
-    m_objModels.clear();
     delete m_objectTree;
-    delete m_objectsBuffer;
-    delete m_objectMaterials;
-    delete m_objMeshWld;
+    delete m_pack;
     delete m_objDefWld;
-    delete m_objMeshArchive;
-    m_objectTree = 0;
-    m_objectsBuffer = 0;
-    m_objectMaterials = 0;
-    m_objMeshWld = 0;
-    m_objDefWld = 0;
-    m_objMeshArchive = 0;
+    m_objectTree = NULL;
+    m_pack = NULL;
+    m_objDefWld = NULL;
 }
 
 bool ZoneObjects::load(QString path, QString name, PFSArchive *mainArchive)
@@ -470,48 +459,26 @@ bool ZoneObjects::load(QString path, QString name, PFSArchive *mainArchive)
     
     QString objMeshPath = QString("%1/%2_obj.s3d").arg(path).arg(name);
     QString objMeshFile = QString("%1_obj.wld").arg(name);
-    m_objMeshArchive = new PFSArchive(objMeshPath, m_zone);
-    m_objMeshWld = WLDData::fromArchive(m_objMeshArchive, objMeshFile, m_zone);
-    if(!m_objMeshWld)
+    m_pack = new ObjectPack();
+    if(!m_pack->load(objMeshPath, objMeshFile))
+    {
+        delete m_pack;
+        m_pack = NULL;
         return false;
-
-    importMeshes();
+    }
     importActors();
     return true;
-}
-
-void ZoneObjects::importMeshes()
-{
-    // import models through ActorDef fragments
-    WLDMaterialPalette palette(m_objMeshArchive);
-    foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
-    {
-        WLDFragment *subModel = actorDef->m_models.value(0);
-        if(!subModel)
-            continue;
-        MeshFragment *mesh = subModel->cast<MeshFragment>();
-        if(!mesh)
-        {
-            if(subModel->kind() == HierSpriteFragment::ID)
-                qDebug("Hierarchical model in zone objects (%s)",
-                       actorDef->name().toLatin1().constData());
-            continue;
-        }
-        WLDMesh *model = new WLDMesh(mesh->m_def, 0);
-        palette.addPaletteDef(mesh->m_def->m_palette);
-        m_objModels.insert(actorDef->name(), model);
-    }
-    m_objectMaterials = palette.loadMaterials();
 }
 
 void ZoneObjects::importActors()
 {
     // import actors through Actor fragments
     AABox bounds = m_zone->terrain()->bounds();
+    const QMap<QString, WLDMesh *> &models = m_pack->models();
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
         QString actorName = actorFrag->m_def.name();
-        WLDMesh *model = m_objModels.value(actorName);
+        WLDMesh *model = models.value(actorName);
         if(model)
         {
             WLDActor *actor = new WLDActor(actorFrag, model, m_zone);
@@ -531,27 +498,6 @@ void ZoneObjects::importActors()
         m_objectTree->add(actor);   
 }
 
-MeshBuffer * ZoneObjects::upload(RenderState *state)
-{
-    m_objectMaterials->uploadArray(state);
-    
-    // Import vertices and indices for each mesh.
-    MeshBuffer *meshBuf = new MeshBuffer();
-    foreach(WLDMesh *mesh, m_objModels.values())
-    {
-        MeshData *meshData = mesh->importFrom(meshBuf);
-        meshData->updateTexCoords(m_objectMaterials);
-    }
-    
-    // Create the GPU buffers.
-    meshBuf->upload(state);
-    meshBuf->clearVertices();
-    meshBuf->clearIndices();
-    //m_gpuBuffers.append(meshBuf->vertexBuffer);
-    //m_gpuBuffers.append(meshBuf->indexBuffer);
-    return meshBuf;
-}
-
 static bool zoneActorGroupLessThan(const WLDActor *a, const WLDActor *b)
 {
     return a->simpleModel()->def() < b->simpleModel()->def();
@@ -567,8 +513,8 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     m_objectsStatGPU->beginTime();
     
     // Create a GPU buffer for the objects' vertices and indices if needed.
-    if(m_objectsBuffer == NULL)
-        m_objectsBuffer = upload(state);
+    if(m_pack->buffer() == NULL)
+        m_pack->upload(state);
     
     // Build a list of visible objects and sort them by mesh.
     m_objectTree->findVisible(m_visibleObjects, frustum, m_zone->cullObjects());
@@ -577,6 +523,7 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     // Draw one batch of objects (beginDraw/endDraw) per mesh.
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
+    MeshBuffer *meshBuf = m_pack->buffer();
     QVector<matrix4> mvMatrices;
     foreach(const WLDActor *actor, m_visibleObjects)
     {
@@ -592,9 +539,9 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
                 }
                 state->endDrawMesh();
             }
-            m_objectsBuffer->matGroups.clear();
-            m_objectsBuffer->addMaterialGroups(currentMesh->data());
-            state->beginDrawMesh(m_objectsBuffer, m_objectMaterials);
+            meshBuf->matGroups.clear();
+            meshBuf->addMaterialGroups(currentMesh->data());
+            state->beginDrawMesh(meshBuf, m_pack->materials());
             previousMesh = currentMesh;
             meshCount++;
         }
@@ -623,10 +570,105 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     m_objectsStat->endTime();
 }
 
-CharacterPack::CharacterPack(Zone *zone)
+////////////////////////////////////////////////////////////////////////////////
+
+ObjectPack::ObjectPack()
 {
-    m_zone = zone;
-    m_uploaded = false;
+    m_archive = NULL;
+    m_wld = NULL;
+    m_meshBuf = NULL;
+}
+
+ObjectPack::~ObjectPack()
+{
+    clear();
+}
+
+const QMap<QString, WLDMesh *> ObjectPack::models() const
+{
+    return m_models;
+}
+
+MeshBuffer * ObjectPack::buffer() const
+{
+    return m_meshBuf;
+}
+
+MaterialMap * ObjectPack::materials() const
+{
+    return m_materials;
+}
+
+void ObjectPack::clear()
+{
+    delete m_meshBuf;
+    foreach(WLDMesh *actor, m_models)
+        delete actor;
+    m_models.clear();
+    delete m_wld;
+    delete m_archive;
+    m_meshBuf = NULL;
+    m_wld = NULL;
+    m_archive = NULL;
+}
+
+bool ObjectPack::load(QString archivePath, QString wldName)
+{
+    m_archive = new PFSArchive(archivePath);
+    m_wld = WLDData::fromArchive(m_archive, wldName);
+    if(!m_wld)
+        return false;
+
+    // Import models through ActorDef fragments.
+    WLDMaterialPalette palette(m_archive);
+    foreach(ActorDefFragment *actorDef, m_wld->fragmentsByType<ActorDefFragment>())
+    {
+        WLDFragment *subModel = actorDef->m_models.value(0);
+        if(!subModel)
+            continue;
+        MeshFragment *mesh = subModel->cast<MeshFragment>();
+        if(!mesh)
+        {
+            if(subModel->kind() == HierSpriteFragment::ID)
+                qDebug("Hierarchical model in zone objects (%s)",
+                       actorDef->name().toLatin1().constData());
+            continue;
+        }
+        WLDMesh *model = new WLDMesh(mesh->m_def, 0);
+        palette.addPaletteDef(mesh->m_def->m_palette);
+        m_models.insert(actorDef->name(), model);
+    }
+    m_materials = palette.loadMaterials();
+    return true;
+}
+
+MeshBuffer * ObjectPack::upload(RenderState *state)
+{
+    m_materials->uploadArray(state);
+    
+    // Import vertices and indices for each mesh.
+    m_meshBuf = new MeshBuffer();
+    foreach(WLDMesh *mesh, m_models.values())
+    {
+        MeshData *meshData = mesh->importFrom(m_meshBuf);
+        meshData->updateTexCoords(m_materials);
+    }
+    
+    // Create the GPU buffers.
+    m_meshBuf->upload(state);
+    m_meshBuf->clearVertices();
+    m_meshBuf->clearIndices();
+    //m_gpuBuffers.append(m_meshBuf->vertexBuffer);
+    //m_gpuBuffers.append(m_meshBuf->indexBuffer);
+    return m_meshBuf;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+CharacterPack::CharacterPack()
+{
+    m_archive = NULL;
+    m_wld = NULL;
 }
 
 CharacterPack::~CharacterPack()
@@ -648,13 +690,12 @@ void CharacterPack::clear()
     delete m_archive;
     m_wld = 0;
     m_archive = 0;
-    m_uploaded = false;
 }
 
 bool CharacterPack::load(QString archivePath, QString wldName)
 {
-    m_archive = new PFSArchive(archivePath, m_zone);
-    m_wld = WLDData::fromArchive(m_archive, wldName, m_zone);
+    m_archive = new PFSArchive(archivePath);
+    m_wld = WLDData::fromArchive(m_archive, wldName);
     if(!m_wld)
     {
         delete m_archive;
@@ -680,7 +721,7 @@ void CharacterPack::importSkeletons(WLDData *wld)
         WLDActor *actor = m_models.value(actorName);
         if(!actor)
             continue;
-        actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef, m_zone));
+        actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef));
     }
 
     // import other animations
@@ -746,8 +787,8 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
     {
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
-        WLDModel *model = new WLDModel(archive, m_zone);
-        WLDActor *actor = new WLDActor(model, m_zone);
+        WLDModel *model = new WLDModel(archive);
+        WLDActor *actor = new WLDActor(model);
         WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
         {
@@ -772,13 +813,10 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     }
 }
 
-void CharacterPack::uploadAll(RenderState *state)
+void CharacterPack::upload(RenderState *state)
 {
-    if(m_uploaded)
-        return;
     foreach(WLDActor *actor, m_models)
         upload(state, actor);
-    m_uploaded = true;
 }
 
 void CharacterPack::upload(RenderState *state, WLDActor *actor)

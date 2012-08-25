@@ -352,7 +352,7 @@ void CharacterScene::init()
 {
     m_started = currentTime();
     foreach(CharacterPack *charPack, m_zone->characterPacks())
-        charPack->uploadAll(m_state);
+        charPack->upload(m_state);
 }
 
 CharacterPack * CharacterScene::loadCharacters(QString archivePath)
@@ -360,7 +360,7 @@ CharacterPack * CharacterScene::loadCharacters(QString archivePath)
     CharacterPack *charPack = m_zone->loadCharacters(archivePath);
     if(charPack)
     {
-        charPack->uploadAll(m_state);
+        charPack->upload(m_state);
         return charPack;
     }
     return NULL;
