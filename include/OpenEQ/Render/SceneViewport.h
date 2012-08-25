@@ -6,6 +6,10 @@
 #include <QVector>
 #include "OpenEQ/Render/Platform.h"
 
+#ifdef USE_VTUNE_PROFILER
+#include <ittnotify.h>
+#endif
+
 class QTimer;
 class QPainter;
 class QGLFormat;
@@ -56,6 +60,10 @@ private:
     // Stats
     QTimer *m_statsTimer;
     QVector<float> m_lastStats;
+    
+#ifdef USE_VTUNE_PROFILER
+    __itt_domain *m_traceDomain;
+#endif
 };
 
 #endif

@@ -21,6 +21,9 @@ SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) 
     m_renderTimer->setInterval(0);
     m_statsTimer = new QTimer(this);
     m_statsTimer->setInterval(1000);
+#ifdef USE_VTUNE_PROFILER
+    m_traceDomain = __itt_domain_create("SceneViewport");
+#endif
     setAutoFillBackground(false);
     connect(m_statsTimer, SIGNAL(timeout()), this, SLOT(updateStats()));
     connect(m_renderTimer, SIGNAL(timeout()), this, SLOT(update()));
@@ -70,12 +73,18 @@ void SceneViewport::paintEvent(QPaintEvent *)
 
 void SceneViewport::paintGL()
 {
+#ifdef USE_VTUNE_PROFILER
+    __itt_frame_begin_v3(m_traceDomain, NULL); 
+#endif
     if(m_state->beginFrame())
     {
         m_scene->clearLog();
         m_scene->draw();
     }
     m_state->endFrame();
+#ifdef USE_VTUNE_PROFILER
+    __itt_frame_end_v3(m_traceDomain, NULL); 
+#endif
 }
 
 void SceneViewport::toggleAnimation()

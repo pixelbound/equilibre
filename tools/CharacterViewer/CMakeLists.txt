@@ -21,4 +21,10 @@ target_link_libraries(CharacterViewer
     OpenEQRender
     OpenEQGame
     ${QT_LIBRARIES}
+    ${SYSTEM_LIBRARIES}
 )
+
+if(USE_VTUNE_PROFILER)
+    target_link_libraries(CharacterViewer ittnotify)
+endif(USE_VTUNE_PROFILER)
+

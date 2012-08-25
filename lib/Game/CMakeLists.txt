@@ -42,4 +42,5 @@ target_link_libraries(OpenEQGame
     OpenEQRender
     ${QT_LIBRARIES}
     ${ZLIB_LIBRARIES}
+    ${SYSTEM_LIBRARIES}
 )

@@ -61,4 +61,5 @@ add_library(OpenEQRender SHARED
 target_link_libraries(OpenEQRender
     ${QT_LIBRARIES}
     ${GLEW_LIBRARIES}
+    ${SYSTEM_LIBRARIES}
 )

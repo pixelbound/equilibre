@@ -23,4 +23,9 @@ target_link_libraries(ZoneViewer
     OpenEQRender
     OpenEQGame
     ${QT_LIBRARIES}
+    ${SYSTEM_LIBRARIES}
 )
+
+if(USE_VTUNE_PROFILER)
+    target_link_libraries(ZoneViewer ittnotify)
+endif(USE_VTUNE_PROFILER)
