@@ -6,10 +6,16 @@
 
 struct RENDER_DLL Plane
 {
-    vec3 p; // point on the plane
-    vec3 n; // normal of the plane
-
+    Plane();
+    Plane(vec3 point, vec3 normal);
+    const vec3 & p() const;
+    const vec3 & n() const;
     float distance(vec3 v) const;
+    
+private:
+    vec3 m_p; // point on the plane
+    vec3 m_n; // normal of the plane
+    float m_dot_minus_n_p; // dot(-n, p)
 };
 
 struct RENDER_DLL AABox

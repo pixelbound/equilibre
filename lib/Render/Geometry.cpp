@@ -3,9 +3,31 @@
 
 using namespace std;
 
+Plane::Plane()
+{
+    m_dot_minus_n_p = 0.0f;
+}
+
+Plane::Plane(vec3 point, vec3 normal)
+{
+    m_p = point;
+    m_n = normal;
+    m_dot_minus_n_p = vec3::dot(-m_n, m_p);
+}
+
+const vec3 & Plane::p() const
+{
+    return m_p;
+}
+
+const vec3 & Plane::n() const
+{
+    return m_n;
+}
+
 float Plane::distance(vec3 v) const
 {
-    return vec3::dot(n, v) + vec3::dot(-n, p);
+    return vec3::dot(m_n, v) + m_dot_minus_n_p;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -240,27 +262,16 @@ void Frustum::update()
     m_corners[7] = farCenter - halfFarX + halfFarY;
 
     // compute the plane "positions" and normals
-    m_planes[NEAR].p = nearCenter;
-    m_planes[NEAR].n = -zAxis;
-
-    m_planes[FAR].p = farCenter;
-    m_planes[FAR].n = zAxis;
-
-    m_planes[TOP].p = nearCenter + halfNearY;
-    m_planes[TOP].n = vec3::cross(
-        (nearCenter + halfNearY - m_eye).normalized(), xAxis);
-
-    m_planes[BOTTOM].p = nearCenter - halfNearY;
-    m_planes[BOTTOM].n = vec3::cross(xAxis,
-        (nearCenter - halfNearY - m_eye).normalized());
-
-    m_planes[LEFT].p = nearCenter - halfNearX;
-    m_planes[LEFT].n = vec3::cross(
-        (nearCenter - halfNearX - m_eye).normalized(), yAxis);
-
-    m_planes[RIGHT].p = nearCenter + halfNearX;
-    m_planes[RIGHT].n = vec3::cross(yAxis,
-        (nearCenter + halfNearX - m_eye).normalized());
+    vec3 topN = vec3::cross((nearCenter + halfNearY - m_eye).normalized(), xAxis);
+    vec3 bottomN = vec3::cross(xAxis, (nearCenter - halfNearY - m_eye).normalized());
+    vec3 leftN = vec3::cross((nearCenter - halfNearX - m_eye).normalized(), yAxis);
+    vec3 rightN = vec3::cross(yAxis, (nearCenter + halfNearX - m_eye).normalized());
+    m_planes[NEAR] = Plane(nearCenter, -zAxis);
+    m_planes[FAR] = Plane(farCenter, zAxis);
+    m_planes[TOP] = Plane(nearCenter + halfNearY, topN);
+    m_planes[BOTTOM] = Plane(nearCenter - halfNearY, bottomN);
+    m_planes[LEFT] = Plane(nearCenter - halfNearX, leftN);
+    m_planes[RIGHT] = Plane(nearCenter + halfNearX, rightN);
     
     // the planes and corners are up-to-date now
     m_dirty = false;
@@ -309,10 +320,10 @@ Frustum::TestResult Frustum::containsAABox(const AABox &b) const
     {
         const Plane &plane = m_planes[i];
         // is the positive vertex outside?
-        if(plane.distance(b.posVertex(plane.n)) < 0)
+        if(plane.distance(b.posVertex(plane.n())) < 0)
             return OUTSIDE;
         // is the negative vertex outside?
-        else if(plane.distance(b.negVertex(plane.n)) < 0)
+        else if(plane.distance(b.negVertex(plane.n())) < 0)
             result = INTERSECTING;
     }
     return result;
