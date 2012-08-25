@@ -83,43 +83,51 @@ matrix4::matrix4(const QMatrix4x4 &m)
 {
     const qreal *md = m.constData();
     for(int i = 0; i < 4; i++, md += 4)
-        r[i] = vec4(md[0], md[1], md[2], md[3]);
+        c[i] = vec4(md[0], md[1], md[2], md[3]);
 }
 
-const vec4 *matrix4::data() const
+const vec4 *matrix4::columns() const
 {
-    return r;
+    return c;
 }
 
 vec3 matrix4::map(const vec3 &v) const
 {
     vec4 v4(v.x, v.y, v.z, 1.0);
-    float x = vec4::dot(r[0], v4);
-    float y = vec4::dot(r[1], v4);
-    float z = vec4::dot(r[2], v4);
-    float w = vec4::dot(r[3], v4);
+    float x = vec4::dot(c[0], v4);
+    float y = vec4::dot(c[1], v4);
+    float z = vec4::dot(c[2], v4);
+    float w = vec4::dot(c[3], v4);
     return vec3(x / w, y / w, z / w);
 }
 
 void matrix4::clear()
 {
     for(int i = 0; i < 4; i++)
-        r[i] = vec4();
+        c[i] = vec4();
 }
 
 void matrix4::setIdentity()
 {
-    r[0] = vec4(1.0, 0.0, 0.0, 0.0);
-    r[1] = vec4(0.0, 1.0, 0.0, 0.0);
-    r[2] = vec4(0.0, 0.0, 1.0, 0.0);
-    r[3] = vec4(0.0, 0.0, 0.0, 1.0);
+    c[0] = vec4(1.0, 0.0, 0.0, 0.0);
+    c[1] = vec4(0.0, 1.0, 0.0, 0.0);
+    c[2] = vec4(0.0, 0.0, 1.0, 0.0);
+    c[3] = vec4(0.0, 0.0, 0.0, 1.0);
+}
+
+void matrix4::transpose()
+{
+    c[0] = vec4(c[0].x, c[1].x, c[2].x, c[3].x);
+    c[1] = vec4(c[0].y, c[1].y, c[2].y, c[3].y);
+    c[2] = vec4(c[0].z, c[1].z, c[2].z, c[3].z);
+    c[3] = vec4(c[0].w, c[1].w, c[2].w, c[3].w);
 }
 
 matrix4 matrix4::translate(float dx, float dy, float dz)
 {
     matrix4 m;
     m.setIdentity();
-    m.r[3] = vec4(dx, dy, dz, 1.0);
+    m.c[3] = vec4(dx, dy, dz, 1.0);
     return m;
 }
 
@@ -130,20 +138,20 @@ matrix4 matrix4::rotate(float angle, float x, float y, float z)
     float s = sin(theta);
     float t = 1 - c;
     matrix4 m;
-    m.r[0] = vec4(t * x * x + c, t * x * y + s * z, t * x * z - s * y, 0.0);
-    m.r[1] = vec4(t * x * y - s * z, t * y * y + c, t * y * z + s * x, 0.0);
-    m.r[2] = vec4(t * x * z + s * y, t * y * z - s * x, t * z * z + c, 0.0);
-    m.r[3] = vec4(0.0, 0.0, 0.0, 1.0);
+    m.c[0] = vec4(t * x * x + c, t * x * y + s * z, t * x * z - s * y, 0.0);
+    m.c[1] = vec4(t * x * y - s * z, t * y * y + c, t * y * z + s * x, 0.0);
+    m.c[2] = vec4(t * x * z + s * y, t * y * z - s * x, t * z * z + c, 0.0);
+    m.c[3] = vec4(0.0, 0.0, 0.0, 1.0);
     return m;
 }
 
 matrix4 matrix4::scale(float sx, float sy, float sz)
 {
     matrix4 m;
-    m.r[0] = vec4(sx, 0.0, 0.0, 0.0);
-    m.r[1] = vec4(0.0, sy, 0.0, 0.0);
-    m.r[2] = vec4(0.0, 0.0, sz, 0.0);
-    m.r[3] = vec4(0.0, 0.0, 0.0, 1.0);
+    m.c[0] = vec4(sx, 0.0, 0.0, 0.0);
+    m.c[1] = vec4(0.0, sy, 0.0, 0.0);
+    m.c[2] = vec4(0.0, 0.0, sz, 0.0);
+    m.c[3] = vec4(0.0, 0.0, 0.0, 1.0);
     return m;
 }
 
@@ -162,10 +170,10 @@ matrix4 matrix4::perspective(float angle, float aspect, float nearPlane, float f
         return m;
     float cotan = cos(radians) / sine;
     float clip = farPlane - nearPlane;
-    m.r[0] = vec4(cotan / aspect, 0.0, 0.0, 0.0);
-    m.r[1] = vec4(0.0, cotan, 0.0, 0.0);
-    m.r[2] = vec4(0.0, 0.0, -(nearPlane + farPlane) / clip, -1.0);
-    m.r[3] = vec4(0.0, 0.0, -(2.0 * nearPlane * farPlane) / clip, 0.0);
+    m.c[0] = vec4(cotan / aspect, 0.0, 0.0, 0.0);
+    m.c[1] = vec4(0.0, cotan, 0.0, 0.0);
+    m.c[2] = vec4(0.0, 0.0, -(nearPlane + farPlane) / clip, -1.0);
+    m.c[3] = vec4(0.0, 0.0, -(2.0 * nearPlane * farPlane) / clip, 0.0);
     return m;
 }
 
@@ -177,35 +185,35 @@ matrix4 matrix4::ortho(float left, float right, float bottom, float top, float n
     float width = right - left;
     float invheight = top - bottom;
     float clip = farPlane - nearPlane;
-    m.r[0] = vec4(2.0 / width, 0.0, 0.0, 0.0);
-    m.r[1] = vec4(0.0, 2.0 / invheight, 0.0, 0.0);
-    m.r[2] = vec4(0.0, 0.0, -2.0 / clip, 0.0);
-    m.r[3] = vec4(-(left + right) / width, -(top + bottom) / invheight, -(nearPlane + farPlane) / clip, 1.0);
+    m.c[0] = vec4(2.0 / width, 0.0, 0.0, 0.0);
+    m.c[1] = vec4(0.0, 2.0 / invheight, 0.0, 0.0);
+    m.c[2] = vec4(0.0, 0.0, -2.0 / clip, 0.0);
+    m.c[3] = vec4(-(left + right) / width, -(top + bottom) / invheight, -(nearPlane + farPlane) / clip, 1.0);
     return m;
 }
 
 matrix4 matrix4::operator*(const matrix4 &b)
 {
     matrix4 m;
-    m.r[0].x = r[0].x * b.r[0].x + r[1].x * b.r[0].y + r[2].x * b.r[0].z + r[3].x * b.r[0].w;
-    m.r[0].y = r[0].y * b.r[0].x + r[1].y * b.r[0].y + r[2].y * b.r[0].z + r[3].y * b.r[0].w;
-    m.r[0].z = r[0].z * b.r[0].x + r[1].z * b.r[0].y + r[2].z * b.r[0].z + r[3].z * b.r[0].w;
-    m.r[0].w = r[0].w * b.r[0].x + r[1].w * b.r[0].y + r[2].w * b.r[0].z + r[3].w * b.r[0].w;
+    m.c[0].x = c[0].x * b.c[0].x + c[1].x * b.c[0].y + c[2].x * b.c[0].z + c[3].x * b.c[0].w;
+    m.c[0].y = c[0].y * b.c[0].x + c[1].y * b.c[0].y + c[2].y * b.c[0].z + c[3].y * b.c[0].w;
+    m.c[0].z = c[0].z * b.c[0].x + c[1].z * b.c[0].y + c[2].z * b.c[0].z + c[3].z * b.c[0].w;
+    m.c[0].w = c[0].w * b.c[0].x + c[1].w * b.c[0].y + c[2].w * b.c[0].z + c[3].w * b.c[0].w;
     
-    m.r[1].x = r[0].x * b.r[1].x + r[1].x * b.r[1].y + r[2].x * b.r[1].z + r[3].x * b.r[1].w;
-    m.r[1].y = r[0].y * b.r[1].x + r[1].y * b.r[1].y + r[2].y * b.r[1].z + r[3].y * b.r[1].w;
-    m.r[1].z = r[0].z * b.r[1].x + r[1].z * b.r[1].y + r[2].z * b.r[1].z + r[3].z * b.r[1].w;
-    m.r[1].w = r[0].w * b.r[1].x + r[1].w * b.r[1].y + r[2].w * b.r[1].z + r[3].w * b.r[1].w;
+    m.c[1].x = c[0].x * b.c[1].x + c[1].x * b.c[1].y + c[2].x * b.c[1].z + c[3].x * b.c[1].w;
+    m.c[1].y = c[0].y * b.c[1].x + c[1].y * b.c[1].y + c[2].y * b.c[1].z + c[3].y * b.c[1].w;
+    m.c[1].z = c[0].z * b.c[1].x + c[1].z * b.c[1].y + c[2].z * b.c[1].z + c[3].z * b.c[1].w;
+    m.c[1].w = c[0].w * b.c[1].x + c[1].w * b.c[1].y + c[2].w * b.c[1].z + c[3].w * b.c[1].w;
     
-    m.r[2].x = r[0].x * b.r[2].x + r[1].x * b.r[3].x + r[2].x * b.r[2].z + r[3].x * b.r[2].w;
-    m.r[2].y = r[0].y * b.r[2].x + r[1].y * b.r[2].y + r[2].y * b.r[2].z + r[3].y * b.r[2].w;
-    m.r[2].z = r[0].z * b.r[2].x + r[1].z * b.r[2].y + r[2].z * b.r[2].z + r[3].z * b.r[2].w;
-    m.r[2].w = r[0].w * b.r[2].x + r[1].w * b.r[2].y + r[2].w * b.r[2].z + r[3].w * b.r[2].w;
+    m.c[2].x = c[0].x * b.c[2].x + c[1].x * b.c[3].x + c[2].x * b.c[2].z + c[3].x * b.c[2].w;
+    m.c[2].y = c[0].y * b.c[2].x + c[1].y * b.c[2].y + c[2].y * b.c[2].z + c[3].y * b.c[2].w;
+    m.c[2].z = c[0].z * b.c[2].x + c[1].z * b.c[2].y + c[2].z * b.c[2].z + c[3].z * b.c[2].w;
+    m.c[2].w = c[0].w * b.c[2].x + c[1].w * b.c[2].y + c[2].w * b.c[2].z + c[3].w * b.c[2].w;
     
-    m.r[3].x = r[0].x * b.r[3].x + r[1].x * b.r[3].y + r[2].x * b.r[3].z + r[3].x * b.r[3].w;
-    m.r[3].y = r[0].y * b.r[3].x + r[1].y * b.r[3].y + r[2].y * b.r[3].z + r[3].y * b.r[3].w;
-    m.r[3].z = r[0].z * b.r[3].x + r[1].z * b.r[3].y + r[2].z * b.r[3].z + r[3].z * b.r[3].w;
-    m.r[3].w = r[0].w * b.r[3].x + r[1].w * b.r[3].y + r[2].w * b.r[3].z + r[3].w * b.r[3].w;
+    m.c[3].x = c[0].x * b.c[3].x + c[1].x * b.c[3].y + c[2].x * b.c[3].z + c[3].x * b.c[3].w;
+    m.c[3].y = c[0].y * b.c[3].x + c[1].y * b.c[3].y + c[2].y * b.c[3].z + c[3].y * b.c[3].w;
+    m.c[3].z = c[0].z * b.c[3].x + c[1].z * b.c[3].y + c[2].z * b.c[3].z + c[3].z * b.c[3].w;
+    m.c[3].w = c[0].w * b.c[3].x + c[1].w * b.c[3].y + c[2].w * b.c[3].z + c[3].w * b.c[3].w;
     return m;
 }
 
@@ -216,10 +224,10 @@ matrix4 matrix4::lookAt(vec3 eye, vec3 center, vec3 up)
     up = vec3::cross(side, forward);
 
     matrix4 m;
-    m.r[0] = vec4(side.x, up.x, -forward.x, 0.0);
-    m.r[1] = vec4(side.y, up.y, -forward.y, 0.0);
-    m.r[2] = vec4(side.z, up.z, -forward.z, 0.0);
-    m.r[3] = vec4(0.0, 0.0, 0.0, 1.0);
+    m.c[0] = vec4(side.x, up.x, -forward.x, 0.0);
+    m.c[1] = vec4(side.y, up.y, -forward.y, 0.0);
+    m.c[2] = vec4(side.z, up.z, -forward.z, 0.0);
+    m.c[3] = vec4(0.0, 0.0, 0.0, 1.0);
     return m * matrix4::translate(-eye.x, -eye.y, -eye.z);
 }
 

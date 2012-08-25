@@ -94,9 +94,9 @@ public:
     matrix4();
     matrix4(const QMatrix4x4 &m);
     
-    const vec4 * data() const;
-
+    const vec4 * columns() const;
     vec3 map(const vec3 &v) const;
+    void transpose();
 
     void clear();
     void setIdentity();
@@ -111,7 +111,7 @@ public:
     matrix4 operator*(const matrix4 &b);
     
 private:
-    vec4 r[4];
+    vec4 c[4];
 };
 
 class RENDER_DLL BoneTransform
