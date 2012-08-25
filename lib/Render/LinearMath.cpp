@@ -86,6 +86,14 @@ matrix4::matrix4(const QMatrix4x4 &m)
         c[i] = vec4(md[0], md[1], md[2], md[3]);
 }
 
+QMatrix4x4 matrix4::toQMatrix() const
+{
+    return QMatrix4x4(c[0].x, c[1].x, c[2].x, c[3].x,
+                      c[0].y, c[1].y, c[2].y, c[3].y,
+                      c[0].z, c[1].z, c[2].z, c[3].z,
+                      c[0].w, c[1].w, c[2].w, c[3].w);
+}
+
 const vec4 *matrix4::columns() const
 {
     return c;
@@ -205,7 +213,7 @@ matrix4 matrix4::operator*(const matrix4 &b)
     m.c[1].z = c[0].z * b.c[1].x + c[1].z * b.c[1].y + c[2].z * b.c[1].z + c[3].z * b.c[1].w;
     m.c[1].w = c[0].w * b.c[1].x + c[1].w * b.c[1].y + c[2].w * b.c[1].z + c[3].w * b.c[1].w;
     
-    m.c[2].x = c[0].x * b.c[2].x + c[1].x * b.c[3].x + c[2].x * b.c[2].z + c[3].x * b.c[2].w;
+    m.c[2].x = c[0].x * b.c[2].x + c[1].x * b.c[2].y + c[2].x * b.c[2].z + c[3].x * b.c[2].w;
     m.c[2].y = c[0].y * b.c[2].x + c[1].y * b.c[2].y + c[2].y * b.c[2].z + c[3].y * b.c[2].w;
     m.c[2].z = c[0].z * b.c[2].x + c[1].z * b.c[2].y + c[2].z * b.c[2].z + c[3].z * b.c[2].w;
     m.c[2].w = c[0].w * b.c[2].x + c[1].w * b.c[2].y + c[2].w * b.c[2].z + c[3].w * b.c[2].w;

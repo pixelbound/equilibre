@@ -94,6 +94,8 @@ public:
     matrix4();
     matrix4(const QMatrix4x4 &m);
     
+    QMatrix4x4 toQMatrix() const;
+    
     const vec4 * columns() const;
     vec3 map(const vec3 &v) const;
     void transpose();
