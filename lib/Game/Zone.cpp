@@ -157,6 +157,10 @@ void Zone::clear()
     m_terrain = NULL;
     m_mainWld = 0;
     m_mainArchive = 0;
+    m_playerPos = vec3(0.0, 0.0, 0.0);
+    m_playerOrient = 0.0;
+    m_cameraPos = vec3(0.0, 0.0, 0.0);
+    m_cameraOrient = vec3(0.0, 0.0, 0.0);
 }
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
@@ -364,6 +368,9 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
         m_zoneBounds.extendTo(meshPart->boundsAA());
         m_zoneParts.append(meshPart);
     }
+    vec3 padding(1.0, 1.0, 1.0);
+    m_zoneBounds.low = m_zoneBounds.low - padding;
+    m_zoneBounds.high = m_zoneBounds.high + padding;
     
     // Load zone textures into the material palette.
     WLDMaterialPalette zonePalette(archive);
@@ -503,7 +510,7 @@ void ZoneObjects::importActors()
     const QMap<QString, WLDMesh *> &models = m_pack->models();
     foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
     {
-        QString actorName = actorFrag->m_def.name();
+        QString actorName = actorFrag->m_def.name().replace("_ACTORDEF", "");
         WLDMesh *model = models.value(actorName);
         if(model)
         {
