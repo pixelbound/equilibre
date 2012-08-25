@@ -1,4 +1,5 @@
 #include <cmath>
+#include <QMatrix4x4>
 #include "OpenEQ/Render/LinearMath.h"
 
 using namespace std;
@@ -71,6 +72,18 @@ vec3 operator*(const vec3 &a, float scalar)
 matrix4::matrix4()
 {
     clear();
+}
+
+matrix4::matrix4(const QMatrix4x4 &m)
+{
+    const qreal *md = m.constData();
+    for(int i = 0; i < 16; i++)
+        d[i] = md[i];
+}
+
+const float * matrix4::data() const
+{
+    return d;
 }
 
 vec3 matrix4::map(const vec3 &v) const
@@ -215,25 +228,25 @@ matrix4 matrix4::ortho(float left, float right, float bottom, float top, float n
     return m;
 }
 
-matrix4 operator*(const matrix4 &a, const matrix4 &b)
+matrix4 matrix4::operator*(const matrix4 &b)
 {
     matrix4 m;
-    m.d[0] = a.d[0] * b.d[0] + a.d[4] * b.d[1] + a.d[8] * b.d[2] + a.d[12] * b.d[3];
-    m.d[1] = a.d[1] * b.d[0] + a.d[5] * b.d[1] + a.d[9] * b.d[2] + a.d[13] * b.d[3];
-    m.d[2] = a.d[2] * b.d[0] + a.d[6] * b.d[1] + a.d[10] * b.d[2] + a.d[14] * b.d[3];
-    m.d[3] = a.d[3] * b.d[0] + a.d[7] * b.d[1] + a.d[11] * b.d[2] + a.d[15] * b.d[3];
-    m.d[4] = a.d[0] * b.d[4] + a.d[4] * b.d[5] + a.d[8] * b.d[6] + a.d[12] * b.d[7];
-    m.d[5] = a.d[1] * b.d[4] + a.d[5] * b.d[5] + a.d[9] * b.d[6] + a.d[13] * b.d[7];
-    m.d[6] = a.d[2] * b.d[4] + a.d[6] * b.d[5] + a.d[10] * b.d[6] + a.d[14] * b.d[7];
-    m.d[7] = a.d[3] * b.d[4] + a.d[7] * b.d[5] + a.d[11] * b.d[6] + a.d[15] * b.d[7];
-    m.d[8] = a.d[0] * b.d[8] + a.d[4] * b.d[9] + a.d[8] * b.d[10] + a.d[12] * b.d[11];
-    m.d[9] = a.d[1] * b.d[8] + a.d[5] * b.d[9] + a.d[9] * b.d[10] + a.d[13] * b.d[11];
-    m.d[10] = a.d[2] * b.d[8] + a.d[6] * b.d[9] + a.d[10] * b.d[10] + a.d[14] * b.d[11];
-    m.d[11] = a.d[3] * b.d[8] + a.d[7] * b.d[9] + a.d[11] * b.d[10] + a.d[15] * b.d[11];
-    m.d[12] = a.d[0] * b.d[12] + a.d[4] * b.d[13] + a.d[8] * b.d[14] + a.d[12] * b.d[15];
-    m.d[13] = a.d[1] * b.d[12] + a.d[5] * b.d[13] + a.d[9] * b.d[14] + a.d[13] * b.d[15];
-    m.d[14] = a.d[2] * b.d[12] + a.d[6] * b.d[13] + a.d[10] * b.d[14] + a.d[14] * b.d[15];
-    m.d[15] = a.d[3] * b.d[12] + a.d[7] * b.d[13] + a.d[11] * b.d[14] + a.d[15] * b.d[15];
+    m.d[0] = d[0] * b.d[0] + d[4] * b.d[1] + d[8] * b.d[2] + d[12] * b.d[3];
+    m.d[1] = d[1] * b.d[0] + d[5] * b.d[1] + d[9] * b.d[2] + d[13] * b.d[3];
+    m.d[2] = d[2] * b.d[0] + d[6] * b.d[1] + d[10] * b.d[2] + d[14] * b.d[3];
+    m.d[3] = d[3] * b.d[0] + d[7] * b.d[1] + d[11] * b.d[2] + d[15] * b.d[3];
+    m.d[4] = d[0] * b.d[4] + d[4] * b.d[5] + d[8] * b.d[6] + d[12] * b.d[7];
+    m.d[5] = d[1] * b.d[4] + d[5] * b.d[5] + d[9] * b.d[6] + d[13] * b.d[7];
+    m.d[6] = d[2] * b.d[4] + d[6] * b.d[5] + d[10] * b.d[6] + d[14] * b.d[7];
+    m.d[7] = d[3] * b.d[4] + d[7] * b.d[5] + d[11] * b.d[6] + d[15] * b.d[7];
+    m.d[8] = d[0] * b.d[8] + d[4] * b.d[9] + d[8] * b.d[10] + d[12] * b.d[11];
+    m.d[9] = d[1] * b.d[8] + d[5] * b.d[9] + d[9] * b.d[10] + d[13] * b.d[11];
+    m.d[10] = d[2] * b.d[8] + d[6] * b.d[9] + d[10] * b.d[10] + d[14] * b.d[11];
+    m.d[11] = d[3] * b.d[8] + d[7] * b.d[9] + d[11] * b.d[10] + d[15] * b.d[11];
+    m.d[12] = d[0] * b.d[12] + d[4] * b.d[13] + d[8] * b.d[14] + d[12] * b.d[15];
+    m.d[13] = d[1] * b.d[12] + d[5] * b.d[13] + d[9] * b.d[14] + d[13] * b.d[15];
+    m.d[14] = d[2] * b.d[12] + d[6] * b.d[13] + d[10] * b.d[14] + d[14] * b.d[15];
+    m.d[15] = d[3] * b.d[12] + d[7] * b.d[13] + d[11] * b.d[14] + d[15] * b.d[15];
     return m;
 }
 

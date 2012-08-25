@@ -177,13 +177,13 @@ uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type)
 void ShaderProgramGL2::setModelViewMatrix(const matrix4 &modelView)
 {
     glUniformMatrix4fv(m_uniform[U_MODELVIEW_MATRIX],
-        1, GL_FALSE, (const GLfloat *)modelView.d);
+        1, GL_FALSE, (const GLfloat *)modelView.data());
 }
 
 void ShaderProgramGL2::setProjectionMatrix(const matrix4 &projection)
 {
     glUniformMatrix4fv(m_uniform[U_PROJECTION_MATRIX],
-        1, GL_FALSE, (const GLfloat *)projection.d);
+        1, GL_FALSE, (const GLfloat *)projection.data());
 }
 
 void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int count)

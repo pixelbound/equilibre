@@ -31,9 +31,7 @@ void RenderState::rotate(const QQuaternion &q)
     QMatrix4x4 m;
     m.setToIdentity();
     m.rotate(q);
-    matrix4 m2;
-    for(int i = 0; i < 16; i++)
-        m2.d[i] = (float)m.constData()[i];
+    matrix4 m2(m);
     multiplyMatrix(m2);
 }
 

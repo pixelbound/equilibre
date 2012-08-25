@@ -88,9 +88,11 @@ public:
 class RENDER_DLL matrix4
 {
 public:
-    float d[16];
 
     matrix4();
+    matrix4(const QMatrix4x4 &m);
+    
+    const float * data() const;
 
     vec3 map(const vec3 &v) const;
     vec3 mapNormal(const vec3 &v) const;
@@ -104,9 +106,12 @@ public:
     static matrix4 perspective(float angle, float aspect, float nearPlane, float farPlane);
     static matrix4 ortho(float left, float right, float bottom, float top, float nearPlane, float farPlane);
     static matrix4 lookAt(vec3 eye, vec3 center, vec3 up);
+    
+    matrix4 operator*(const matrix4 &b);
+    
+private:
+    float d[16];
 };
-
-matrix4 RENDER_DLL operator*(const matrix4 &a, const matrix4 &b);
 
 class RENDER_DLL BoneTransform
 {
