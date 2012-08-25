@@ -15,12 +15,11 @@
 Zone::Zone(QObject *parent) : QObject(parent)
 {
     m_mainArchive = 0;
-    m_objMeshArchive = 0;
     m_charArchive = 0;
     m_mainWld = 0;
-    m_objMeshWld = m_objDefWld = 0;
     m_charWld = 0;
     m_terrain = NULL;
+    m_objects = NULL;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
     m_cameraPos = vec3(0.0, 0.0, 0.0);
@@ -30,12 +29,6 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cullObjects = true;
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
-    m_objectsStat = NULL;
-    m_objectsStatGPU = NULL;
-    m_objectsBuffer = NULL;
-    m_objectMaterials = NULL;
-    m_objectTree = NULL;
-    m_drawnObjectsStat = NULL;
 }
 
 Zone::~Zone()
@@ -43,9 +36,14 @@ Zone::~Zone()
     clear();
 }
 
-const QMap<QString, WLDMesh *> & Zone::objectModels() const
+ZoneTerrain * Zone::terrain() const
 {
-    return m_objModels;
+    return m_terrain;
+}
+
+ZoneObjects * Zone::objects() const
+{
+    return m_objects;
 }
 
 const QMap<QString, WLDActor *> & Zone::charModels() const
@@ -65,18 +63,20 @@ bool Zone::load(QString path, QString name)
     
     m_terrain = new ZoneTerrain(this);
     if(!m_terrain->load(m_mainArchive, m_mainWld))
+    {
+        delete m_terrain;
+        m_terrain = NULL;
         return false;
+    }
     
-    m_objDefWld = WLDData::fromArchive(m_mainArchive, "objects.wld", this);
-    if(!m_mainWld || !m_objDefWld)
+    m_objects = new ZoneObjects(this);
+    if(!m_objects->load(path, name, m_mainArchive))
+    {
+        delete m_objects;
+        m_objects = NULL;
         return false;
+    }
     
-    QString objMeshPath = QString("%1/%2_obj.s3d").arg(path).arg(name);
-    QString objMeshFile = QString("%1_obj.wld").arg(name);
-    m_objMeshArchive = new PFSArchive(objMeshPath, this);
-    m_objMeshWld = WLDData::fromArchive(m_objMeshArchive, objMeshFile, this);
-    if(!m_objMeshWld)
-        return false;
     QString charPath = QString("%1/%2_chr.s3d").arg(path).arg(name);
     QString charFile = QString("%1_chr.wld").arg(name);
     m_charArchive = new PFSArchive(charPath, this);
@@ -87,8 +87,7 @@ bool Zone::load(QString path, QString name)
         m_charArchive = 0;
     }
 
-    // import objects, characters
-    importObjects();
+    // import characters
     if(m_charWld)
     {
         importCharacters(m_charArchive, m_charWld);
@@ -123,87 +122,21 @@ bool Zone::loadCharacters(QString archivePath, QString wldName)
 
 void Zone::clear()
 {
-    foreach(WLDMesh *model, m_objModels)
-        delete model;
     foreach(WLDActor *actor, m_charModels)
         delete actor;
-    m_objModels.clear();
     m_charModels.clear();
-    delete m_objectTree;
-    delete m_objectsBuffer;
-    delete m_objectMaterials;
+    delete m_objects;
     delete m_terrain;
     delete m_mainWld;
-    delete m_objMeshWld;
-    delete m_objDefWld;
     delete m_charWld;
     delete m_mainArchive;
-    delete m_objMeshArchive;
     delete m_charArchive;
-    m_objectTree = 0;
-    m_objectsBuffer = 0;
-    m_objectMaterials = 0;
+    m_objects = NULL;
     m_terrain = NULL;
     m_mainWld = 0;
-    m_objMeshWld = 0;
-    m_objDefWld = 0;
     m_charWld = 0;
     m_mainArchive = 0;
-    m_objMeshArchive = 0;
     m_charArchive = 0;
-}
-
-void Zone::importObjects()
-{
-    importObjectsMeshes(m_objMeshArchive, m_objMeshWld);
-
-    // import actors through Actor fragments
-    AABox bounds = m_terrain->bounds();
-    foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
-    {
-        QString actorName = actorFrag->m_def.name();
-        WLDMesh *model = m_objModels.value(actorName);
-        if(model)
-        {
-            WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
-            bounds.extendTo(actor->boundsAA());
-            m_objects.append(actor);
-        }
-        else
-        {
-            qDebug("Actor '%s' not found", actorName.toLatin1().constData());
-        }
-    }
-    
-    // Add actors to the actors octree index.
-    // XXX use the same octree than for the geometry?
-    m_objectTree = new OctreeIndex(bounds, 8);
-    foreach(WLDZoneActor *actor, m_objects)
-        m_objectTree->add(actor);   
-}
-
-void Zone::importObjectsMeshes(PFSArchive *archive, WLDData *wld)
-{
-    // import models through ActorDef fragments
-    WLDMaterialPalette palette(archive, this);
-    foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
-    {
-        WLDFragment *subModel = actorDef->m_models.value(0);
-        if(!subModel)
-            continue;
-        MeshFragment *mesh = subModel->cast<MeshFragment>();
-        if(!mesh)
-        {
-            if(subModel->kind() == HierSpriteFragment::ID)
-                qDebug("Hierarchical model in zone objects (%s)",
-                       actorDef->name().toLatin1().constData());
-            continue;
-        }
-        WLDMesh *model = new WLDMesh(mesh->m_def, 0, this);
-        palette.addPaletteDef(mesh->m_def->m_palette);
-        m_objModels.insert(actorDef->name(), model);
-    }
-    m_objectMaterials = palette.loadMaterials();
 }
 
 void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
@@ -307,11 +240,6 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
     }
 }
 
-static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
-{
-    return a->mesh()->def() < b->mesh()->def();
-}
-
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
@@ -333,19 +261,9 @@ void Zone::draw(RenderState *state)
     
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
     
-    // draw objects
-    if(!m_objectsStat)
-        m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
-    if(!m_objectsStatGPU)
-        m_objectsStatGPU = state->createStat("Objects GPU (ms)", FrameStat::GPUTime);
-    if(m_showObjects && (m_objMeshWld != NULL))
-    {
-        m_objectsStat->beginTime();
-        m_objectsStatGPU->beginTime();
-        drawObjects(state);
-        m_objectsStatGPU->endTime();
-        m_objectsStat->endTime();
-    }
+    // Draw the zone's static objects.
+    if(m_showObjects && m_objects)
+        m_objects->draw(state, realFrustum);
 
     // Draw the zone's terrain.
     if(m_showZone && m_terrain)
@@ -369,85 +287,6 @@ void Zone::draw(RenderState *state)
     }
     
     state->popMatrix();
-    
-    m_visibleObjects.clear();
-}
-
-void Zone::drawObjects(RenderState *state)
-{
-    // Create a GPU buffer for the objects' vertices and indices if needed.
-    if(m_objectsBuffer == NULL)
-        m_objectsBuffer = uploadObjects(state);
-    
-    // Build a list of visible objects and sort them by mesh.
-    Frustum &frustum(m_frustumIsFrozen ? m_frozenFrustum : state->viewFrustum());
-    m_objectTree->findVisible(m_visibleObjects, frustum, m_cullObjects);
-    qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
-    
-    // Draw one batch of objects (beginDraw/endDraw) per mesh.
-    int meshCount = 0;
-    WLDMesh *previousMesh = NULL;
-    QVector<matrix4> mvMatrices;
-    foreach(const WLDZoneActor *actor, m_visibleObjects)
-    {
-        WLDMesh *currentMesh = actor->mesh();
-        if(currentMesh != previousMesh)
-        {
-            if(previousMesh)
-            {
-                if(mvMatrices.count() > 0)
-                {
-                    state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
-                    mvMatrices.clear();
-                }
-                state->endDrawMesh();
-            }
-            m_objectsBuffer->matGroups.clear();
-            m_objectsBuffer->addMaterialGroups(currentMesh->data());
-            state->beginDrawMesh(m_objectsBuffer, m_objectMaterials);
-            previousMesh = currentMesh;
-            meshCount++;
-        }
-        
-        // Draw the zone object.
-        state->pushMatrix();
-        state->multiplyMatrix(actor->modelMatrix());
-        mvMatrices.append(state->matrix(RenderState::ModelView));
-        state->popMatrix();
-    }
-    if(previousMesh)
-    {
-        if(mvMatrices.count() > 0)
-        {
-            state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
-            mvMatrices.clear();
-        }
-        state->endDrawMesh();
-    }
-    if(m_drawnObjectsStat == NULL)
-        m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
-    m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
-}
-
-MeshBuffer * Zone::uploadObjects(RenderState *state)
-{
-    m_objectMaterials->uploadArray(state);
-    
-    // Import vertices and indices for each mesh.
-    MeshBuffer *meshBuf = new MeshBuffer();
-    foreach(WLDMesh *mesh, m_objModels.values())
-    {
-        MeshData *meshData = mesh->importFrom(meshBuf);
-        meshData->updateTexCoords(m_objectMaterials);
-    }
-    
-    // Create the GPU buffers.
-    meshBuf->upload(state);
-    meshBuf->clearVertices();
-    meshBuf->clearIndices();
-    m_gpuBuffers.append(meshBuf->vertexBuffer);
-    m_gpuBuffers.append(meshBuf->indexBuffer);
-    return meshBuf;
 }
 
 void Zone::uploadCharacters(RenderState *state)
@@ -724,4 +563,209 @@ void ZoneTerrain::draw(RenderState *state, Frustum &frustum)
     m_zoneStatGPU->endTime();
     m_zoneStat->endTime();
     m_visibleZoneParts.clear();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ZoneObjects::ZoneObjects(Zone *zone)
+{
+    m_zone = zone;
+    m_objMeshArchive = 0;
+    m_objMeshWld = m_objDefWld = 0;
+    m_objectsStat = NULL;
+    m_objectsStatGPU = NULL;
+    m_objectsBuffer = NULL;
+    m_objectMaterials = NULL;
+    m_objectTree = NULL;
+    m_drawnObjectsStat = NULL;
+}
+
+ZoneObjects::~ZoneObjects()
+{
+    clear();
+}
+
+const QMap<QString, WLDMesh *> & ZoneObjects::models() const
+{
+    return m_objModels;
+}
+
+void ZoneObjects::clear()
+{
+    foreach(WLDMesh *model, m_objModels)
+        delete model;
+    m_objModels.clear();
+    delete m_objectTree;
+    delete m_objectsBuffer;
+    delete m_objectMaterials;
+    delete m_objMeshWld;
+    delete m_objDefWld;
+    delete m_objMeshArchive;
+    m_objectTree = 0;
+    m_objectsBuffer = 0;
+    m_objectMaterials = 0;
+    m_objMeshWld = 0;
+    m_objDefWld = 0;
+    m_objMeshArchive = 0;
+}
+
+bool ZoneObjects::load(QString path, QString name, PFSArchive *mainArchive)
+{
+    m_objDefWld = WLDData::fromArchive(mainArchive, "objects.wld", m_zone);
+    if(!m_objDefWld)
+        return false;
+    
+    QString objMeshPath = QString("%1/%2_obj.s3d").arg(path).arg(name);
+    QString objMeshFile = QString("%1_obj.wld").arg(name);
+    m_objMeshArchive = new PFSArchive(objMeshPath, m_zone);
+    m_objMeshWld = WLDData::fromArchive(m_objMeshArchive, objMeshFile, m_zone);
+    if(!m_objMeshWld)
+        return false;
+
+    importMeshes();
+    importActors();
+    return true;
+}
+
+void ZoneObjects::importMeshes()
+{
+    // import models through ActorDef fragments
+    WLDMaterialPalette palette(m_objMeshArchive);
+    foreach(ActorDefFragment *actorDef, m_objMeshWld->fragmentsByType<ActorDefFragment>())
+    {
+        WLDFragment *subModel = actorDef->m_models.value(0);
+        if(!subModel)
+            continue;
+        MeshFragment *mesh = subModel->cast<MeshFragment>();
+        if(!mesh)
+        {
+            if(subModel->kind() == HierSpriteFragment::ID)
+                qDebug("Hierarchical model in zone objects (%s)",
+                       actorDef->name().toLatin1().constData());
+            continue;
+        }
+        WLDMesh *model = new WLDMesh(mesh->m_def, 0);
+        palette.addPaletteDef(mesh->m_def->m_palette);
+        m_objModels.insert(actorDef->name(), model);
+    }
+    m_objectMaterials = palette.loadMaterials();
+}
+
+void ZoneObjects::importActors()
+{
+    // import actors through Actor fragments
+    AABox bounds = m_zone->terrain()->bounds();
+    foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
+    {
+        QString actorName = actorFrag->m_def.name();
+        WLDMesh *model = m_objModels.value(actorName);
+        if(model)
+        {
+            WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
+            bounds.extendTo(actor->boundsAA());
+            m_objects.append(actor);
+        }
+        else
+        {
+            qDebug("Actor '%s' not found", actorName.toLatin1().constData());
+        }
+    }
+    
+    // Add actors to the actors octree index.
+    // XXX use the same octree than for the geometry?
+    m_objectTree = new OctreeIndex(bounds, 8);
+    foreach(WLDZoneActor *actor, m_objects)
+        m_objectTree->add(actor);   
+}
+
+MeshBuffer * ZoneObjects::upload(RenderState *state)
+{
+    m_objectMaterials->uploadArray(state);
+    
+    // Import vertices and indices for each mesh.
+    MeshBuffer *meshBuf = new MeshBuffer();
+    foreach(WLDMesh *mesh, m_objModels.values())
+    {
+        MeshData *meshData = mesh->importFrom(meshBuf);
+        meshData->updateTexCoords(m_objectMaterials);
+    }
+    
+    // Create the GPU buffers.
+    meshBuf->upload(state);
+    meshBuf->clearVertices();
+    meshBuf->clearIndices();
+    //m_gpuBuffers.append(meshBuf->vertexBuffer);
+    //m_gpuBuffers.append(meshBuf->indexBuffer);
+    return meshBuf;
+}
+
+static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
+{
+    return a->mesh()->def() < b->mesh()->def();
+}
+
+void ZoneObjects::draw(RenderState *state, Frustum &frustum)
+{
+    if(!m_objectsStat)
+        m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
+    if(!m_objectsStatGPU)
+        m_objectsStatGPU = state->createStat("Objects GPU (ms)", FrameStat::GPUTime);
+    m_objectsStat->beginTime();
+    m_objectsStatGPU->beginTime();
+    
+    // Create a GPU buffer for the objects' vertices and indices if needed.
+    if(m_objectsBuffer == NULL)
+        m_objectsBuffer = upload(state);
+    
+    // Build a list of visible objects and sort them by mesh.
+    m_objectTree->findVisible(m_visibleObjects, frustum, m_zone->cullObjects());
+    qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
+    
+    // Draw one batch of objects (beginDraw/endDraw) per mesh.
+    int meshCount = 0;
+    WLDMesh *previousMesh = NULL;
+    QVector<matrix4> mvMatrices;
+    foreach(const WLDZoneActor *actor, m_visibleObjects)
+    {
+        WLDMesh *currentMesh = actor->mesh();
+        if(currentMesh != previousMesh)
+        {
+            if(previousMesh)
+            {
+                if(mvMatrices.count() > 0)
+                {
+                    state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+                    mvMatrices.clear();
+                }
+                state->endDrawMesh();
+            }
+            m_objectsBuffer->matGroups.clear();
+            m_objectsBuffer->addMaterialGroups(currentMesh->data());
+            state->beginDrawMesh(m_objectsBuffer, m_objectMaterials);
+            previousMesh = currentMesh;
+            meshCount++;
+        }
+        
+        // Draw the zone object.
+        state->pushMatrix();
+        state->multiplyMatrix(actor->modelMatrix());
+        mvMatrices.append(state->matrix(RenderState::ModelView));
+        state->popMatrix();
+    }
+    if(previousMesh)
+    {
+        if(mvMatrices.count() > 0)
+        {
+            state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+            mvMatrices.clear();
+        }
+        state->endDrawMesh();
+    }
+    
+    if(m_drawnObjectsStat == NULL)
+        m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
+    m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
+    m_visibleObjects.clear();
+    m_objectsStatGPU->endTime();
+    m_objectsStat->endTime();
 }

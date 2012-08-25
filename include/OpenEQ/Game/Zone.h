@@ -26,6 +26,7 @@ class RenderState;
 class FrameStat;
 class MeshBuffer;
 class ZoneTerrain;
+class ZoneObjects;
 
 /*!
   \brief Describes a zone of the world.
@@ -36,7 +37,9 @@ public:
     Zone(QObject *parent = 0);
     virtual ~Zone();
 
-    const QMap<QString, WLDMesh *> & objectModels() const;
+    ZoneTerrain * terrain() const;
+    ZoneObjects * objects() const;
+    
     const QMap<QString, WLDActor *> & charModels() const;
 
     bool load(QString path, QString name);
@@ -91,20 +94,13 @@ private:
     //TODO refactor this into data container classes
     QString m_name;
     ZoneTerrain *m_terrain;
+    ZoneObjects *m_objects;
     PFSArchive *m_mainArchive;
-    PFSArchive *m_objMeshArchive;
     PFSArchive *m_charArchive;
     WLDData *m_mainWld;
-    WLDData *m_objMeshWld, *m_objDefWld;
     WLDData *m_charWld;
-    QMap<QString, WLDMesh *> m_objModels;
     QMap<QString, WLDActor *> m_charModels;
     QVector<buffer_t> m_gpuBuffers;
-    // zone objects
-    MeshBuffer *m_objectsBuffer;
-    MaterialMap *m_objectMaterials;
-    QVector<WLDZoneActor *> m_objects;
-    OctreeIndex *m_objectTree;
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
@@ -112,10 +108,6 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     Frustum m_frozenFrustum;
-    FrameStat *m_objectsStat;
-    FrameStat *m_objectsStatGPU;
-    FrameStat *m_drawnObjectsStat;
-    QVector<WLDZoneActor *> m_visibleObjects;
     // player and camera settings
     vec3 m_playerPos;
     float m_playerOrient;
@@ -150,6 +142,40 @@ private:
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
     QVector<WLDZoneActor *> m_visibleZoneParts;
+};
+
+/*!
+  \brief Holds the resources needed to render a zone's static objects.
+  */
+class GAME_DLL ZoneObjects
+{
+public:
+    ZoneObjects(Zone *zone);
+    virtual ~ZoneObjects();
+    
+    const QMap<QString, WLDMesh *> & models() const;
+
+    bool load(QString path, QString name, PFSArchive *mainArchive);
+    void draw(RenderState *state, Frustum &frustum);
+    void clear();
+
+private:
+    void importMeshes();
+    void importActors();
+    MeshBuffer * upload(RenderState *state);
+    
+    Zone *m_zone;
+    PFSArchive *m_objMeshArchive;
+    WLDData *m_objMeshWld, *m_objDefWld;
+    QMap<QString, WLDMesh *> m_objModels;
+    MeshBuffer *m_objectsBuffer;
+    MaterialMap *m_objectMaterials;
+    QVector<WLDZoneActor *> m_objects;
+    OctreeIndex *m_objectTree;
+    FrameStat *m_objectsStat;
+    FrameStat *m_objectsStatGPU;
+    FrameStat *m_drawnObjectsStat;
+    QVector<WLDZoneActor *> m_visibleObjects;
 };
 
 #endif
