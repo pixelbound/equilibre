@@ -148,7 +148,7 @@ void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
         WLDActor *actor = m_charModels.value(actorName);
         if(!actor)
             continue;
-        actor->model()->setSkeleton(new WLDSkeleton(skelDef, this));
+        actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef, this));
     }
 
     // import other animations
@@ -159,7 +159,7 @@ void Zone::importSkeletons(PFSArchive *archive, WLDData *wld)
         WLDActor *actor = m_charModels.value(actorName);
         if(!actor)
             continue;
-        WLDSkeleton *skel = actor->model()->skeleton();
+        WLDSkeleton *skel = actor->complexModel()->skeleton();
         if(skel && track->m_def)
             skel->addTrack(animName, track->m_def);
     }
@@ -175,7 +175,7 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             WLDActor *actor = m_charModels.value(charName);
             if(!actor)
                 continue;
-            WLDModel *model = actor->model();
+            WLDModel *model = actor->complexModel();
             WLDModelSkin *skin = model->skins().value(palName);
             if(!skin)
             {
@@ -195,7 +195,7 @@ void Zone::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         WLDActor *actor = m_charModels.value(actorName);
         if(!actor || meshName.isEmpty())
             continue;
-        WLDModel *model = actor->model();
+        WLDModel *model = actor->complexModel();
         WLDModelSkin *skin = model->skins().value(skinName);
         if(!skin)
             continue;
@@ -298,7 +298,7 @@ void Zone::uploadCharacters(RenderState *state)
 void Zone::uploadCharacter(RenderState *state, WLDActor *actor)
 {
     // Make sure we haven't uploaded this character before.
-    WLDModel *model = actor->model();
+    WLDModel *model = actor->complexModel();
     if(model->buffer())
         return;
 
@@ -495,7 +495,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     // Add zone regions to the zone octree index.
     m_zoneTree = new OctreeIndex(m_zoneBounds, 8);
     foreach(WLDMesh *meshPart, m_zoneParts)
-        m_zoneTree->add(new WLDZoneActor(NULL, meshPart));
+        m_zoneTree->add(new WLDActor(NULL, meshPart, m_zone));
     
     return true;
 }
@@ -551,8 +551,8 @@ void ZoneTerrain::draw(RenderState *state, Frustum &frustum)
     
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
-    foreach(const WLDZoneActor *actor, m_visibleZoneParts)
-        m_zoneBuffer->addMaterialGroups(actor->mesh()->data());
+    foreach(const WLDActor *actor, m_visibleZoneParts)
+        m_zoneBuffer->addMaterialGroups(actor->simpleModel()->data());
 #endif
     
     // Draw the visible parts as one big mesh.
@@ -661,7 +661,7 @@ void ZoneObjects::importActors()
         WLDMesh *model = m_objModels.value(actorName);
         if(model)
         {
-            WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
+            WLDActor *actor = new WLDActor(actorFrag, model, m_zone);
             bounds.extendTo(actor->boundsAA());
             m_objects.append(actor);
         }
@@ -674,7 +674,7 @@ void ZoneObjects::importActors()
     // Add actors to the actors octree index.
     // XXX use the same octree than for the geometry?
     m_objectTree = new OctreeIndex(bounds, 8);
-    foreach(WLDZoneActor *actor, m_objects)
+    foreach(WLDActor *actor, m_objects)
         m_objectTree->add(actor);   
 }
 
@@ -699,9 +699,9 @@ MeshBuffer * ZoneObjects::upload(RenderState *state)
     return meshBuf;
 }
 
-static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
+static bool zoneActorGroupLessThan(const WLDActor *a, const WLDActor *b)
 {
-    return a->mesh()->def() < b->mesh()->def();
+    return a->simpleModel()->def() < b->simpleModel()->def();
 }
 
 void ZoneObjects::draw(RenderState *state, Frustum &frustum)
@@ -725,9 +725,9 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
     QVector<matrix4> mvMatrices;
-    foreach(const WLDZoneActor *actor, m_visibleObjects)
+    foreach(const WLDActor *actor, m_visibleObjects)
     {
-        WLDMesh *currentMesh = actor->mesh();
+        WLDMesh *currentMesh = actor->simpleModel();
         if(currentMesh != previousMesh)
         {
             if(previousMesh)

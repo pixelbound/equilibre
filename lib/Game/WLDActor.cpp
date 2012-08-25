@@ -4,20 +4,45 @@
 #include "OpenEQ/Game/Fragments.h"
 #include "OpenEQ/Render/RenderState.h"
 
+WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent)
+{
+    m_simpleModel = simpleModel;
+    m_complexModel = NULL;
+    m_type = Simple;
+    if(frag)
+    {
+        m_location = frag->m_location;
+        m_rotation = frag->m_rotation;
+        m_scale = frag->m_scale;
+    }
+    else
+    {
+        m_location = vec3(0.0, 0.0, 0.0);
+        m_rotation = vec3(0.0, 0.0, 0.0);
+        m_scale = vec3(1.0, 1.0, 1.0);
+    }
+    update();
+}
+
 WLDActor::WLDActor(WLDModel *model, QObject *parent) : QObject(parent)
 {
-    m_model = model;
+    m_complexModel = model;
+    m_simpleModel = NULL;
+    m_type = Complex;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
+    update();
 }
 
 WLDActor::WLDActor(ActorFragment *frag, WLDModel *model, QObject *parent) : QObject(parent)
 {
-    m_model = model;
+    m_complexModel = model;
+    m_simpleModel = NULL;
+    m_type = Complex;
     if(frag)
     {
         m_location = frag->m_location;
@@ -33,6 +58,7 @@ WLDActor::WLDActor(ActorFragment *frag, WLDModel *model, QObject *parent) : QObj
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
+    update();
 }
 
 WLDActor::~WLDActor()
@@ -44,14 +70,29 @@ const vec3 & WLDActor::location() const
     return m_location;
 }
 
-WLDModel *WLDActor::model() const
+const AABox & WLDActor::boundsAA() const
 {
-    return m_model;
+    return m_boundsAA;
 }
 
-void WLDActor::setModel(WLDModel *newModel)
+const matrix4 & WLDActor::modelMatrix() const
 {
-    m_model = newModel;
+    return m_modelMatrix;
+}
+
+WLDModel * WLDActor::complexModel() const
+{
+    return m_complexModel;
+}
+
+WLDMesh * WLDActor::simpleModel() const
+{
+    return m_simpleModel;
+}
+
+WLDActor::ModelType WLDActor::type() const
+{
+    return m_type;
 }
 
 QString WLDActor::animName() const
@@ -87,9 +128,9 @@ void WLDActor::setPaletteName(QString palName)
 bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDActor *actor)
 {
     QString name = slotName(slot);
-    if(name.isEmpty() || !m_model->skeleton())
+    if(name.isEmpty() || !m_complexModel->skeleton())
         return false;
-    WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
+    WLDAnimation *anim = m_complexModel->skeleton()->animations().value(m_animName);
     if(!anim)
         return false;
     int trackIndex = anim->findTrack(name);
@@ -117,24 +158,50 @@ QString WLDActor::slotName(EquipSlot slot)
     return QString::null;
 }
 
+void WLDActor::update()
+{
+    if(m_type == Simple)
+    {
+        m_boundsAA = m_simpleModel->boundsAA();
+    }
+    else
+    {
+        WLDModelSkin *skin = m_complexModel->skins().value(m_palName);
+        if(skin)
+            m_boundsAA = skin->boundsAA();
+    }
+    
+    m_boundsAA.scale(m_scale);
+    m_boundsAA.rotate(m_rotation);
+    m_boundsAA.translate(m_location);
+    
+    m_modelMatrix.setIdentity();
+    m_modelMatrix = m_modelMatrix
+            * matrix4::translate(m_location.x, m_location.y, m_location.z)
+            * matrix4::rotate(m_rotation.x, 1.0, 0.0, 0.0)
+            * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
+            * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
+            * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
+}
+
 void WLDActor::draw(RenderState *state)
 {
-    WLDModelSkin *skin = m_model->skins().value(m_palName);
+    if(!m_complexModel)
+        return;
+    WLDModelSkin *skin = m_complexModel->skins().value(m_palName);
     if(!skin)
         return;
     QVector<BoneTransform> bones;
-    if(m_model->skeleton())
+    if(m_complexModel->skeleton())
     {
-        WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
+        WLDAnimation *anim = m_complexModel->skeleton()->animations().value(m_animName);
         if(anim)
             bones = anim->transformationsAtTime(m_animTime);
     }
+    update();
+    
     state->pushMatrix();
-    state->translate(m_location);
-    state->rotate(m_rotation.x, 1.0, 0.0, 0.0);
-    state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
-    state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
-    state->scale(m_scale);
+    state->multiplyMatrix(m_modelMatrix);
     // XXX drawEquip method to minimize program changes
     if(bones.count() > 0)
         state->setRenderMode(RenderState::Skinning);
@@ -156,51 +223,6 @@ void WLDActor::draw(RenderState *state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDMesh *mesh)
-{
-    m_mesh = mesh;
-    m_boundsAA = mesh->boundsAA();
-    m_modelMatrix.setIdentity();
-    if(frag)
-    {
-        m_location = frag->m_location;
-        m_rotation = frag->m_rotation;
-        m_scale = frag->m_scale;
-        m_boundsAA.scale(m_scale);
-        m_boundsAA.rotate(m_rotation);
-        m_boundsAA.translate(m_location);
-        m_modelMatrix = m_modelMatrix
-                * matrix4::translate(m_location.x, m_location.y, m_location.z)
-                * matrix4::rotate(m_rotation.x, 1.0, 0.0, 0.0)
-                * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
-                * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
-                * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
-    }
-    else
-    {
-        m_location = vec3(0.0, 0.0, 0.0);
-        m_rotation = vec3(0.0, 0.0, 0.0);
-        m_scale = vec3(1.0, 1.0, 1.0);
-    }
-}
-
-const AABox & WLDZoneActor::boundsAA() const
-{
-    return m_boundsAA;
-}
-
-const matrix4 & WLDZoneActor::modelMatrix() const
-{
-    return m_modelMatrix;
-}
-
-WLDMesh * WLDZoneActor::mesh() const
-{
-    return m_mesh;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
 OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)
 {
     // Convert the bounds to a cube.
@@ -211,7 +233,7 @@ OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)
     m_maxDepth = maxDepth;
 }
 
-Octree * OctreeIndex::add(WLDZoneActor *actor)
+Octree * OctreeIndex::add(WLDActor *actor)
 {
     AABox actorBounds = actor->boundsAA();
     int x = 0, y = 0, z = 0, depth = 0;
@@ -228,12 +250,12 @@ Octree * OctreeIndex::add(WLDZoneActor *actor)
     return octant;
 }
 
-void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, const Frustum &f, bool cull)
+void OctreeIndex::findVisible(QVector<WLDActor *> &objects, const Frustum &f, bool cull)
 {
     findVisible(objects, m_root, f, cull);
 }
 
-void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull)
+void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, const Frustum &f, bool cull)
 {
     if(!octant)
         return;
@@ -243,7 +265,7 @@ void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, 
     cull = (r != Frustum::INSIDE);
     for(int i = 0; i < 8; i++)
         findVisible(objects, octant->child(i), f, cull);
-    foreach(WLDZoneActor *actor, octant->actors())
+    foreach(WLDActor *actor, octant->actors())
     {
         if((r == Frustum::INSIDE) || (f.containsAABox(actor->boundsAA()) != Frustum::OUTSIDE))
             objects.append(actor);
@@ -327,12 +349,12 @@ AABox Octree::looseBounds() const
     return loose;
 }
 
-const QVector<WLDZoneActor *> & Octree::actors() const
+const QVector<WLDActor *> & Octree::actors() const
 {
     return m_actors;
 }
 
-QVector<WLDZoneActor *> & Octree::actors()
+QVector<WLDActor *> & Octree::actors()
 {
     return m_actors;
 }

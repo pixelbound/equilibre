@@ -463,6 +463,7 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
             m_parts.append(part);
             m_palette->addPaletteDef(part->def()->m_palette);
         }
+        updateBounds();
     }
 }
 
@@ -473,6 +474,11 @@ WLDModelSkin::~WLDModelSkin()
 QString WLDModelSkin::name() const
 {
     return m_name;
+}
+
+const AABox & WLDModelSkin::boundsAA() const
+{
+    return m_boundsAA;
 }
 
 WLDMaterialPalette *WLDModelSkin::palette() const
@@ -506,6 +512,7 @@ void WLDModelSkin::addPart(MeshDefFragment *frag)
         return;
     uint32_t partID = m_parts.count();
     m_parts.append(new WLDMesh(frag, partID, m_model));
+    updateBounds();
 }
 
 void WLDModelSkin::replacePart(WLDMesh *basePart, MeshDefFragment *frag)
@@ -515,6 +522,7 @@ void WLDModelSkin::replacePart(WLDMesh *basePart, MeshDefFragment *frag)
         return;
     if((basePart == m_parts[partID]) && (basePart->def() != frag))
         m_parts[partID] = new WLDMesh(frag, partID, m_model);
+    updateBounds();
 }
 
 bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
@@ -533,6 +541,23 @@ bool WLDModelSkin::explodeMeshName(QString defName, QString &actorName,
         return true;
     }
     return false;
+}
+
+void WLDModelSkin::updateBounds()
+{
+    if(m_parts.count() == 0)
+    {
+        m_boundsAA = AABox();
+    }
+    else
+    {
+        m_boundsAA = m_parts[0]->boundsAA();
+        for(int i = 1; i < m_parts.count(); i++)
+        {
+            // XXX sort out skinning
+            m_boundsAA.extendTo(m_parts[i]->boundsAA());
+        }
+    }
 }
 
 void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)

@@ -23,14 +23,25 @@ typedef QPair<int, WLDActor *> ActorEquip;
 class GAME_DLL WLDActor : public QObject
 {
 public:
-    WLDActor(WLDModel *model, QObject *parent = 0);
-    WLDActor(ActorFragment *frag, WLDModel *model, QObject *parent = 0);
+    WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent = 0);
+    WLDActor(WLDModel *complexModel, QObject *parent = 0);
+    WLDActor(ActorFragment *frag, WLDModel *complexModel, QObject *parent = 0);
     virtual ~WLDActor();
 
     const vec3 & location() const;
+    
+    const AABox & boundsAA() const;
+    const matrix4 & modelMatrix() const;
+    
+    enum ModelType
+    {
+        Simple = 0,
+        Complex
+    };
 
-    WLDModel *model() const;
-    void setModel(WLDModel *newModel);
+    WLDModel * complexModel() const;
+    WLDMesh * simpleModel() const;
+    ModelType type() const;
 
     QString animName() const;
     void setAnimName(QString name);
@@ -51,6 +62,8 @@ public:
     };
 
     bool addEquip(EquipSlot slot, WLDActor *actor);
+    
+    void update();
 
     void draw(RenderState *state);
 
@@ -59,30 +72,15 @@ private:
 
     ActorFragment *m_frag;
     vec3 m_location, m_rotation, m_scale;
-    WLDModel *m_model;
+    matrix4 m_modelMatrix;
+    AABox m_boundsAA;
+    WLDModel *m_complexModel;
+    WLDMesh *m_simpleModel;
+    ModelType m_type;
     QString m_animName;
     double m_animTime;
     QString m_palName;
     QMap<EquipSlot, ActorEquip> m_equip;
-};
-
-/*!
-  \brief Describes an instance of a zone object.
-  */
-class GAME_DLL WLDZoneActor
-{
-public:
-    WLDZoneActor(ActorFragment *frag, WLDMesh *mesh);
-    
-    const AABox & boundsAA() const;
-    const matrix4 & modelMatrix() const;
-    WLDMesh * mesh() const;
-    
-private:
-    vec3 m_location, m_rotation, m_scale;
-    matrix4 m_modelMatrix;
-    AABox m_boundsAA;
-    WLDMesh *m_mesh;
 };
 
 class Octree;
@@ -91,13 +89,13 @@ class GAME_DLL OctreeIndex
 {
 public:
     OctreeIndex(AABox bounds, int maxDepth=5);
-    Octree * add(WLDZoneActor *actor);
-    void findVisible(QVector<WLDZoneActor *> &objects, const Frustum &f, bool cull);
+    Octree * add(WLDActor *actor);
+    void findVisible(QVector<WLDActor *> &objects, const Frustum &f, bool cull);
     void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
     Octree * findBestFittingOctant(int x, int y, int z, int depth);
     
 private:
-    void findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, const Frustum &f, bool cull);
+    void findVisible(QVector<WLDActor *> &objects, Octree *octant, const Frustum &f, bool cull);
     
     Octree *m_root;
     int m_maxDepth;
@@ -109,8 +107,8 @@ public:
     Octree(AABox bounds, OctreeIndex *index);
     const AABox & strictBounds() const;
     AABox looseBounds() const;
-    const QVector<WLDZoneActor *> & actors() const;
-    QVector<WLDZoneActor *> & actors();
+    const QVector<WLDActor *> & actors() const;
+    QVector<WLDActor *> & actors();
     Octree *child(int index) const;
     Octree *createChild(int index);
     
@@ -118,7 +116,7 @@ private:
     AABox m_bounds;
     OctreeIndex *m_index;
     Octree *m_children[8];
-    QVector<WLDZoneActor *> m_actors;
+    QVector<WLDActor *> m_actors;
 };
 
 #endif

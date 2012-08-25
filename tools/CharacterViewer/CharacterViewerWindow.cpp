@@ -184,7 +184,7 @@ void CharacterViewerWindow::copyAnimations()
     WLDActor *charModel = m_scene->selectedCharacter();
     if(!charModel)
         return;
-    WLDSkeleton *charSkel = charModel->model()->skeleton();
+    WLDSkeleton *charSkel = charModel->complexModel()->skeleton();
     if(!charSkel)
         return;
     QDialog d;
@@ -193,7 +193,7 @@ void CharacterViewerWindow::copyAnimations()
     const QMap<QString, WLDActor *> &actors = m_scene->zone()->charModels();
     foreach(QString charName, actors.keys())
     {
-        WLDSkeleton *skel = actors.value(charName)->model()->skeleton();
+        WLDSkeleton *skel = actors.value(charName)->complexModel()->skeleton();
         if(skel)
             charList->addItem(charName);
     }
@@ -215,7 +215,7 @@ void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar
     WLDActor *actor = m_scene->zone()->charModels().value(fromChar);
     if(actor)
     {
-        WLDSkeleton *fromSkel = actor->model()->skeleton();
+        WLDSkeleton *fromSkel = actor->complexModel()->skeleton();
         if(fromSkel)
         {
             toSkel->copyAnimationsFrom(fromSkel);
@@ -238,13 +238,13 @@ void CharacterViewerWindow::updateLists()
     WLDActor *charModel = m_scene->selectedCharacter();
     if(charModel)
     {
-        WLDSkeleton *skel = charModel->model()->skeleton();
+        WLDSkeleton *skel = charModel->complexModel()->skeleton();
         if(skel)
         {
             foreach(QString animName, skel->animations().keys())
                 m_animationText->addItem(animName);
         }
-        foreach(WLDModelSkin *skin, charModel->model()->skins())
+        foreach(WLDModelSkin *skin, charModel->complexModel()->skins())
             m_paletteText->addItem(skin->name());
         m_actorText->setCurrentIndex(m_actorText->findText(m_scene->selectedModelName()));
         m_paletteText->setCurrentIndex(m_paletteText->findText(charModel->paletteName()));

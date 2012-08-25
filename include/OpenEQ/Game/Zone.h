@@ -13,7 +13,6 @@ class WLDData;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
-class WLDZoneActor;
 class ActorIndex;
 class ActorIndexNode;
 class OctreeIndex;
@@ -141,7 +140,7 @@ private:
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
-    QVector<WLDZoneActor *> m_visibleZoneParts;
+    QVector<WLDActor *> m_visibleZoneParts;
 };
 
 /*!
@@ -170,12 +169,12 @@ private:
     QMap<QString, WLDMesh *> m_objModels;
     MeshBuffer *m_objectsBuffer;
     MaterialMap *m_objectMaterials;
-    QVector<WLDZoneActor *> m_objects;
+    QVector<WLDActor *> m_objects;
     OctreeIndex *m_objectTree;
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
-    QVector<WLDZoneActor *> m_visibleObjects;
+    QVector<WLDActor *> m_visibleObjects;
 };
 
 #endif

@@ -131,6 +131,8 @@ public:
     virtual ~WLDModelSkin();
 
     QString name() const;
+    
+    const AABox & boundsAA() const;
 
     WLDMaterialPalette *palette() const;
     void setPalette(WLDMaterialPalette *newPal);
@@ -146,16 +148,17 @@ public:
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
 
-    void combineParts();
-
     void draw(RenderState *state, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
+    void updateBounds();
+    
     QString m_name;
     WLDModel *m_model;
     WLDMaterialPalette *m_palette;
     MaterialMap *m_materials;
     QList<WLDMesh *> m_parts;
+    AABox m_boundsAA;
 };
 
 #endif

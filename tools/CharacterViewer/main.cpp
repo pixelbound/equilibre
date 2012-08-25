@@ -15,7 +15,7 @@ QWidget * showCharViewer(RenderState *state)
 {
     // create viewport for rendering the scene
     CharacterViewerWindow *v = new CharacterViewerWindow(state);
-    /*CharacterScene *scene = v->scene();
+    CharacterScene *scene = v->scene();
     Zone *z = scene->zone();
     QDir assetDir(scene->assetPath());
     z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
@@ -31,10 +31,10 @@ QWidget * showCharViewer(RenderState *state)
         charActor->addEquip(WLDActor::Left, weaponActor2);
     if(charActor && skelActor)
     {
-        charActor->model()->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());
+        charActor->complexModel()->skeleton()->copyAnimationsFrom(skelActor->complexModel()->skeleton());
         charActor->setAnimName("P01");
         charActor->setPaletteName("03");
-    }*/
+    }
     return v;
 }
 
