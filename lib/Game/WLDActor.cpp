@@ -158,23 +158,45 @@ void WLDActor::draw(RenderState *state)
 
 WLDZoneActor::WLDZoneActor(ActorFragment *frag, WLDMesh *mesh)
 {
-    this->mesh = mesh;
-    this->boundsAA = mesh->boundsAA();
+    m_mesh = mesh;
+    m_boundsAA = mesh->boundsAA();
+    m_modelMatrix.setIdentity();
     if(frag)
     {
-        this->location = frag->m_location;
-        this->rotation = frag->m_rotation;
-        this->scale = frag->m_scale;
-        this->boundsAA.scale(this->scale);
-        this->boundsAA.rotate(this->rotation);
-        this->boundsAA.translate(this->location);
+        m_location = frag->m_location;
+        m_rotation = frag->m_rotation;
+        m_scale = frag->m_scale;
+        m_boundsAA.scale(m_scale);
+        m_boundsAA.rotate(m_rotation);
+        m_boundsAA.translate(m_location);
+        m_modelMatrix = m_modelMatrix
+                * matrix4::translate(m_location.x, m_location.y, m_location.z)
+                * matrix4::rotate(m_rotation.x, 1.0, 0.0, 0.0)
+                * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
+                * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
+                * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
     }
     else
     {
-        this->location = vec3(0.0, 0.0, 0.0);
-        this->rotation = vec3(0.0, 0.0, 0.0);
-        this->scale = vec3(1.0, 1.0, 1.0);
+        m_location = vec3(0.0, 0.0, 0.0);
+        m_rotation = vec3(0.0, 0.0, 0.0);
+        m_scale = vec3(1.0, 1.0, 1.0);
     }
+}
+
+const AABox & WLDZoneActor::boundsAA() const
+{
+    return m_boundsAA;
+}
+
+const matrix4 & WLDZoneActor::modelMatrix() const
+{
+    return m_modelMatrix;
+}
+
+WLDMesh * WLDZoneActor::mesh() const
+{
+    return m_mesh;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -191,7 +213,7 @@ OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)
 
 Octree * OctreeIndex::add(WLDZoneActor *actor)
 {
-    AABox actorBounds = actor->boundsAA;
+    AABox actorBounds = actor->boundsAA();
     int x = 0, y = 0, z = 0, depth = 0;
     findIdealInsertion(actorBounds, x, y, z, depth);
     Octree *octant = findBestFittingOctant(x, y, z, depth);
@@ -223,7 +245,7 @@ void OctreeIndex::findVisible(QVector<WLDZoneActor *> &objects, Octree *octant, 
         findVisible(objects, octant->child(i), f, cull);
     foreach(WLDZoneActor *actor, octant->actors())
     {
-        if((r == Frustum::INSIDE) || (f.containsAABox(actor->boundsAA) != Frustum::OUTSIDE))
+        if((r == Frustum::INSIDE) || (f.containsAABox(actor->boundsAA()) != Frustum::OUTSIDE))
             objects.append(actor);
     }
 }

@@ -73,10 +73,16 @@ class GAME_DLL WLDZoneActor
 {
 public:
     WLDZoneActor(ActorFragment *frag, WLDMesh *mesh);
-
-    vec3 location, rotation, scale;
-    AABox boundsAA;
-    WLDMesh *mesh;
+    
+    const AABox & boundsAA() const;
+    const matrix4 & modelMatrix() const;
+    WLDMesh * mesh() const;
+    
+private:
+    vec3 m_location, m_rotation, m_scale;
+    matrix4 m_modelMatrix;
+    AABox m_boundsAA;
+    WLDMesh *m_mesh;
 };
 
 class Octree;

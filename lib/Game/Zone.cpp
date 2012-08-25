@@ -190,7 +190,7 @@ void Zone::importObjects()
         if(model)
         {
             WLDZoneActor *actor = new WLDZoneActor(actorFrag, model);
-            bounds.extendTo(actor->boundsAA);
+            bounds.extendTo(actor->boundsAA());
             m_objects.append(actor);
         }
         else
@@ -333,7 +333,7 @@ void Zone::importCharacters(PFSArchive *archive, WLDData *wld)
 
 static bool zoneActorGroupLessThan(const WLDZoneActor *a, const WLDZoneActor *b)
 {
-    return a->mesh->def()->name() < b->mesh->def()->name();
+    return a->mesh()->def()->name() < b->mesh()->def()->name();
 }
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
@@ -420,7 +420,7 @@ void Zone::drawGeometry(RenderState *state)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
     foreach(const WLDZoneActor *actor, m_visibleZoneParts)
-        m_zoneBuffer->addMaterialGroups(actor->mesh->data());
+        m_zoneBuffer->addMaterialGroups(actor->mesh()->data());
 #endif
     
     // Draw the visible parts as one big mesh.
@@ -446,7 +446,7 @@ void Zone::drawObjects(RenderState *state)
     QVector<matrix4> mvMatrices;
     foreach(const WLDZoneActor *actor, m_visibleObjects)
     {
-        WLDMesh *currentMesh = actor->mesh;
+        WLDMesh *currentMesh = actor->mesh();
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
@@ -467,11 +467,7 @@ void Zone::drawObjects(RenderState *state)
         
         // Draw the zone object.
         state->pushMatrix();
-        state->translate(actor->location);
-        state->rotate(actor->rotation.x, 1.0, 0.0, 0.0);
-        state->rotate(actor->rotation.y, 0.0, 1.0, 0.0);
-        state->rotate(actor->rotation.z, 0.0, 0.0, 1.0);
-        state->scale(actor->scale);
+        state->multiplyMatrix(actor->modelMatrix());
         mvMatrices.append(state->matrix(RenderState::ModelView));
         state->popMatrix();
     }
