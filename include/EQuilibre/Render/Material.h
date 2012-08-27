@@ -34,12 +34,6 @@ public:
     };
     
     Material();
-    Material(vec4 ambient, vec4 diffuse);
-
-    const vec4 & ambient() const;
-    const vec4 & diffuse() const;
-    void setAmbient(const vec4 &ambient);
-    void setDiffuse(const vec4 &diffuse);
 
     bool isOpaque() const;
     void setOpaque(bool opaque);
@@ -59,10 +53,6 @@ public:
     static bool loadTextureDDS(const char *data, size_t size, QImage &img);
 
 private:
-    vec4 m_ambient;
-    vec4 m_diffuse;
-    vec4 m_specular;
-    float m_shine;
     QImage m_img;
     OriginType m_origin;
     texture_t m_texture;

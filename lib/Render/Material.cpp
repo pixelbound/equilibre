@@ -24,42 +24,10 @@
 
 Material::Material()
 {
-    m_ambient = vec4(0.0, 0.0, 0.0, 0.0);
-    m_diffuse = vec4(0.0, 0.0, 0.0, 0.0);
     m_origin = LowerLeft;
     m_texture = 0;
     m_subTexture = 0;
     m_opaque = true;
-}
-
-Material::Material(vec4 ambient, vec4 diffuse)
-{
-    m_ambient = ambient;
-    m_diffuse = diffuse;
-    m_origin = LowerLeft;
-    m_texture = 0;
-    m_subTexture = 0;
-    m_opaque = true;
-}
-
-const vec4 & Material::ambient() const
-{
-    return m_ambient;
-}
-
-const vec4 & Material::diffuse() const
-{
-    return m_diffuse;
-}
-
-void Material::setAmbient(const vec4 &ambient)
-{
-    m_ambient = ambient;
-}
-
-void Material::setDiffuse(const vec4 &diffuse)
-{
-    m_diffuse = diffuse;
 }
 
 bool Material::isOpaque() const

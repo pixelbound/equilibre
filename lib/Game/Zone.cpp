@@ -205,6 +205,8 @@ void Zone::draw(RenderState *state)
     
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
     
+    vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
+    state->setAmbientLight(ambientLight);
     state->setFogParams(m_fogParams);
     
     // Draw the zone's static objects.

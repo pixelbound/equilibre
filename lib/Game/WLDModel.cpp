@@ -453,10 +453,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     }
     // 0x53 == ?
 
-    float ambient = frag->m_scaledAmbient;
     Material *mat = new Material();
-    mat->setAmbient(vec4(ambient, ambient, ambient, 1.0));
-    mat->setDiffuse(vec4(1.0, 1.0, 1.0, 1.0));
     mat->setOpaque(opaque);
     mat->setImage(img);
     mat->setOrigin(dds ? Material::LowerLeft : Material::UpperLeft);

@@ -135,8 +135,6 @@ void RenderStateGL2::createCube()
     m_cube->matGroups.push_back(mg);
     
     Material *mat = new Material();
-    mat->setAmbient(vec4(0.1, 0.1, 0.1, 0.4));
-    mat->setDiffuse(vec4(0.2, 0.2, 0.2, 0.4));
     //mat->setOpaque(false);
     
     m_cubeMats = new MaterialMap();
@@ -445,6 +443,12 @@ void RenderStateGL2::freeTexture(texture_t tex)
 {
     if(tex != 0)
         glDeleteTextures(1, &tex);
+}
+
+void RenderStateGL2::setAmbientLight(vec4 lightColor)
+{
+    if(program())
+        program()->setAmbientLight(lightColor);
 }
 
 void RenderStateGL2::setFogParams(const FogParams &fogParams)

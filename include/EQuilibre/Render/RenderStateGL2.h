@@ -75,6 +75,7 @@ public:
     virtual texture_t loadTexture(QImage img);
     virtual texture_t loadTextures(const QImage *images, size_t count);
     virtual void freeTexture(texture_t tex);
+    virtual void setAmbientLight(vec4 lightColor);
     virtual void setFogParams(const FogParams &fogParams);
     
     virtual buffer_t createBuffer(const void *data, size_t size);

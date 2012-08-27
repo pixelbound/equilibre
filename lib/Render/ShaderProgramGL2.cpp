@@ -23,10 +23,9 @@ static const ShaderSymbolInfo Uniforms[] =
 {
     {U_MODELVIEW_MATRIX, "u_modelViewMatrix"},
     {U_PROJECTION_MATRIX, "u_projectionMatrix"},
-    {U_MAT_AMBIENT, "u_material_ambient"},
-    {U_MAT_DIFFUSE, "u_material_diffuse"},
-    {U_MAT_TEXTURE, "u_material_texture"},
+    {U_AMBIENT_LIGHT, "u_ambientLight"},
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
+    {U_MAT_TEXTURE, "u_material_texture"},
     {U_FOG_START, "u_fogStart"},
     {U_FOG_END, "u_fogEnd"},
     {U_FOG_DENSITY, "u_fogDensity"},
@@ -252,6 +251,11 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
     }
 }
 
+void ShaderProgramGL2::setAmbientLight(vec4 lightColor)
+{
+    glUniform4fv(m_uniform[U_AMBIENT_LIGHT], 1, (const GLfloat *)&lightColor);
+}
+
 void ShaderProgramGL2::setFogParams(const FogParams &fogParams)
 {
     glUniform1f(m_uniform[U_FOG_START], fogParams.start);
@@ -265,8 +269,6 @@ void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
     //XXX GL_MAX_TEXTURE_IMAGE_UNITS
     //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     GLuint target = GL_TEXTURE_2D_ARRAY;
-    glUniform4fv(m_uniform[U_MAT_AMBIENT], 1, (const GLfloat *)&m->ambient());
-    glUniform4fv(m_uniform[U_MAT_DIFFUSE], 1, (const GLfloat *)&m->diffuse());
     if(m->texture() != 0)
     {
         glActiveTexture(GL_TEXTURE0);

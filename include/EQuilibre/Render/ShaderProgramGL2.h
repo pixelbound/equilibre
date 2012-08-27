@@ -33,14 +33,13 @@ const int A_MAX = A_MODEL_VIEW_0;
 
 const int U_MODELVIEW_MATRIX = 0;
 const int U_PROJECTION_MATRIX = 1;
-const int U_MAT_AMBIENT = 2;
-const int U_MAT_DIFFUSE = 3;
-const int U_MAT_HAS_TEXTURE = 4;
-const int U_MAT_TEXTURE = 5;
-const int U_FOG_START = 6;
-const int U_FOG_END = 7;
-const int U_FOG_DENSITY = 8;
-const int U_FOG_COLOR = 9;
+const int U_AMBIENT_LIGHT = 2;
+const int U_MAT_HAS_TEXTURE = 3;
+const int U_MAT_TEXTURE = 4;
+const int U_FOG_START = 5;
+const int U_FOG_END = 6;
+const int U_FOG_DENSITY = 7;
+const int U_FOG_COLOR = 8;
 const int U_MAX = U_FOG_COLOR;
 
 struct ShaderSymbolInfo
@@ -94,6 +93,7 @@ public:
     void setProjectionMatrix(const matrix4 &projection);
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
+    void setAmbientLight(vec4 lightColor);
     void setFogParams(const FogParams &fogParams);
 
     void enableVertexAttribute(int attr, int index = 0);
