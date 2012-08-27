@@ -3,17 +3,17 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QPaintEvent>
-#include "OpenEQ/Render/Scene.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/WLDActor.h"
-#include "OpenEQ/Game/Zone.h"
+#include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDActor.h"
+#include "EQuilibre/Game/Zone.h"
 
 Scene::Scene(RenderState *state)
 {
     m_state = state;
     m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
-        "OpenEQ", QString(), this);
+        "EQuilibre", QString(), this);
 }
 
 Scene::~Scene()

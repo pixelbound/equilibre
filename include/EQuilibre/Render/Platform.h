@@ -1,5 +1,5 @@
-#ifndef OPENEQ_PLATFORM_H
-#define OPENEQ_PLATFORM_H
+#ifndef EQUILIBRE_PLATFORM_H
+#define EQUILIBRE_PLATFORM_H
 
 #include <cstdio>
 #include <string>
@@ -33,4 +33,4 @@ char RENDER_DLL * loadFileData(std::string path);
 void RENDER_DLL freeFileData(char *data);
 double RENDER_DLL currentTime();
 
-#endif // OPENEQ_PLATFORM_H
+#endif // EQUILIBRE_PLATFORM_H

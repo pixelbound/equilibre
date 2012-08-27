@@ -1,16 +1,16 @@
 #include <QFileInfo>
 #include <QImage>
-#include "OpenEQ/Game/Zone.h"
-#include "OpenEQ/Game/PFSArchive.h"
-#include "OpenEQ/Game/WLDData.h"
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/WLDActor.h"
-#include "OpenEQ/Game/WLDSkeleton.h"
-#include "OpenEQ/Game/Fragments.h"
-#include "OpenEQ/Game/SoundTrigger.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Render/Material.h"
-#include "OpenEQ/Render/FrameStat.h"
+#include "EQuilibre/Game/Zone.h"
+#include "EQuilibre/Game/PFSArchive.h"
+#include "EQuilibre/Game/WLDData.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDActor.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
+#include "EQuilibre/Game/Fragments.h"
+#include "EQuilibre/Game/SoundTrigger.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/Material.h"
+#include "EQuilibre/Render/FrameStat.h"
 
 Zone::Zone(QObject *parent) : QObject(parent)
 {

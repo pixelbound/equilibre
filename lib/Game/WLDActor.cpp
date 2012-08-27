@@ -1,8 +1,8 @@
 #include <math.h>
-#include "OpenEQ/Game/WLDActor.h"
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/Fragments.h"
-#include "OpenEQ/Render/RenderState.h"
+#include "EQuilibre/Game/WLDActor.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/Fragments.h"
+#include "EQuilibre/Render/RenderState.h"
 
 WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent)
 {

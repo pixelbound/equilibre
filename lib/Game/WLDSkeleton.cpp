@@ -1,6 +1,6 @@
 #include <cmath>
-#include "OpenEQ/Game/WLDSkeleton.h"
-#include "OpenEQ/Game/Fragments.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
+#include "EQuilibre/Game/Fragments.h"
 
 WLDSkeleton::WLDSkeleton(HierSpriteDefFragment *def, QObject *parent) : QObject(parent)
 {

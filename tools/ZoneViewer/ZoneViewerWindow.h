@@ -1,9 +1,9 @@
-#ifndef OPENEQ_ZONE_VIEWER_WINDOW_H
-#define OPENEQ_ZONE_VIEWER_WINDOW_H
+#ifndef EQUILIBRE_ZONE_VIEWER_WINDOW_H
+#define EQUILIBRE_ZONE_VIEWER_WINDOW_H
 
 #include <QMainWindow>
-#include "OpenEQ/Render/Scene.h"
-#include "OpenEQ/Render/Vertex.h"
+#include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Render/Vertex.h"
 
 class QComboBox;
 class QVBoxLayout;

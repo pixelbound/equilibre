@@ -1,10 +1,10 @@
-#ifndef OPENEQ_RENDER_STATE_H
-#define OPENEQ_RENDER_STATE_H
+#ifndef EQUILIBRE_RENDER_STATE_H
+#define EQUILIBRE_RENDER_STATE_H
 
 #include <QVector>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
-#include "OpenEQ/Render/FrameStat.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/FrameStat.h"
 
 class QImage;
 class QVector3D;

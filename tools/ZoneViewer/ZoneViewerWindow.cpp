@@ -11,20 +11,20 @@
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include "ZoneViewerWindow.h"
-#include "OpenEQ/Render/SceneViewport.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Render/Scene.h"
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/WLDActor.h"
-#include "OpenEQ/Game/WLDSkeleton.h"
-#include "OpenEQ/Game/Zone.h"
-#include "OpenEQ/Game/SoundTrigger.h"
+#include "EQuilibre/Render/SceneViewport.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDActor.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
+#include "EQuilibre/Game/Zone.h"
+#include "EQuilibre/Game/SoundTrigger.h"
 
 ZoneViewerWindow::ZoneViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
 {
     m_scene = new ZoneScene(state);
     m_state = state;
-    setWindowTitle("OpenEQ Zone Viewer");
+    setWindowTitle("EQuilibre Zone Viewer");
     m_viewport = new SceneViewport(m_scene, state);
     setCentralWidget(m_viewport);
     initMenus();

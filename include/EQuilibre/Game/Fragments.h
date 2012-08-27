@@ -1,15 +1,15 @@
-#ifndef OPENEQ_FRAGMENTS_H
-#define OPENEQ_FRAGMENTS_H
+#ifndef EQUILIBRE_FRAGMENTS_H
+#define EQUILIBRE_FRAGMENTS_H
 
 #include <QString>
 #include <QVector>
 #include <QColor>
 #include <QPair>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
-#include "OpenEQ/Render/Geometry.h"
-#include "OpenEQ/Game/WLDFragment.h"
-#include "OpenEQ/Game/WLDSkeleton.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/Geometry.h"
+#include "EQuilibre/Game/WLDFragment.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
 
 typedef QPair<uint16_t, uint16_t> vec2us;
 

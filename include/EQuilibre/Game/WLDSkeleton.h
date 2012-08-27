@@ -1,11 +1,11 @@
-#ifndef OPENEQ_WLD_SKELETON_H
-#define OPENEQ_WLD_SKELETON_H
+#ifndef EQUILIBRE_WLD_SKELETON_H
+#define EQUILIBRE_WLD_SKELETON_H
 
 #include <QObject>
 #include <QMap>
 #include <QVector>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Geometry.h"
 #include "WLDFragment.h"
 
 class HierSpriteDefFragment;

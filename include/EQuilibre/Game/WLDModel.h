@@ -1,12 +1,12 @@
-#ifndef OPENEQ_WLD_MODEL_H
-#define OPENEQ_WLD_MODEL_H
+#ifndef EQUILIBRE_WLD_MODEL_H
+#define EQUILIBRE_WLD_MODEL_H
 
 #include <QObject>
 #include <QList>
 #include <QMap>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/Geometry.h"
 
 class MeshDefFragment;
 class HierSpriteDefFragment;

@@ -1,9 +1,9 @@
-#ifndef OPENEQ_STATISTIC_H
-#define OPENEQ_STATISTIC_H
+#ifndef EQUILIBRE_STATISTIC_H
+#define EQUILIBRE_STATISTIC_H
 
 #include <QString>
 #include <QVector>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 typedef uint32_t gpu_timer_t;
 

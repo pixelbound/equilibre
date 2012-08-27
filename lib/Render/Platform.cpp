@@ -1,5 +1,5 @@
 #include <QFile>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 QString resolvePath(QString path)
 {

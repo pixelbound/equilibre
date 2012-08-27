@@ -15,21 +15,21 @@ set(LIB_SOURCES
 )
 
 set(LIB_HEADERS
-    ../../include/OpenEQ/Render/SceneViewport.h
-    ../../include/OpenEQ/Render/RenderState.h
-    ../../include/OpenEQ/Render/RenderStateGL2.h
-    ../../include/OpenEQ/Render/ShaderProgramGL2.h
-    ../../include/OpenEQ/Render/Material.h
-    ../../include/OpenEQ/Render/Vertex.h
-    ../../include/OpenEQ/Render/Geometry.h
-    ../../include/OpenEQ/Render/LinearMath.h
-    ../../include/OpenEQ/Render/Scene.h
-    ../../include/OpenEQ/Render/FrameStat.h
-    ../../include/OpenEQ/Render/Platform.h
-    ../../include/OpenEQ/Render/imath.h
-    ../../include/OpenEQ/Render/dxt_tables.h
-    ../../include/OpenEQ/Render/dds.h
-    ../../include/OpenEQ/Render/dxt.h
+    ../../include/EQuilibre/Render/SceneViewport.h
+    ../../include/EQuilibre/Render/RenderState.h
+    ../../include/EQuilibre/Render/RenderStateGL2.h
+    ../../include/EQuilibre/Render/ShaderProgramGL2.h
+    ../../include/EQuilibre/Render/Material.h
+    ../../include/EQuilibre/Render/Vertex.h
+    ../../include/EQuilibre/Render/Geometry.h
+    ../../include/EQuilibre/Render/LinearMath.h
+    ../../include/EQuilibre/Render/Scene.h
+    ../../include/EQuilibre/Render/FrameStat.h
+    ../../include/EQuilibre/Render/Platform.h
+    ../../include/EQuilibre/Render/imath.h
+    ../../include/EQuilibre/Render/dxt_tables.h
+    ../../include/EQuilibre/Render/dds.h
+    ../../include/EQuilibre/Render/dxt.h
 )
 
 set(LIB_RESOURCES
@@ -51,14 +51,14 @@ source_group(moc FILES ${LIB_MOC_SOURCES})
 
 add_definitions(-DBUILD_RENDER_DLL)
 
-add_library(OpenEQRender SHARED
+add_library(EQuilibreRender SHARED
     ${LIB_SOURCES}
     ${LIB_MOC_SOURCES}
     ${LIB_RESOURCES}
     ${LIB_RESOURCE_FILES}
     ${LIB_HEADERS}
 )
-target_link_libraries(OpenEQRender
+target_link_libraries(EQuilibreRender
     ${QT_LIBRARIES}
     ${GLEW_LIBRARIES}
     ${SYSTEM_LIBRARIES}

@@ -1,6 +1,6 @@
 #include <QFile>
-#include "OpenEQ/Game/SoundTrigger.h"
-#include "OpenEQ/Game/StreamReader.h"
+#include "EQuilibre/Game/SoundTrigger.h"
+#include "EQuilibre/Game/StreamReader.h"
 
 const uint32_t SoundEntry::Size = 84;
 

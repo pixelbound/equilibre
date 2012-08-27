@@ -1,10 +1,10 @@
-#ifndef OPENEQ_SCENE_H
-#define OPENEQ_SCENE_H
+#ifndef EQUILIBRE_SCENE_H
+#define EQUILIBRE_SCENE_H
 
 #include <QObject>
 #include <QMap>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
 
 class WLDModel;
 class WLDActor;

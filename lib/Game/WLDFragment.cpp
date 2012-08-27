@@ -1,6 +1,6 @@
-#include "OpenEQ/Game/WLDFragment.h"
-#include "OpenEQ/Game/WLDData.h"
-#include "OpenEQ/Game/Fragments.h"
+#include "EQuilibre/Game/WLDFragment.h"
+#include "EQuilibre/Game/WLDData.h"
+#include "EQuilibre/Game/Fragments.h"
 
 WLDFragment::WLDFragment(uint32_t kind, QString name)
 {

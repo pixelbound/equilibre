@@ -1,8 +1,8 @@
-#ifndef OPENEQ_RENDER_GEOMETRY_H
-#define OPENEQ_RENDER_GEOMETRY_H
+#ifndef EQUILIBRE_RENDER_GEOMETRY_H
+#define EQUILIBRE_RENDER_GEOMETRY_H
 
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/LinearMath.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/LinearMath.h"
 
 struct RENDER_DLL Plane
 {

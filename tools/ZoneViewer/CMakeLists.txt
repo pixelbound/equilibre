@@ -20,8 +20,8 @@ add_executable(ZoneViewer
 )
 
 target_link_libraries(ZoneViewer
-    OpenEQRender
-    OpenEQGame
+    EQuilibreRender
+    EQuilibreGame
     ${QT_LIBRARIES}
     ${SYSTEM_LIBRARIES}
 )

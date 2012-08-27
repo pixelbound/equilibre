@@ -18,8 +18,8 @@ add_executable(CharacterViewer
 )
 
 target_link_libraries(CharacterViewer
-    OpenEQRender
-    OpenEQGame
+    EQuilibreRender
+    EQuilibreGame
     ${QT_LIBRARIES}
     ${SYSTEM_LIBRARIES}
 )

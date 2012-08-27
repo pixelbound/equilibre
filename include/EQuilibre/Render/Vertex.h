@@ -1,9 +1,9 @@
-#ifndef OPENEQ_RENDER_VERTEX_H
-#define OPENEQ_RENDER_VERTEX_H
+#ifndef EQUILIBRE_RENDER_VERTEX_H
+#define EQUILIBRE_RENDER_VERTEX_H
 
 #include <QVector>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/LinearMath.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/LinearMath.h"
 
 class MeshBuffer;
 class MaterialMap;

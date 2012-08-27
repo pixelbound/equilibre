@@ -1,7 +1,7 @@
 #include <GL/glew.h>
-#include "OpenEQ/Render/ShaderProgramGL2.h"
-#include "OpenEQ/Render/RenderStateGL2.h"
-#include "OpenEQ/Render/Material.h"
+#include "EQuilibre/Render/ShaderProgramGL2.h"
+#include "EQuilibre/Render/RenderStateGL2.h"
+#include "EQuilibre/Render/Material.h"
 
 ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
 {

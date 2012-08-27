@@ -1,8 +1,8 @@
-#ifndef OPENEQ_STREAM_READER_H
-#define OPENEQ_STREAM_READER_H
+#ifndef EQUILIBRE_STREAM_READER_H
+#define EQUILIBRE_STREAM_READER_H
 
 #include <QObject>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 class QIODevice;
 

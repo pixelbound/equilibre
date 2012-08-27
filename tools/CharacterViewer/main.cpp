@@ -3,12 +3,12 @@
 #include <QGLFormat>
 #include <QDir>
 #include <QMessageBox>
-#include "OpenEQ/Render/Scene.h"
-#include "OpenEQ/Render/RenderStateGL2.h"
-#include "OpenEQ/Game/Zone.h"
-#include "OpenEQ/Game/WLDActor.h"
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/WLDSkeleton.h"
+#include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Render/RenderStateGL2.h"
+#include "EQuilibre/Game/Zone.h"
+#include "EQuilibre/Game/WLDActor.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
 #include "CharacterViewerWindow.h"
 
 QWidget * showCharViewer(RenderState *state)

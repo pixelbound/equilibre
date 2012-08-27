@@ -2,8 +2,8 @@
 #include <zlib.h>
 #include <QFile>
 #include <QBuffer>
-#include "OpenEQ/Game/PFSArchive.h"
-#include "OpenEQ/Game/StreamReader.h"
+#include "EQuilibre/Game/PFSArchive.h"
+#include "EQuilibre/Game/StreamReader.h"
 
 class PFSHeader
 {

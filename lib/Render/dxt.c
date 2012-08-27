@@ -34,11 +34,11 @@
 #include <math.h>
 #include <malloc.h>
 
-#include "OpenEQ/Render/dds.h"
-#include "OpenEQ/Render/mipmap.h"
-#include "OpenEQ/Render/imath.h"
+#include "EQuilibre/Render/dds.h"
+#include "EQuilibre/Render/mipmap.h"
+#include "EQuilibre/Render/imath.h"
 
-#include "OpenEQ/Render/dxt_tables.h"
+#include "EQuilibre/Render/dxt_tables.h"
 
 /* extract 4x4 BGRA block */
 static void extract_block(const unsigned char *src, int x, int y,

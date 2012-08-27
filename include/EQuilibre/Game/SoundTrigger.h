@@ -1,10 +1,10 @@
-#ifndef OPENEQ_SOUND_TRIGGER_H
-#define OPENEQ_SOUND_TRIGGER_H
+#ifndef EQUILIBRE_SOUND_TRIGGER_H
+#define EQUILIBRE_SOUND_TRIGGER_H
 
 #include <QString>
 #include <QVector>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Geometry.h"
 
 class StreamReader;
 

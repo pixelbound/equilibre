@@ -1,9 +1,9 @@
-#ifndef OPENEQ_RENDER_LINEAR_MATH_H
-#define OPENEQ_RENDER_LINEAR_MATH_H
+#ifndef EQUILIBRE_RENDER_LINEAR_MATH_H
+#define EQUILIBRE_RENDER_LINEAR_MATH_H
 
 #include <QVector3D>
 #include <QQuaternion>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 bool fequal(double a, double b);
 

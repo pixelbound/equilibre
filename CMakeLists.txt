@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(OpenEQ)
+project(EQuilibre)
 
 find_package(Qt4 4.6.0 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 find_package(ZLIB 1.0.0 REQUIRED)
@@ -27,7 +27,7 @@ else( WIN32 )
 endif( WIN32 )
 
 if(WIN32)
-    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include/OpenEQ/Platform/win32")
+    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include/EQuilibre/Platform/win32")
     add_definitions(/DM_PI=3.14159265358979323846)
 endif(WIN32)
 

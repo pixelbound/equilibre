@@ -14,20 +14,20 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include "CharacterViewerWindow.h"
-#include "OpenEQ/Render/SceneViewport.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Render/Scene.h"
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/WLDActor.h"
-#include "OpenEQ/Game/WLDSkeleton.h"
-#include "OpenEQ/Game/Zone.h"
+#include "EQuilibre/Render/SceneViewport.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDActor.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
+#include "EQuilibre/Game/Zone.h"
 
 CharacterViewerWindow::CharacterViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
 {
     m_scene = new CharacterScene(state);
     m_state = state;
     m_lastDir = m_scene->assetPath();
-    setWindowTitle("OpenEQ Character Viewer");
+    setWindowTitle("EQuilibre Character Viewer");
     m_viewport = new SceneViewport(m_scene, state);
     m_actorText = new QComboBox();
     m_paletteText = new QComboBox();

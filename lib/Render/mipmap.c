@@ -24,9 +24,9 @@
 #include <math.h>
 #include <malloc.h>
 
-#include "OpenEQ/Render/dds.h"
-#include "OpenEQ/Render/mipmap.h"
-#include "OpenEQ/Render/imath.h"
+#include "EQuilibre/Render/dds.h"
+#include "EQuilibre/Render/mipmap.h"
+#include "EQuilibre/Render/imath.h"
 
 typedef void (*mipmapfunc_t)(unsigned char *, int, int, unsigned char *, int, int, int, int, float);
 typedef void (*volmipmapfunc_t)(unsigned char *, int, int, int, unsigned char *, int, int, int, int, int, float);

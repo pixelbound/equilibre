@@ -1,8 +1,8 @@
-#ifndef OPENEQ_WLD_FRAGMENT_H
-#define OPENEQ_WLD_FRAGMENT_H
+#ifndef EQUILIBRE_WLD_FRAGMENT_H
+#define EQUILIBRE_WLD_FRAGMENT_H
 
 #include <QObject>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 class WLDData;
 class WLDReader;

@@ -1,10 +1,10 @@
-#ifndef OPENEQ_MATERIAL_H
-#define OPENEQ_MATERIAL_H
+#ifndef EQUILIBRE_MATERIAL_H
+#define EQUILIBRE_MATERIAL_H
 
 #include <QImage>
 #include <QMap>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
 
 class RenderState;
 

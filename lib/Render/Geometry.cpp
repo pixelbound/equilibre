@@ -1,5 +1,5 @@
 #include <cmath>
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Geometry.h"
 
 using namespace std;
 

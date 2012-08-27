@@ -1,6 +1,6 @@
 #include <cmath>
 #include <QMatrix4x4>
-#include "OpenEQ/Render/LinearMath.h"
+#include "EQuilibre/Render/LinearMath.h"
 
 using namespace std;
 

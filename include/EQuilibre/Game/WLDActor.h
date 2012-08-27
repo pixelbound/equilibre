@@ -1,12 +1,12 @@
-#ifndef OPENEQ_WLD_ACTOR_H
-#define OPENEQ_WLD_ACTOR_H
+#ifndef EQUILIBRE_WLD_ACTOR_H
+#define EQUILIBRE_WLD_ACTOR_H
 
 #include <QObject>
 #include <QMap>
 #include <QPair>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/Geometry.h"
 
 class PFSArchive;
 class ActorFragment;

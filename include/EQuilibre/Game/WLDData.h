@@ -1,12 +1,12 @@
-#ifndef OPENEQ_WLD_DATA_H
-#define OPENEQ_WLD_DATA_H
+#ifndef EQUILIBRE_WLD_DATA_H
+#define EQUILIBRE_WLD_DATA_H
 
 #include <QObject>
 #include <QList>
 #include <QByteArray>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Game/WLDFragment.h"
-#include "OpenEQ/Game/StreamReader.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Game/WLDFragment.h"
+#include "EQuilibre/Game/StreamReader.h"
 
 class QIODevice;
 class PFSArchive;

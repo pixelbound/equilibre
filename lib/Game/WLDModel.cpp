@@ -1,11 +1,11 @@
 #include <QImage>
 #include <QRegExp>
-#include "OpenEQ/Game/WLDModel.h"
-#include "OpenEQ/Game/Fragments.h"
-#include "OpenEQ/Game/WLDSkeleton.h"
-#include "OpenEQ/Game/PFSArchive.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Render/Material.h"
+#include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/Fragments.h"
+#include "EQuilibre/Game/WLDSkeleton.h"
+#include "EQuilibre/Game/PFSArchive.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/Material.h"
 
 WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 {

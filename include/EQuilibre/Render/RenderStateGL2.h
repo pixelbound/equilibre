@@ -1,11 +1,11 @@
-#ifndef OPENEQ_RENDER_STATE_GL2_H
-#define OPENEQ_RENDER_STATE_GL2_H
+#ifndef EQUILIBRE_RENDER_STATE_GL2_H
+#define EQUILIBRE_RENDER_STATE_GL2_H
 
 #include <vector>
 #include <string>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/Geometry.h"
 
 class ShaderProgramGL2;
 class MaterialMap;

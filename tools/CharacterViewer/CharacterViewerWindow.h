@@ -1,8 +1,8 @@
-#ifndef OPENEQ_CHARACTER_VIEWER_WINDOW_H
-#define OPENEQ_CHARACTER_VIEWER_WINDOW_H
+#ifndef EQUILIBRE_CHARACTER_VIEWER_WINDOW_H
+#define EQUILIBRE_CHARACTER_VIEWER_WINDOW_H
 
 #include <QMainWindow>
-#include "OpenEQ/Render/Scene.h"
+#include "EQuilibre/Render/Scene.h"
 
 class QComboBox;
 class QVBoxLayout;

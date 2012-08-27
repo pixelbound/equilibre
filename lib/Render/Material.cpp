@@ -1,10 +1,10 @@
 #include <QImage>
 #include <QGLWidget>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Material.h"
-#include "OpenEQ/Render/RenderState.h"
-#include "OpenEQ/Render/dds.h"
-#include "OpenEQ/Render/dxt.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Material.h"
+#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/dds.h"
+#include "EQuilibre/Render/dxt.h"
 
 Material::Material()
 {

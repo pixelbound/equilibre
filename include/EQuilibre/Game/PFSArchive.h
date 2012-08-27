@@ -1,11 +1,11 @@
-#ifndef OPENEQ_PFS_ARCHIVE_H
-#define OPENEQ_PFS_ARCHIVE_H
+#ifndef EQUILIBRE_PFS_ARCHIVE_H
+#define EQUILIBRE_PFS_ARCHIVE_H
 
 #include <QObject>
 #include <QByteArray>
 #include <QList>
 #include <QMap>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 class QFile;
 class StreamReader;

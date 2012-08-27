@@ -1,12 +1,12 @@
-#ifndef OPENEQ_ZONE_H
-#define OPENEQ_ZONE_H
+#ifndef EQUILIBRE_ZONE_H
+#define EQUILIBRE_ZONE_H
 
 #include <QObject>
 #include <QList>
 #include <QMap>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
-#include "OpenEQ/Render/Geometry.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/Geometry.h"
 
 class PFSArchive;
 class WLDData;

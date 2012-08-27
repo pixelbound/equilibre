@@ -1,10 +1,10 @@
-#ifndef OPENEQ_SCENE_VIEWPORT_H
-#define OPENEQ_SCENE_VIEWPORT_H
+#ifndef EQUILIBRE_SCENE_VIEWPORT_H
+#define EQUILIBRE_SCENE_VIEWPORT_H
 
 #include <QGLWidget>
 #include <QTime>
 #include <QVector>
-#include "OpenEQ/Render/Platform.h"
+#include "EQuilibre/Render/Platform.h"
 
 #ifdef USE_VTUNE_PROFILER
 #include <ittnotify.h>

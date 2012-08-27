@@ -12,16 +12,16 @@ set(LIB_SOURCES
 )
 
 set(LIB_HEADERS
-    ../../include/OpenEQ/Game/WLDData.h
-    ../../include/OpenEQ/Game/WLDFragment.h
-    ../../include/OpenEQ/Game/Fragments.h
-    ../../include/OpenEQ/Game/WLDModel.h
-    ../../include/OpenEQ/Game/SoundTrigger.h
-    ../../include/OpenEQ/Game/StreamReader.h
-    ../../include/OpenEQ/Game/PFSArchive.h
-    ../../include/OpenEQ/Game/WLDActor.h
-    ../../include/OpenEQ/Game/Zone.h
-    ../../include/OpenEQ/Game/WLDSkeleton.h
+    ../../include/EQuilibre/Game/WLDData.h
+    ../../include/EQuilibre/Game/WLDFragment.h
+    ../../include/EQuilibre/Game/Fragments.h
+    ../../include/EQuilibre/Game/WLDModel.h
+    ../../include/EQuilibre/Game/SoundTrigger.h
+    ../../include/EQuilibre/Game/StreamReader.h
+    ../../include/EQuilibre/Game/PFSArchive.h
+    ../../include/EQuilibre/Game/WLDActor.h
+    ../../include/EQuilibre/Game/Zone.h
+    ../../include/EQuilibre/Game/WLDSkeleton.h
 )
 
 QT4_WRAP_CPP(LIB_MOC_SOURCES ${LIB_HEADERS})
@@ -30,7 +30,7 @@ source_group(moc FILES ${LIB_MOC_SOURCES})
 
 add_definitions(-DBUILD_GAME_DLL)
 
-add_library(OpenEQGame SHARED
+add_library(EQuilibreGame SHARED
     ${LIB_SOURCES}
     ${LIB_MOC_SOURCES}
     ${LIB_RESOURCES}
@@ -38,8 +38,8 @@ add_library(OpenEQGame SHARED
     ${LIB_HEADERS}
 )
 
-target_link_libraries(OpenEQGame
-    OpenEQRender
+target_link_libraries(EQuilibreGame
+    EQuilibreRender
     ${QT_LIBRARIES}
     ${ZLIB_LIBRARIES}
     ${SYSTEM_LIBRARIES}

@@ -1,6 +1,6 @@
-#include "OpenEQ/Render/Vertex.h"
-#include "OpenEQ/Render/Material.h"
-#include "OpenEQ/Render/RenderState.h"
+#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/Material.h"
+#include "EQuilibre/Render/RenderState.h"
 
 BufferSegment::BufferSegment()
 {

@@ -1,7 +1,7 @@
 #include <string.h>
 #include <time.h>
 #include <GL/glew.h>
-#include "OpenEQ/Render/FrameStat.h"
+#include "EQuilibre/Render/FrameStat.h"
 
 FrameStat::FrameStat(QString name, int samples, FrameStat::Type type)
 {

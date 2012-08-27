@@ -1,10 +1,10 @@
-#ifndef OPENEQ_SHADER_PROGRAM_GL2_H
-#define OPENEQ_SHADER_PROGRAM_GL2_H
+#ifndef EQUILIBRE_SHADER_PROGRAM_GL2_H
+#define EQUILIBRE_SHADER_PROGRAM_GL2_H
 
 #include <vector>
 #include <QString>
-#include "OpenEQ/Render/Platform.h"
-#include "OpenEQ/Render/Vertex.h"
+#include "EQuilibre/Render/Platform.h"
+#include "EQuilibre/Render/Vertex.h"
 
 const int MAX_TRANSFORMS = 256;
 const int A_POSITION = 0;
