@@ -1,14 +1,16 @@
+GPL license
+fog
+lights, vertex colors
+    have an uniform array of material state -> is it still needed?
+sort items front to back
+Draw opaque materials and then masked materials
+remove z-fighting of sea textures
+Load sky box
 one frame latency for querying GL timers and remove glFinish
     is it still an issue with vsync disabled?
-Material type, can specify material mask when rendering
-    Draw opaque materials and then masked materials
-No unbind / do unbind at the end of the frame (use VAOs?)
-sort items front to back
-have an uniform array of material state
-physics/collisions
+No unbind / do unbind at the end of the frame (use VAOs?)physics/collisions
 play XMI music and WAV sounds
 Load file for mapping animations to characters
-Load sky box
 start animation when selecting it (remember the time when it was first selected)
 mimic character selection screen (load character selection background and rotate, random animation)
 split animation tracks into two lists (skinning, positioning) and renumber piece IDs

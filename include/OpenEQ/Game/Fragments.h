@@ -156,7 +156,7 @@ public:
     vec3 m_rotation;
     float m_param1;
     vec3 m_scale;
-    WLDFragment *m_fragment2;
+    WLDFragment *m_fragment2; // 0x33, vertex color ref.
 };
 
 /*!
