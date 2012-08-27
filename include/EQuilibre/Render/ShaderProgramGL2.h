@@ -21,6 +21,7 @@
 #include <QString>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/RenderState.h"
 
 const int MAX_TRANSFORMS = 256;
 const int A_POSITION = 0;
@@ -36,7 +37,17 @@ const int U_MAT_AMBIENT = 2;
 const int U_MAT_DIFFUSE = 3;
 const int U_MAT_HAS_TEXTURE = 4;
 const int U_MAT_TEXTURE = 5;
-const int U_MAX = U_MAT_TEXTURE;
+const int U_FOG_START = 6;
+const int U_FOG_END = 7;
+const int U_FOG_DENSITY = 8;
+const int U_FOG_COLOR = 9;
+const int U_MAX = U_FOG_COLOR;
+
+struct ShaderSymbolInfo
+{
+    uint32_t ID;
+    const char *Name;
+};
 
 class RenderStateGL2;
 class BoneTransform;
@@ -83,6 +94,7 @@ public:
     void setProjectionMatrix(const matrix4 &projection);
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
+    void setFogParams(const FogParams &fogParams);
 
     void enableVertexAttribute(int attr, int index = 0);
     void disableVertexAttribute(int attr, int index = 0);

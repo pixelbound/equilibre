@@ -23,6 +23,7 @@
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
+#include "EQuilibre/Render/RenderState.h"
 
 class PFSArchive;
 class WLDData;
@@ -120,6 +121,7 @@ private:
     float m_playerOrient;
     vec3 m_cameraOrient;
     vec3 m_cameraPos;
+    FogParams m_fogParams;
 };
 
 /*!

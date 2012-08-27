@@ -27,12 +27,17 @@ const vec4 u_light_diffuse = vec4(1.0, 1.0, 1.0, 1.0);
 const vec4 u_light_specular = vec4(1.0, 1.0, 1.0, 1.0);
 const vec4 u_light_pos = vec4(0.0, 1.0, 1.0, 0.0);
 
+uniform float u_fogStart;
+uniform float u_fogEnd;
+uniform float u_fogDensity;
+
 uniform vec4 u_material_ambient;
 uniform vec4 u_material_diffuse;
 uniform vec4 u_bones[512];
 
 varying vec4 v_color;
 varying vec3 v_texCoords;
+varying float v_fogFactor;
 
 // http://qt.gitorious.org/qt/qt/blobs/raw/4.7/src/gui/math3d/qquaternion.h
 vec4 mult_quat(vec4 q1, vec4 q2)
@@ -66,7 +71,8 @@ vec4 skin(vec3 pos)
 
 void main()
 {
-    gl_Position = u_projectionMatrix * u_modelViewMatrix * skin(a_position);
+    vec4 viewPos = u_modelViewMatrix * skin(a_position);
+    gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
 
     vec3 normal, lightDir, halfVector;
@@ -83,4 +89,9 @@ void main()
     diffuse = max(dot(normal, lightDir), 0.0) * u_material_diffuse * u_light_diffuse;
 
     v_color = ambient + diffuse;
+    
+    // Compute the fog factor.
+    const float LOG2 = 1.442695;
+    float fogDist = max(length(viewPos) - u_fogStart, 0.0);
+    v_fogFactor = clamp(exp2(-pow(u_fogDensity * fogDist, 2.0) * LOG2), 0.0, 1.0);
 }

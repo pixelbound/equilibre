@@ -83,6 +83,9 @@ public:
 
     float aspect() const;
     void setAspect(float aspect);
+    
+    float farPlane() const;
+    void setFarPlane(float distance);
 
     const vec3 & eye() const;
     void setEye(vec3 eye);

@@ -33,6 +33,14 @@ class MaterialMap;
 class FrameStat;
 class MeshBuffer;
 
+struct RENDER_DLL FogParams
+{
+    float start;
+    float end;
+    float density;
+    vec4 color;
+};
+
 class RENDER_DLL RenderState
 {
 public:
@@ -130,6 +138,7 @@ public:
     virtual texture_t loadTexture(QImage img) = 0;
     virtual texture_t loadTextures(const QImage *images, size_t count) = 0;
     virtual void freeTexture(texture_t tex) = 0;
+    virtual void setFogParams(const FogParams &fogParams) = 0;
     
     // buffer operations
     
@@ -140,9 +149,6 @@ public:
     virtual FrameStat * createStat(QString name, FrameStat::Type type) = 0;
     virtual void destroyStat(FrameStat *stat) = 0;
     virtual const QVector<FrameStat *> &stats() const = 0;
-
-protected:
-    vec4 m_bgColor;
 };
 
 #endif

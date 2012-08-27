@@ -239,6 +239,7 @@ void ZoneScene::showSoundTriggers(bool show)
 void ZoneScene::init()
 {
     m_started = currentTime();
+    m_state->viewFrustum().setFarPlane(1000.0);
 }
 
 void ZoneScene::draw()

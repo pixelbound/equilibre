@@ -30,6 +30,11 @@
 
 Zone::Zone(QObject *parent) : QObject(parent)
 {
+    // XXX read fog params from a file.
+    m_fogParams.start = 10.0;
+    m_fogParams.end = 300.0;
+    m_fogParams.density = 0.003;
+    m_fogParams.color = vec4(230.0/255.0*0.5, 255.0/255.0*0.5, 200.0/255.0*0.5, 1.0);
     m_mainArchive = 0;
     m_mainWld = 0;
     m_terrain = NULL;
@@ -199,6 +204,8 @@ void Zone::draw(RenderState *state)
     state->multiplyMatrix(frustum.camera());
     
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
+    
+    state->setFogParams(m_fogParams);
     
     // Draw the zone's static objects.
     if(m_showObjects && m_objects)

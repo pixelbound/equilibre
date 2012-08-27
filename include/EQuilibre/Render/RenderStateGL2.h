@@ -74,7 +74,8 @@ public:
     // material operations
     virtual texture_t loadTexture(QImage img);
     virtual texture_t loadTextures(const QImage *images, size_t count);
-    virtual void freeTexture(texture_t tex) ;
+    virtual void freeTexture(texture_t tex);
+    virtual void setFogParams(const FogParams &fogParams);
     
     virtual buffer_t createBuffer(const void *data, size_t size);
 
@@ -99,6 +100,7 @@ private:
     void createCube();
 
     Frustum m_frustum;
+    vec4 m_clearColor;
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];

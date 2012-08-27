@@ -175,7 +175,7 @@ Frustum::Frustum()
     m_angle = 45.0;
     m_aspect = 1.0;
     m_nearPlane = 0.1;
-    m_farPlane = 5000.0;
+    m_farPlane = 100.0;
     m_dirty = true;
 }
 
@@ -187,6 +187,17 @@ float Frustum::aspect() const
 void Frustum::setAspect(float aspect)
 {
     m_aspect = aspect;
+    m_dirty = true;
+}
+
+float Frustum::farPlane() const
+{
+    return m_farPlane;
+}
+
+void Frustum::setFarPlane(float distance)
+{
+    m_farPlane = distance;
     m_dirty = true;
 }
 

@@ -25,6 +25,7 @@
 
 RenderStateGL2::RenderStateGL2() : RenderState()
 {
+    m_clearColor = vec4(0.6, 0.6, 0.9, 1.0);
     m_matrixMode = ModelView;
     m_matrix[(int)ModelView].setIdentity();
     m_matrix[(int)Projection].setIdentity();
@@ -446,6 +447,13 @@ void RenderStateGL2::freeTexture(texture_t tex)
         glDeleteTextures(1, &tex);
 }
 
+void RenderStateGL2::setFogParams(const FogParams &fogParams)
+{
+    m_clearColor = fogParams.color;
+    if(program())
+        program()->setFogParams(fogParams);
+}
+
 bool RenderStateGL2::beginFrame()
 {
     m_frameStat->beginTime();
@@ -461,9 +469,9 @@ bool RenderStateGL2::beginFrame()
     pushMatrix();
     loadIdentity();
     if(shaderLoaded)
-        glClearColor(m_bgColor.x, m_bgColor.y, m_bgColor.z, m_bgColor.w);
+        glClearColor(m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.w);
     else
-        glClearColor(1.0, 0.0, 0.0, 1.0);
+        glClearColor(0.6, 0.2, 0.2, 1.0);
     m_clearStat->beginTime();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     m_clearStat->endTime();

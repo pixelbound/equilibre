@@ -21,7 +21,6 @@
 
 RenderState::RenderState()
 {
-    m_bgColor = vec4(0.6, 0.6, 1.0, 1.0);
 }
 
 RenderState::~RenderState()

@@ -18,9 +18,11 @@
 
 uniform int u_has_texture;
 uniform sampler2DArray u_material_texture;
+uniform vec4 u_fogColor;
 
 varying vec4 v_color;
 varying vec3 v_texCoords;
+varying float v_fogFactor;
 
 void main()
 {
@@ -32,4 +34,6 @@ void main()
     // XXX sort objects back to front in renderer
     if(gl_FragColor.w == 0.0)
         discard;
+    
+    gl_FragColor = mix(u_fogColor, gl_FragColor, v_fogFactor);
 }
