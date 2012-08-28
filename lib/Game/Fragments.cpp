@@ -240,6 +240,57 @@ bool ActorFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+LightDefFragment::LightDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool LightDefFragment::unpack(WLDReader *s)
+{
+    s->unpackFields("II", &m_flags, &m_params2);
+    if(m_flags & 0x8)
+    {
+        // ARGB light source.
+        s->unpackFields("Ifff", &m_attenuation, &m_color.w, &m_color.x, &m_color.y, &m_color.z);
+    }
+    else
+    {
+        // White light source.
+        s->unpackField('f', &m_color.x);
+        m_color.y = m_color.z = m_color.x;
+        m_color.w = 1.0f;
+        m_attenuation = 0;
+    }
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+LightFragment::LightFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool LightFragment::unpack(WLDReader *s)
+{
+    s->unpackReference(&m_def);
+    s->unpackField('I', &m_flags);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+LightSourceFragment::LightSourceFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool LightSourceFragment::unpack(WLDReader *s)
+{
+    s->unpackReference(&m_ref);
+    s->unpackFields("Iffff", &m_flags, &m_pos.x, &m_pos.y, &m_pos.z, &m_radius);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 SpellParticleDefFragment::SpellParticleDefFragment(QString name) : WLDFragment(ID, name)
 {
 }
@@ -330,6 +381,7 @@ bool MeshLightingDefFragment::unpack(WLDReader *s)
         s->unpackStruct("BBBB", color);
         m_colors.append(qRgba(color[0], color[1], color[2], color[3]));
     }
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -342,6 +394,7 @@ bool MeshLightingFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
     s->unpackField('I', &m_flags);
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -177,6 +177,52 @@ public:
 };
 
 /*!
+  \brief This type of fragment (0x1B) defines light sources.
+  */
+class LightDefFragment : public WLDFragment
+{
+public:
+    LightDefFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x1B;
+    uint32_t m_flags;
+    uint32_t m_params2;
+    uint32_t m_attenuation;
+    vec4 m_color;
+};
+
+/*!
+  \brief This type of fragment (0x1C) defines instances of light sources (fragment 0x1B).
+  */
+class LightFragment : public WLDFragment
+{
+public:
+    LightFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x1C;
+    LightDefFragment *m_def;
+    uint32_t m_flags;
+};
+
+/*!
+  \brief This type of fragment (0x28) defines placeable light sources.
+  */
+class LightSourceFragment : public WLDFragment
+{
+public:
+    LightSourceFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x28;
+    LightFragment *m_ref;
+    uint32_t m_flags;
+    vec3 m_pos;
+    float m_radius;
+};
+
+/*!
   \brief This type of fragment (0x26) defines spell particle bolts.
   */
 class SpellParticleDefFragment : public WLDFragment
