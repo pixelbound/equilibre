@@ -60,8 +60,10 @@ MeshBuffer::MeshBuffer()
 {
     vertexBuffer = 0;
     indexBuffer = 0;
+    colorBuffer = 0;
     vertexBufferSize = 0;
     indexBufferSize = 0;
+    colorBufferSize = 0;
 }
 
 MeshBuffer::~MeshBuffer()
@@ -144,4 +146,10 @@ void MeshBuffer::clearIndices()
 {
     indices.clear();
     indices.squeeze();
+}
+
+void MeshBuffer::clearColors()
+{
+    colors.clear();
+    colors.squeeze();
 }

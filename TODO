@@ -1,7 +1,6 @@
-fog
 lights, vertex colors
-    have an uniform array of material state -> is it still needed?
 sort items front to back
+delete frame counters when deleting ZoneObjects/ZoneTerrain
 Draw opaque materials and then masked materials
 remove z-fighting of sea textures
 Load sky box

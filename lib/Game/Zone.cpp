@@ -549,13 +549,25 @@ void ZoneObjects::importActors()
         }
     }
     
-    // XXX import objects' lighting colors in a VBO
-    
     // Add actors to the actors octree index.
     // XXX use the same octree than for the geometry?
     m_objectTree = new OctreeIndex(bounds, 8);
     foreach(WLDActor *actor, m_objects)
         m_objectTree->add(actor);   
+}
+
+void ZoneObjects::upload(RenderState *state)
+{
+    // Copy objects' lighting colors to a GPU buffer.
+    MeshBuffer *meshBuf = m_pack->upload(state);
+    foreach(WLDActor *actor, m_objects)
+        actor->importColorData(meshBuf);
+    meshBuf->colorBufferSize = meshBuf->colors.count() * sizeof(uint32_t);
+    if(meshBuf->colorBufferSize > 0)
+    {
+        meshBuf->colorBuffer = state->createBuffer(meshBuf->colors.constData(), meshBuf->colorBufferSize);
+        meshBuf->clearColors();
+    }
 }
 
 static bool zoneActorGroupLessThan(const WLDActor *a, const WLDActor *b)
@@ -574,7 +586,7 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     
     // Create a GPU buffer for the objects' vertices and indices if needed.
     if(m_pack->buffer() == NULL)
-        m_pack->upload(state);
+        upload(state);
     
     // Build a list of visible objects and sort them by mesh.
     m_objectTree->findVisible(m_visibleObjects, frustum, m_zone->cullObjects());
@@ -594,6 +606,7 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
             {
                 if(mvMatrices.count() > 0)
                 {
+                    // XXX add a colorBuffer parameter?
                     state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
                     mvMatrices.clear();
                 }

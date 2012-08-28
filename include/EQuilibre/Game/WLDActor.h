@@ -64,6 +64,8 @@ public:
     WLDModel * complexModel() const;
     WLDMesh * simpleModel() const;
     ModelType type() const;
+    
+    const BufferSegment * colorSegment() const;
 
     QString animName() const;
     void setAnimName(QString name);
@@ -87,6 +89,7 @@ public:
     
     void update();
 
+    void importColorData(MeshBuffer *meshBuf);
     void draw(RenderState *state);
 
 private:
@@ -98,6 +101,7 @@ private:
     AABox m_boundsAA;
     WLDModel *m_complexModel;
     WLDMesh *m_simpleModel;
+    BufferSegment m_colorSegment;
     ModelType m_type;
     QString m_animName;
     double m_animTime;

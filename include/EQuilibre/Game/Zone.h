@@ -171,7 +171,7 @@ public:
 private:
     void importMeshes();
     void importActors();
-    MeshBuffer * upload(RenderState *state);
+    void upload(RenderState *state);
     
     Zone *m_zone;
     ObjectPack *m_pack;

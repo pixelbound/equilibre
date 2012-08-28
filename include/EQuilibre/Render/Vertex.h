@@ -82,15 +82,19 @@ public:
     void upload(RenderState *state);
     void clearVertices();
     void clearIndices();
+    void clearColors();
     
     QVector<Vertex> vertices;
     QVector<uint32_t> indices;
+    QVector<uint32_t> colors;
     QVector<MaterialGroup> matGroups;
     QVector<MeshData *> meshes;
     buffer_t vertexBuffer;
     buffer_t indexBuffer;
+    buffer_t colorBuffer;
     uint32_t vertexBufferSize;
     uint32_t indexBufferSize;
+    uint32_t colorBufferSize;
 };
 
 #endif

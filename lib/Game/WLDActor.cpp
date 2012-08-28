@@ -25,6 +25,7 @@ WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent)
     m_simpleModel = simpleModel;
     m_complexModel = NULL;
     m_type = Simple;
+    m_frag = frag;
     if(frag)
     {
         m_location = frag->m_location;
@@ -44,6 +45,7 @@ WLDActor::WLDActor(WLDModel *model, QObject *parent) : QObject(parent)
 {
     m_complexModel = model;
     m_simpleModel = NULL;
+    m_frag = NULL;
     m_type = Complex;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
@@ -59,6 +61,7 @@ WLDActor::WLDActor(ActorFragment *frag, WLDModel *model, QObject *parent) : QObj
     m_complexModel = model;
     m_simpleModel = NULL;
     m_type = Complex;
+    m_frag = frag;
     if(frag)
     {
         m_location = frag->m_location;
@@ -109,6 +112,11 @@ WLDMesh * WLDActor::simpleModel() const
 WLDActor::ModelType WLDActor::type() const
 {
     return m_type;
+}
+
+const BufferSegment * WLDActor::colorSegment() const
+{
+    return &m_colorSegment;
 }
 
 QString WLDActor::animName() const
@@ -202,6 +210,19 @@ void WLDActor::update()
             * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
             * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
             * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
+}
+
+void WLDActor::importColorData(MeshBuffer *meshBuf)
+{
+    // XXX handle complex models here.
+    if(!m_simpleModel || !m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
+        return;
+    const QVector<QRgb> &colors = m_frag->m_lighting->m_def->m_colors;
+    m_colorSegment.offset = meshBuf->colors.count();
+    m_colorSegment.count = colors.count();
+    m_colorSegment.elementSize = sizeof(uint32_t);
+    for(int i = 0; i < m_colorSegment.count; i++)
+        meshBuf->colors.append(colors[i]);
 }
 
 void WLDActor::draw(RenderState *state)

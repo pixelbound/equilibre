@@ -231,7 +231,7 @@ bool ActorFragment::unpack(WLDReader *s)
     m_rotation = vec3(rotX * rotFactor, rotY * rotFactor, rotZ * rotFactor);
     s->unpackFields("ff", &scaleX, &scaleY);
     m_scale = vec3(scaleX, scaleY, 1.0);
-    s->unpackField('r', &m_lighting);
+    s->unpackReference(&m_lighting);
     // Fix pathological z locations.
     if((m_location.z > -32768.0f) && (m_location.z < -32767.0f))
         m_location.z = 0.0f;
