@@ -26,6 +26,7 @@
 RenderStateGL2::RenderStateGL2() : RenderState()
 {
     m_clearColor = vec4(0.6, 0.6, 0.9, 1.0);
+    m_ambientLightColor = vec4(1.0, 1.0, 1.0, 1.0);
     m_matrixMode = ModelView;
     m_matrix[(int)ModelView].setIdentity();
     m_matrix[(int)Projection].setIdentity();
@@ -135,7 +136,7 @@ void RenderStateGL2::createCube()
     m_cube->matGroups.push_back(mg);
     
     Material *mat = new Material();
-    //mat->setOpaque(false);
+    mat->setOpaque(false);
     
     m_cubeMats = new MaterialMap();
     m_cubeMats->setMaterial(mg.matID, mat);
@@ -143,24 +144,30 @@ void RenderStateGL2::createCube()
 
 void RenderStateGL2::drawBox(const AABox &box)
 {
+    const vec4 boxColor(0.2, 0.2, 0.2, 0.4);
     vec3 size = box.high - box.low;
     pushMatrix();
     translate(box.low.x, box.low.y, box.low.z);
     scale(size.x, size.y, size.z);
     translate(0.5, 0.5, 0.5);
     fromEightCorners(m_cube, cubeVertices);
+    program()->setAmbientLight(boxColor);
     beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
+    program()->setAmbientLight(m_ambientLightColor);
     popMatrix();
 }
 
 void RenderStateGL2::drawFrustum(const Frustum &frustum)
 {
+    const vec4 frustumColor(0.2, 0.2, 0.2, 0.4);
     fromEightCorners(m_cube, frustum.corners());
+    program()->setAmbientLight(frustumColor);
     beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
+    program()->setAmbientLight(m_ambientLightColor);
 }
 
 RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode render,
@@ -447,6 +454,7 @@ void RenderStateGL2::freeTexture(texture_t tex)
 
 void RenderStateGL2::setAmbientLight(vec4 lightColor)
 {
+    m_ambientLightColor = lightColor;
     if(program())
         program()->setAmbientLight(lightColor);
 }
@@ -467,8 +475,6 @@ bool RenderStateGL2::beginFrame()
     if(shaderLoaded)
         glUseProgram(prog->program());
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     setMatrixMode(ModelView);
     pushMatrix();
     loadIdentity();

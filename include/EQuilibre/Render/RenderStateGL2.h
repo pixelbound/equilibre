@@ -102,6 +102,7 @@ private:
 
     Frustum m_frustum;
     vec4 m_clearColor;
+    vec4 m_ambientLightColor;
     RenderState::MatrixMode m_matrixMode;
     matrix4 m_matrix[3];
     std::vector<matrix4> m_matrixStack[3];

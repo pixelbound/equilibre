@@ -31,7 +31,6 @@ void main()
         gl_FragColor = gl_FragColor * texture2DArray(u_material_texture,
                                                      vec3(v_texCoords.xy, v_texCoords.z - 1.0), 0.0);
     // discard transparent pixels
-    // XXX sort objects back to front in renderer
     if(gl_FragColor.w == 0.0)
         discard;
     

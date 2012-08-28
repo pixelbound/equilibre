@@ -55,6 +55,7 @@ ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
         m_uniform[i] = -1;
     m_drawCalls = 0;
     m_textureBinds = 0;
+    m_blendingEnabled = m_currentMatNeedsBlending = false;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
     m_meshData.clear();
 }
@@ -281,6 +282,7 @@ void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
     {
         glUniform1i(m_uniform[U_MAT_HAS_TEXTURE], 0);
     }
+    m_currentMatNeedsBlending = !m->isOpaque();
 }
 
 void ShaderProgramGL2::endApplyMaterial(MaterialMap *map, Material *m)
@@ -292,6 +294,7 @@ void ShaderProgramGL2::endApplyMaterial(MaterialMap *map, Material *m)
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(target, 0);
     }
+    m_currentMatNeedsBlending = false;
 }
 
 void ShaderProgramGL2::enableVertexAttribute(int attr, int index)
@@ -384,9 +387,8 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
     {
         uint32_t matID = meshBuf->matGroups[i].matID;
         Material *mat = m_meshData.materials->material(matID);
-        // skip meshes that don't have a material
-        // XXX fix rendering non-opaque polygons
-        if(!mat || !mat->isOpaque())
+        // Skip meshes that don't have a material.
+        if(!mat)
             continue;
         groups.append(meshBuf->matGroups[i]);
         groupMats.append(mat);
@@ -457,6 +459,19 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
 
 void ShaderProgramGL2::drawMaterialGroup(const MaterialGroup &mg)
 {
+    // Enable or disable blending based on the current material.
+    if(m_currentMatNeedsBlending && !m_blendingEnabled)
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        m_blendingEnabled = true;
+    }
+    else if(!m_currentMatNeedsBlending && m_blendingEnabled)
+    {
+        glDisable(GL_BLEND);
+        m_blendingEnabled = false;
+    }
+    
     const GLuint mode = GL_TRIANGLES;
     if(m_meshData.haveIndices)
         glDrawElements(mode, mg.count, GL_UNSIGNED_INT, m_meshData.indices + mg.offset);

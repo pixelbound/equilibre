@@ -393,6 +393,9 @@ void CharacterScene::draw()
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
     
+    vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
+    m_state->setAmbientLight(ambientLight);
+    
     WLDActor *charModel = selectedCharacter();
     if(charModel)
     {

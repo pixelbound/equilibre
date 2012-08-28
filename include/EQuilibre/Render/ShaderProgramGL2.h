@@ -119,6 +119,8 @@ protected:
     MeshDataGL2 m_meshData;
     int m_drawCalls;
     int m_textureBinds;
+    bool m_blendingEnabled;
+    bool m_currentMatNeedsBlending;
 };
 
 class UniformSkinningProgram : public ShaderProgramGL2
