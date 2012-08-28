@@ -37,7 +37,7 @@ public:
     virtual void beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
     virtual void drawMesh();
-    virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances);
     virtual void endDrawMesh();
     
     virtual void drawBox(const AABox &box);

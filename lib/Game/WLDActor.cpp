@@ -114,9 +114,9 @@ WLDActor::ModelType WLDActor::type() const
     return m_type;
 }
 
-const BufferSegment * WLDActor::colorSegment() const
+const BufferSegment & WLDActor::colorSegment() const
 {
-    return &m_colorSegment;
+    return m_colorSegment;
 }
 
 QString WLDActor::animName() const

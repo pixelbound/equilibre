@@ -87,7 +87,7 @@ public:
     
     virtual void beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
                                const BoneTransform *bones, int boneCount);
-    virtual void drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances);
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances);
     virtual void endDrawMesh();
 
     void setModelViewMatrix(const matrix4 &modelView);
@@ -107,6 +107,7 @@ protected:
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
     void drawMaterialGroup(const MaterialGroup &mg);
+    void bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor);
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
 

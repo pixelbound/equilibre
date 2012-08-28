@@ -26,13 +26,24 @@ varying float v_fogFactor;
 
 void main()
 {
-    gl_FragColor = v_color;
+    vec4 intermColor;
     if(u_has_texture != 0)
-        gl_FragColor = gl_FragColor * texture2DArray(u_material_texture,
-                                                     vec3(v_texCoords.xy, v_texCoords.z - 1.0), 0.0);
-    // discard transparent pixels
-    if(gl_FragColor.w == 0.0)
-        discard;
+    {
+        // Mix the base color and texture color into the intermediate color.
+        vec3 actualTexCoords = vec3(v_texCoords.xy, v_texCoords.z - 1.0);
+        vec4 texColor = texture2DArray(u_material_texture, actualTexCoords, 0.0);
+        
+        // Discard fully transparent pixels (masked texture).
+        if(texColor.w == 0.0)
+            discard;
+        intermColor = mix(vec4(v_color.xyz, 1.0), texColor, v_color.w);
+    }
+    else
+    {
+        // No texture bound, use the base color as is.
+        intermColor = v_color;   
+    }
     
-    gl_FragColor = mix(u_fogColor, gl_FragColor, v_fogFactor);
+    // Apply fog to the intermdiate color.
+    gl_FragColor = mix(u_fogColor, intermColor, v_fogFactor);
 }

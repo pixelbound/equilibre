@@ -69,16 +69,16 @@ void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
 
 void RenderStateGL2::drawMesh()
 {
-    drawMeshBatch(&m_matrix[(int)ModelView], 1);
+    drawMeshBatch(&m_matrix[(int)ModelView], NULL, 1);
 }
 
-void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
+void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
 {
     ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
     prog->setProjectionMatrix(m_matrix[(int)Projection]);
-    prog->drawMeshBatch(mvMatrices, instances);
+    prog->drawMeshBatch(mvMatrices, colorSegments, instances);
 }
 
 void RenderStateGL2::endDrawMesh()

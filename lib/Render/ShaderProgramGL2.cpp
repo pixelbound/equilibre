@@ -359,7 +359,6 @@ void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *mat
     enableVertexAttribute(A_POSITION);
     enableVertexAttribute(A_NORMAL);
     enableVertexAttribute(A_TEX_COORDS);
-    enableVertexAttribute(A_COLOR);
     if(bones && (boneCount > 0))
     {
         enableVertexAttribute(A_BONE_INDEX);
@@ -380,7 +379,7 @@ void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *mat
     uploadVertexAttributes(meshBuf);
 }
 
-void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instances)
+void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
 {
     // No material - nothing is drawn.
     if(!m_meshData.pending || !m_meshData.materials)
@@ -415,7 +414,8 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
             }
         }
     }
-
+    
+    bool enabledColor = false;
     if(arrayMat != NULL)
     {
         // If all material groups use the same texture we can render them together.
@@ -424,7 +424,8 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
         {
             setModelViewMatrix(mvMatrices[i]);
             
-            // XXX bind the color buffer if needed
+            // Bind any color attribute if needed.
+            bindColorBuffer(colorSegments, i, enabledColor);
 
             // Assume groups are sorted by offset and merge as many as possible.
             MaterialGroup merged;
@@ -458,9 +459,61 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, uint32_t instanc
             for(uint32_t j = 0; j < instances; j++)
             {
                 setModelViewMatrix(mvMatrices[j]);
+                bindColorBuffer(colorSegments, i, enabledColor);
                 drawMaterialGroup(groups[i]);
             }
             endApplyMaterial(m_meshData.materials, mat);
+        }
+    }
+    
+    if(enabledColor)
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        disableVertexAttribute(A_COLOR);
+    }
+}
+
+void ShaderProgramGL2::bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor)
+{
+    // Make sure the attribute is actually used by the shader.
+    if(m_attr[A_COLOR] < 0)
+        return;
+    
+    const MeshBuffer *meshBuf = m_meshData.meshBuf;
+    if(colorSegments)
+    {
+        // Use the actor's per-instance color buffer.
+        BufferSegment colorSegment = colorSegments[instanceID];
+        if(colorSegment.count > 0)
+        {
+            if(!enabledColor)
+            {
+                enableVertexAttribute(A_COLOR);
+                enabledColor = true;
+            }
+            glBindBuffer(GL_ARRAY_BUFFER, meshBuf->colorBuffer);
+            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
+                                  0, (GLvoid *)colorSegment.address());
+        }
+        else if(enabledColor)
+        {
+            // No color information for this actor, do not reuse the previous actor's.
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            disableVertexAttribute(A_COLOR);
+            enabledColor = false;
+        }
+    }
+    else
+    {
+        // Use the color inside the mesh's vertex buffer.
+        Q_ASSERT(meshBuf->vertexBuffer && "Using vertex arrays with color is not supported.");
+        if(!enabledColor)
+        {
+            enableVertexAttribute(A_COLOR);
+            glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
+            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
+                                  sizeof(Vertex), (GLvoid *)offsetof(Vertex, color));
+            enabledColor = true;
         }
     }
 }

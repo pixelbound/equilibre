@@ -65,7 +65,7 @@ public:
     WLDMesh * simpleModel() const;
     ModelType type() const;
     
-    const BufferSegment * colorSegment() const;
+    const BufferSegment & colorSegment() const;
 
     QString animName() const;
     void setAnimName(QString name);

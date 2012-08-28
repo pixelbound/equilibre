@@ -38,6 +38,7 @@ void main()
     v_texCoords = a_texCoords;
     
     v_color = u_ambientLight;
+    //v_color = u_ambientLight * a_color; // debug the per-vertex color values.
     
     // Compute the fog factor.
     const float LOG2 = 1.442695;

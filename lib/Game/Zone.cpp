@@ -597,6 +597,8 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     WLDMesh *previousMesh = NULL;
     MeshBuffer *meshBuf = m_pack->buffer();
     QVector<matrix4> mvMatrices;
+    QVector<BufferSegment> colorSegments;
+    int instanceCount = 0;
     foreach(const WLDActor *actor, m_visibleObjects)
     {
         WLDMesh *currentMesh = actor->simpleModel();
@@ -604,11 +606,14 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
         {
             if(previousMesh)
             {
-                if(mvMatrices.count() > 0)
+                if(instanceCount > 0)
                 {
-                    // XXX add a colorBuffer parameter?
-                    state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+                    state->drawMeshBatch(mvMatrices.constData(),
+                                         colorSegments.constData(),
+                                         instanceCount);
                     mvMatrices.clear();
+                    colorSegments.clear();
+                    instanceCount = 0;
                 }
                 state->endDrawMesh();
             }
@@ -623,14 +628,19 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
         state->pushMatrix();
         state->multiplyMatrix(actor->modelMatrix());
         mvMatrices.append(state->matrix(RenderState::ModelView));
+        colorSegments.append(actor->colorSegment());
+        instanceCount++;
         state->popMatrix();
     }
     if(previousMesh)
     {
-        if(mvMatrices.count() > 0)
+        if(instanceCount > 0)
         {
-            state->drawMeshBatch(mvMatrices.constData(), mvMatrices.count());
+            state->drawMeshBatch(mvMatrices.constData(),
+                                 colorSegments.constData(),
+                                 instanceCount);
             mvMatrices.clear();
+            colorSegments.clear();
         }
         state->endDrawMesh();
     }
