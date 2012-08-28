@@ -231,7 +231,7 @@ bool ActorFragment::unpack(WLDReader *s)
     m_rotation = vec3(rotX * rotFactor, rotY * rotFactor, rotZ * rotFactor);
     s->unpackFields("ff", &scaleX, &scaleY);
     m_scale = vec3(scaleX, scaleY, 1.0);
-    s->unpackField('r', &m_fragment2);
+    s->unpackField('r', &m_lighting);
     // Fix pathological z locations.
     if((m_location.z > -32768.0f) && (m_location.z < -32767.0f))
         m_location.z = 0.0f;
@@ -313,6 +313,35 @@ bool MaterialPaletteFragment::unpack(WLDReader *s)
             m_materials.append(frag);
     }
     return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MeshLightingDefFragment::MeshLightingDefFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool MeshLightingDefFragment::unpack(WLDReader *s)
+{
+    uint8_t color[4];
+    s->unpackFields("IIIII", &m_data1, &m_size1, &m_data2, &m_data3, &m_data4);
+    for(uint32_t i = 0; i < m_size1; i++)
+    {
+        s->unpackStruct("BBBB", color);
+        m_colors.append(qRgba(color[0], color[1], color[2], color[3]));
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+MeshLightingFragment::MeshLightingFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool MeshLightingFragment::unpack(WLDReader *s)
+{
+    s->unpackReference(&m_def);
+    s->unpackField('I', &m_flags);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

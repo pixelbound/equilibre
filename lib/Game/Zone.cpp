@@ -549,6 +549,8 @@ void ZoneObjects::importActors()
         }
     }
     
+    // XXX import objects' lighting colors in a VBO
+    
     // Add actors to the actors octree index.
     // XXX use the same octree than for the geometry?
     m_objectTree = new OctreeIndex(bounds, 8);

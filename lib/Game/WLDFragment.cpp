@@ -100,6 +100,10 @@ WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
         return new MaterialDefFragment(name);
     case MaterialPaletteFragment::ID:
         return new MaterialPaletteFragment(name);
+    case MeshLightingDefFragment::ID:
+        return new MeshLightingDefFragment(name);
+    case MeshLightingFragment::ID:
+        return new MeshLightingFragment(name);
     case MeshDefFragment::ID:
         return new MeshDefFragment(name);
     case MeshFragment::ID:

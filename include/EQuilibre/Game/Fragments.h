@@ -31,6 +31,7 @@ typedef QPair<uint16_t, uint16_t> vec2us;
 
 class TrackFragment;
 class MeshFragment;
+class MeshLightingFragment;
 
 /*!
   \brief This type of fragment (0x03) holds the name of a texture bitmap.
@@ -172,7 +173,7 @@ public:
     vec3 m_rotation;
     float m_param1;
     vec3 m_scale;
-    WLDFragment *m_fragment2; // 0x33, vertex color ref.
+    MeshLightingFragment *m_lighting;
 };
 
 /*!
@@ -258,6 +259,34 @@ public:
     const static uint32_t ID = 0x31;
     uint32_t m_flags;
     QVector<MaterialDefFragment *> m_materials;
+};
+
+/*!
+  \brief This type of fragment (0x32) defines a mesh's lighting.
+  */
+class MeshLightingDefFragment : public WLDFragment
+{
+public:
+    MeshLightingDefFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x32;
+    uint32_t m_data1, m_size1, m_data2, m_data3, m_data4;
+    QVector<QRgb> m_colors;
+};
+
+/*!
+  \brief This type of fragment (0x33) defines instances of mesh lighting (fragment 0x32).
+  */
+class MeshLightingFragment : public WLDFragment
+{
+public:
+    MeshLightingFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x33;
+    uint32_t m_flags;
+    MeshLightingDefFragment *m_def;
 };
 
 /*!

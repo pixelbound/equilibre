@@ -17,6 +17,7 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec3 a_texCoords;
+attribute vec4 a_color;
 
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;

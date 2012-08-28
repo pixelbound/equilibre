@@ -38,6 +38,7 @@ static const ShaderSymbolInfo Attributes[] =
     {A_POSITION, "a_position"},
     {A_NORMAL, "a_normal"},
     {A_TEX_COORDS, "a_texCoords"},
+    {A_COLOR, "a_color"},
     {A_BONE_INDEX, "a_boneIndex"},
     {A_MODEL_VIEW_0, "a_modelViewMatrix"},
     {0, NULL}
@@ -315,6 +316,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
     const uint8_t *posPointer = (const uint8_t *)&vd->position;
     const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
     const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
+    const uint8_t *colorPointer = (const uint8_t *)&vd->color;
     const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
     if(meshBuf->vertexBuffer != 0)
     {
@@ -322,7 +324,8 @@ void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
         texCoordsPointer = normalPointer + sizeof(vec3);
-        bonePointer = texCoordsPointer + sizeof(vec3);
+        colorPointer = texCoordsPointer + sizeof(vec3);
+        bonePointer = colorPointer + sizeof(uint32_t);
     }
     glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), posPointer);
@@ -332,6 +335,9 @@ void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
     if(m_attr[A_TEX_COORDS] >= 0)
         glVertexAttribPointer(m_attr[A_TEX_COORDS], 3, GL_FLOAT, GL_FALSE,
             sizeof(Vertex), texCoordsPointer);
+    if(m_attr[A_COLOR] >= 0)
+        glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
+            sizeof(Vertex), colorPointer);
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
             sizeof(Vertex), bonePointer);
@@ -353,6 +359,7 @@ void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *mat
     enableVertexAttribute(A_POSITION);
     enableVertexAttribute(A_NORMAL);
     enableVertexAttribute(A_TEX_COORDS);
+    enableVertexAttribute(A_COLOR);
     if(bones && (boneCount > 0))
     {
         enableVertexAttribute(A_BONE_INDEX);
@@ -494,6 +501,7 @@ void ShaderProgramGL2::endDrawMesh()
     disableVertexAttribute(A_POSITION);
     disableVertexAttribute(A_NORMAL);
     disableVertexAttribute(A_TEX_COORDS);
+    disableVertexAttribute(A_COLOR);
     m_meshData.clear();
 }
 

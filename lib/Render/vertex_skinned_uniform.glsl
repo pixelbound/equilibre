@@ -17,6 +17,7 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec3 a_texCoords;
+attribute vec4 a_color;
 attribute float a_boneIndex; // to be compatible with OpenGL < 3.0
 
 uniform mat4 u_modelViewMatrix;
