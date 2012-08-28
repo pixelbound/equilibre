@@ -372,6 +372,11 @@ const AABox & ZoneTerrain::bounds() const
 
 void ZoneTerrain::clear()
 {
+    foreach(WLDActor *part, m_zoneParts)
+    {
+        delete part->simpleModel();
+        delete part;
+    }
     delete m_zoneBuffer;
     delete m_zoneMaterials;
     m_zoneBuffer = NULL;
@@ -391,7 +396,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     {
         WLDMesh *meshPart = new WLDMesh(meshDef, partID++);
         m_zoneBounds.extendTo(meshPart->boundsAA());
-        m_zoneParts.append(meshPart);
+        m_zoneParts.append(new WLDActor(NULL, meshPart));
     }
     vec3 padding(1.0, 1.0, 1.0);
     m_zoneBounds.low = m_zoneBounds.low - padding;
@@ -405,8 +410,8 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     
     // Add zone regions to the zone octree index.
     m_zoneTree = new OctreeIndex(m_zoneBounds, 8);
-    foreach(WLDMesh *meshPart, m_zoneParts)
-        m_zoneTree->add(new WLDActor(NULL, meshPart, m_zone));
+    foreach(WLDActor *part, m_zoneParts)
+        m_zoneTree->add(part);
     
     return true;
 }
@@ -422,9 +427,9 @@ MeshBuffer * ZoneTerrain::upload(RenderState *state)
     meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
-    foreach(WLDMesh *mesh, m_zoneParts)
+    foreach(WLDActor *part, m_zoneParts)
     {
-        MeshData *meshData = mesh->importFrom(meshBuf);
+        MeshData *meshData = part->simpleModel()->importFrom(meshBuf);
         meshData->updateTexCoords(m_zoneMaterials);
     }
 #else
@@ -501,6 +506,8 @@ const QMap<QString, WLDMesh *> & ZoneObjects::models() const
 
 void ZoneObjects::clear()
 {
+    foreach(WLDActor *actor, m_objects)
+        delete actor;
     delete m_objectTree;
     delete m_pack;
     delete m_objDefWld;
@@ -539,7 +546,7 @@ void ZoneObjects::importActors()
         WLDMesh *model = models.value(actorName);
         if(model)
         {
-            WLDActor *actor = new WLDActor(actorFrag, model, m_zone);
+            WLDActor *actor = new WLDActor(actorFrag, model);
             bounds.extendTo(actor->boundsAA());
             m_objects.append(actor);
         }
@@ -685,8 +692,8 @@ MaterialMap * ObjectPack::materials() const
 void ObjectPack::clear()
 {
     delete m_meshBuf;
-    foreach(WLDMesh *actor, m_models)
-        delete actor;
+    foreach(WLDMesh *model, m_models)
+        delete model;
     m_models.clear();
     delete m_wld;
     delete m_archive;
@@ -768,7 +775,12 @@ const QMap<QString, WLDActor *> CharacterPack::models() const
 void CharacterPack::clear()
 {
     foreach(WLDActor *actor, m_models)
+    {
+        WLDModel *model = actor->complexModel();
+        delete model->skeleton();
+        delete model;
         delete actor;
+    }
     m_models.clear();
     delete m_wld;
     delete m_archive;
@@ -837,7 +849,6 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             if(!skin)
             {
                 skin = model->newSkin(palName, archive);
-                skin->setPalette(new WLDMaterialPalette(archive));
                 skin->palette()->copyFrom(model->skin()->palette());
             }
             skin->palette()->addMaterialDef(matDef);

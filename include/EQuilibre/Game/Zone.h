@@ -143,7 +143,7 @@ private:
     MeshBuffer * upload(RenderState *state);
 
     Zone *m_zone;
-    QVector<WLDMesh *> m_zoneParts;
+    QVector<WLDActor *> m_zoneParts;
     MeshBuffer *m_zoneBuffer;
     OctreeIndex *m_zoneTree;
     MaterialMap *m_zoneMaterials;

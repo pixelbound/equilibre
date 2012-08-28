@@ -17,7 +17,6 @@
 #ifndef EQUILIBRE_WLD_MODEL_H
 #define EQUILIBRE_WLD_MODEL_H
 
-#include <QObject>
 #include <QList>
 #include <QMap>
 #include "EQuilibre/Render/Platform.h"
@@ -44,10 +43,10 @@ class WLDAnimation;
 /*!
   \brief Describes a model (such as an object or a character) that can be rendered.
   */
-class GAME_DLL WLDModel : public QObject
+class GAME_DLL WLDModel
 {
 public:
-    WLDModel(PFSArchive *archive, QObject *parent = 0);
+    WLDModel(PFSArchive *archive);
     virtual ~WLDModel();
 
     static QList<MeshDefFragment *> listMeshes(ActorDefFragment *def);
@@ -59,25 +58,26 @@ public:
     void setSkeleton(WLDSkeleton *skeleton);
 
     WLDModelSkin *skin() const;
-    QMap<QString, WLDModelSkin *> & skins();
     const QMap<QString, WLDModelSkin *> & skins() const;
 
     WLDModelSkin * newSkin(QString name, PFSArchive *archive);
 
 private:
+    friend class WLDModelSkin;
     MeshBuffer *m_buffer;
     WLDSkeleton *m_skel;
     WLDModelSkin *m_skin;
     QMap<QString, WLDModelSkin *> m_skins;
+    QList<WLDMesh *> m_meshes;
 };
 
 /*!
   \brief Describes part of a model.
   */
-class GAME_DLL WLDMesh : public QObject
+class GAME_DLL WLDMesh
 {
 public:
-    WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent = 0);
+    WLDMesh(MeshDefFragment *meshDef, uint32_t partID);
     virtual ~WLDMesh();
 
     MeshData * data() const;
@@ -105,10 +105,10 @@ private:
   \brief Defines a set of materials (e.g. textures) that can be used for a model.
   One model can have multiple palettes but can only use one at the same time.
   */
-class GAME_DLL WLDMaterialPalette : public QObject
+class GAME_DLL WLDMaterialPalette
 {
 public:
-    WLDMaterialPalette(PFSArchive *archive, QObject *parent = 0);
+    WLDMaterialPalette(PFSArchive *archive);
     
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
@@ -140,10 +140,10 @@ private:
   \brief Describes one way an actor can be rendered. A skin can include a texture
   palette and alternative meshes (e.g. for a character's head).
   */
-class GAME_DLL WLDModelSkin : public QObject
+class GAME_DLL WLDModelSkin
 {
 public:
-    WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, QObject *parent = 0);
+    WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive);
     virtual ~WLDModelSkin();
 
     QString name() const;
@@ -151,7 +151,6 @@ public:
     const AABox & boundsAA() const;
 
     WLDMaterialPalette *palette() const;
-    void setPalette(WLDMaterialPalette *newPal);
     
     MaterialMap *materials() const;
     void setMaterials(MaterialMap *newMaterials);

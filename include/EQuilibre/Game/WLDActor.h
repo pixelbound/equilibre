@@ -42,12 +42,12 @@ public:
 /*!
   \brief Describes an instance of a model (such as an object or a character).
   */
-class GAME_DLL WLDActor : public QObject
+class GAME_DLL WLDActor
 {
 public:
-    WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent = 0);
-    WLDActor(WLDModel *complexModel, QObject *parent = 0);
-    WLDActor(ActorFragment *frag, WLDModel *complexModel, QObject *parent = 0);
+    WLDActor(ActorFragment *frag, WLDMesh *simpleModel);
+    WLDActor(WLDModel *complexModel);
+    WLDActor(ActorFragment *frag, WLDModel *complexModel);
     virtual ~WLDActor();
 
     const vec3 & location() const;

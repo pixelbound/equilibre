@@ -20,7 +20,7 @@
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Render/RenderState.h"
 
-WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent)
+WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel)
 {
     m_simpleModel = simpleModel;
     m_complexModel = NULL;
@@ -41,7 +41,7 @@ WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel, QObject *parent)
     update();
 }
 
-WLDActor::WLDActor(WLDModel *model, QObject *parent) : QObject(parent)
+WLDActor::WLDActor(WLDModel *model)
 {
     m_complexModel = model;
     m_simpleModel = NULL;
@@ -56,7 +56,7 @@ WLDActor::WLDActor(WLDModel *model, QObject *parent) : QObject(parent)
     update();
 }
 
-WLDActor::WLDActor(ActorFragment *frag, WLDModel *model, QObject *parent) : QObject(parent)
+WLDActor::WLDActor(ActorFragment *frag, WLDModel *model)
 {
     m_complexModel = model;
     m_simpleModel = NULL;

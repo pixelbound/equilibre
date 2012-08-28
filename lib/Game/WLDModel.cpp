@@ -23,7 +23,7 @@
 #include "EQuilibre/Render/RenderState.h"
 #include "EQuilibre/Render/Material.h"
 
-WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
+WLDModel::WLDModel(PFSArchive *archive)
 {
     m_buffer = 0;
     m_skel = 0;
@@ -33,6 +33,10 @@ WLDModel::WLDModel(PFSArchive *archive, QObject *parent) : QObject(parent)
 
 WLDModel::~WLDModel()
 {
+    foreach(WLDModelSkin *skin, m_skins)
+        delete skin;
+    foreach(WLDMesh *mesh, m_meshes)
+        delete mesh;
 }
 
 MeshBuffer * WLDModel::buffer() const
@@ -50,7 +54,7 @@ WLDSkeleton * WLDModel::skeleton() const
     return m_skel;
 }
 
-WLDModelSkin *WLDModel::skin() const
+WLDModelSkin * WLDModel::skin() const
 {
     return m_skin;
 }
@@ -60,11 +64,6 @@ void WLDModel::setSkeleton(WLDSkeleton *skeleton)
     m_skel = skeleton;
 }
 
-QMap<QString, WLDModelSkin *> & WLDModel::skins()
-{
-    return m_skins;
-}
-
 const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
 {
     return m_skins;
@@ -72,7 +71,7 @@ const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
 
 WLDModelSkin * WLDModel::newSkin(QString name, PFSArchive *archive)
 {
-    WLDModelSkin *skin = new WLDModelSkin(name, this, archive, this);
+    WLDModelSkin *skin = new WLDModelSkin(name, this, archive);
     m_skins.insert(name, skin);
     return skin;
 }
@@ -102,7 +101,7 @@ QList<MeshDefFragment *> WLDModel::listMeshes(ActorDefFragment *def)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID, QObject *parent) : QObject(parent)
+WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
 {
     m_partID = partID;
     m_meshDef = meshDef;
@@ -273,7 +272,7 @@ MeshBuffer * WLDMesh::combine(const QVector<WLDMesh *> &meshes)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive, QObject *parent) : QObject(parent)
+WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
 {
     m_archive = archive;
 }
@@ -463,11 +462,11 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, QObject *parent) : QObject(parent)
+WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive)
 {
     m_name = name;
     m_model = model;
-    m_palette = new WLDMaterialPalette(archive, this);
+    m_palette = new WLDMaterialPalette(archive);
     m_materials = NULL;
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
@@ -483,6 +482,7 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive, Q
 
 WLDModelSkin::~WLDModelSkin()
 {
+    delete m_palette;
 }
 
 QString WLDModelSkin::name() const
@@ -495,14 +495,9 @@ const AABox & WLDModelSkin::boundsAA() const
     return m_boundsAA;
 }
 
-WLDMaterialPalette *WLDModelSkin::palette() const
+WLDMaterialPalette * WLDModelSkin::palette() const
 {
     return m_palette;
-}
-
-void WLDModelSkin::setPalette(WLDMaterialPalette *newPal)
-{
-    m_palette = newPal;
 }
 
 MaterialMap * WLDModelSkin::materials() const
@@ -525,7 +520,9 @@ void WLDModelSkin::addPart(MeshDefFragment *frag)
     if(!frag)
         return;
     uint32_t partID = m_parts.count();
-    m_parts.append(new WLDMesh(frag, partID, m_model));
+    WLDMesh *meshPart = new WLDMesh(frag, partID);
+    m_parts.append(meshPart);
+    m_model->m_meshes.append(meshPart);
     updateBounds();
 }
 
@@ -535,7 +532,11 @@ void WLDModelSkin::replacePart(WLDMesh *basePart, MeshDefFragment *frag)
     if(partID >= m_parts.size())
         return;
     if((basePart == m_parts[partID]) && (basePart->def() != frag))
-        m_parts[partID] = new WLDMesh(frag, partID, m_model);
+    {
+        WLDMesh *meshPart = new WLDMesh(frag, partID);
+        m_parts[partID] = meshPart;
+        m_model->m_meshes.append(meshPart);
+    }
     updateBounds();
 }
 
