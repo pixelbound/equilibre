@@ -30,6 +30,8 @@ class WLDData;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
+class WLDStaticActor;
+class WLDCharActor;
 class ActorIndex;
 class ActorIndexNode;
 class OctreeIndex;
@@ -63,7 +65,7 @@ public:
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
-    WLDActor * findCharacter(QString name) const;
+    WLDCharActor * findCharacter(QString name) const;
 
     void clear();
 
@@ -143,7 +145,7 @@ private:
     MeshBuffer * upload(RenderState *state);
 
     Zone *m_zone;
-    QVector<WLDActor *> m_zoneParts;
+    QVector<WLDStaticActor *> m_zoneParts;
     MeshBuffer *m_zoneBuffer;
     OctreeIndex *m_zoneTree;
     MaterialMap *m_zoneMaterials;
@@ -176,7 +178,7 @@ private:
     Zone *m_zone;
     ObjectPack *m_pack;
     WLDData *m_objDefWld;
-    QVector<WLDActor *> m_objects;
+    QVector<WLDStaticActor *> m_objects;
     QVector<WLDActor *> m_visibleObjects;
     OctreeIndex *m_objectTree;
     FrameStat *m_objectsStat;
@@ -218,7 +220,7 @@ public:
     CharacterPack();
     virtual ~CharacterPack();
     
-    const QMap<QString, WLDActor *> models() const;
+    const QMap<QString, WLDCharActor *> models() const;
     
     bool load(QString archivePath, QString wldName);
     void upload(RenderState *state);
@@ -228,11 +230,11 @@ private:
     void importSkeletons(WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void upload(RenderState *state, WLDActor *actor);
+    void upload(RenderState *state, WLDCharActor *actor);
     
     PFSArchive *m_archive;
     WLDData *m_wld;
-    QMap<QString, WLDActor *> m_models;
+    QMap<QString, WLDCharActor *> m_models;
 };
 
 #endif

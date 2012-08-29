@@ -42,14 +42,14 @@ QWidget * showCharViewer(RenderState *state)
     if(!itemPack)
         return v;
     
-    WLDActor *charActor = charPack->models().value("BAF");
-    WLDActor *skelActor = charPack->models().value("ELF");
+    WLDCharActor *charActor = charPack->models().value("BAF");
+    WLDCharActor *skelActor = charPack->models().value("ELF");
     WLDMesh *weaponActor = itemPack->models().value("IT106");
     WLDMesh *weaponActor2 = itemPack->models().value("IT113");
     if(charActor && weaponActor)
-        charActor->addEquip(WLDActor::Right, weaponActor, itemPack->materials());
+        charActor->addEquip(WLDCharActor::Right, weaponActor, itemPack->materials());
     if(charActor && weaponActor2)
-        charActor->addEquip(WLDActor::Left, weaponActor2, itemPack->materials());
+        charActor->addEquip(WLDCharActor::Left, weaponActor2, itemPack->materials());
     if(charActor && skelActor)
     {
         charActor->complexModel()->skeleton()->copyAnimationsFrom(skelActor->complexModel()->skeleton());

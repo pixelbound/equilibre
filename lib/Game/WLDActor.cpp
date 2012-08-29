@@ -20,64 +20,9 @@
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Render/RenderState.h"
 
-WLDActor::WLDActor(ActorFragment *frag, WLDMesh *simpleModel)
+WLDActor::WLDActor(ActorType type)
 {
-    m_simpleModel = simpleModel;
-    m_complexModel = NULL;
-    m_type = Simple;
-    m_frag = frag;
-    if(frag)
-    {
-        m_location = frag->m_location;
-        m_rotation = frag->m_rotation;
-        m_scale = frag->m_scale;
-    }
-    else
-    {
-        m_location = vec3(0.0, 0.0, 0.0);
-        m_rotation = vec3(0.0, 0.0, 0.0);
-        m_scale = vec3(1.0, 1.0, 1.0);
-    }
-    update();
-}
-
-WLDActor::WLDActor(WLDModel *model)
-{
-    m_complexModel = model;
-    m_simpleModel = NULL;
-    m_frag = NULL;
-    m_type = Complex;
-    m_location = vec3(0.0, 0.0, 0.0);
-    m_rotation = vec3(0.0, 0.0, 0.0);
-    m_scale = vec3(1.0, 1.0, 1.0);
-    m_animName = "POS";
-    m_animTime = 0;
-    m_palName = "00";
-    update();
-}
-
-WLDActor::WLDActor(ActorFragment *frag, WLDModel *model)
-{
-    m_complexModel = model;
-    m_simpleModel = NULL;
-    m_type = Complex;
-    m_frag = frag;
-    if(frag)
-    {
-        m_location = frag->m_location;
-        m_rotation = frag->m_rotation;
-        m_scale = frag->m_scale;
-    }
-    else
-    {
-        m_location = vec3(0.0, 0.0, 0.0);
-        m_rotation = vec3(0.0, 0.0, 0.0);
-        m_scale = vec3(1.0, 1.0, 1.0);
-    }
-    m_animName = "POS";
-    m_animTime = 0;
-    m_palName = "00";
-    update();
+    m_type = type;
 }
 
 WLDActor::~WLDActor()
@@ -94,62 +39,155 @@ const AABox & WLDActor::boundsAA() const
     return m_boundsAA;
 }
 
-const matrix4 & WLDActor::modelMatrix() const
-{
-    return m_modelMatrix;
-}
-
-WLDModel * WLDActor::complexModel() const
-{
-    return m_complexModel;
-}
-
-WLDMesh * WLDActor::simpleModel() const
-{
-    return m_simpleModel;
-}
-
-WLDActor::ModelType WLDActor::type() const
+WLDActor::ActorType WLDActor::type() const
 {
     return m_type;
 }
 
-const BufferSegment & WLDActor::colorSegment() const
+////////////////////////////////////////////////////////////////////////////////
+
+WLDStaticActor::WLDStaticActor(ActorFragment *frag, WLDMesh *simpleModel) : WLDActor(Static)
+{
+    m_simpleModel = simpleModel;
+    m_frag = frag;
+    if(frag)
+    {
+        m_location = frag->m_location;
+        m_rotation = frag->m_rotation;
+        m_scale = frag->m_scale;
+    }
+    else
+    {
+        m_location = vec3(0.0, 0.0, 0.0);
+        m_rotation = vec3(0.0, 0.0, 0.0);
+        m_scale = vec3(1.0, 1.0, 1.0);
+    }
+    update();
+}
+
+WLDStaticActor::~WLDStaticActor()
+{
+}
+
+WLDMesh * WLDStaticActor::simpleModel() const
+{
+    return m_simpleModel;
+}
+
+const matrix4 & WLDStaticActor::modelMatrix() const
+{
+    return m_modelMatrix;
+}
+
+const BufferSegment & WLDStaticActor::colorSegment() const
 {
     return m_colorSegment;
 }
 
-QString WLDActor::animName() const
+void WLDStaticActor::update()
+{
+    m_boundsAA = m_simpleModel->boundsAA();
+    m_boundsAA.scale(m_scale);
+    m_boundsAA.rotate(m_rotation);
+    m_boundsAA.translate(m_location);
+    
+    m_modelMatrix.setIdentity();
+    m_modelMatrix = m_modelMatrix
+            * matrix4::translate(m_location.x, m_location.y, m_location.z)
+            * matrix4::rotate(m_rotation.x, 1.0, 0.0, 0.0)
+            * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
+            * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
+            * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
+}
+
+void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
+{
+    // XXX handle complex models here.
+    if(!!m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
+        return;
+    const QVector<QRgb> &colors = m_frag->m_lighting->m_def->m_colors;
+    m_colorSegment.offset = meshBuf->colors.count();
+    m_colorSegment.count = colors.count();
+    m_colorSegment.elementSize = sizeof(uint32_t);
+    for(int i = 0; i < m_colorSegment.count; i++)
+        meshBuf->colors.append(colors[i]);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Character)
+{
+    m_complexModel = model;
+    m_frag = NULL;
+    m_location = vec3(0.0, 0.0, 0.0);
+    m_rotation = vec3(0.0, 0.0, 0.0);
+    m_scale = vec3(1.0, 1.0, 1.0);
+    m_animName = "POS";
+    m_animTime = 0;
+    m_palName = "00";
+}
+
+WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Character)
+{
+    m_complexModel = model;
+    m_frag = frag;
+    if(frag)
+    {
+        m_location = frag->m_location;
+        m_rotation = frag->m_rotation;
+        m_scale = frag->m_scale;
+    }
+    else
+    {
+        m_location = vec3(0.0, 0.0, 0.0);
+        m_rotation = vec3(0.0, 0.0, 0.0);
+        m_scale = vec3(1.0, 1.0, 1.0);
+    }
+    m_animName = "POS";
+    m_animTime = 0;
+    m_palName = "00";
+}
+
+WLDCharActor::~WLDCharActor()
+{
+}
+
+WLDModel * WLDCharActor::complexModel() const
+{
+    return m_complexModel;
+}
+
+QString WLDCharActor::animName() const
 {
     return m_animName;
 }
 
-void WLDActor::setAnimName(QString name)
+void WLDCharActor::setAnimName(QString name)
 {
     m_animName = name;
 }
 
-double WLDActor::animTime() const
+double WLDCharActor::animTime() const
 {
     return m_animTime;
 }
 
-void WLDActor::setAnimTime(double newTime)
+void WLDCharActor::setAnimTime(double newTime)
 {
     m_animTime = newTime;
 }
 
-QString WLDActor::paletteName() const
+QString WLDCharActor::paletteName() const
 {
     return m_palName;
 }
 
-void WLDActor::setPaletteName(QString palName)
+void WLDCharActor::setPaletteName(QString palName)
 {
     m_palName = palName;
 }
 
-bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDMesh *mesh, MaterialMap *materials)
+bool WLDCharActor::addEquip(WLDCharActor::EquipSlot slot, WLDMesh *mesh, MaterialMap *materials)
 {
     QString name = slotName(slot);
     if(name.isEmpty() || !m_complexModel->skeleton())
@@ -168,7 +206,7 @@ bool WLDActor::addEquip(WLDActor::EquipSlot slot, WLDMesh *mesh, MaterialMap *ma
     return true;
 }
 
-QString WLDActor::slotName(EquipSlot slot)
+QString WLDCharActor::slotName(EquipSlot slot)
 {
     switch(slot)
     {
@@ -186,46 +224,7 @@ QString WLDActor::slotName(EquipSlot slot)
     return QString::null;
 }
 
-void WLDActor::update()
-{
-    if(m_type == Simple)
-    {
-        m_boundsAA = m_simpleModel->boundsAA();
-    }
-    else
-    {
-        WLDModelSkin *skin = m_complexModel->skins().value(m_palName);
-        if(skin)
-            m_boundsAA = skin->boundsAA();
-    }
-    
-    m_boundsAA.scale(m_scale);
-    m_boundsAA.rotate(m_rotation);
-    m_boundsAA.translate(m_location);
-    
-    m_modelMatrix.setIdentity();
-    m_modelMatrix = m_modelMatrix
-            * matrix4::translate(m_location.x, m_location.y, m_location.z)
-            * matrix4::rotate(m_rotation.x, 1.0, 0.0, 0.0)
-            * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
-            * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
-            * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
-}
-
-void WLDActor::importColorData(MeshBuffer *meshBuf)
-{
-    // XXX handle complex models here.
-    if(!m_simpleModel || !m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
-        return;
-    const QVector<QRgb> &colors = m_frag->m_lighting->m_def->m_colors;
-    m_colorSegment.offset = meshBuf->colors.count();
-    m_colorSegment.count = colors.count();
-    m_colorSegment.elementSize = sizeof(uint32_t);
-    for(int i = 0; i < m_colorSegment.count; i++)
-        meshBuf->colors.append(colors[i]);
-}
-
-void WLDActor::draw(RenderState *state)
+void WLDCharActor::draw(RenderState *state)
 {
     if(!m_complexModel)
         return;
@@ -239,7 +238,6 @@ void WLDActor::draw(RenderState *state)
         if(anim)
             bones = anim->transformationsAtTime(m_animTime);
     }
-    update();
     
     state->pushMatrix();
     state->multiplyMatrix(m_modelMatrix);

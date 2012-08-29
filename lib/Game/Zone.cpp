@@ -152,7 +152,7 @@ ObjectPack * Zone::loadObjects(QString archivePath, QString wldName)
     return objPack;
 }
 
-WLDActor * Zone::findCharacter(QString name) const
+WLDCharActor * Zone::findCharacter(QString name) const
 {
     foreach(CharacterPack *pack, m_charPacks)
     {
@@ -372,7 +372,7 @@ const AABox & ZoneTerrain::bounds() const
 
 void ZoneTerrain::clear()
 {
-    foreach(WLDActor *part, m_zoneParts)
+    foreach(WLDStaticActor *part, m_zoneParts)
     {
         delete part->simpleModel();
         delete part;
@@ -396,7 +396,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     {
         WLDMesh *meshPart = new WLDMesh(meshDef, partID++);
         m_zoneBounds.extendTo(meshPart->boundsAA());
-        m_zoneParts.append(new WLDActor(NULL, meshPart));
+        m_zoneParts.append(new WLDStaticActor(NULL, meshPart));
     }
     vec3 padding(1.0, 1.0, 1.0);
     m_zoneBounds.low = m_zoneBounds.low - padding;
@@ -427,7 +427,7 @@ MeshBuffer * ZoneTerrain::upload(RenderState *state)
     meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
-    foreach(WLDActor *part, m_zoneParts)
+    foreach(WLDStaticActor *part, m_zoneParts)
     {
         MeshData *meshData = part->simpleModel()->importFrom(meshBuf);
         meshData->updateTexCoords(m_zoneMaterials);
@@ -467,8 +467,12 @@ void ZoneTerrain::draw(RenderState *state, Frustum &frustum)
     
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
-    foreach(const WLDActor *actor, m_visibleZoneParts)
-        m_zoneBuffer->addMaterialGroups(actor->simpleModel()->data());
+    foreach(WLDActor *actor, m_visibleZoneParts)
+    {
+        WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
+        if(staticActor)
+            m_zoneBuffer->addMaterialGroups(staticActor->simpleModel()->data());
+    }
 #endif
     
     // Draw the visible parts as one big mesh.
@@ -546,7 +550,7 @@ void ZoneObjects::importActors()
         WLDMesh *model = models.value(actorName);
         if(model)
         {
-            WLDActor *actor = new WLDActor(actorFrag, model);
+            WLDStaticActor *actor = new WLDStaticActor(actorFrag, model);
             bounds.extendTo(actor->boundsAA());
             m_objects.append(actor);
         }
@@ -567,7 +571,7 @@ void ZoneObjects::upload(RenderState *state)
 {
     // Copy objects' lighting colors to a GPU buffer.
     MeshBuffer *meshBuf = m_pack->upload(state);
-    foreach(WLDActor *actor, m_objects)
+    foreach(WLDStaticActor *actor, m_objects)
         actor->importColorData(meshBuf);
     meshBuf->colorBufferSize = meshBuf->colors.count() * sizeof(uint32_t);
     if(meshBuf->colorBufferSize > 0)
@@ -579,7 +583,11 @@ void ZoneObjects::upload(RenderState *state)
 
 static bool zoneActorGroupLessThan(const WLDActor *a, const WLDActor *b)
 {
-    return a->simpleModel()->def() < b->simpleModel()->def();
+    const WLDStaticActor *sa = a->cast<WLDStaticActor>();
+    const WLDStaticActor *sb = b->cast<WLDStaticActor>();
+    if(!sa || !sb)
+        return false;
+    return sa->simpleModel()->def() < sb->simpleModel()->def();
 }
 
 void ZoneObjects::draw(RenderState *state, Frustum &frustum)
@@ -606,9 +614,12 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
     QVector<matrix4> mvMatrices;
     QVector<BufferSegment> colorSegments;
     int instanceCount = 0;
-    foreach(const WLDActor *actor, m_visibleObjects)
+    foreach(WLDActor *actor, m_visibleObjects)
     {
-        WLDMesh *currentMesh = actor->simpleModel();
+        WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
+        if(!staticActor)
+            continue;
+        WLDMesh *currentMesh = staticActor->simpleModel();
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
@@ -633,9 +644,9 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
         
         // Draw the zone object.
         state->pushMatrix();
-        state->multiplyMatrix(actor->modelMatrix());
+        state->multiplyMatrix(staticActor->modelMatrix());
         mvMatrices.append(state->matrix(RenderState::ModelView));
-        colorSegments.append(actor->colorSegment());
+        colorSegments.append(staticActor->colorSegment());
         instanceCount++;
         state->popMatrix();
     }
@@ -767,14 +778,14 @@ CharacterPack::~CharacterPack()
     clear();
 }
 
-const QMap<QString, WLDActor *> CharacterPack::models() const
+const QMap<QString, WLDCharActor *> CharacterPack::models() const
 {
     return m_models;
 }
 
 void CharacterPack::clear()
 {
-    foreach(WLDActor *actor, m_models)
+    foreach(WLDCharActor *actor, m_models)
     {
         WLDModel *model = actor->complexModel();
         delete model->skeleton();
@@ -814,7 +825,7 @@ void CharacterPack::importSkeletons(WLDData *wld)
     foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
     {
         QString actorName = skelDef->name().replace("_HS_DEF", "");
-        WLDActor *actor = m_models.value(actorName);
+        WLDCharActor *actor = m_models.value(actorName);
         if(!actor)
             continue;
         actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef));
@@ -825,7 +836,7 @@ void CharacterPack::importSkeletons(WLDData *wld)
     {
         QString animName = track->name().left(3);
         QString actorName = track->name().mid(3, 3);
-        WLDActor *actor = m_models.value(actorName);
+        WLDCharActor *actor = m_models.value(actorName);
         if(!actor)
             continue;
         WLDSkeleton *skel = actor->complexModel()->skeleton();
@@ -841,7 +852,7 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         QString charName, palName, partName;
         if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
         {
-            WLDActor *actor = m_models.value(charName);
+            WLDCharActor *actor = m_models.value(charName);
             if(!actor)
                 continue;
             WLDModel *model = actor->complexModel();
@@ -860,7 +871,7 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     {
         QString actorName, meshName, skinName;
         WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
-        WLDActor *actor = m_models.value(actorName);
+        WLDCharActor *actor = m_models.value(actorName);
         if(!actor || meshName.isEmpty())
             continue;
         WLDModel *model = actor->complexModel();
@@ -883,7 +894,7 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     {
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDModel *model = new WLDModel(archive);
-        WLDActor *actor = new WLDActor(model);
+        WLDCharActor *actor = new WLDCharActor(model);
         WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
         {
@@ -910,11 +921,11 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
 
 void CharacterPack::upload(RenderState *state)
 {
-    foreach(WLDActor *actor, m_models)
+    foreach(WLDCharActor *actor, m_models)
         upload(state, actor);
 }
 
-void CharacterPack::upload(RenderState *state, WLDActor *actor)
+void CharacterPack::upload(RenderState *state, WLDCharActor *actor)
 {
     // Make sure we haven't uploaded this character before.
     WLDModel *model = actor->complexModel();

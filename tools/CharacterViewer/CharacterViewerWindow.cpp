@@ -184,7 +184,7 @@ void CharacterViewerWindow::loadActor(QString name)
 
 void CharacterViewerWindow::loadPalette(QString name)
 {
-    WLDActor *charModel = m_scene->selectedCharacter();
+    WLDCharActor *charModel = m_scene->selectedCharacter();
     if(charModel)
     {
         charModel->setPaletteName(name);
@@ -194,7 +194,7 @@ void CharacterViewerWindow::loadPalette(QString name)
 
 void CharacterViewerWindow::loadAnimation(QString animName)
 {
-    WLDActor *charModel = m_scene->selectedCharacter();
+    WLDCharActor *charModel = m_scene->selectedCharacter();
     if(charModel)
     {
         charModel->setAnimName(animName);
@@ -204,7 +204,7 @@ void CharacterViewerWindow::loadAnimation(QString animName)
 
 void CharacterViewerWindow::copyAnimations()
 {
-    WLDActor *charModel = m_scene->selectedCharacter();
+    WLDCharActor *charModel = m_scene->selectedCharacter();
     if(!charModel)
         return;
     WLDSkeleton *charSkel = charModel->complexModel()->skeleton();
@@ -215,7 +215,7 @@ void CharacterViewerWindow::copyAnimations()
     QComboBox *charList = new QComboBox();
     foreach(CharacterPack *pack, m_scene->zone()->characterPacks())
     {
-        const QMap<QString, WLDActor *> &actors = pack->models();
+        const QMap<QString, WLDCharActor *> &actors = pack->models();
         foreach(QString charName, actors.keys())
         {
             WLDSkeleton *skel = actors.value(charName)->complexModel()->skeleton();
@@ -239,7 +239,7 @@ void CharacterViewerWindow::copyAnimations()
 
 void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar)
 {
-    WLDActor *actor = m_scene->zone()->findCharacter(fromChar);
+    WLDCharActor *actor = m_scene->zone()->findCharacter(fromChar);
     if(actor)
     {
         WLDSkeleton *fromSkel = actor->complexModel()->skeleton();
@@ -258,7 +258,7 @@ void CharacterViewerWindow::updateLists()
     m_animationText->clear();
     foreach(CharacterPack *pack, m_scene->zone()->characterPacks())
     {
-        const QMap<QString, WLDActor *> &actors = pack->models();
+        const QMap<QString, WLDCharActor *> &actors = pack->models();
         foreach(QString name, actors.keys())
             m_actorText->addItem(name);
     }
@@ -266,7 +266,7 @@ void CharacterViewerWindow::updateLists()
     if(m_scene->selectedModelName().isEmpty() && m_actorText->count() > 0)
         m_scene->setSelectedModelName(m_actorText->itemText(0));
 
-    WLDActor *charModel = m_scene->selectedCharacter();
+    WLDCharActor *charModel = m_scene->selectedCharacter();
     if(charModel)
     {
         WLDSkeleton *skel = charModel->complexModel()->skeleton();
@@ -359,7 +359,7 @@ void CharacterScene::setSelectedModelName(QString name)
     m_meshName = name;
 }
 
-WLDActor * CharacterScene::selectedCharacter() const
+WLDCharActor * CharacterScene::selectedCharacter() const
 {
     return m_zone->findCharacter(m_meshName);
 }
@@ -396,7 +396,7 @@ void CharacterScene::draw()
     vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
     m_state->setAmbientLight(ambientLight);
     
-    WLDActor *charModel = selectedCharacter();
+    WLDCharActor *charModel = selectedCharacter();
     if(charModel)
     {
         charModel->setAnimTime(currentTime());

@@ -26,6 +26,7 @@ class QAction;
 class RenderState;
 class SceneViewport;
 class WLDSkeleton;
+class WLDCharActor;
 class CharacterScene;
 class CharacterPack;
 
@@ -82,7 +83,7 @@ public:
     void init();
 
     Zone * zone() const;
-    WLDActor * selectedCharacter() const;
+    WLDCharActor *selectedCharacter() const;
     QString selectedModelName() const;
     
     CharacterPack * loadCharacters(QString archivePath);

@@ -30,6 +30,7 @@ class WLDModel;
 class WLDMesh;
 class WLDActor;
 class RenderState;
+class Octree;
 
 class ActorEquip
 {
@@ -40,33 +41,86 @@ public:
 };
 
 /*!
-  \brief Describes an instance of a model (such as an object or a character).
+  \brief Describes an instance of an entity that can be referenced by a spatial index.
   */
 class GAME_DLL WLDActor
 {
 public:
-    WLDActor(ActorFragment *frag, WLDMesh *simpleModel);
-    WLDActor(WLDModel *complexModel);
-    WLDActor(ActorFragment *frag, WLDModel *complexModel);
+    enum ActorType
+    {
+        Static = 0,
+        Character
+    };
+    
+    WLDActor(ActorType type);
     virtual ~WLDActor();
 
     const vec3 & location() const;
-    
     const AABox & boundsAA() const;
-    const matrix4 & modelMatrix() const;
+    ActorType type() const;
     
-    enum ModelType
+    template<typename T>
+    T * cast()
     {
-        Simple = 0,
-        Complex
-    };
-
-    WLDModel * complexModel() const;
-    WLDMesh * simpleModel() const;
-    ModelType type() const;
+        if(m_type == T::Kind)
+            return static_cast<T *>(this);
+        else
+            return 0;
+    }
     
+    template<typename T>
+    const T * cast() const 
+    {
+        if(m_type == T::Kind)
+            return static_cast<const T *>(this);
+        else
+            return 0;
+    }
+    
+protected:
+    vec3 m_location;
+    AABox m_boundsAA;
+    ActorType m_type;
+};
+
+/*!
+  \brief Describes an instance of a static model, like a placeable object or terrain part.
+  */
+class GAME_DLL WLDStaticActor : public WLDActor
+{
+public:
+    WLDStaticActor(ActorFragment *frag, WLDMesh *simpleModel);
+    virtual ~WLDStaticActor();
+
+    const matrix4 & modelMatrix() const;
+    WLDMesh * simpleModel() const;
     const BufferSegment & colorSegment() const;
 
+    void update();
+    void importColorData(MeshBuffer *meshBuf);
+    
+    const static ActorType Kind = Static;
+    
+private:
+    ActorFragment *m_frag;
+    vec3 m_rotation, m_scale;
+    matrix4 m_modelMatrix;
+    WLDMesh *m_simpleModel;
+    BufferSegment m_colorSegment;
+};
+
+/*!
+  \brief Describes an instance of a character model.
+  */
+class GAME_DLL WLDCharActor : public WLDActor
+{
+public:
+    WLDCharActor(WLDModel *complexModel);
+    WLDCharActor(ActorFragment *frag, WLDModel *complexModel);
+    virtual ~WLDCharActor();
+    
+    WLDModel * complexModel() const;
+    
     QString animName() const;
     void setAnimName(QString name);
 
@@ -86,30 +140,22 @@ public:
     };
 
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialMap *materials);
-    
-    void update();
-
-    void importColorData(MeshBuffer *meshBuf);
     void draw(RenderState *state);
+    
+    const static ActorType Kind = Character;
 
 private:
     static QString slotName(EquipSlot slot);
 
     ActorFragment *m_frag;
-    vec3 m_location, m_rotation, m_scale;
+    vec3 m_rotation, m_scale;
     matrix4 m_modelMatrix;
-    AABox m_boundsAA;
     WLDModel *m_complexModel;
-    WLDMesh *m_simpleModel;
-    BufferSegment m_colorSegment;
-    ModelType m_type;
     QString m_animName;
     double m_animTime;
     QString m_palName;
     QMap<EquipSlot, ActorEquip> m_equip;
 };
-
-class Octree;
 
 class GAME_DLL OctreeIndex
 {
