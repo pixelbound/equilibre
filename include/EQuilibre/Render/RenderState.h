@@ -33,6 +33,13 @@ class MaterialMap;
 class FrameStat;
 class MeshBuffer;
 
+struct RENDER_DLL LightParams
+{
+    vec3 color;
+    vec3 position;
+    float radius;
+};
+
 struct RENDER_DLL FogParams
 {
     float start;
@@ -139,6 +146,7 @@ public:
     virtual texture_t loadTextures(const QImage *images, size_t count) = 0;
     virtual void freeTexture(texture_t tex) = 0;
     virtual void setAmbientLight(vec4 lightColor) = 0;
+    virtual void setLightSources(const LightParams *sources, int count) = 0;
     virtual void setFogParams(const FogParams &fogParams) = 0;
     
     // buffer operations

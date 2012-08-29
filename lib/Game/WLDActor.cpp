@@ -283,7 +283,23 @@ WLDLightActor::WLDLightActor(LightSourceFragment *frag) : WLDActor(Kind)
         m_boundsAA.low = frag->m_pos - radius;
         m_boundsAA.high = frag->m_pos + radius;
         m_location = frag->m_pos;
+        
+        LightDefFragment *def = frag->m_ref->m_def;
+        m_params.color = vec3(def->m_color.x, def->m_color.y, def->m_color.z);
+        m_params.position = frag->m_pos;
+        m_params.radius = frag->m_radius;
     }
+    else
+    {
+        m_params.color = vec3(0.0, 0.0, 0.0);
+        m_params.position = vec3(0.0, 0.0, 0.0);
+        m_params.radius = 0.0;
+    }
+}
+
+const LightParams & WLDLightActor::params() const
+{
+    return m_params;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

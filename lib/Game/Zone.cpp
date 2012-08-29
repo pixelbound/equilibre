@@ -269,9 +269,14 @@ void Zone::draw(RenderState *state)
         }
     }
     
-    vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
+    vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     state->setAmbientLight(ambientLight);
     state->setFogParams(m_fogParams);
+    
+    QVector<LightParams> sources;
+    foreach(WLDLightActor *light, m_visibleLights)
+        sources.append(light->params());
+    state->setLightSources(sources.constData(), sources.count());
     
     // Draw the zone's static objects.
     if(m_showObjects && m_objects)

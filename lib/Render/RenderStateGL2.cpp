@@ -459,6 +459,12 @@ void RenderStateGL2::setAmbientLight(vec4 lightColor)
         program()->setAmbientLight(lightColor);
 }
 
+void RenderStateGL2::setLightSources(const LightParams *sources, int count)
+{
+    if(program())
+        program()->setLightSources(sources, count);
+}
+
 void RenderStateGL2::setFogParams(const FogParams &fogParams)
 {
     m_clearColor = fogParams.color;

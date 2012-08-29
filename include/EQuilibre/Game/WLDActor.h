@@ -23,6 +23,7 @@
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
+#include "EQuilibre/Render/RenderState.h"
 
 class PFSArchive;
 class ActorFragment;
@@ -165,8 +166,11 @@ public:
     WLDLightActor(LightSourceFragment *frag);
     const static ActorType Kind = LightSource;
     
+    const LightParams & params() const;
+    
 private:
     LightSourceFragment *m_frag;
+    LightParams m_params;
 };
 
 class GAME_DLL OctreeIndex

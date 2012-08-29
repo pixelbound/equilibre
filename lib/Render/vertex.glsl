@@ -23,6 +23,12 @@ uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
 uniform vec4 u_ambientLight;
+
+const int MAX_LIGHTS = 8;
+uniform vec3 u_lightPos[MAX_LIGHTS];
+uniform vec3 u_lightColor[MAX_LIGHTS];
+uniform float u_lightRadius[MAX_LIGHTS];
+
 uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform float u_fogDensity;
@@ -31,13 +37,38 @@ varying vec4 v_color;
 varying vec3 v_texCoords;
 varying float v_fogFactor;
 
+vec4 lightDiffuseValue(int index, vec4 eyeVertex, vec3 eyeNormal)
+{
+    vec4 lightPos = vec4(u_lightPos[index], 1.0);
+    float lightRadius = u_lightRadius[index];
+    vec4 eyeLightPos = u_modelViewMatrix * lightPos;
+    vec3 lightDir = vec3(eyeLightPos - eyeVertex);
+    float lightDist = length(lightDir);
+    lightDir = normalize(lightDir);
+    float lightIntensity = (lightRadius > 0.0) ? clamp(1.0 - (lightDist / lightRadius), 0.0, 1.0) : 0.0;
+    vec4 lightColor = vec4(u_lightColor[index] * lightIntensity, 1.0);
+    vec4 lightContrib = max(dot(eyeNormal, lightDir), 0.0) * lightColor;
+    return (lightDist < lightRadius) ? lightContrib : vec4(0.0, 0.0, 0.0, 1.0);
+}
+
 void main()
 {
     vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
     
-    v_color = u_ambientLight;
+    mat3 normalMatrix;
+    normalMatrix[0] = vec3(u_modelViewMatrix[0]);
+    normalMatrix[1] = vec3(u_modelViewMatrix[1]);
+    normalMatrix[2] = vec3(u_modelViewMatrix[2]);
+    vec3 normal = normalize(normalMatrix * a_normal);
+    
+    vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
+    for(int i = 0; i < MAX_LIGHTS; i++)
+        diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
+    v_color = u_ambientLight + diffuse;
+    v_color = vec4(v_color.xyz, a_color.w);
+    
     //v_color = u_ambientLight * a_color; // debug the per-vertex color values.
     
     // Compute the fog factor.

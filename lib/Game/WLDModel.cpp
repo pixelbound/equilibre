@@ -159,13 +159,15 @@ void WLDMesh::importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc)
     dataLoc.elementSize = sizeof(Vertex);
     
     // Load vertices, texCoords, normals, faces.
+    bool hasColors = m_meshDef->m_colors.count() > 0;
+    uint32_t defaultColor = qRgba(0, 0, 0, 191);
     for(uint32_t i = 0; i < vertexCount; i++)
     {
         Vertex v;
         v.position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
         v.normal = m_meshDef->m_normals.value(i);
         v.texCoords = vec3(m_meshDef->m_texCoords.value(i), 0.0f);
-        v.color = m_meshDef->m_colors.value(i);
+        v.color = hasColors ? m_meshDef->m_colors.value(i) : defaultColor;
         v.bone = 0;
         vertices.append(v);
     }

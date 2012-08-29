@@ -26,6 +26,9 @@ static const ShaderSymbolInfo Uniforms[] =
     {U_AMBIENT_LIGHT, "u_ambientLight"},
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
     {U_MAT_TEXTURE, "u_material_texture"},
+    {U_LIGHT_POS, "u_lightPos"},
+    {U_LIGHT_RADIUS, "u_lightRadius"},
+    {U_LIGHT_COLOR, "u_lightColor"},
     {U_FOG_START, "u_fogStart"},
     {U_FOG_END, "u_fogEnd"},
     {U_FOG_DENSITY, "u_fogDensity"},
@@ -256,6 +259,27 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
 void ShaderProgramGL2::setAmbientLight(vec4 lightColor)
 {
     glUniform4fv(m_uniform[U_AMBIENT_LIGHT], 1, (const GLfloat *)&lightColor);
+}
+
+void ShaderProgramGL2::setLightSources(const LightParams *sources, int count)
+{
+    for(int i = 0; i < MAX_LIGHTS; i++)
+    {
+        LightParams lp;
+        if(i < count)
+        {
+            lp = sources[i];
+        }
+        else
+        {
+            lp.color = vec3(0.0, 0.0, 0.0);
+            lp.position = vec3(0.0, 0.0, 0.0);
+            lp.radius = 0.0;
+        }
+        glUniform3fv(m_uniform[U_LIGHT_POS], 1, (const GLfloat *)&lp.position);
+        glUniform1f(m_uniform[U_LIGHT_RADIUS], lp.radius);
+        glUniform3fv(m_uniform[U_LIGHT_COLOR], 1, (const GLfloat *)&lp.color);
+    }
 }
 
 void ShaderProgramGL2::setFogParams(const FogParams &fogParams)
@@ -503,10 +527,9 @@ void ShaderProgramGL2::bindColorBuffer(const BufferSegment *colorSegments, int i
             enabledColor = false;
         }
     }
-    else
+    else if(meshBuf->vertexBuffer)
     {
         // Use the color inside the mesh's vertex buffer.
-        Q_ASSERT(meshBuf->vertexBuffer && "Using vertex arrays with color is not supported.");
         if(!enabledColor)
         {
             enableVertexAttribute(A_COLOR);
