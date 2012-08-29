@@ -374,12 +374,13 @@ MeshLightingDefFragment::MeshLightingDefFragment(QString name) : WLDFragment(ID,
 
 bool MeshLightingDefFragment::unpack(WLDReader *s)
 {
-    uint8_t color[4];
+    uint8_t r, g, b, a;
     s->unpackFields("IIIII", &m_data1, &m_size1, &m_data2, &m_data3, &m_data4);
     for(uint32_t i = 0; i < m_size1; i++)
     {
-        s->unpackStruct("BBBB", color);
-        m_colors.append(qRgba(color[0], color[1], color[2], color[3]));
+        s->unpackFields("BBBB", &r, &g, &b, &a);
+        uint32_t rgba = r + (g << 8) + (b << 16) + (a << 24);
+        m_colors.append(rgba);
     }
     return true;
 }

@@ -318,7 +318,7 @@ public:
 
     const static uint32_t ID = 0x32;
     uint32_t m_data1, m_size1, m_data2, m_data3, m_data4;
-    QVector<QRgb> m_colors;
+    QVector<uint32_t> m_colors;
 };
 
 /*!
@@ -356,7 +356,7 @@ public:
     QVector<vec3> m_vertices;
     QVector<vec2> m_texCoords;
     QVector<vec3> m_normals;
-    QVector<QRgb> m_colors;
+    QVector<uint32_t> m_colors;
     QVector<uint16_t> m_indices;
     QVector<vec2us> m_vertexPieces;
     QVector<vec2us> m_polygonsByTex;
