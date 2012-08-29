@@ -80,6 +80,7 @@ public:
     void updateTexCoords(MaterialMap *map);
     void updateTexCoords(MaterialMap *map, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex);
     void upload(RenderState *state);
+    void clear(RenderState *state);
     void clearVertices();
     void clearIndices();
     void clearColors();

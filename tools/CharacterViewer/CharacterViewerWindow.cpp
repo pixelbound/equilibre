@@ -306,7 +306,8 @@ void CharacterViewerWindow::updateMenus()
 
 void CharacterViewerWindow::clear()
 {
-    m_scene->zone()->clear();
+    m_viewport->makeCurrent();
+    m_scene->zone()->clear(m_state);
     updateLists();
 }
 

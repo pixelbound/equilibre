@@ -152,6 +152,7 @@ public:
     // buffer operations
     
     virtual buffer_t createBuffer(const void *data, size_t size) = 0;
+    virtual void freeBuffers(buffer_t *buffers, int count) = 0;
 
     // Performance measurement
 

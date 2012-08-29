@@ -556,6 +556,14 @@ buffer_t RenderStateGL2::createBuffer(const void *data, size_t size)
     return buffer;
 }
 
+void RenderStateGL2::freeBuffers(buffer_t *buffers, int count)
+{
+    if(!buffers)
+        return;
+    glDeleteBuffers(count, buffers);
+    memset(buffers, 0, sizeof(buffer_t) * count);
+}
+
 void RenderStateGL2::init()
 {
     initShader(BasicShader, "vertex.glsl", "fragment.glsl");

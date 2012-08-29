@@ -156,7 +156,7 @@ void ZoneViewerWindow::selectAssetDir()
 bool ZoneViewerWindow::loadZone(QString path, QString name)
 {
     m_viewport->makeCurrent();
-    m_scene->zone()->clear();
+    m_scene->zone()->clear(m_state);
     return m_scene->zone()->load(path, name);
 }
 

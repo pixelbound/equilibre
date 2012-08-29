@@ -68,8 +68,7 @@ MeshBuffer::MeshBuffer()
 
 MeshBuffer::~MeshBuffer()
 {
-    foreach(MeshData *m, meshes)
-        delete m;
+    clear(NULL);
 }
 
 MeshData * MeshBuffer::createMesh(uint32_t groups)
@@ -134,6 +133,22 @@ void MeshBuffer::upload(RenderState *state)
     indexBufferSize = indices.count() * sizeof(uint32_t);
     vertexBuffer = state->createBuffer(vertices.constData(), vertexBufferSize);
     indexBuffer = state->createBuffer(indices.constData(), indexBufferSize);
+}
+
+void MeshBuffer::clear(RenderState *state)
+{
+    foreach(MeshData *m, meshes)
+        delete m;
+    meshes.clear();
+    clearVertices();
+    clearIndices();
+    clearColors();
+    if(state)
+    {
+        state->freeBuffers(&vertexBuffer, 1);
+        state->freeBuffers(&indexBuffer, 1);
+        state->freeBuffers(&colorBuffer, 1);
+    }
 }
 
 void MeshBuffer::clearVertices()

@@ -80,6 +80,7 @@ public:
     virtual void setFogParams(const FogParams &fogParams);
     
     virtual buffer_t createBuffer(const void *data, size_t size);
+    virtual void freeBuffers(buffer_t *buffers, int count);
 
     // Performance measurement
 

@@ -53,7 +53,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
 
 Zone::~Zone()
 {
-    clear();
+    clear(NULL);
 }
 
 ZoneTerrain * Zone::terrain() const
@@ -196,19 +196,33 @@ WLDCharActor * Zone::findCharacter(QString name) const
     return NULL;
 }
 
-void Zone::clear()
+void Zone::clear(RenderState *state)
 {
     foreach(CharacterPack *pack, m_charPacks)
+    {
+        pack->clear(state);
         delete pack;
+    }
     foreach(ObjectPack *pack, m_objectPacks)
+    {
+        pack->clear(state);
         delete pack;
+    }
     foreach(WLDLightActor *light, m_lights)
         delete light;
     m_lights.clear();
     m_charPacks.clear();
     m_objectPacks.clear();
-    delete m_objects;
-    delete m_terrain;
+    if(m_objects)
+    {
+        m_objects->clear(state);
+        delete m_objects;
+    }
+    if(m_terrain)
+    {
+        m_terrain->clear(state);
+        delete m_terrain;
+    }
     delete m_actorTree;
     delete m_mainWld;
     delete m_mainArchive;
@@ -436,7 +450,7 @@ ZoneTerrain::ZoneTerrain(Zone *zone)
 
 ZoneTerrain::~ZoneTerrain()
 {
-    clear();
+    clear(NULL);
 }
 
 const AABox & ZoneTerrain::bounds() const
@@ -449,18 +463,32 @@ QVector<WLDStaticActor *> & ZoneTerrain::visibleZoneParts()
     return m_visibleZoneParts;
 }
 
-void ZoneTerrain::clear()
+void ZoneTerrain::clear(RenderState *state)
 {
     foreach(WLDStaticActor *part, m_zoneParts)
     {
         delete part->mesh();
         delete part;
     }
-    delete m_zoneBuffer;
+    m_zoneParts.clear();
+    
+    if(m_zoneBuffer)
+    {
+        m_zoneBuffer->clear(state);
+        delete m_zoneBuffer;
+        m_zoneBuffer = NULL;
+    }
+    
     delete m_zoneMaterials;
-    m_zoneBuffer = NULL;
     m_zoneMaterials = NULL;
-    m_zone = NULL;
+    
+    if(state)
+    {
+        state->destroyStat(m_zoneStat);
+        state->destroyStat(m_zoneStatGPU);
+        m_zoneStat = NULL;
+        m_zoneStatGPU = NULL;
+    }
 }
 
 bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
@@ -521,9 +549,6 @@ MeshBuffer * ZoneTerrain::upload(RenderState *state)
     meshBuf->upload(state);
     meshBuf->clearVertices();
     meshBuf->clearIndices();
-    
-    //m_gpuBuffers.append(meshBuf->vertexBuffer);
-    //m_gpuBuffers.append(meshBuf->indexBuffer);
     return meshBuf;
 }
 
@@ -577,7 +602,7 @@ ZoneObjects::ZoneObjects(Zone *zone)
 
 ZoneObjects::~ZoneObjects()
 {
-    clear();
+    clear(NULL);
 }
 
 const AABox & ZoneObjects::bounds() const
@@ -595,14 +620,26 @@ QVector<WLDStaticActor *> & ZoneObjects::visibleObjects()
     return m_visibleObjects;
 }
 
-void ZoneObjects::clear()
+void ZoneObjects::clear(RenderState *state)
 {
     foreach(WLDActor *actor, m_objects)
         delete actor;
-    delete m_pack;
+    m_objects.clear();
+    if(m_pack)
+    {
+        m_pack->clear(state);
+        delete m_pack;
+        m_pack = NULL;
+    }
     delete m_objDefWld;
-    m_pack = NULL;
     m_objDefWld = NULL;
+    if(state)
+    {
+        state->destroyStat(m_objectsStat);
+        state->destroyStat(m_objectsStatGPU);
+        m_objectsStat = NULL;
+        m_objectsStatGPU = NULL;
+    }
 }
 
 bool ZoneObjects::load(QString path, QString name, PFSArchive *mainArchive)
@@ -761,7 +798,7 @@ ObjectPack::ObjectPack()
 
 ObjectPack::~ObjectPack()
 {
-    clear();
+    clear(NULL);
 }
 
 const QMap<QString, WLDMesh *> & ObjectPack::models() const
@@ -779,16 +816,20 @@ MaterialMap * ObjectPack::materials() const
     return m_materials;
 }
 
-void ObjectPack::clear()
+void ObjectPack::clear(RenderState *state)
 {
-    delete m_meshBuf;
     foreach(WLDMesh *model, m_models)
         delete model;
     m_models.clear();
+    if(m_meshBuf)
+    {
+        m_meshBuf->clear(state);
+        delete m_meshBuf;
+        m_meshBuf = NULL;
+    }
     delete m_wld;
-    delete m_archive;
-    m_meshBuf = NULL;
     m_wld = NULL;
+    delete m_archive;
     m_archive = NULL;
 }
 
@@ -839,8 +880,6 @@ MeshBuffer * ObjectPack::upload(RenderState *state)
     m_meshBuf->upload(state);
     m_meshBuf->clearVertices();
     m_meshBuf->clearIndices();
-    //m_gpuBuffers.append(m_meshBuf->vertexBuffer);
-    //m_gpuBuffers.append(m_meshBuf->indexBuffer);
     return m_meshBuf;
 }
 
@@ -854,7 +893,7 @@ CharacterPack::CharacterPack()
 
 CharacterPack::~CharacterPack()
 {
-    clear();
+    clear(NULL);
 }
 
 const QMap<QString, WLDCharActor *> CharacterPack::models() const
@@ -862,11 +901,17 @@ const QMap<QString, WLDCharActor *> CharacterPack::models() const
     return m_models;
 }
 
-void CharacterPack::clear()
+void CharacterPack::clear(RenderState *state)
 {
     foreach(WLDCharActor *actor, m_models)
     {
         WLDModel *model = actor->model();
+        MeshBuffer *meshBuf = model->buffer();
+        if(meshBuf)
+        {
+            meshBuf->clear(state);
+            delete meshBuf;
+        }
         delete model->skeleton();
         delete model;
         delete actor;
@@ -1031,8 +1076,6 @@ void CharacterPack::upload(RenderState *state, WLDCharActor *actor)
 
     // Create the GPU buffers.
     meshBuf->upload(state);
-    //m_gpuBuffers.append(meshBuf->vertexBuffer);
-    //m_gpuBuffers.append(meshBuf->indexBuffer);
 
     // Free the memory used for indices. We need to keep the vertices around for software skinning.
     meshBuf->clearIndices();

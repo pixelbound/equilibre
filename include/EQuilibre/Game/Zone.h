@@ -70,8 +70,7 @@ public:
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     WLDCharActor * findCharacter(QString name) const;
 
-    void clear();
-
+    void clear(RenderState *state);
     void draw(RenderState *state);
 
     // xyz position of the player in the zone
@@ -118,7 +117,6 @@ private:
     QVector<WLDActor *> m_visibleActors;
     QVector<WLDLightActor *> m_lights;
     QVector<WLDLightActor *> m_visibleLights;
-    QVector<buffer_t> m_gpuBuffers;
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
@@ -149,7 +147,7 @@ public:
     bool load(PFSArchive *archive, WLDData *wld);
     void addTo(OctreeIndex *tree);
     void draw(RenderState *state);
-    void clear();
+    void clear(RenderState *state);
 
 private:
     MeshBuffer * upload(RenderState *state);
@@ -180,7 +178,7 @@ public:
     bool load(QString path, QString name, PFSArchive *mainArchive);
     void addTo(OctreeIndex *tree);
     void draw(RenderState *state);
-    void clear();
+    void clear(RenderState *state);
 
 private:
     void importMeshes();
@@ -213,7 +211,7 @@ public:
     
     bool load(QString archivePath, QString wldName);
     MeshBuffer * upload(RenderState *state);
-    void clear();
+    void clear(RenderState *state);
     
 private:
     PFSArchive *m_archive;
@@ -236,7 +234,7 @@ public:
     
     bool load(QString archivePath, QString wldName);
     void upload(RenderState *state);
-    void clear();
+    void clear(RenderState *state);
     
 private:
     void importSkeletons(WLDData *wld);
