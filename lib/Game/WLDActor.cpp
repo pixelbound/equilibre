@@ -107,7 +107,7 @@ void WLDStaticActor::update()
 
 void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 {
-    if(!!m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
+    if(!m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
         return;
     const QVector<QRgb> &colors = m_frag->m_lighting->m_def->m_colors;
     m_colorSegment.offset = meshBuf->colors.count();
