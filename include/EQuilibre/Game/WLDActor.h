@@ -89,23 +89,22 @@ protected:
 class GAME_DLL WLDStaticActor : public WLDActor
 {
 public:
-    WLDStaticActor(ActorFragment *frag, WLDMesh *simpleModel);
+    WLDStaticActor(ActorFragment *frag, WLDMesh *mesh);
     virtual ~WLDStaticActor();
+    const static ActorType Kind = Static;
 
     const matrix4 & modelMatrix() const;
-    WLDMesh * simpleModel() const;
+    WLDMesh * mesh() const;
     const BufferSegment & colorSegment() const;
 
     void update();
     void importColorData(MeshBuffer *meshBuf);
     
-    const static ActorType Kind = Static;
-    
 private:
     ActorFragment *m_frag;
     vec3 m_rotation, m_scale;
     matrix4 m_modelMatrix;
-    WLDMesh *m_simpleModel;
+    WLDMesh *m_mesh;
     BufferSegment m_colorSegment;
 };
 
@@ -115,11 +114,12 @@ private:
 class GAME_DLL WLDCharActor : public WLDActor
 {
 public:
-    WLDCharActor(WLDModel *complexModel);
-    WLDCharActor(ActorFragment *frag, WLDModel *complexModel);
+    WLDCharActor(WLDModel *model);
+    WLDCharActor(ActorFragment *frag, WLDModel *model);
     virtual ~WLDCharActor();
+    const static ActorType Kind = Character;
     
-    WLDModel * complexModel() const;
+    WLDModel * model() const;
     
     QString animName() const;
     void setAnimName(QString name);
@@ -141,16 +141,12 @@ public:
 
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialMap *materials);
     void draw(RenderState *state);
-    
-    const static ActorType Kind = Character;
 
 private:
     static QString slotName(EquipSlot slot);
 
-    ActorFragment *m_frag;
     vec3 m_rotation, m_scale;
-    matrix4 m_modelMatrix;
-    WLDModel *m_complexModel;
+    WLDModel *m_model;
     QString m_animName;
     double m_animTime;
     QString m_palName;

@@ -374,7 +374,7 @@ void ZoneTerrain::clear()
 {
     foreach(WLDStaticActor *part, m_zoneParts)
     {
-        delete part->simpleModel();
+        delete part->mesh();
         delete part;
     }
     delete m_zoneBuffer;
@@ -429,7 +429,7 @@ MeshBuffer * ZoneTerrain::upload(RenderState *state)
     // Import vertices and indices for each mesh.
     foreach(WLDStaticActor *part, m_zoneParts)
     {
-        MeshData *meshData = part->simpleModel()->importFrom(meshBuf);
+        MeshData *meshData = part->mesh()->importFrom(meshBuf);
         meshData->updateTexCoords(m_zoneMaterials);
     }
 #else
@@ -471,7 +471,7 @@ void ZoneTerrain::draw(RenderState *state, Frustum &frustum)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
         if(staticActor)
-            m_zoneBuffer->addMaterialGroups(staticActor->simpleModel()->data());
+            m_zoneBuffer->addMaterialGroups(staticActor->mesh()->data());
     }
 #endif
     
@@ -587,7 +587,7 @@ static bool zoneActorGroupLessThan(const WLDActor *a, const WLDActor *b)
     const WLDStaticActor *sb = b->cast<WLDStaticActor>();
     if(!sa || !sb)
         return false;
-    return sa->simpleModel()->def() < sb->simpleModel()->def();
+    return sa->mesh()->def() < sb->mesh()->def();
 }
 
 void ZoneObjects::draw(RenderState *state, Frustum &frustum)
@@ -619,7 +619,7 @@ void ZoneObjects::draw(RenderState *state, Frustum &frustum)
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
         if(!staticActor)
             continue;
-        WLDMesh *currentMesh = staticActor->simpleModel();
+        WLDMesh *currentMesh = staticActor->mesh();
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
@@ -787,7 +787,7 @@ void CharacterPack::clear()
 {
     foreach(WLDCharActor *actor, m_models)
     {
-        WLDModel *model = actor->complexModel();
+        WLDModel *model = actor->model();
         delete model->skeleton();
         delete model;
         delete actor;
@@ -828,7 +828,7 @@ void CharacterPack::importSkeletons(WLDData *wld)
         WLDCharActor *actor = m_models.value(actorName);
         if(!actor)
             continue;
-        actor->complexModel()->setSkeleton(new WLDSkeleton(skelDef));
+        actor->model()->setSkeleton(new WLDSkeleton(skelDef));
     }
 
     // import other animations
@@ -839,7 +839,7 @@ void CharacterPack::importSkeletons(WLDData *wld)
         WLDCharActor *actor = m_models.value(actorName);
         if(!actor)
             continue;
-        WLDSkeleton *skel = actor->complexModel()->skeleton();
+        WLDSkeleton *skel = actor->model()->skeleton();
         if(skel && track->m_def)
             skel->addTrack(animName, track->m_def);
     }
@@ -855,7 +855,7 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             WLDCharActor *actor = m_models.value(charName);
             if(!actor)
                 continue;
-            WLDModel *model = actor->complexModel();
+            WLDModel *model = actor->model();
             WLDModelSkin *skin = model->skins().value(palName);
             if(!skin)
             {
@@ -874,7 +874,7 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         WLDCharActor *actor = m_models.value(actorName);
         if(!actor || meshName.isEmpty())
             continue;
-        WLDModel *model = actor->complexModel();
+        WLDModel *model = actor->model();
         WLDModelSkin *skin = model->skins().value(skinName);
         if(!skin)
             continue;
@@ -928,7 +928,7 @@ void CharacterPack::upload(RenderState *state)
 void CharacterPack::upload(RenderState *state, WLDCharActor *actor)
 {
     // Make sure we haven't uploaded this character before.
-    WLDModel *model = actor->complexModel();
+    WLDModel *model = actor->model();
     if(model->buffer())
         return;
 

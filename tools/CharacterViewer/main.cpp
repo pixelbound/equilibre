@@ -52,7 +52,7 @@ QWidget * showCharViewer(RenderState *state)
         charActor->addEquip(WLDCharActor::Left, weaponActor2, itemPack->materials());
     if(charActor && skelActor)
     {
-        charActor->complexModel()->skeleton()->copyAnimationsFrom(skelActor->complexModel()->skeleton());
+        charActor->model()->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());
         charActor->setAnimName("P01");
         charActor->setPaletteName("03");
     }

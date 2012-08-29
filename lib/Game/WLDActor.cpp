@@ -46,9 +46,9 @@ WLDActor::ActorType WLDActor::type() const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDStaticActor::WLDStaticActor(ActorFragment *frag, WLDMesh *simpleModel) : WLDActor(Static)
+WLDStaticActor::WLDStaticActor(ActorFragment *frag, WLDMesh *simpleModel) : WLDActor(Kind)
 {
-    m_simpleModel = simpleModel;
+    m_mesh = simpleModel;
     m_frag = frag;
     if(frag)
     {
@@ -69,9 +69,9 @@ WLDStaticActor::~WLDStaticActor()
 {
 }
 
-WLDMesh * WLDStaticActor::simpleModel() const
+WLDMesh * WLDStaticActor::mesh() const
 {
-    return m_simpleModel;
+    return m_mesh;
 }
 
 const matrix4 & WLDStaticActor::modelMatrix() const
@@ -86,7 +86,7 @@ const BufferSegment & WLDStaticActor::colorSegment() const
 
 void WLDStaticActor::update()
 {
-    m_boundsAA = m_simpleModel->boundsAA();
+    m_boundsAA = m_mesh->boundsAA();
     m_boundsAA.scale(m_scale);
     m_boundsAA.rotate(m_rotation);
     m_boundsAA.translate(m_location);
@@ -102,7 +102,6 @@ void WLDStaticActor::update()
 
 void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 {
-    // XXX handle complex models here.
     if(!!m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
         return;
     const QVector<QRgb> &colors = m_frag->m_lighting->m_def->m_colors;
@@ -115,10 +114,9 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Character)
+WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
 {
-    m_complexModel = model;
-    m_frag = NULL;
+    m_model = model;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
@@ -127,10 +125,9 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Character)
     m_palName = "00";
 }
 
-WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Character)
+WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Kind)
 {
-    m_complexModel = model;
-    m_frag = frag;
+    m_model = model;
     if(frag)
     {
         m_location = frag->m_location;
@@ -152,9 +149,9 @@ WLDCharActor::~WLDCharActor()
 {
 }
 
-WLDModel * WLDCharActor::complexModel() const
+WLDModel * WLDCharActor::model() const
 {
-    return m_complexModel;
+    return m_model;
 }
 
 QString WLDCharActor::animName() const
@@ -190,9 +187,9 @@ void WLDCharActor::setPaletteName(QString palName)
 bool WLDCharActor::addEquip(WLDCharActor::EquipSlot slot, WLDMesh *mesh, MaterialMap *materials)
 {
     QString name = slotName(slot);
-    if(name.isEmpty() || !m_complexModel->skeleton())
+    if(name.isEmpty() || !m_model->skeleton())
         return false;
-    WLDAnimation *anim = m_complexModel->skeleton()->animations().value(m_animName);
+    WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
     if(!anim)
         return false;
     int trackIndex = anim->findTrack(name);
@@ -226,21 +223,26 @@ QString WLDCharActor::slotName(EquipSlot slot)
 
 void WLDCharActor::draw(RenderState *state)
 {
-    if(!m_complexModel)
+    if(!m_model)
         return;
-    WLDModelSkin *skin = m_complexModel->skins().value(m_palName);
+    WLDModelSkin *skin = m_model->skins().value(m_palName);
     if(!skin)
         return;
     QVector<BoneTransform> bones;
-    if(m_complexModel->skeleton())
+    if(m_model->skeleton())
     {
-        WLDAnimation *anim = m_complexModel->skeleton()->animations().value(m_animName);
+        WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
         if(anim)
             bones = anim->transformationsAtTime(m_animTime);
     }
     
     state->pushMatrix();
-    state->multiplyMatrix(m_modelMatrix);
+    state->translate(m_location.x, m_location.y, m_location.z);
+    state->rotate(m_rotation.x, 1.0, 0.0, 0.0);
+    state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
+    state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
+    state->scale(m_scale.x, m_scale.y, m_scale.z);
+    
     // XXX drawEquip method to minimize program changes
     if(bones.count() > 0)
         state->setRenderMode(RenderState::Skinning);
