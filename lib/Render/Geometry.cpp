@@ -170,6 +170,66 @@ void AABox::scaleCenter(float s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+Sphere::Sphere()
+{
+    radius = 0.0;
+}
+
+Sphere::Sphere(const vec3 &pos, float radius)
+{
+    this->pos = pos;
+    this->radius = radius;
+}
+
+TestResult Sphere::containsPoint(vec3 v) const
+{
+    float distanceSquared = (pos - v).lengthSquared();
+    float radiusSquared = radius * radius;
+    if(distanceSquared < radiusSquared)
+        return INSIDE;
+    else if(distanceSquared == radiusSquared)
+        return INTERSECTING;
+    else 
+        return OUTSIDE;
+}
+
+TestResult Sphere::containsAABox(const AABox &b) const
+{
+    if(intersectsAABox(b))
+        return INTERSECTING;
+    
+    if(!b.contains(pos))
+        return OUTSIDE;
+    
+    // Either the box is inside the sphere or the sphere is inside the box.
+    // The one with the larger extent contains the other.
+    vec3 boxExtent = b.high - b.low;
+    float boxMaxExtent = qMax(boxExtent.x, qMax(boxExtent.y, boxExtent.z));
+    return (boxMaxExtent > (radius * 2.0)) ? INTERSECTING : INSIDE;
+}
+
+bool Sphere::intersectsAABox(const AABox &b) const
+{
+    // On Faster Sphere-Box Overlap Testing (Larsson, Akenine-Moeller, Lengyel).
+    float d = 0;
+    float e;
+    e = qMax(b.low.x - pos.x, 0.0f) + qMax(pos.x - b.high.x, 0.0f);
+    if(e <= radius)
+        return false;
+    d += (e * e);
+    e = qMax(b.low.y - pos.y, 0.0f) + qMax(pos.y - b.high.y, 0.0f);
+    if(e <= radius)
+        return false;
+    d += (e * e);
+    e = qMax(b.low.z - pos.z, 0.0f) + qMax(pos.z - b.high.z, 0.0f);
+    if(e <= radius)
+        return false;
+    d += (e * e);
+    return d <= (radius * radius);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 Frustum::Frustum()
 {
     m_angle = 45.0;
@@ -304,7 +364,7 @@ void Frustum::update()
     m_dirty = false;
 }
 
-Frustum::TestResult Frustum::containsPoint(vec3 v) const
+TestResult Frustum::containsPoint(vec3 v) const
 {
     for(int i = 0; i < 6; i++)
     {
@@ -314,7 +374,7 @@ Frustum::TestResult Frustum::containsPoint(vec3 v) const
     return INSIDE;
 }
 
-Frustum::TestResult Frustum::containsBox(const vec3 *corners) const
+TestResult Frustum::containsBox(const vec3 *corners) const
 {
     int allInCount = 0;
     for(int i = 0; i < 6; i++)
@@ -340,7 +400,7 @@ Frustum::TestResult Frustum::containsBox(const vec3 *corners) const
     return (allInCount == 6) ? INSIDE : INTERSECTING;
 }
 
-Frustum::TestResult Frustum::containsAABox(const AABox &b) const
+TestResult Frustum::containsAABox(const AABox &b) const
 {
     TestResult result = INSIDE;
     for(int i = 0; i < 6; i++)

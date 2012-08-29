@@ -27,8 +27,13 @@ bool fequal(double a, double b)
 
 vec3 vec3::normalized() const
 {
-    float w = (float)sqrt(x * x + y * y + z * z);
+    float w = (float)sqrt(lengthSquared());
     return vec3(x / w, y / w, z / w);
+}
+
+float vec3::lengthSquared() const
+{
+    return x * x + y * y + z * z;
 }
 
 float vec3::dot(const vec3 &a, const vec3 &b)

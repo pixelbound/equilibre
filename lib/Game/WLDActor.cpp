@@ -340,15 +340,37 @@ void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, cons
 {
     if(!octant)
         return;
-    Frustum::TestResult r = cull ? f.containsAABox(octant->looseBounds()) : Frustum::INSIDE;
-    if(r == Frustum::OUTSIDE)
+    TestResult r = cull ? f.containsAABox(octant->looseBounds()) : INSIDE;
+    if(r == OUTSIDE)
         return;
-    cull = (r != Frustum::INSIDE);
+    cull = (r != INSIDE);
     for(int i = 0; i < 8; i++)
         findVisible(objects, octant->child(i), f, cull);
     foreach(WLDActor *actor, octant->actors())
     {
-        if((r == Frustum::INSIDE) || (f.containsAABox(actor->boundsAA()) != Frustum::OUTSIDE))
+        if((r == INSIDE) || (f.containsAABox(actor->boundsAA()) != OUTSIDE))
+            objects.append(actor);
+    }
+}
+
+void OctreeIndex::findVisible(QVector<WLDActor *> &objects, const Sphere &s, bool cull)
+{
+    findVisible(objects, s, cull);
+}
+
+void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, const Sphere &s, bool cull)
+{
+    if(!octant)
+        return;
+    TestResult r = cull ? s.containsAABox(octant->looseBounds()) : INSIDE;
+    if(r == OUTSIDE)
+        return;
+    cull = (r != INSIDE);
+    for(int i = 0; i < 8; i++)
+        findVisible(objects, octant->child(i), s, cull);
+    foreach(WLDActor *actor, octant->actors())
+    {
+        if((r == INSIDE) || (s.containsAABox(actor->boundsAA()) != OUTSIDE))
             objects.append(actor);
     }
 }

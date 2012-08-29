@@ -20,6 +20,13 @@
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/LinearMath.h"
 
+enum TestResult
+{
+    INSIDE,
+    INTERSECTING,
+    OUTSIDE
+};
+
 struct RENDER_DLL Plane
 {
     Plane();
@@ -54,6 +61,19 @@ struct RENDER_DLL AABox
     void scaleCenter(float s);
 };
 
+struct RENDER_DLL Sphere
+{
+    vec3 pos;
+    float radius;
+    
+    Sphere();
+    Sphere(const vec3 &pos, float radius);
+    
+    TestResult containsPoint(vec3 v) const;
+    TestResult containsAABox(const AABox &b) const;
+    bool intersectsAABox(const AABox &b) const;
+};
+
 #ifdef _WIN32
 #undef NEAR
 #undef FAR
@@ -70,13 +90,6 @@ public:
         RIGHT,
         NEAR,
         FAR
-    };
-
-    enum TestResult
-    {
-        INSIDE,
-        INTERSECTING,
-        OUTSIDE
     };
 
     Frustum();

@@ -68,6 +68,7 @@ public:
     }
 
     vec3 normalized() const;
+    float lengthSquared() const;
 
     static float dot(const vec3 &a, const vec3 &b);
     static vec3 cross(const vec3 &a, const vec3 &b);

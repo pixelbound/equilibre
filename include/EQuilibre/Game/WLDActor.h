@@ -179,11 +179,13 @@ public:
     OctreeIndex(AABox bounds, int maxDepth=5);
     Octree * add(WLDActor *actor);
     void findVisible(QVector<WLDActor *> &objects, const Frustum &f, bool cull);
+    void findVisible(QVector<WLDActor *> &objects, const Sphere &s, bool cull);
     void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
     Octree * findBestFittingOctant(int x, int y, int z, int depth);
     
 private:
     void findVisible(QVector<WLDActor *> &objects, Octree *octant, const Frustum &f, bool cull);
+    void findVisible(QVector<WLDActor *> &objects, Octree *octant, const Sphere &f, bool cull);
     
     Octree *m_root;
     int m_maxDepth;
