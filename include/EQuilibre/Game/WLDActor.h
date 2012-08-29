@@ -26,6 +26,7 @@
 
 class PFSArchive;
 class ActorFragment;
+class LightSourceFragment;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
@@ -49,7 +50,8 @@ public:
     enum ActorType
     {
         Static = 0,
-        Character
+        Character,
+        LightSource
     };
     
     WLDActor(ActorType type);
@@ -95,6 +97,7 @@ public:
 
     const matrix4 & modelMatrix() const;
     WLDMesh * mesh() const;
+    ActorFragment * frag() const;
     const BufferSegment & colorSegment() const;
 
     void update();
@@ -151,6 +154,19 @@ private:
     double m_animTime;
     QString m_palName;
     QMap<EquipSlot, ActorEquip> m_equip;
+};
+
+/*!
+  \brief Describes an instance of a light source.
+  */
+class GAME_DLL WLDLightActor : public WLDActor
+{
+public:
+    WLDLightActor(LightSourceFragment *frag);
+    const static ActorType Kind = LightSource;
+    
+private:
+    LightSourceFragment *m_frag;
 };
 
 class GAME_DLL OctreeIndex

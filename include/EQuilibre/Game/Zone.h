@@ -32,6 +32,7 @@ class WLDMesh;
 class WLDActor;
 class WLDStaticActor;
 class WLDCharActor;
+class WLDLightActor;
 class ActorIndex;
 class ActorIndexNode;
 class OctreeIndex;
@@ -61,6 +62,8 @@ public:
     ZoneObjects * objects() const;
     QList<CharacterPack *> characterPacks() const;
     QList<ObjectPack *> objectPacks() const;
+    OctreeIndex * actorIndex() const;
+    const QVector<WLDActor *> visibleActors() const;
     
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
@@ -102,6 +105,7 @@ public:
 
 private:
     void setPlayerViewFrustum(Frustum &frustum) const;
+    bool importLightSources(PFSArchive *archive);
 
     QString m_name;
     ZoneTerrain *m_terrain;
@@ -110,6 +114,10 @@ private:
     QList<ObjectPack *> m_objectPacks; // XXX this shouldn't be in Zone, maybe Game.
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
+    OctreeIndex *m_actorTree;
+    QVector<WLDActor *> m_visibleActors;
+    QVector<WLDLightActor *> m_lights;
+    QVector<WLDLightActor *> m_visibleLights;
     QVector<buffer_t> m_gpuBuffers;
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
@@ -136,9 +144,11 @@ public:
     virtual ~ZoneTerrain();
     
     const AABox & bounds() const;
+    QVector<WLDStaticActor *> & visibleZoneParts();
 
     bool load(PFSArchive *archive, WLDData *wld);
-    void draw(RenderState *state, Frustum &frustum);
+    void addTo(OctreeIndex *tree);
+    void draw(RenderState *state);
     void clear();
 
 private:
@@ -146,13 +156,12 @@ private:
 
     Zone *m_zone;
     QVector<WLDStaticActor *> m_zoneParts;
+    QVector<WLDStaticActor *> m_visibleZoneParts;
     MeshBuffer *m_zoneBuffer;
-    OctreeIndex *m_zoneTree;
     MaterialMap *m_zoneMaterials;
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
-    QVector<WLDActor *> m_visibleZoneParts;
 };
 
 /*!
@@ -164,10 +173,13 @@ public:
     ZoneObjects(Zone *zone);
     virtual ~ZoneObjects();
     
+    const AABox & bounds() const;
     const QMap<QString, WLDMesh *> & models() const;
+    QVector<WLDStaticActor *> & visibleObjects();
 
     bool load(QString path, QString name, PFSArchive *mainArchive);
-    void draw(RenderState *state, Frustum &frustum);
+    void addTo(OctreeIndex *tree);
+    void draw(RenderState *state);
     void clear();
 
 private:
@@ -176,11 +188,11 @@ private:
     void upload(RenderState *state);
     
     Zone *m_zone;
+    AABox m_bounds;
     ObjectPack *m_pack;
     WLDData *m_objDefWld;
     QVector<WLDStaticActor *> m_objects;
-    QVector<WLDActor *> m_visibleObjects;
-    OctreeIndex *m_objectTree;
+    QVector<WLDStaticActor *> m_visibleObjects;
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
@@ -195,7 +207,7 @@ public:
     ObjectPack();
     virtual ~ObjectPack();
     
-    const QMap<QString, WLDMesh *> models() const;
+    const QMap<QString, WLDMesh *> & models() const;
     MeshBuffer * buffer() const;
     MaterialMap * materials() const;
     

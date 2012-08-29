@@ -74,6 +74,11 @@ WLDMesh * WLDStaticActor::mesh() const
     return m_mesh;
 }
 
+ActorFragment * WLDStaticActor::frag() const
+{
+    return m_frag;
+}
+
 const matrix4 & WLDStaticActor::modelMatrix() const
 {
     return m_modelMatrix;
@@ -265,6 +270,20 @@ void WLDCharActor::draw(RenderState *state)
         state->popMatrix();
     }
     state->popMatrix();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+WLDLightActor::WLDLightActor(LightSourceFragment *frag) : WLDActor(Kind)
+{
+    m_frag = frag;
+    if(frag)
+    {
+        vec3 radius(frag->m_radius, frag->m_radius, frag->m_radius);
+        m_boundsAA.low = frag->m_pos - radius;
+        m_boundsAA.high = frag->m_pos + radius;
+        m_location = frag->m_pos;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

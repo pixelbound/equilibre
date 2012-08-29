@@ -144,7 +144,7 @@ void RenderStateGL2::createCube()
 
 void RenderStateGL2::drawBox(const AABox &box)
 {
-    const vec4 boxColor(0.2, 0.2, 0.2, 0.4);
+    const vec4 boxColor(0.4, 0.2, 0.2, 0.4);
     vec3 size = box.high - box.low;
     pushMatrix();
     translate(box.low.x, box.low.y, box.low.z);
@@ -161,7 +161,7 @@ void RenderStateGL2::drawBox(const AABox &box)
 
 void RenderStateGL2::drawFrustum(const Frustum &frustum)
 {
-    const vec4 frustumColor(0.2, 0.2, 0.2, 0.4);
+    const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
     fromEightCorners(m_cube, frustum.corners());
     program()->setAmbientLight(frustumColor);
     beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
