@@ -63,7 +63,6 @@ public:
     QList<CharacterPack *> characterPacks() const;
     QList<ObjectPack *> objectPacks() const;
     OctreeIndex * actorIndex() const;
-    const QVector<WLDActor *> visibleActors() const;
     
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
@@ -105,6 +104,7 @@ public:
 private:
     void setPlayerViewFrustum(Frustum &frustum) const;
     bool importLightSources(PFSArchive *archive);
+    static void frustumCullingCallback(WLDActor *actor, void *user);
 
     QString m_name;
     ZoneTerrain *m_terrain;
@@ -114,9 +114,8 @@ private:
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;
-    QVector<WLDActor *> m_visibleActors;
     QVector<WLDLightActor *> m_lights;
-    QVector<WLDLightActor *> m_visibleLights;
+    QVector<LightParams> m_lightsInRange;
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
@@ -148,6 +147,7 @@ public:
     void addTo(OctreeIndex *tree);
     void draw(RenderState *state);
     void clear(RenderState *state);
+    void resetVisible();
 
 private:
     MeshBuffer * upload(RenderState *state);
@@ -179,6 +179,7 @@ public:
     void addTo(OctreeIndex *tree);
     void draw(RenderState *state);
     void clear(RenderState *state);
+    void resetVisible();
 
 private:
     void importMeshes();

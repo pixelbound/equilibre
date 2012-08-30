@@ -20,6 +20,7 @@
 #include <QVector>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/FrameStat.h"
 
 class QImage;
@@ -36,8 +37,7 @@ class MeshBuffer;
 struct RENDER_DLL LightParams
 {
     vec3 color;
-    vec3 position;
-    float radius;
+    Sphere bounds;
 };
 
 struct RENDER_DLL FogParams

@@ -33,6 +33,7 @@ class WLDMesh;
 class WLDActor;
 class RenderState;
 class Octree;
+class OctreeIndex;
 
 class ActorEquip
 {
@@ -100,6 +101,7 @@ public:
     WLDMesh * mesh() const;
     ActorFragment * frag() const;
     const BufferSegment & colorSegment() const;
+    QVector<uint16_t> & lightsInRange();
 
     void update();
     void importColorData(MeshBuffer *meshBuf);
@@ -110,6 +112,7 @@ private:
     matrix4 m_modelMatrix;
     WLDMesh *m_mesh;
     BufferSegment m_colorSegment;
+    QVector<uint16_t> m_lightsInRange;
 };
 
 /*!
@@ -163,29 +166,35 @@ private:
 class GAME_DLL WLDLightActor : public WLDActor
 {
 public:
-    WLDLightActor(LightSourceFragment *frag);
+    WLDLightActor(LightSourceFragment *frag, uint16_t lightID);
     const static ActorType Kind = LightSource;
-    
+   
     const LightParams & params() const;
+    void checkCoverage(OctreeIndex *index);
     
 private:
+    static void lightCoverageCallback(WLDActor *actor, void *user);
+    
     LightSourceFragment *m_frag;
+    uint16_t m_lightID;
     LightParams m_params;
 };
+
+typedef void (*OctreeCallback)(WLDActor *actor, void *user);
 
 class GAME_DLL OctreeIndex
 {
 public:
     OctreeIndex(AABox bounds, int maxDepth=5);
     Octree * add(WLDActor *actor);
-    void findVisible(QVector<WLDActor *> &objects, const Frustum &f, bool cull);
-    void findVisible(QVector<WLDActor *> &objects, const Sphere &s, bool cull);
+    void findVisible(const Frustum &f, OctreeCallback callback, void *user, bool cull);
+    void findVisible(const Sphere &s, OctreeCallback callback, void *user, bool cull);
     void findIdealInsertion(AABox bb, int &x, int &y, int &z, int &depth);
     Octree * findBestFittingOctant(int x, int y, int z, int depth);
     
 private:
-    void findVisible(QVector<WLDActor *> &objects, Octree *octant, const Frustum &f, bool cull);
-    void findVisible(QVector<WLDActor *> &objects, Octree *octant, const Sphere &f, bool cull);
+    void findVisible(const Frustum &f, Octree *octant, OctreeCallback callback, void *user, bool cull);
+    void findVisible(const Sphere &f, Octree *octant, OctreeCallback callback, void *user, bool cull);
     
     Octree *m_root;
     int m_maxDepth;

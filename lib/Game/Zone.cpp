@@ -81,11 +81,6 @@ OctreeIndex * Zone::actorIndex() const
     return m_actorTree;
 }
 
-const QVector<WLDActor *> Zone::visibleActors() const
-{
-    return m_visibleActors;
-}
-
 bool Zone::load(QString path, QString name)
 {
     m_name = name;
@@ -176,9 +171,10 @@ bool Zone::importLightSources(PFSArchive *archive)
     WLDData *wld = WLDData::fromArchive(archive, "lights.wld");
     if(!wld)
         return false;
+    uint16_t ID = 0;
     foreach(LightSourceFragment *lightFrag, wld->fragmentsByType<LightSourceFragment>())
     {
-        WLDLightActor *actor = new WLDLightActor(lightFrag);
+        WLDLightActor *actor = new WLDLightActor(lightFrag, ID++);
         m_lights.append(actor);
         m_actorTree->add(actor);
     }
@@ -248,6 +244,20 @@ void Zone::setPlayerViewFrustum(Frustum &frustum) const
     frustum.update();
 }
 
+void Zone::frustumCullingCallback(WLDActor *actor, void *user)
+{
+    Zone *z = (Zone *)user;
+    WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
+    if(staticActor)
+    {
+        if(staticActor->frag())
+            z->objects()->visibleObjects().append(staticActor);
+        else
+            z->terrain()->visibleZoneParts().append(staticActor);
+        return;
+    }
+}
+
 void Zone::draw(RenderState *state)
 {
     if(!m_actorTree)
@@ -260,37 +270,15 @@ void Zone::draw(RenderState *state)
     
     // Build a list of visible actors.
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
-    m_actorTree->findVisible(m_visibleActors, realFrustum, m_cullObjects);
-    
-    // Add them to the relevant visible lists.
-    QVector<WLDStaticActor *> &visibleZoneParts = m_terrain->visibleZoneParts();
-    QVector<WLDStaticActor *> &visibleObjects = m_objects->visibleObjects();
-    foreach(WLDActor *actor, m_visibleActors)
-    {
-        WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
-        if(staticActor)
-        {
-            if(staticActor->frag())
-                visibleObjects.append(staticActor);
-            else
-                visibleZoneParts.append(staticActor);
-            continue;
-        }
-        WLDLightActor *lightActor = actor->cast<WLDLightActor>();
-        if(lightActor)
-        {
-            m_visibleLights.append(lightActor);
-        }
-    }
+    m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
     
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     state->setAmbientLight(ambientLight);
     state->setFogParams(m_fogParams);
     
-    QVector<LightParams> sources;
-    foreach(WLDLightActor *light, m_visibleLights)
-        sources.append(light->params());
-    state->setLightSources(sources.constData(), sources.count());
+    // Find which lights affect which actors.
+    foreach(WLDLightActor *light, m_lights)
+        light->checkCoverage(m_actorTree);
     
     // Draw the zone's static objects.
     if(m_showObjects && m_objects)
@@ -317,10 +305,8 @@ void Zone::draw(RenderState *state)
         //    state->drawBox(actor->boundsAA);
     }
     
-    visibleZoneParts.clear();
-    visibleObjects.clear();
-    m_visibleLights.clear();
-    m_visibleActors.clear();
+    m_terrain->resetVisible();
+    m_objects->resetVisible();
     
     state->popMatrix();
 }
@@ -524,6 +510,13 @@ void ZoneTerrain::addTo(OctreeIndex *tree)
         tree->add(actor);   
 }
 
+void ZoneTerrain::resetVisible()
+{
+    foreach(WLDStaticActor *actor, m_visibleZoneParts)
+        actor->lightsInRange().clear();
+    m_visibleZoneParts.clear();
+}
+
 MeshBuffer * ZoneTerrain::upload(RenderState *state)
 {
     MeshBuffer *meshBuf = NULL;
@@ -686,6 +679,13 @@ void ZoneObjects::addTo(OctreeIndex *tree)
 {
     foreach(WLDStaticActor *actor, m_objects)
         tree->add(actor);   
+}
+
+void ZoneObjects::resetVisible()
+{
+    foreach(WLDStaticActor *actor, m_visibleObjects)
+        actor->lightsInRange().clear();
+    m_visibleObjects.clear();
 }
 
 void ZoneObjects::upload(RenderState *state)

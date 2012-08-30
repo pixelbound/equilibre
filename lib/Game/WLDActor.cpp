@@ -89,6 +89,11 @@ const BufferSegment & WLDStaticActor::colorSegment() const
     return m_colorSegment;
 }
 
+QVector<uint16_t> & WLDStaticActor::lightsInRange()
+{
+    return m_lightsInRange;
+}
+
 void WLDStaticActor::update()
 {
     m_boundsAA = m_mesh->boundsAA();
@@ -274,9 +279,10 @@ void WLDCharActor::draw(RenderState *state)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDLightActor::WLDLightActor(LightSourceFragment *frag) : WLDActor(Kind)
+WLDLightActor::WLDLightActor(LightSourceFragment *frag, uint16_t lightID) : WLDActor(Kind)
 {
     m_frag = frag;
+    m_lightID = lightID;
     if(frag)
     {
         vec3 radius(frag->m_radius, frag->m_radius, frag->m_radius);
@@ -286,20 +292,38 @@ WLDLightActor::WLDLightActor(LightSourceFragment *frag) : WLDActor(Kind)
         
         LightDefFragment *def = frag->m_ref->m_def;
         m_params.color = vec3(def->m_color.x, def->m_color.y, def->m_color.z);
-        m_params.position = frag->m_pos;
-        m_params.radius = frag->m_radius;
+        m_params.bounds.pos = frag->m_pos;
+        m_params.bounds.radius = frag->m_radius;
     }
     else
     {
         m_params.color = vec3(0.0, 0.0, 0.0);
-        m_params.position = vec3(0.0, 0.0, 0.0);
-        m_params.radius = 0.0;
+        m_params.bounds.pos = vec3(0.0, 0.0, 0.0);
+        m_params.bounds.radius = 0.0;
     }
 }
 
 const LightParams & WLDLightActor::params() const
 {
     return m_params;
+}
+
+void WLDLightActor::checkCoverage(OctreeIndex *index)
+{
+    index->findVisible(m_params.bounds, lightCoverageCallback, this, true);
+}
+
+void WLDLightActor::lightCoverageCallback(WLDActor *actor, void *user)
+{
+    const int MAX_LIGHTS = 8;
+    WLDLightActor *light = (WLDLightActor *)user;
+    WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
+    if(staticActor)
+    {
+        QVector<uint16_t> &lights = staticActor->lightsInRange(); 
+        if(lights.count() < MAX_LIGHTS)
+            lights.append(light->m_lightID);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -331,12 +355,12 @@ Octree * OctreeIndex::add(WLDActor *actor)
     return octant;
 }
 
-void OctreeIndex::findVisible(QVector<WLDActor *> &objects, const Frustum &f, bool cull)
+void OctreeIndex::findVisible(const Frustum &f, OctreeCallback callback, void *user, bool cull)
 {
-    findVisible(objects, m_root, f, cull);
+    findVisible(f, m_root, callback, user, cull);
 }
 
-void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, const Frustum &f, bool cull)
+void OctreeIndex::findVisible(const Frustum &f, Octree *octant, OctreeCallback callback, void *user, bool cull)
 {
     if(!octant)
         return;
@@ -345,20 +369,20 @@ void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, cons
         return;
     cull = (r != INSIDE);
     for(int i = 0; i < 8; i++)
-        findVisible(objects, octant->child(i), f, cull);
+        findVisible(f, octant->child(i), callback, user, cull);
     foreach(WLDActor *actor, octant->actors())
     {
         if((r == INSIDE) || (f.containsAABox(actor->boundsAA()) != OUTSIDE))
-            objects.append(actor);
+            (*callback)(actor, user);
     }
 }
 
-void OctreeIndex::findVisible(QVector<WLDActor *> &objects, const Sphere &s, bool cull)
+void OctreeIndex::findVisible(const Sphere &s, OctreeCallback callback, void *user, bool cull)
 {
-    findVisible(objects, s, cull);
+    findVisible(s, m_root, callback, user, cull);
 }
 
-void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, const Sphere &s, bool cull)
+void OctreeIndex::findVisible(const Sphere &s, Octree *octant, OctreeCallback callback, void *user, bool cull)
 {
     if(!octant)
         return;
@@ -367,11 +391,11 @@ void OctreeIndex::findVisible(QVector<WLDActor *> &objects, Octree *octant, cons
         return;
     cull = (r != INSIDE);
     for(int i = 0; i < 8; i++)
-        findVisible(objects, octant->child(i), s, cull);
+        findVisible(s, octant->child(i), callback, user, cull);
     foreach(WLDActor *actor, octant->actors())
     {
         if((r == INSIDE) || (s.containsAABox(actor->boundsAA()) != OUTSIDE))
-            objects.append(actor);
+            (*callback)(actor, user);
     }
 }
 

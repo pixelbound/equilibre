@@ -273,11 +273,11 @@ void ShaderProgramGL2::setLightSources(const LightParams *sources, int count)
         else
         {
             lp.color = vec3(0.0, 0.0, 0.0);
-            lp.position = vec3(0.0, 0.0, 0.0);
-            lp.radius = 0.0;
+            lp.bounds.pos = vec3(0.0, 0.0, 0.0);
+            lp.bounds.radius = 0.0;
         }
-        glUniform3fv(m_uniform[U_LIGHT_POS], 1, (const GLfloat *)&lp.position);
-        glUniform1f(m_uniform[U_LIGHT_RADIUS], lp.radius);
+        glUniform3fv(m_uniform[U_LIGHT_POS], 1, (const GLfloat *)&lp.bounds.pos);
+        glUniform1f(m_uniform[U_LIGHT_RADIUS], lp.bounds.radius);
         glUniform3fv(m_uniform[U_LIGHT_COLOR], 1, (const GLfloat *)&lp.color);
     }
 }
