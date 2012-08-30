@@ -1,6 +1,6 @@
-lights, vertex colors
+lights
+    try out deferred lighting
 sort items front to back
-delete frame counters when deleting ZoneObjects/ZoneTerrain
 Draw opaque materials and then masked materials
 remove z-fighting of sea textures
 Load sky box

@@ -60,6 +60,7 @@ public:
 
     ZoneTerrain * terrain() const;
     ZoneObjects * objects() const;
+    const QVector<WLDLightActor *> & lights() const;
     QList<CharacterPack *> characterPacks() const;
     QList<ObjectPack *> objectPacks() const;
     OctreeIndex * actorIndex() const;
@@ -115,7 +116,6 @@ private:
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;
     QVector<WLDLightActor *> m_lights;
-    QVector<LightParams> m_lightsInRange;
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
@@ -192,6 +192,7 @@ private:
     WLDData *m_objDefWld;
     QVector<WLDStaticActor *> m_objects;
     QVector<WLDStaticActor *> m_visibleObjects;
+    LightParams m_lightsInRange[8];
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;

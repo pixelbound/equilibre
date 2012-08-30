@@ -266,7 +266,7 @@ void ShaderProgramGL2::setLightSources(const LightParams *sources, int count)
     for(int i = 0; i < MAX_LIGHTS; i++)
     {
         LightParams lp;
-        if(i < count)
+        if(sources && (i < count))
         {
             lp = sources[i];
         }

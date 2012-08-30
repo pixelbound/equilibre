@@ -66,6 +66,11 @@ ZoneObjects * Zone::objects() const
     return m_objects;
 }
 
+const QVector<WLDLightActor *> & Zone::lights() const
+{
+    return m_lights;   
+}
+
 QList<CharacterPack *> Zone::characterPacks() const
 {
     return m_charPacks;
@@ -254,7 +259,21 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
             z->objects()->visibleObjects().append(staticActor);
         else
             z->terrain()->visibleZoneParts().append(staticActor);
-        return;
+        
+        // Check which lights affect this actor.
+        const int MAX_LIGHTS = 8;
+        const QVector<WLDLightActor *> &zoneLights = z->m_lights;
+        const AABox &actorBounds = staticActor->boundsAA();
+        foreach(WLDLightActor *light, zoneLights)
+        {
+            if(light->params().bounds.containsAABox(actorBounds))
+            {
+                QVector<uint16_t> &actorLights = staticActor->lightsInRange(); 
+                actorLights.append(light->lightID());
+                if(actorLights.count() >= MAX_LIGHTS)
+                    break;
+            }
+        }
     }
 }
 
@@ -275,10 +294,6 @@ void Zone::draw(RenderState *state)
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     state->setAmbientLight(ambientLight);
     state->setFogParams(m_fogParams);
-    
-    // Find which lights affect which actors.
-    foreach(WLDLightActor *light, m_lights)
-        light->checkCoverage(m_actorTree);
     
     // Draw the zone's static objects.
     if(m_showObjects && m_objects)
@@ -562,6 +577,7 @@ void ZoneTerrain::draw(RenderState *state)
 #if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
+    state->setLightSources(NULL, 0);
     foreach(WLDActor *actor, m_visibleZoneParts)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -577,7 +593,6 @@ void ZoneTerrain::draw(RenderState *state)
     
     m_zoneStatGPU->endTime();
     m_zoneStat->endTime();
-    m_visibleZoneParts.clear();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -727,9 +742,7 @@ void ZoneObjects::draw(RenderState *state)
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
     MeshBuffer *meshBuf = m_pack->buffer();
-    QVector<matrix4> mvMatrices;
-    QVector<BufferSegment> colorSegments;
-    int instanceCount = 0;
+    const QVector<WLDLightActor *> &lightSources = m_zone->lights();
     foreach(WLDActor *actor, m_visibleObjects)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -739,18 +752,7 @@ void ZoneObjects::draw(RenderState *state)
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
-            {
-                if(instanceCount > 0)
-                {
-                    state->drawMeshBatch(mvMatrices.constData(),
-                                         colorSegments.constData(),
-                                         instanceCount);
-                    mvMatrices.clear();
-                    colorSegments.clear();
-                    instanceCount = 0;
-                }
                 state->endDrawMesh();
-            }
             meshBuf->matGroups.clear();
             meshBuf->addMaterialGroups(currentMesh->data());
             state->beginDrawMesh(meshBuf, m_pack->materials());
@@ -761,28 +763,24 @@ void ZoneObjects::draw(RenderState *state)
         // Draw the zone object.
         state->pushMatrix();
         state->multiplyMatrix(staticActor->modelMatrix());
-        mvMatrices.append(state->matrix(RenderState::ModelView));
-        colorSegments.append(staticActor->colorSegment());
-        instanceCount++;
+        matrix4 mvMatrix = state->matrix(RenderState::ModelView);
+        QVector<uint16_t> &actorLights = staticActor->lightsInRange();
+        for(int i = 0; i < actorLights.count(); i++)
+        {
+            uint16_t lightID = actorLights[i];
+            Q_ASSERT(i < 8);
+            m_lightsInRange[i] = lightSources[lightID]->params();
+        }
+        state->setLightSources(m_lightsInRange, actorLights.count());
+        state->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
         state->popMatrix();
     }
     if(previousMesh)
-    {
-        if(instanceCount > 0)
-        {
-            state->drawMeshBatch(mvMatrices.constData(),
-                                 colorSegments.constData(),
-                                 instanceCount);
-            mvMatrices.clear();
-            colorSegments.clear();
-        }
         state->endDrawMesh();
-    }
     
     if(m_drawnObjectsStat == NULL)
         m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
     m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
-    m_visibleObjects.clear();
     m_objectsStatGPU->endTime();
     m_objectsStat->endTime();
 }

@@ -169,12 +169,10 @@ public:
     WLDLightActor(LightSourceFragment *frag, uint16_t lightID);
     const static ActorType Kind = LightSource;
    
+    uint16_t lightID() const;
     const LightParams & params() const;
-    void checkCoverage(OctreeIndex *index);
     
 private:
-    static void lightCoverageCallback(WLDActor *actor, void *user);
-    
     LightSourceFragment *m_frag;
     uint16_t m_lightID;
     LightParams m_params;
