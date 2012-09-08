@@ -101,7 +101,8 @@ public:
     {
         NoLighting = 0,
         BakedLighting = 1,
-        DebugVertexColor = 2
+        DebugVertexColor = 2,
+        DebugTextureFactor = 3
     };
     
     virtual LightingMode lightingMode() const = 0;

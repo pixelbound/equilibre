@@ -32,6 +32,7 @@ uniform float u_lightRadius[MAX_LIGHTS];
 const int NO_LIGHTING = 0;
 const int BAKED_LIGHTING = 1;
 const int DEBUG_VERTEX_COLOR = 2;
+const int DEBUG_TEX_FACTOR = 3;
 uniform int u_lightingMode;
 
 uniform float u_fogStart;
@@ -74,13 +75,29 @@ void main()
         vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
         for(int i = 0; i < MAX_LIGHTS; i++)
             diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
-        v_color = vec3(u_ambientLight + diffuse);
+        v_color = vec3(u_ambientLight * diffuse);
         v_texFactor = a_color.w;
+    }
+    else if(u_lightingMode == DEBUG_VERTEX_COLOR)
+    {
+        v_color = a_color.xyz;
+        v_texFactor = 0.0;
+    }
+    else if(u_lightingMode == DEBUG_TEX_FACTOR)
+    {
+        // Show extreme texture factors as solid red/blue, or grayscale otherwise.
+        if(a_color.w == 0.0)
+            v_color = vec3(1.0, 0.0, 0.0);
+        else if(a_color.w == 1.0)
+            v_color = vec3(0.0, 0.0, 1.0);
+        else
+            v_color = a_color.www;
+        v_texFactor = 0.0;
     }
     else
     {
         v_color = a_color.xyz;
-        v_texFactor = (u_lightingMode == DEBUG_VERTEX_COLOR) ? 0.0 : 1.0;
+        v_texFactor = 1.0;
     }
     
     // Compute the fog factor.
