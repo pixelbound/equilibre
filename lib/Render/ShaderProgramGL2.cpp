@@ -606,6 +606,7 @@ void ShaderProgramGL2::beginSkinMesh()
         dst->normal = src->normal;
         dst->bone = src->bone;
         dst->texCoords = src->texCoords;
+        dst->color = src->color;
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
