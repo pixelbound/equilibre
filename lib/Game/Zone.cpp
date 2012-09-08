@@ -25,6 +25,7 @@
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/SoundTrigger.h"
 #include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/FrameStat.h"
 
@@ -84,6 +85,11 @@ QList<ObjectPack *> Zone::objectPacks() const
 OctreeIndex * Zone::actorIndex() const
 {
     return m_actorTree;
+}
+
+const FogParams & Zone::fogParams() const
+{
+    return m_fogParams;
 }
 
 bool Zone::load(QString path, QString name)
@@ -281,6 +287,7 @@ void Zone::draw(RenderState *state)
 {
     if(!m_actorTree)
         return;
+    ShaderProgramGL2 *prog = state->program();
     
     Frustum &frustum = state->viewFrustum();
     setPlayerViewFrustum(frustum);
@@ -292,16 +299,16 @@ void Zone::draw(RenderState *state)
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
     
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
-    state->setAmbientLight(ambientLight);
-    state->setFogParams(m_fogParams);
+    prog->setAmbientLight(ambientLight);
+    prog->setFogParams(m_fogParams);
     
     // Draw the zone's static objects.
     if(m_showObjects && m_objects)
-        m_objects->draw(state);
+        m_objects->draw(state, prog);
 
     // Draw the zone's terrain.
     if(m_showZone && m_terrain)
-        m_terrain->draw(state);
+        m_terrain->draw(state, prog);
     
     // draw sound trigger volumes
     if(m_showSoundTriggers)
@@ -560,7 +567,7 @@ MeshBuffer * ZoneTerrain::upload(RenderState *state)
     return meshBuf;
 }
 
-void ZoneTerrain::draw(RenderState *state)
+void ZoneTerrain::draw(RenderState *state, ShaderProgramGL2 *prog)
 {
     // draw geometry
     if(!m_zoneStat)
@@ -577,7 +584,7 @@ void ZoneTerrain::draw(RenderState *state)
 #if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
-    state->setLightSources(NULL, 0);
+    prog->setLightSources(NULL, 0);
     foreach(WLDActor *actor, m_visibleZoneParts)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -722,7 +729,7 @@ static bool zoneActorGroupLessThan(const WLDStaticActor *a, const WLDStaticActor
     return a->mesh()->def() < b->mesh()->def();
 }
 
-void ZoneObjects::draw(RenderState *state)
+void ZoneObjects::draw(RenderState *state, ShaderProgramGL2 *prog)
 {
     if(!m_objectsStat)
         m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
@@ -771,7 +778,7 @@ void ZoneObjects::draw(RenderState *state)
             Q_ASSERT(i < 8);
             m_lightsInRange[i] = lightSources[lightID]->params();
         }
-        state->setLightSources(m_lightsInRange, actorLights.count());
+        prog->setLightSources(m_lightsInRange, actorLights.count());
         state->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
         state->popMatrix();
     }

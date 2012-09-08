@@ -100,6 +100,8 @@ public slots:
     void setSelectedModelName(QString name);
 
 private:
+    void drawFrame();
+    
     QString m_meshName;
     double m_started;
     vec3 m_delta;

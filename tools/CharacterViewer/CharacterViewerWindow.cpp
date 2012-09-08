@@ -387,6 +387,17 @@ CharacterPack * CharacterScene::loadCharacters(QString archivePath)
 
 void CharacterScene::draw()
 {
+    vec4 clearColor(0.6, 0.6, 0.9, 1.0);
+    if(m_state->beginFrame(clearColor))
+    {
+        clearLog();
+        drawFrame();
+    }
+    m_state->endFrame();
+}
+
+void CharacterScene::drawFrame()
+{
     vec3 rot = m_theta;
     m_state->translate(m_delta.x, m_delta.y, m_delta.z);
     m_state->rotate(rot.x, 1.0, 0.0, 0.0);

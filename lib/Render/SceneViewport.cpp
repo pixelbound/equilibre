@@ -93,12 +93,7 @@ void SceneViewport::paintGL()
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_begin_v3(m_traceDomain, NULL); 
 #endif
-    if(m_state->beginFrame())
-    {
-        m_scene->clearLog();
-        m_scene->draw();
-    }
-    m_state->endFrame();
+    m_scene->draw();
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_end_v3(m_traceDomain, NULL); 
 #endif

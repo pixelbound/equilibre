@@ -64,6 +64,7 @@ public:
     QList<CharacterPack *> characterPacks() const;
     QList<ObjectPack *> objectPacks() const;
     OctreeIndex * actorIndex() const;
+    const FogParams & fogParams() const;
     
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
@@ -145,7 +146,7 @@ public:
 
     bool load(PFSArchive *archive, WLDData *wld);
     void addTo(OctreeIndex *tree);
-    void draw(RenderState *state);
+    void draw(RenderState *state, ShaderProgramGL2 *prog);
     void clear(RenderState *state);
     void resetVisible();
 
@@ -177,7 +178,7 @@ public:
 
     bool load(QString path, QString name, PFSArchive *mainArchive);
     void addTo(OctreeIndex *tree);
-    void draw(RenderState *state);
+    void draw(RenderState *state, ShaderProgramGL2 *prog);
     void clear(RenderState *state);
     void resetVisible();
 

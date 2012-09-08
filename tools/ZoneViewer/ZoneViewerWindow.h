@@ -95,6 +95,8 @@ public slots:
     void showSoundTriggers(bool show);
 
 private:
+    void drawFrame();
+    
     double m_started;
     Zone *m_zone;
     MouseState m_rotState;

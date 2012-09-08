@@ -32,12 +32,10 @@ struct RenderStateData
     RenderStateData();
     
     void createCube();
-    ShaderProgramGL2 * program() const;
     bool initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile);
     void setShader(RenderState::Shader newShader);
     
     Frustum frustum;
-    vec4 clearColor;
     vec4 ambientLightColor;
     RenderState::MatrixMode matrixMode;
     matrix4 matrix[3];
@@ -92,11 +90,6 @@ void RenderStateData::createCube()
     cubeMats->setMaterial(mg.matID, mat);
 }
 
-ShaderProgramGL2 * RenderStateData::program() const
-{
-    return programs[(int)shader];
-}
-
 bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile)
 {
     ShaderProgramGL2 *prog = programs[(int)shader];
@@ -111,7 +104,7 @@ bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile,
 
 void RenderStateData::setShader(RenderState::Shader newShader)
 {
-    ShaderProgramGL2 *oldProg = program();
+    ShaderProgramGL2 *oldProg = programs[(int)shader];
     ShaderProgramGL2 *newProg = programs[(int)newShader];
     if(oldProg != newProg)
     {
@@ -129,7 +122,6 @@ void RenderStateData::setShader(RenderState::Shader newShader)
 RenderStateGL2::RenderState()
 {
     d = new RenderStateData();
-    d->clearColor = vec4(0.6, 0.6, 0.9, 1.0);
     d->ambientLightColor = vec4(1.0, 1.0, 1.0, 1.0);
     d->matrix[(int)RenderState::ModelView].setIdentity();
     d->matrix[(int)RenderState::Projection].setIdentity();
@@ -154,6 +146,11 @@ RenderStateGL2::~RenderState()
     delete d;
 }
 
+ShaderProgramGL2 * RenderStateGL2::program() const
+{
+    return d->programs[(int)d->shader];
+}
+
 ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
 {
     if((shaderID >= BasicShader) && (shaderID < SkinningTextureShader))
@@ -165,7 +162,7 @@ ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
 void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
                                    const BoneTransform *bones, int boneCount)
 {
-    ShaderProgramGL2 *prog = d->program();
+    ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
     prog->beginDrawMesh(m, materials, bones, boneCount);
@@ -178,7 +175,7 @@ void RenderStateGL2::drawMesh()
 
 void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
 {
-    ShaderProgramGL2 *prog = d->program();
+    ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
     prog->setProjectionMatrix(d->matrix[(int)Projection]);
@@ -187,7 +184,7 @@ void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegmen
 
 void RenderStateGL2::endDrawMesh()
 {
-    ShaderProgramGL2 *prog = d->program();
+    ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
     prog->endDrawMesh();
@@ -236,11 +233,11 @@ void RenderStateGL2::drawBox(const AABox &box)
     scale(size.x, size.y, size.z);
     translate(0.5, 0.5, 0.5);
     fromEightCorners(d->cube, cubeVertices);
-    d->program()->setAmbientLight(boxColor);
+    program()->setAmbientLight(boxColor);
     beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    d->program()->setAmbientLight(d->ambientLightColor);
+    program()->setAmbientLight(d->ambientLightColor);
     popMatrix();
 }
 
@@ -248,11 +245,11 @@ void RenderStateGL2::drawFrustum(const Frustum &frustum)
 {
     const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
     fromEightCorners(d->cube, frustum.corners());
-    d->program()->setAmbientLight(frustumColor);
+    program()->setAmbientLight(frustumColor);
     beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    d->program()->setAmbientLight(d->ambientLightColor);
+    program()->setAmbientLight(d->ambientLightColor);
 }
 
 static RenderState::Shader shaderFromModes(RenderState::RenderMode render, RenderState::SkinningMode skinning)
@@ -553,27 +550,14 @@ void RenderStateGL2::freeTexture(texture_t tex)
 void RenderStateGL2::setAmbientLight(vec4 lightColor)
 {
     d->ambientLightColor = lightColor;
-    if(d->program())
-        d->program()->setAmbientLight(lightColor);
+    if(program())
+        program()->setAmbientLight(lightColor);
 }
 
-void RenderStateGL2::setLightSources(const LightParams *sources, int count)
-{
-    if(d->program())
-        d->program()->setLightSources(sources, count);
-}
-
-void RenderStateGL2::setFogParams(const FogParams &fogParams)
-{
-    d->clearColor = fogParams.color;
-    if(d->program())
-        d->program()->setFogParams(fogParams);
-}
-
-bool RenderStateGL2::beginFrame()
+bool RenderStateGL2::beginFrame(const vec4 &clearColor)
 {
     d->frameStat->beginTime();
-    ShaderProgramGL2 *prog = d->program();
+    ShaderProgramGL2 *prog = program();
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
@@ -583,7 +567,7 @@ bool RenderStateGL2::beginFrame()
     pushMatrix();
     loadIdentity();
     if(shaderLoaded)
-        glClearColor(d->clearColor.x, d->clearColor.y, d->clearColor.z, d->clearColor.w);
+        glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
     else
         glClearColor(0.6, 0.2, 0.2, 1.0);
     d->clearStat->beginTime();

@@ -273,6 +273,16 @@ void ZoneScene::init()
 
 void ZoneScene::draw()
 {
+    if(m_state->beginFrame(m_zone->fogParams().color))
+    {
+        clearLog();
+        drawFrame();
+    }
+    m_state->endFrame();
+}
+
+void ZoneScene::drawFrame()
+{
     vec3 camPos = m_zone->playerPos() + m_zone->cameraPos();
     log(QString("%1 %2 %3\n")
         .arg(camPos.x, 0, 'f', 2)

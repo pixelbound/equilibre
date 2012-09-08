@@ -98,6 +98,7 @@ public:
         SkinningTextureShader = 2
     };
     
+    ShaderProgramGL2 * program() const;
     ShaderProgramGL2 * programByID(Shader shaderID) const;
 
     enum SkinningMode
@@ -150,7 +151,7 @@ public:
 
     Frustum & viewFrustum();
     void setupViewport(int width, int heigth);
-    bool beginFrame();
+    bool beginFrame(const vec4 &clearColor);
     void endFrame();
 
     // material operations
@@ -159,8 +160,6 @@ public:
     texture_t loadTextures(const QImage *images, size_t count);
     void freeTexture(texture_t tex);
     void setAmbientLight(vec4 lightColor);
-    void setLightSources(const LightParams *sources, int count);
-    void setFogParams(const FogParams &fogParams);
     
     // buffer operations
     
