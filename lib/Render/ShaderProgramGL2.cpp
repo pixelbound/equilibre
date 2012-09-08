@@ -16,7 +16,7 @@
 
 #include <GL/glew.h>
 #include "EQuilibre/Render/ShaderProgramGL2.h"
-#include "EQuilibre/Render/RenderStateGL2.h"
+#include "EQuilibre/Render/RenderState.h"
 #include "EQuilibre/Render/Material.h"
 
 static const ShaderSymbolInfo Uniforms[] =

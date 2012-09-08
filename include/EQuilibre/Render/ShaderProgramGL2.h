@@ -55,7 +55,6 @@ struct ShaderSymbolInfo
     const char *Name;
 };
 
-class RenderStateGL2;
 class BoneTransform;
 class Material;
 class MaterialMap;

@@ -20,7 +20,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include "EQuilibre/Render/Scene.h"
-#include "EQuilibre/Render/RenderStateGL2.h"
+#include "EQuilibre/Render/RenderState.h"
 #include "EQuilibre/Game/Zone.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDModel.h"
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
     f.setSampleBuffers(true);
     f.setSwapInterval(0);
     QGLFormat::setDefaultFormat(f);
-    RenderStateGL2 state;
+    RenderState state;
 
     // main window loop
     QWidget *v = showCharViewer(&state);

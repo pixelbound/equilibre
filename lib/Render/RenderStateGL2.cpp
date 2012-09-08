@@ -17,15 +17,31 @@
 #include <cstdio>
 #include <GL/glew.h>
 #include <QImage>
+#include <QString>
+#include <QVector3D>
+#include <QQuaternion>
+#include <QMatrix4x4>
 #include "EQuilibre/Render/Platform.h"
-#include "EQuilibre/Render/RenderStateGL2.h"
+#include "EQuilibre/Render/RenderState.h"
 #include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/FrameStat.h"
 
-struct RenderStateGL2Data
+enum Shader
 {
-    RenderStateGL2Data();
+    BasicShader = 0,
+    SkinningUniformShader = 1,
+    SkinningTextureShader = 2
+};
+
+struct RenderStateData
+{
+    RenderStateData();
+    
+    void createCube();
+    ShaderProgramGL2 * program() const;
+    bool initShader(Shader shader, QString vertexFile, QString fragmentFile);
+    void setShader(Shader newShader);
     
     Frustum frustum;
     vec4 clearColor;
@@ -37,7 +53,7 @@ struct RenderStateGL2Data
     RenderState::RenderMode renderMode;
     RenderState::SkinningMode skinningMode;
     RenderState::LightingMode lightingMode;
-    RenderStateGL2::Shader shader;
+    Shader shader;
     MeshBuffer *cube;
     MaterialMap *cubeMats;
     QVector<FrameStat *> stats;
@@ -48,13 +64,13 @@ struct RenderStateGL2Data
     FrameStat *textureBindsStat;
 };
 
-RenderStateGL2Data::RenderStateGL2Data()
+RenderStateData::RenderStateData()
 {
     matrixMode = RenderState::ModelView;
     renderMode = RenderState::Basic;
     skinningMode = RenderState::SoftwareSkinning;
     lightingMode = RenderState::NoLighting;
-    shader = RenderStateGL2::BasicShader;
+    shader = BasicShader;
     for(int i = 0; i < 3; i++)
         programs[i] = NULL;
     cube = NULL;
@@ -66,9 +82,62 @@ RenderStateGL2Data::RenderStateGL2Data()
     textureBindsStat = NULL;
 }
 
-RenderStateGL2::RenderStateGL2() : RenderState()
+void RenderStateData::createCube()
+{   
+    MaterialGroup mg;
+    mg.count = 36;
+    mg.offset = 0;
+    mg.id = 0;
+    mg.matID = 1;
+    
+    cube = new MeshBuffer();
+    cube->vertices.resize(36);
+    cube->matGroups.push_back(mg);
+    
+    Material *mat = new Material();
+    mat->setOpaque(false);
+    
+    cubeMats = new MaterialMap();
+    cubeMats->setMaterial(mg.matID, mat);
+}
+
+ShaderProgramGL2 * RenderStateData::program() const
 {
-    d = new RenderStateGL2Data();
+    return programs[(int)shader];
+}
+
+bool RenderStateData::initShader(Shader shader, QString vertexFile, QString fragmentFile)
+{
+    ShaderProgramGL2 *prog = programs[(int)shader];
+    if(!prog->load(vertexFile, fragmentFile))
+    {
+        delete prog;
+        programs[(int)shader] = NULL;
+        return false;
+    }
+    return true;
+}
+
+void RenderStateData::setShader(Shader newShader)
+{
+    ShaderProgramGL2 *oldProg = program();
+    ShaderProgramGL2 *newProg = programs[(int)newShader];
+    if(oldProg != newProg)
+    {
+        // Change to the new program only if the program loaded correctly.
+        if(newProg && newProg->loaded())
+        {
+            shader = newShader;
+            glUseProgram(newProg->program());
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+RenderStateGL2::RenderState()
+{
+    d = new RenderStateData();
     d->clearColor = vec4(0.6, 0.6, 0.9, 1.0);
     d->ambientLightColor = vec4(1.0, 1.0, 1.0, 1.0);
     d->matrix[(int)RenderState::ModelView].setIdentity();
@@ -77,14 +146,14 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     d->programs[(int)BasicShader] = new ShaderProgramGL2(this);
     d->programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     d->programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
-    createCube();
+    d->createCube();
     d->drawCallsStat = createStat("Draw calls", FrameStat::Counter);
     d->textureBindsStat = createStat("Texture binds", FrameStat::Counter);
     d->frameStat = createStat("Frame (ms)", FrameStat::WallTime);
     d->clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
 
-RenderStateGL2::~RenderStateGL2()
+RenderStateGL2::~RenderState()
 {
     delete d->programs[(int)BasicShader];
     delete d->programs[(int)SkinningUniformShader];
@@ -94,15 +163,10 @@ RenderStateGL2::~RenderStateGL2()
     delete d;
 }
 
-ShaderProgramGL2 * RenderStateGL2::program() const
-{
-    return d->programs[(int)d->shader];
-}
-
 void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
                                    const BoneTransform *bones, int boneCount)
 {
-    ShaderProgramGL2 *prog = program();
+    ShaderProgramGL2 *prog = d->program();
     if(!prog || !prog->loaded())
         return;
     prog->beginDrawMesh(m, materials, bones, boneCount);
@@ -115,7 +179,7 @@ void RenderStateGL2::drawMesh()
 
 void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
 {
-    ShaderProgramGL2 *prog = program();
+    ShaderProgramGL2 *prog = d->program();
     if(!prog || !prog->loaded())
         return;
     prog->setProjectionMatrix(d->matrix[(int)Projection]);
@@ -124,7 +188,7 @@ void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegmen
 
 void RenderStateGL2::endDrawMesh()
 {
-    ShaderProgramGL2 *prog = program();
+    ShaderProgramGL2 *prog = d->program();
     if(!prog || !prog->loaded())
         return;
     prog->endDrawMesh();
@@ -164,25 +228,6 @@ static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
     }
 }
 
-void RenderStateGL2::createCube()
-{   
-    MaterialGroup mg;
-    mg.count = 36;
-    mg.offset = 0;
-    mg.id = 0;
-    mg.matID = 1;
-    
-    d->cube = new MeshBuffer();
-    d->cube->vertices.resize(36);
-    d->cube->matGroups.push_back(mg);
-    
-    Material *mat = new Material();
-    mat->setOpaque(false);
-    
-    d->cubeMats = new MaterialMap();
-    d->cubeMats->setMaterial(mg.matID, mat);
-}
-
 void RenderStateGL2::drawBox(const AABox &box)
 {
     const vec4 boxColor(0.4, 0.2, 0.2, 0.4);
@@ -192,11 +237,11 @@ void RenderStateGL2::drawBox(const AABox &box)
     scale(size.x, size.y, size.z);
     translate(0.5, 0.5, 0.5);
     fromEightCorners(d->cube, cubeVertices);
-    program()->setAmbientLight(boxColor);
+    d->program()->setAmbientLight(boxColor);
     beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    program()->setAmbientLight(d->ambientLightColor);
+    d->program()->setAmbientLight(d->ambientLightColor);
     popMatrix();
 }
 
@@ -204,30 +249,29 @@ void RenderStateGL2::drawFrustum(const Frustum &frustum)
 {
     const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
     fromEightCorners(d->cube, frustum.corners());
-    program()->setAmbientLight(frustumColor);
+    d->program()->setAmbientLight(frustumColor);
     beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    program()->setAmbientLight(d->ambientLightColor);
+    d->program()->setAmbientLight(d->ambientLightColor);
 }
 
-RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode render,
-                                                       RenderState::SkinningMode skinning) const
+static Shader shaderFromModes(RenderState::RenderMode render, RenderState::SkinningMode skinning)
 {
     switch(render)
     {
     default:
-    case Basic:
+    case RenderState::Basic:
         return BasicShader;
-    case Skinning:
+    case RenderState::Skinning:
       switch(skinning)
       {
       default:
-      case SoftwareSkinning:
+      case RenderState::SoftwareSkinning:
           return BasicShader;
-      case HardwareSkinningUniform:
+      case RenderState::HardwareSkinningUniform:
           return SkinningUniformShader;
-      case HardwareSkinningTexture:
+      case RenderState::HardwareSkinningTexture:
           return SkinningTextureShader;
       }
     }
@@ -241,7 +285,7 @@ RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
 void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 {
     d->skinningMode = newMode;
-    setShader(shaderFromModes(d->renderMode, newMode));
+    d->setShader(shaderFromModes(d->renderMode, newMode));
 }
 
 RenderStateGL2::LightingMode RenderStateGL2::lightingMode() const
@@ -252,8 +296,8 @@ RenderStateGL2::LightingMode RenderStateGL2::lightingMode() const
 void RenderStateGL2::setLightingMode(RenderStateGL2::LightingMode newMode)
 {
     d->lightingMode = newMode;
-    if(program())
-        program()->setLightingMode(newMode);
+    if(d->program())
+        d->program()->setLightingMode(newMode);
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
@@ -269,7 +313,7 @@ RenderState::RenderMode RenderStateGL2::renderMode() const
 void RenderStateGL2::setRenderMode(RenderState::RenderMode newMode)
 {
     d->renderMode = newMode;
-    setShader(shaderFromModes(newMode, d->skinningMode));
+    d->setShader(shaderFromModes(newMode, d->skinningMode));
 }
 
 void RenderStateGL2::loadIdentity()
@@ -310,6 +354,20 @@ void RenderStateGL2::rotate(float angle, float rx, float ry, float rz)
 void RenderStateGL2::scale(float sx, float sy, float sz)
 {
     multiplyMatrix(matrix4::scale(sx, sy, sz));
+}
+
+void RenderStateGL2::translate(const QVector3D &v)
+{
+    translate(v.x(), v.y(), v.z());
+}
+
+void RenderStateGL2::rotate(const QQuaternion &q)
+{
+    QMatrix4x4 m;
+    m.setToIdentity();
+    m.rotate(q);
+    matrix4 m2(m);
+    multiplyMatrix(m2);
 }
 
 matrix4 RenderStateGL2::currentMatrix() const
@@ -508,27 +566,27 @@ void RenderStateGL2::freeTexture(texture_t tex)
 void RenderStateGL2::setAmbientLight(vec4 lightColor)
 {
     d->ambientLightColor = lightColor;
-    if(program())
-        program()->setAmbientLight(lightColor);
+    if(d->program())
+        d->program()->setAmbientLight(lightColor);
 }
 
 void RenderStateGL2::setLightSources(const LightParams *sources, int count)
 {
-    if(program())
-        program()->setLightSources(sources, count);
+    if(d->program())
+        d->program()->setLightSources(sources, count);
 }
 
 void RenderStateGL2::setFogParams(const FogParams &fogParams)
 {
     d->clearColor = fogParams.color;
-    if(program())
-        program()->setFogParams(fogParams);
+    if(d->program())
+        d->program()->setFogParams(fogParams);
 }
 
 bool RenderStateGL2::beginFrame()
 {
     d->frameStat->beginTime();
-    ShaderProgramGL2 *prog = program();
+    ShaderProgramGL2 *prog = d->program();
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
@@ -622,37 +680,9 @@ void RenderStateGL2::freeBuffers(buffer_t *buffers, int count)
 
 void RenderStateGL2::init()
 {
-    initShader(BasicShader, "vertex.glsl", "fragment.glsl");
-    initShader(SkinningUniformShader, "vertex_skinned_uniform.glsl", "fragment.glsl");
-    initShader(SkinningTextureShader, "vertex_skinned_texture.glsl", "fragment.glsl");
-}
-
-bool RenderStateGL2::initShader(RenderStateGL2::Shader shader,
-                                 QString vertexFile, QString fragmentFile)
-{
-    ShaderProgramGL2 *prog = d->programs[(int)shader];
-    if(!prog->load(vertexFile, fragmentFile))
-    {
-        delete prog;
-        d->programs[(int)shader] = NULL;
-        return false;
-    }
-    return true;
-}
-
-void RenderStateGL2::setShader(RenderStateGL2::Shader newShader)
-{
-    ShaderProgramGL2 *oldProg = program();
-    ShaderProgramGL2 *newProg = d->programs[(int)newShader];
-    if(oldProg != newProg)
-    {
-        // Change to the new program only if the program loaded correctly.
-        if(newProg && newProg->loaded())
-        {
-            d->shader = newShader;
-            glUseProgram(newProg->program());
-        }
-    }
+    d->initShader(BasicShader, "vertex.glsl", "fragment.glsl");
+    d->initShader(SkinningUniformShader, "vertex_skinned_uniform.glsl", "fragment.glsl");
+    d->initShader(SkinningTextureShader, "vertex_skinned_texture.glsl", "fragment.glsl");
 }
 
 const QVector<FrameStat *> & RenderStateGL2::stats() const
