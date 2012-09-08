@@ -96,6 +96,16 @@ public:
 
     virtual SkinningMode skinningMode() const = 0;
     virtual void setSkinningMode(SkinningMode newMode) = 0;
+    
+    enum LightingMode
+    {
+        NoLighting = 0,
+        BakedLighting = 1,
+        DebugVertexColor = 2
+    };
+    
+    virtual LightingMode lightingMode() const = 0;
+    virtual void setLightingMode(LightingMode newMode) = 0;
 
     enum RenderMode
     {

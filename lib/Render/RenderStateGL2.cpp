@@ -33,6 +33,7 @@ RenderStateGL2::RenderStateGL2() : RenderState()
     m_matrix[(int)Texture].setIdentity();
     m_renderMode = Basic;
     m_skinningMode = SoftwareSkinning;
+    m_lightingMode = NoLighting;
     m_shader = BasicShader;
     m_programs[(int)BasicShader] = new ShaderProgramGL2(this);
     m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
@@ -201,6 +202,18 @@ void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 {
     m_skinningMode = newMode;
     setShader(shaderFromModes(m_renderMode, newMode));
+}
+
+RenderStateGL2::LightingMode RenderStateGL2::lightingMode() const
+{
+    return m_lightingMode;
+}
+
+void RenderStateGL2::setLightingMode(RenderStateGL2::LightingMode newMode)
+{
+    m_lightingMode = newMode;
+    if(program())
+        program()->setLightingMode(newMode);
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
@@ -479,7 +492,10 @@ bool RenderStateGL2::beginFrame()
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
+    {
         glUseProgram(prog->program());
+        prog->setLightingMode(m_lightingMode);
+    }
     glEnable(GL_DEPTH_TEST);
     setMatrixMode(ModelView);
     pushMatrix();

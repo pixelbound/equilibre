@@ -81,6 +81,17 @@ void ZoneViewerWindow::initMenus()
     skinningActions->addAction(m_softwareSkinningAction);
     skinningActions->addAction(m_hardwareSkinningUniformAction);
     skinningActions->addAction(m_hardwareSkinningTextureAction);
+    
+    m_noLightingAction = new QAction("No Lighting", this);
+    m_bakedLightingAction = new QAction("Baked Lighting", this);
+    m_debugVertexColorAction = new QAction("Debug Vertex Color", this);
+    m_noLightingAction->setCheckable(true);
+    m_bakedLightingAction->setCheckable(true);
+    m_debugVertexColorAction->setCheckable(true);
+    QActionGroup *lightingActions = new QActionGroup(this);
+    lightingActions->addAction(m_noLightingAction);
+    lightingActions->addAction(m_bakedLightingAction);
+    lightingActions->addAction(m_debugVertexColorAction);
 
     m_showFpsAction = new QAction("Show Stats", this);
     m_showFpsAction->setCheckable(true);
@@ -99,6 +110,11 @@ void ZoneViewerWindow::initMenus()
     renderMenu->addAction(m_softwareSkinningAction);
     renderMenu->addAction(m_hardwareSkinningUniformAction);
     renderMenu->addAction(m_hardwareSkinningTextureAction);
+    renderMenu->addSeparator();
+    renderMenu->addAction(m_noLightingAction);
+    renderMenu->addAction(m_bakedLightingAction);
+    renderMenu->addAction(m_debugVertexColorAction);
+    renderMenu->addSeparator();
     renderMenu->addAction(m_showFpsAction);
     renderMenu->addAction(m_showZoneAction);
     renderMenu->addAction(m_showZoneObjectsAction);
@@ -117,6 +133,9 @@ void ZoneViewerWindow::initMenus()
     connect(m_softwareSkinningAction, SIGNAL(triggered()), this, SLOT(setSoftwareSkinning()));
     connect(m_hardwareSkinningUniformAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningUniform()));
     connect(m_hardwareSkinningTextureAction, SIGNAL(triggered()), this, SLOT(setHardwareSkinningTexture()));
+    connect(m_noLightingAction, SIGNAL(triggered()), this, SLOT(setNoLighting()));
+    connect(m_bakedLightingAction, SIGNAL(triggered()), this, SLOT(setBakedLighting()));
+    connect(m_debugVertexColorAction, SIGNAL(triggered()), this, SLOT(setDebugVertexColor()));
     connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowStats(bool)));
     connect(m_showZoneAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZone(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
@@ -181,6 +200,21 @@ void ZoneViewerWindow::updateMenus()
         m_hardwareSkinningTextureAction->setChecked(true);
         break;
     }
+    
+    switch(m_state->lightingMode())
+    {
+    default:
+    case RenderState::NoLighting:
+        m_noLightingAction->setChecked(true);
+        break;
+    case RenderState::BakedLighting:
+        m_bakedLightingAction->setChecked(true);
+        break;
+    case RenderState::DebugVertexColor:
+        m_debugVertexColorAction->setChecked(true);
+        break;
+    }
+
     m_showFpsAction->setChecked(m_viewport->showStats());
 }
 
@@ -199,6 +233,24 @@ void ZoneViewerWindow::setHardwareSkinningUniform()
 void ZoneViewerWindow::setHardwareSkinningTexture()
 {
     m_state->setSkinningMode(RenderState::HardwareSkinningTexture);
+    updateMenus();
+}
+
+void ZoneViewerWindow::setNoLighting()
+{
+    m_state->setLightingMode(RenderState::NoLighting);
+    updateMenus();
+}
+
+void ZoneViewerWindow::setBakedLighting()
+{
+    m_state->setLightingMode(RenderState::BakedLighting);
+    updateMenus();
+}
+
+void ZoneViewerWindow::setDebugVertexColor()
+{
+    m_state->setLightingMode(RenderState::DebugVertexColor);
     updateMenus();
 }
 

@@ -29,6 +29,11 @@ uniform vec3 u_lightPos[MAX_LIGHTS];
 uniform vec3 u_lightColor[MAX_LIGHTS];
 uniform float u_lightRadius[MAX_LIGHTS];
 
+const int NO_LIGHTING = 0;
+const int BAKED_LIGHTING = 1;
+const int DEBUG_VERTEX_COLOR = 2;
+uniform int u_lightingMode;
+
 uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform float u_fogDensity;
@@ -58,17 +63,25 @@ void main()
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
     
-    mat3 normalMatrix;
-    normalMatrix[0] = vec3(u_modelViewMatrix[0]);
-    normalMatrix[1] = vec3(u_modelViewMatrix[1]);
-    normalMatrix[2] = vec3(u_modelViewMatrix[2]);
-    vec3 normal = normalize(normalMatrix * a_normal);
-    
-    vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
-    for(int i = 0; i < MAX_LIGHTS; i++)
-        diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
-    v_color = vec3(u_ambientLight + diffuse);
-    v_texFactor = a_color.w;
+    if(u_lightingMode == BAKED_LIGHTING)
+    {
+        mat3 normalMatrix;
+        normalMatrix[0] = vec3(u_modelViewMatrix[0]);
+        normalMatrix[1] = vec3(u_modelViewMatrix[1]);
+        normalMatrix[2] = vec3(u_modelViewMatrix[2]);
+        vec3 normal = normalize(normalMatrix * a_normal);
+      
+        vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
+        for(int i = 0; i < MAX_LIGHTS; i++)
+            diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
+        v_color = vec3(u_ambientLight + diffuse);
+        v_texFactor = a_color.w;
+    }
+    else
+    {
+        v_color = a_color.xyz;
+        v_texFactor = (u_lightingMode == DEBUG_VERTEX_COLOR) ? 0.0 : 1.0;
+    }
     
     // Compute the fog factor.
     const float LOG2 = 1.442695;

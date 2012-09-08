@@ -26,6 +26,7 @@ static const ShaderSymbolInfo Uniforms[] =
     {U_AMBIENT_LIGHT, "u_ambientLight"},
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
     {U_MAT_TEXTURE, "u_material_texture"},
+    {U_LIGHTING_MODE, "u_lightingMode"},
     {U_LIGHT_POS, "u_lightPos"},
     {U_LIGHT_RADIUS, "u_lightRadius"},
     {U_LIGHT_COLOR, "u_lightColor"},
@@ -259,6 +260,11 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
 void ShaderProgramGL2::setAmbientLight(vec4 lightColor)
 {
     glUniform4fv(m_uniform[U_AMBIENT_LIGHT], 1, (const GLfloat *)&lightColor);
+}
+
+void ShaderProgramGL2::setLightingMode(RenderState::LightingMode newMode)
+{
+    glUniform1i(m_uniform[U_LIGHTING_MODE], newMode);
 }
 
 void ShaderProgramGL2::setLightSources(const LightParams *sources, int count)

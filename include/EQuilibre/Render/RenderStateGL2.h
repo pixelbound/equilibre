@@ -46,6 +46,9 @@ public:
 
     virtual SkinningMode skinningMode() const;
     virtual void setSkinningMode(SkinningMode newMode);
+    
+    virtual LightingMode lightingMode() const;
+    virtual void setLightingMode(LightingMode newMode);
 
     virtual RenderMode renderMode() const;
     virtual void setRenderMode(RenderMode newMode);
@@ -111,6 +114,7 @@ private:
     ShaderProgramGL2 *m_programs[3];
     RenderMode m_renderMode;
     SkinningMode m_skinningMode;
+    LightingMode m_lightingMode;
     Shader m_shader;
     MeshBuffer *m_cube;
     MaterialMap *m_cubeMats;

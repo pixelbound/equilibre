@@ -48,6 +48,9 @@ private slots:
     void setSoftwareSkinning();
     void setHardwareSkinningUniform();
     void setHardwareSkinningTexture();
+    void setNoLighting();
+    void setBakedLighting();
+    void setDebugVertexColor();
 
 private:
     void initMenus();
@@ -59,6 +62,9 @@ private:
     QAction *m_softwareSkinningAction;
     QAction *m_hardwareSkinningUniformAction;
     QAction *m_hardwareSkinningTextureAction;
+    QAction *m_noLightingAction;
+    QAction *m_bakedLightingAction;
+    QAction *m_debugVertexColorAction;
     QAction *m_showFpsAction;
     QAction *m_showZoneAction;
     QAction *m_showZoneObjectsAction;
