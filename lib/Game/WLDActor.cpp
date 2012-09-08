@@ -253,13 +253,8 @@ void WLDCharActor::draw(RenderState *state)
     state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
     state->scale(m_scale.x, m_scale.y, m_scale.z);
     
-    // XXX drawEquip method to minimize program changes
-    if(bones.count() > 0)
-        state->setRenderMode(RenderState::Skinning);
-    else
-        state->setRenderMode(RenderState::Basic);
+    // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)
     skin->draw(state, bones.constData(), (uint32_t)bones.count());
-    state->setRenderMode(RenderState::Basic);
     foreach(ActorEquip eq, m_equip)
     {
         state->pushMatrix();

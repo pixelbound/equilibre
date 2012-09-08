@@ -412,7 +412,9 @@ void CharacterScene::drawFrame()
     if(charModel)
     {
         charModel->setAnimTime(currentTime());
+        m_state->setRenderMode(RenderState::Skinning);
         charModel->draw(m_state);
+        m_state->setRenderMode(RenderState::Basic);
     }
 }
 
