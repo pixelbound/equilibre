@@ -36,6 +36,7 @@ class MeshBuffer;
 struct RenderStateData;
 class RenderState;
 typedef RenderState RenderStateGL2;
+class ShaderProgramGL2;
 
 struct RENDER_DLL LightParams
 {
@@ -89,6 +90,15 @@ public:
     // debug operations
     void drawBox(const AABox &box);
     void drawFrustum(const Frustum &frustum);
+    
+    enum Shader
+    {
+        BasicShader = 0,
+        SkinningUniformShader = 1,
+        SkinningTextureShader = 2
+    };
+    
+    ShaderProgramGL2 * programByID(Shader shaderID) const;
 
     enum SkinningMode
     {
@@ -100,17 +110,6 @@ public:
     SkinningMode skinningMode() const;
     void setSkinningMode(SkinningMode newMode);
     
-    enum LightingMode
-    {
-        NoLighting = 0,
-        BakedLighting = 1,
-        DebugVertexColor = 2,
-        DebugTextureFactor = 3
-    };
-    
-    LightingMode lightingMode() const;
-    void setLightingMode(LightingMode newMode);
-
     enum RenderMode
     {
         Basic = 0,

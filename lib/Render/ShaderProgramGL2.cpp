@@ -262,7 +262,7 @@ void ShaderProgramGL2::setAmbientLight(vec4 lightColor)
     glUniform4fv(m_uniform[U_AMBIENT_LIGHT], 1, (const GLfloat *)&lightColor);
 }
 
-void ShaderProgramGL2::setLightingMode(RenderState::LightingMode newMode)
+void ShaderProgramGL2::setLightingMode(ShaderProgramGL2::LightingMode newMode)
 {
     glUniform1i(m_uniform[U_LIGHTING_MODE], newMode);
 }

@@ -27,21 +27,14 @@
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/FrameStat.h"
 
-enum Shader
-{
-    BasicShader = 0,
-    SkinningUniformShader = 1,
-    SkinningTextureShader = 2
-};
-
 struct RenderStateData
 {
     RenderStateData();
     
     void createCube();
     ShaderProgramGL2 * program() const;
-    bool initShader(Shader shader, QString vertexFile, QString fragmentFile);
-    void setShader(Shader newShader);
+    bool initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile);
+    void setShader(RenderState::Shader newShader);
     
     Frustum frustum;
     vec4 clearColor;
@@ -52,8 +45,7 @@ struct RenderStateData
     ShaderProgramGL2 *programs[3];
     RenderState::RenderMode renderMode;
     RenderState::SkinningMode skinningMode;
-    RenderState::LightingMode lightingMode;
-    Shader shader;
+    RenderState::Shader shader;
     MeshBuffer *cube;
     MaterialMap *cubeMats;
     QVector<FrameStat *> stats;
@@ -69,8 +61,7 @@ RenderStateData::RenderStateData()
     matrixMode = RenderState::ModelView;
     renderMode = RenderState::Basic;
     skinningMode = RenderState::SoftwareSkinning;
-    lightingMode = RenderState::NoLighting;
-    shader = BasicShader;
+    shader = RenderState::BasicShader;
     for(int i = 0; i < 3; i++)
         programs[i] = NULL;
     cube = NULL;
@@ -106,7 +97,7 @@ ShaderProgramGL2 * RenderStateData::program() const
     return programs[(int)shader];
 }
 
-bool RenderStateData::initShader(Shader shader, QString vertexFile, QString fragmentFile)
+bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile)
 {
     ShaderProgramGL2 *prog = programs[(int)shader];
     if(!prog->load(vertexFile, fragmentFile))
@@ -118,7 +109,7 @@ bool RenderStateData::initShader(Shader shader, QString vertexFile, QString frag
     return true;
 }
 
-void RenderStateData::setShader(Shader newShader)
+void RenderStateData::setShader(RenderState::Shader newShader)
 {
     ShaderProgramGL2 *oldProg = program();
     ShaderProgramGL2 *newProg = programs[(int)newShader];
@@ -161,6 +152,14 @@ RenderStateGL2::~RenderState()
     delete d->cubeMats;
     delete d->cube;
     delete d;
+}
+
+ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
+{
+    if((shaderID >= BasicShader) && (shaderID < SkinningTextureShader))
+        return d->programs[(int)shaderID];
+    else
+        return NULL;
 }
 
 void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
@@ -256,23 +255,23 @@ void RenderStateGL2::drawFrustum(const Frustum &frustum)
     d->program()->setAmbientLight(d->ambientLightColor);
 }
 
-static Shader shaderFromModes(RenderState::RenderMode render, RenderState::SkinningMode skinning)
+static RenderState::Shader shaderFromModes(RenderState::RenderMode render, RenderState::SkinningMode skinning)
 {
     switch(render)
     {
     default:
     case RenderState::Basic:
-        return BasicShader;
+        return RenderState::BasicShader;
     case RenderState::Skinning:
       switch(skinning)
       {
       default:
       case RenderState::SoftwareSkinning:
-          return BasicShader;
+          return RenderState::BasicShader;
       case RenderState::HardwareSkinningUniform:
-          return SkinningUniformShader;
+          return RenderState::SkinningUniformShader;
       case RenderState::HardwareSkinningTexture:
-          return SkinningTextureShader;
+          return RenderState::SkinningTextureShader;
       }
     }
 }
@@ -286,18 +285,6 @@ void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 {
     d->skinningMode = newMode;
     d->setShader(shaderFromModes(d->renderMode, newMode));
-}
-
-RenderStateGL2::LightingMode RenderStateGL2::lightingMode() const
-{
-    return d->lightingMode;
-}
-
-void RenderStateGL2::setLightingMode(RenderStateGL2::LightingMode newMode)
-{
-    d->lightingMode = newMode;
-    if(d->program())
-        d->program()->setLightingMode(newMode);
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
@@ -590,10 +577,7 @@ bool RenderStateGL2::beginFrame()
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
-    {
         glUseProgram(prog->program());
-        prog->setLightingMode(d->lightingMode);
-    }
     glEnable(GL_DEPTH_TEST);
     setMatrixMode(ModelView);
     pushMatrix();

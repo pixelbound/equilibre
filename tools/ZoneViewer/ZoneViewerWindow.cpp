@@ -29,6 +29,7 @@
 #include "ZoneViewerWindow.h"
 #include "EQuilibre/Render/SceneViewport.h"
 #include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Scene.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDActor.h"
@@ -174,19 +175,19 @@ bool ZoneViewerWindow::loadCharacters(QString archivePath)
 
 void ZoneViewerWindow::updateMenus()
 {
-    switch(m_state->lightingMode())
+    switch(m_scene->lightingMode())
     {
     default:
-    case RenderState::NoLighting:
+    case ShaderProgramGL2::NoLighting:
         m_noLightingAction->setChecked(true);
         break;
-    case RenderState::BakedLighting:
+    case ShaderProgramGL2::BakedLighting:
         m_bakedLightingAction->setChecked(true);
         break;
-    case RenderState::DebugVertexColor:
+    case ShaderProgramGL2::DebugVertexColor:
         m_debugVertexColorAction->setChecked(true);
         break;
-    case RenderState::DebugTextureFactor:
+    case ShaderProgramGL2::DebugTextureFactor:
         m_debugTextureFactorAction->setChecked(true);
         break;
     }
@@ -196,25 +197,25 @@ void ZoneViewerWindow::updateMenus()
 
 void ZoneViewerWindow::setNoLighting()
 {
-    m_state->setLightingMode(RenderState::NoLighting);
+    m_scene->setLightingMode(ShaderProgramGL2::NoLighting);
     updateMenus();
 }
 
 void ZoneViewerWindow::setBakedLighting()
 {
-    m_state->setLightingMode(RenderState::BakedLighting);
+    m_scene->setLightingMode(ShaderProgramGL2::BakedLighting);
     updateMenus();
 }
 
 void ZoneViewerWindow::setDebugVertexColor()
 {
-    m_state->setLightingMode(RenderState::DebugVertexColor);
+    m_scene->setLightingMode(ShaderProgramGL2::DebugVertexColor);
     updateMenus();
 }
 
 void ZoneViewerWindow::setDebugTextureFactor()
 {
-    m_state->setLightingMode(RenderState::DebugTextureFactor);
+    m_scene->setLightingMode(ShaderProgramGL2::DebugTextureFactor);
     updateMenus();
 }
 
@@ -223,6 +224,8 @@ void ZoneViewerWindow::setDebugTextureFactor()
 ZoneScene::ZoneScene(RenderState *state) : Scene(state)
 {
     m_zone = new Zone(this);
+    m_program = state->programByID(RenderState::BasicShader);
+    m_lightingMode = (int)ShaderProgramGL2::NoLighting;
     m_rotState.last = vec3();
     m_rotState.active = false;
 }
@@ -230,6 +233,16 @@ ZoneScene::ZoneScene(RenderState *state) : Scene(state)
 Zone * ZoneScene::zone() const
 {
     return m_zone;
+}
+
+int ZoneScene::lightingMode() const
+{
+    return m_lightingMode;
+}
+
+void ZoneScene::setLightingMode(int newMode)
+{
+    m_lightingMode = newMode;
 }
 
 void ZoneScene::showZone(bool show)
@@ -265,6 +278,7 @@ void ZoneScene::draw()
         .arg(camPos.x, 0, 'f', 2)
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
+    m_program->setLightingMode((ShaderProgramGL2::LightingMode)m_lightingMode);
     m_zone->draw(m_state);
     
     if(m_zone->showSoundTriggers())

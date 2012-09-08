@@ -49,7 +49,7 @@ const int U_FOG_DENSITY = 11;
 const int U_FOG_COLOR = 12;
 const int U_MAX = U_FOG_COLOR;
 
-struct ShaderSymbolInfo
+struct RENDER_DLL ShaderSymbolInfo
 {
     uint32_t ID;
     const char *Name;
@@ -59,7 +59,7 @@ class BoneTransform;
 class Material;
 class MaterialMap;
 
-class MeshDataGL2
+class RENDER_DLL MeshDataGL2
 {
 public:
     void clear();
@@ -73,7 +73,7 @@ public:
     bool pending;
 };
 
-class ShaderProgramGL2
+class RENDER_DLL ShaderProgramGL2
 {
 public:
     ShaderProgramGL2(RenderStateGL2 *state);
@@ -94,13 +94,21 @@ public:
                                const BoneTransform *bones, int boneCount);
     virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances);
     virtual void endDrawMesh();
+    
+    enum LightingMode
+    {
+        NoLighting = 0,
+        BakedLighting = 1,
+        DebugVertexColor = 2,
+        DebugTextureFactor = 3
+    };
 
     void setModelViewMatrix(const matrix4 &modelView);
     void setProjectionMatrix(const matrix4 &projection);
     void setMatrices(const matrix4 &modelView, const matrix4 &projection);
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
-    void setLightingMode(RenderState::LightingMode newMode);
+    void setLightingMode(LightingMode newMode);
     void setLightSources(const LightParams *sources, int count);
     void setFogParams(const FogParams &fogParams);
 
