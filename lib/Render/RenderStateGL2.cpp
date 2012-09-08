@@ -23,40 +23,80 @@
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/FrameStat.h"
 
+struct RenderStateGL2Data
+{
+    RenderStateGL2Data();
+    
+    Frustum frustum;
+    vec4 clearColor;
+    vec4 ambientLightColor;
+    RenderState::MatrixMode matrixMode;
+    matrix4 matrix[3];
+    std::vector<matrix4> matrixStack[3];
+    ShaderProgramGL2 *programs[3];
+    RenderState::RenderMode renderMode;
+    RenderState::SkinningMode skinningMode;
+    RenderState::LightingMode lightingMode;
+    RenderStateGL2::Shader shader;
+    MeshBuffer *cube;
+    MaterialMap *cubeMats;
+    QVector<FrameStat *> stats;
+    int gpuTimers;
+    FrameStat *frameStat;
+    FrameStat *clearStat;
+    FrameStat *drawCallsStat;
+    FrameStat *textureBindsStat;
+};
+
+RenderStateGL2Data::RenderStateGL2Data()
+{
+    matrixMode = RenderState::ModelView;
+    renderMode = RenderState::Basic;
+    skinningMode = RenderState::SoftwareSkinning;
+    lightingMode = RenderState::NoLighting;
+    shader = RenderStateGL2::BasicShader;
+    for(int i = 0; i < 3; i++)
+        programs[i] = NULL;
+    cube = NULL;
+    cubeMats = NULL;
+    gpuTimers = 0;
+    frameStat = NULL;
+    clearStat = NULL;
+    drawCallsStat = NULL;
+    textureBindsStat = NULL;
+}
+
 RenderStateGL2::RenderStateGL2() : RenderState()
 {
-    m_clearColor = vec4(0.6, 0.6, 0.9, 1.0);
-    m_ambientLightColor = vec4(1.0, 1.0, 1.0, 1.0);
-    m_matrixMode = ModelView;
-    m_matrix[(int)ModelView].setIdentity();
-    m_matrix[(int)Projection].setIdentity();
-    m_matrix[(int)Texture].setIdentity();
-    m_renderMode = Basic;
-    m_skinningMode = SoftwareSkinning;
-    m_lightingMode = NoLighting;
-    m_shader = BasicShader;
-    m_programs[(int)BasicShader] = new ShaderProgramGL2(this);
-    m_programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
-    m_programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
-    m_gpuTimers = 0;
+    d = new RenderStateGL2Data();
+    d->clearColor = vec4(0.6, 0.6, 0.9, 1.0);
+    d->ambientLightColor = vec4(1.0, 1.0, 1.0, 1.0);
+    d->matrix[(int)RenderState::ModelView].setIdentity();
+    d->matrix[(int)RenderState::Projection].setIdentity();
+    d->matrix[(int)RenderState::Texture].setIdentity();
+    d->programs[(int)BasicShader] = new ShaderProgramGL2(this);
+    d->programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
+    d->programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     createCube();
-    m_drawCallsStat = createStat("Draw calls", FrameStat::Counter);
-    m_textureBindsStat = createStat("Texture binds", FrameStat::Counter);
-    m_frameStat = createStat("Frame (ms)", FrameStat::WallTime);
-    m_clearStat = createStat("Clear (ms)", FrameStat::WallTime);
+    d->drawCallsStat = createStat("Draw calls", FrameStat::Counter);
+    d->textureBindsStat = createStat("Texture binds", FrameStat::Counter);
+    d->frameStat = createStat("Frame (ms)", FrameStat::WallTime);
+    d->clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
 
 RenderStateGL2::~RenderStateGL2()
 {
-    delete m_programs[(int)BasicShader];
-    delete m_programs[(int)SkinningUniformShader];
-    delete m_programs[(int)SkinningTextureShader];
-    delete m_cube;
+    delete d->programs[(int)BasicShader];
+    delete d->programs[(int)SkinningUniformShader];
+    delete d->programs[(int)SkinningTextureShader];
+    delete d->cubeMats;
+    delete d->cube;
+    delete d;
 }
 
 ShaderProgramGL2 * RenderStateGL2::program() const
 {
-    return m_programs[(int)m_shader];
+    return d->programs[(int)d->shader];
 }
 
 void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
@@ -70,7 +110,7 @@ void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
 
 void RenderStateGL2::drawMesh()
 {
-    drawMeshBatch(&m_matrix[(int)ModelView], NULL, 1);
+    drawMeshBatch(&d->matrix[(int)ModelView], NULL, 1);
 }
 
 void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
@@ -78,7 +118,7 @@ void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegmen
     ShaderProgramGL2 *prog = program();
     if(!prog || !prog->loaded())
         return;
-    prog->setProjectionMatrix(m_matrix[(int)Projection]);
+    prog->setProjectionMatrix(d->matrix[(int)Projection]);
     prog->drawMeshBatch(mvMatrices, colorSegments, instances);
 }
 
@@ -132,15 +172,15 @@ void RenderStateGL2::createCube()
     mg.id = 0;
     mg.matID = 1;
     
-    m_cube = new MeshBuffer();
-    m_cube->vertices.resize(36);
-    m_cube->matGroups.push_back(mg);
+    d->cube = new MeshBuffer();
+    d->cube->vertices.resize(36);
+    d->cube->matGroups.push_back(mg);
     
     Material *mat = new Material();
     mat->setOpaque(false);
     
-    m_cubeMats = new MaterialMap();
-    m_cubeMats->setMaterial(mg.matID, mat);
+    d->cubeMats = new MaterialMap();
+    d->cubeMats->setMaterial(mg.matID, mat);
 }
 
 void RenderStateGL2::drawBox(const AABox &box)
@@ -151,24 +191,24 @@ void RenderStateGL2::drawBox(const AABox &box)
     translate(box.low.x, box.low.y, box.low.z);
     scale(size.x, size.y, size.z);
     translate(0.5, 0.5, 0.5);
-    fromEightCorners(m_cube, cubeVertices);
+    fromEightCorners(d->cube, cubeVertices);
     program()->setAmbientLight(boxColor);
-    beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
+    beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    program()->setAmbientLight(m_ambientLightColor);
+    program()->setAmbientLight(d->ambientLightColor);
     popMatrix();
 }
 
 void RenderStateGL2::drawFrustum(const Frustum &frustum)
 {
     const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
-    fromEightCorners(m_cube, frustum.corners());
+    fromEightCorners(d->cube, frustum.corners());
     program()->setAmbientLight(frustumColor);
-    beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
+    beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();
-    program()->setAmbientLight(m_ambientLightColor);
+    program()->setAmbientLight(d->ambientLightColor);
 }
 
 RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode render,
@@ -195,66 +235,66 @@ RenderStateGL2::Shader RenderStateGL2::shaderFromModes(RenderState::RenderMode r
 
 RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
 {
-    return m_skinningMode;
+    return d->skinningMode;
 }
 
 void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
 {
-    m_skinningMode = newMode;
-    setShader(shaderFromModes(m_renderMode, newMode));
+    d->skinningMode = newMode;
+    setShader(shaderFromModes(d->renderMode, newMode));
 }
 
 RenderStateGL2::LightingMode RenderStateGL2::lightingMode() const
 {
-    return m_lightingMode;
+    return d->lightingMode;
 }
 
 void RenderStateGL2::setLightingMode(RenderStateGL2::LightingMode newMode)
 {
-    m_lightingMode = newMode;
+    d->lightingMode = newMode;
     if(program())
         program()->setLightingMode(newMode);
 }
 
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
 {
-    m_matrixMode = newMode;
+    d->matrixMode = newMode;
 }
 
 RenderState::RenderMode RenderStateGL2::renderMode() const
 {
-    return m_renderMode;
+    return d->renderMode;
 }
 
 void RenderStateGL2::setRenderMode(RenderState::RenderMode newMode)
 {
-    m_renderMode = newMode;
-    setShader(shaderFromModes(newMode, m_skinningMode));
+    d->renderMode = newMode;
+    setShader(shaderFromModes(newMode, d->skinningMode));
 }
 
 void RenderStateGL2::loadIdentity()
 {
-    int i = (int)m_matrixMode;
-    m_matrix[i].setIdentity();
+    int i = (int)d->matrixMode;
+    d->matrix[i].setIdentity();
 }
 
 void RenderStateGL2::multiplyMatrix(const matrix4 &m)
 {
-    int i = (int)m_matrixMode;
-    m_matrix[i] = m_matrix[i] * m;
+    int i = (int)d->matrixMode;
+    d->matrix[i] = d->matrix[i] * m;
 }
 
 void RenderStateGL2::pushMatrix()
 {
-    int i = (int)m_matrixMode;
-    m_matrixStack[i].push_back(m_matrix[i]);
+    int i = (int)d->matrixMode;
+    d->matrixStack[i].push_back(d->matrix[i]);
 }
 
 void RenderStateGL2::popMatrix()
 {
-    int i = (int)m_matrixMode;
-    m_matrix[i] = m_matrixStack[i].back();
-    m_matrixStack[i].pop_back();
+    int i = (int)d->matrixMode;
+    d->matrix[i] = d->matrixStack[i].back();
+    d->matrixStack[i].pop_back();
 }
 
 void RenderStateGL2::translate(float dx, float dy, float dz)
@@ -274,12 +314,12 @@ void RenderStateGL2::scale(float sx, float sy, float sz)
 
 matrix4 RenderStateGL2::currentMatrix() const
 {
-    return m_matrix[(int)m_matrixMode];
+    return d->matrix[(int)d->matrixMode];
 }
 
 matrix4 RenderStateGL2::matrix(RenderState::MatrixMode mode) const
 {
-    return m_matrix[(int)mode];
+    return d->matrix[(int)mode];
 }
 
 static void setTextureParams(GLenum target, bool mipmaps)
@@ -467,7 +507,7 @@ void RenderStateGL2::freeTexture(texture_t tex)
 
 void RenderStateGL2::setAmbientLight(vec4 lightColor)
 {
-    m_ambientLightColor = lightColor;
+    d->ambientLightColor = lightColor;
     if(program())
         program()->setAmbientLight(lightColor);
 }
@@ -480,33 +520,33 @@ void RenderStateGL2::setLightSources(const LightParams *sources, int count)
 
 void RenderStateGL2::setFogParams(const FogParams &fogParams)
 {
-    m_clearColor = fogParams.color;
+    d->clearColor = fogParams.color;
     if(program())
         program()->setFogParams(fogParams);
 }
 
 bool RenderStateGL2::beginFrame()
 {
-    m_frameStat->beginTime();
+    d->frameStat->beginTime();
     ShaderProgramGL2 *prog = program();
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
     {
         glUseProgram(prog->program());
-        prog->setLightingMode(m_lightingMode);
+        prog->setLightingMode(d->lightingMode);
     }
     glEnable(GL_DEPTH_TEST);
     setMatrixMode(ModelView);
     pushMatrix();
     loadIdentity();
     if(shaderLoaded)
-        glClearColor(m_clearColor.x, m_clearColor.y, m_clearColor.z, m_clearColor.w);
+        glClearColor(d->clearColor.x, d->clearColor.y, d->clearColor.z, d->clearColor.w);
     else
         glClearColor(0.6, 0.2, 0.2, 1.0);
-    m_clearStat->beginTime();
+    d->clearStat->beginTime();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    m_clearStat->endTime();
+    d->clearStat->endTime();
     return shaderLoaded;
 }
 
@@ -517,7 +557,7 @@ void RenderStateGL2::endFrame()
     int totalTextureBinds = 0;
     for(int i = 0; i < 3; i++)
     {
-        ShaderProgramGL2 *prog = m_programs[i];
+        ShaderProgramGL2 *prog = d->programs[i];
         if(prog)
         {
             totalDrawCalls += prog->drawCalls();
@@ -525,8 +565,8 @@ void RenderStateGL2::endFrame()
             prog->resetFrameStats();
         }
     }
-    m_drawCallsStat->setCurrent(totalDrawCalls);
-    m_textureBindsStat->setCurrent(totalTextureBinds);
+    d->drawCallsStat->setCurrent(totalDrawCalls);
+    d->textureBindsStat->setCurrent(totalTextureBinds);
     
     // Reset state.
     setMatrixMode(ModelView);
@@ -535,30 +575,30 @@ void RenderStateGL2::endFrame()
     glPopAttrib();
 
     // Wait for the GPU to finish rendering the scene if we are profiling it.
-    if(m_gpuTimers > 0)
+    if(d->gpuTimers > 0)
         glFinish();
 
     // Update the frame time and FPS.
-    m_frameStat->endTime();
+    d->frameStat->endTime();
 
     // Move each frame stat to the next sample.
-    foreach(FrameStat *stat, m_stats)
+    foreach(FrameStat *stat, d->stats)
         stat->next();
 }
 
 Frustum & RenderStateGL2::viewFrustum()
 {
-    return m_frustum;
+    return d->frustum;
 }
 
 void RenderStateGL2::setupViewport(int w, int h)
 {
     float r = (float)w / (float)h;
-    m_frustum.setAspect(r);
+    d->frustum.setAspect(r);
     glViewport(0, 0, w, h);
     setMatrixMode(Projection);
     loadIdentity();
-    multiplyMatrix(m_frustum.projection());
+    multiplyMatrix(d->frustum.projection());
     setMatrixMode(ModelView);
 }
 
@@ -590,11 +630,11 @@ void RenderStateGL2::init()
 bool RenderStateGL2::initShader(RenderStateGL2::Shader shader,
                                  QString vertexFile, QString fragmentFile)
 {
-    ShaderProgramGL2 *prog = m_programs[(int)shader];
+    ShaderProgramGL2 *prog = d->programs[(int)shader];
     if(!prog->load(vertexFile, fragmentFile))
     {
         delete prog;
-        m_programs[(int)shader] = NULL;
+        d->programs[(int)shader] = NULL;
         return false;
     }
     return true;
@@ -603,13 +643,13 @@ bool RenderStateGL2::initShader(RenderStateGL2::Shader shader,
 void RenderStateGL2::setShader(RenderStateGL2::Shader newShader)
 {
     ShaderProgramGL2 *oldProg = program();
-    ShaderProgramGL2 *newProg = m_programs[(int)newShader];
+    ShaderProgramGL2 *newProg = d->programs[(int)newShader];
     if(oldProg != newProg)
     {
         // Change to the new program only if the program loaded correctly.
         if(newProg && newProg->loaded())
         {
-            m_shader = newShader;
+            d->shader = newShader;
             glUseProgram(newProg->program());
         }
     }
@@ -617,26 +657,26 @@ void RenderStateGL2::setShader(RenderStateGL2::Shader newShader)
 
 const QVector<FrameStat *> & RenderStateGL2::stats() const
 {
-    return m_stats;
+    return d->stats;
 }
 
 FrameStat * RenderStateGL2::createStat(QString name, FrameStat::Type type)
 {
     FrameStat *stat = new FrameStat(name, 64, type);
-    m_stats.append(stat);
+    d->stats.append(stat);
     if(stat->type() == FrameStat::GPUTime)
-        m_gpuTimers++;
+        d->gpuTimers++;
     return stat;
 }
 
 void RenderStateGL2::destroyStat(FrameStat *stat)
 {
-    int pos = m_stats.indexOf(stat);
+    int pos = d->stats.indexOf(stat);
     if(pos >= 0)
     {
         if(stat->type() == FrameStat::GPUTime)
-            m_gpuTimers--;
-        m_stats.remove(pos);
+            d->gpuTimers--;
+        d->stats.remove(pos);
         delete stat;
     }
 }

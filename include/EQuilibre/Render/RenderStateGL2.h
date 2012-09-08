@@ -25,6 +25,7 @@
 
 class ShaderProgramGL2;
 class MaterialMap;
+struct RenderStateGL2Data;
 
 class RENDER_DLL RenderStateGL2 : public RenderState
 {
@@ -105,25 +106,7 @@ private:
     void setShader(Shader newShader);
     void createCube();
 
-    Frustum m_frustum;
-    vec4 m_clearColor;
-    vec4 m_ambientLightColor;
-    RenderState::MatrixMode m_matrixMode;
-    matrix4 m_matrix[3];
-    std::vector<matrix4> m_matrixStack[3];
-    ShaderProgramGL2 *m_programs[3];
-    RenderMode m_renderMode;
-    SkinningMode m_skinningMode;
-    LightingMode m_lightingMode;
-    Shader m_shader;
-    MeshBuffer *m_cube;
-    MaterialMap *m_cubeMats;
-    QVector<FrameStat *> m_stats;
-    int m_gpuTimers;
-    FrameStat *m_frameStat;
-    FrameStat *m_clearStat;
-    FrameStat *m_drawCallsStat;
-    FrameStat *m_textureBindsStat;
+    RenderStateGL2Data *d;
 };
 
 #endif
