@@ -20,7 +20,8 @@ uniform int u_has_texture;
 uniform sampler2DArray u_material_texture;
 uniform vec4 u_fogColor;
 
-varying vec4 v_color;
+varying vec3 v_color;
+varying float v_texFactor;
 varying vec3 v_texCoords;
 varying float v_fogFactor;
 
@@ -36,12 +37,12 @@ void main()
         // Discard fully transparent pixels (masked texture).
         if(texColor.w == 0.0)
             discard;
-        intermColor = mix(vec4(v_color.xyz, 1.0), texColor, v_color.w);
+        intermColor = mix(vec4(v_color, 1.0), texColor, v_texFactor);
     }
     else
     {
         // No texture bound, use the base color as is.
-        intermColor = v_color;   
+        intermColor = vec4(v_color, 1.0);   
     }
     
     // Apply fog to the intermdiate color.

@@ -33,7 +33,8 @@ uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform float u_fogDensity;
 
-varying vec4 v_color;
+varying vec3 v_color;
+varying float v_texFactor;
 varying vec3 v_texCoords;
 varying float v_fogFactor;
 
@@ -66,10 +67,8 @@ void main()
     vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
     for(int i = 0; i < MAX_LIGHTS; i++)
         diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
-    v_color = u_ambientLight + diffuse;
-    v_color = vec4(v_color.xyz, a_color.w);
-    
-    //v_color = u_ambientLight * a_color; // debug the per-vertex color values.
+    v_color = vec3(u_ambientLight + diffuse);
+    v_texFactor = a_color.w;
     
     // Compute the fog factor.
     const float LOG2 = 1.442695;

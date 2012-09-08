@@ -31,7 +31,8 @@ uniform float u_fogDensity;
 uniform sampler2D u_bones;
 const vec2 u_bonesSize = vec2(2.0f, 256.0f);
 
-varying vec4 v_color;
+varying vec3 v_color;
+varying float v_texFactor;
 varying vec3 v_texCoords;
 varying float v_fogFactor;
 
@@ -70,7 +71,8 @@ void main()
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
 
-    v_color = u_ambientLight;
+    v_color = u_ambientLight.xyz;
+    v_texFactor = 1.0;
     
     // Compute the fog factor.
     const float LOG2 = 1.442695;
