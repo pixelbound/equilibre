@@ -45,9 +45,6 @@ public:
 private slots:
     void openArchive();
     void selectAssetDir();
-    void setSoftwareSkinning();
-    void setHardwareSkinningUniform();
-    void setHardwareSkinningTexture();
     void setNoLighting();
     void setBakedLighting();
     void setDebugVertexColor();
@@ -60,9 +57,6 @@ private:
     SceneViewport *m_viewport;
     ZoneScene *m_scene;
     RenderState *m_state;
-    QAction *m_softwareSkinningAction;
-    QAction *m_hardwareSkinningUniformAction;
-    QAction *m_hardwareSkinningTextureAction;
     QAction *m_noLightingAction;
     QAction *m_bakedLightingAction;
     QAction *m_debugVertexColorAction;
