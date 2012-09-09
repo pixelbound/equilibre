@@ -29,7 +29,7 @@ class RenderContext;
 class SceneViewport;
 class WLDSkeleton;
 class Zone;
-class ShaderProgramGL2;
+class RenderProgram;
 
 class ZoneViewerWindow : public QMainWindow
 {
@@ -100,7 +100,7 @@ private:
     double m_started;
     Zone *m_zone;
     MouseState m_rotState;
-    ShaderProgramGL2 *m_program;
+    RenderProgram *m_program;
     int m_lightingMode;
 };
 

@@ -48,7 +48,7 @@ static const ShaderSymbolInfo Attributes[] =
     {0, NULL}
 };
 
-ShaderProgramGL2::ShaderProgramGL2(RenderContext *renderCtx)
+RenderProgram::RenderProgram(RenderContext *renderCtx)
 {
     m_renderCtx = renderCtx;
     m_program = 0;
@@ -65,7 +65,7 @@ ShaderProgramGL2::ShaderProgramGL2(RenderContext *renderCtx)
     m_meshData.clear();
 }
 
-ShaderProgramGL2::~ShaderProgramGL2()
+RenderProgram::~RenderProgram()
 {
     delete [] m_bones;
 
@@ -79,12 +79,12 @@ ShaderProgramGL2::~ShaderProgramGL2()
         glDeleteProgram(m_program);
 }
 
-bool ShaderProgramGL2::loaded() const
+bool RenderProgram::loaded() const
 {
     return m_program != 0;
 }
 
-bool ShaderProgramGL2::load(QString vertexFile, QString fragmentFile)
+bool RenderProgram::load(QString vertexFile, QString fragmentFile)
 {
     if(loaded())
         return false;
@@ -96,40 +96,40 @@ bool ShaderProgramGL2::load(QString vertexFile, QString fragmentFile)
         return true;
 }
 
-bool ShaderProgramGL2::current() const
+bool RenderProgram::current() const
 {
     uint32_t currentProg = 0;
     glGetIntegerv(GL_CURRENT_PROGRAM, (int32_t *)&currentProg);
     return (currentProg != 0) && (currentProg == m_program);
 }
 
-uint32_t ShaderProgramGL2::program() const
+uint32_t RenderProgram::program() const
 {
     return m_program;
 }
 
-int ShaderProgramGL2::drawCalls() const
+int RenderProgram::drawCalls() const
 {
     return m_drawCalls;
 }
 
-int ShaderProgramGL2::textureBinds() const
+int RenderProgram::textureBinds() const
 {
     return m_textureBinds;
 }
 
-void ShaderProgramGL2::resetFrameStats()
+void RenderProgram::resetFrameStats()
 {
     m_drawCalls = 0;
     m_textureBinds = 0;
 }
 
-bool ShaderProgramGL2::init()
+bool RenderProgram::init()
 {
     return true;
 }
 
-bool ShaderProgramGL2::compileProgram(QString vertexFile, QString fragmentFile)
+bool RenderProgram::compileProgram(QString vertexFile, QString fragmentFile)
 {
     uint32_t vertexShader = loadShader(vertexFile, GL_VERTEX_SHADER);
     if(vertexShader == 0)
@@ -192,7 +192,7 @@ bool ShaderProgramGL2::compileProgram(QString vertexFile, QString fragmentFile)
     return true;
 }
 
-uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type)
+uint32_t RenderProgram::loadShader(QString path, uint32_t type)
 {
     char *code = loadFileData(path.toStdString());
     if(!code)
@@ -223,7 +223,7 @@ uint32_t ShaderProgramGL2::loadShader(QString path, uint32_t type)
     return shader;
 }
 
-void ShaderProgramGL2::setModelViewMatrix(const matrix4 &modelView)
+void RenderProgram::setModelViewMatrix(const matrix4 &modelView)
 {
     //const vec4 *columns = t.columns();
     //for(int i = 0; i < 4; i++)
@@ -232,13 +232,13 @@ void ShaderProgramGL2::setModelViewMatrix(const matrix4 &modelView)
             1, GL_FALSE, (const GLfloat *)modelView.columns());
 }
 
-void ShaderProgramGL2::setProjectionMatrix(const matrix4 &projection)
+void RenderProgram::setProjectionMatrix(const matrix4 &projection)
 {
     glUniformMatrix4fv(m_uniform[U_PROJECTION_MATRIX],
         1, GL_FALSE, (const GLfloat *)projection.columns());
 }
 
-void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int count)
+void RenderProgram::setBoneTransforms(const BoneTransform *transforms, int count)
 {
     for(int i = 0; i < MAX_TRANSFORMS; i++)
     {
@@ -257,17 +257,17 @@ void ShaderProgramGL2::setBoneTransforms(const BoneTransform *transforms, int co
     }
 }
 
-void ShaderProgramGL2::setAmbientLight(vec4 lightColor)
+void RenderProgram::setAmbientLight(vec4 lightColor)
 {
     glUniform4fv(m_uniform[U_AMBIENT_LIGHT], 1, (const GLfloat *)&lightColor);
 }
 
-void ShaderProgramGL2::setLightingMode(ShaderProgramGL2::LightingMode newMode)
+void RenderProgram::setLightingMode(RenderProgram::LightingMode newMode)
 {
     glUniform1i(m_uniform[U_LIGHTING_MODE], newMode);
 }
 
-void ShaderProgramGL2::setLightSources(const LightParams *sources, int count)
+void RenderProgram::setLightSources(const LightParams *sources, int count)
 {
     for(int i = 0; i < MAX_LIGHTS; i++)
     {
@@ -288,7 +288,7 @@ void ShaderProgramGL2::setLightSources(const LightParams *sources, int count)
     }
 }
 
-void ShaderProgramGL2::setFogParams(const FogParams &fogParams)
+void RenderProgram::setFogParams(const FogParams &fogParams)
 {
     glUniform1f(m_uniform[U_FOG_START], fogParams.start);
     glUniform1f(m_uniform[U_FOG_END], fogParams.end);
@@ -296,7 +296,7 @@ void ShaderProgramGL2::setFogParams(const FogParams &fogParams)
     glUniform4fv(m_uniform[U_FOG_COLOR], 1, (const GLfloat *)&fogParams.color);
 }
 
-void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
+void RenderProgram::beginApplyMaterial(MaterialMap *map, Material *m)
 {
     //XXX GL_MAX_TEXTURE_IMAGE_UNITS
     //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
@@ -316,7 +316,7 @@ void ShaderProgramGL2::beginApplyMaterial(MaterialMap *map, Material *m)
     m_currentMatNeedsBlending = !m->isOpaque();
 }
 
-void ShaderProgramGL2::endApplyMaterial(MaterialMap *map, Material *m)
+void RenderProgram::endApplyMaterial(MaterialMap *map, Material *m)
 {
     //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     GLuint target = GL_TEXTURE_2D_ARRAY;
@@ -328,19 +328,19 @@ void ShaderProgramGL2::endApplyMaterial(MaterialMap *map, Material *m)
     m_currentMatNeedsBlending = false;
 }
 
-void ShaderProgramGL2::enableVertexAttribute(int attr, int index)
+void RenderProgram::enableVertexAttribute(int attr, int index)
 {
     if(m_attr[attr] >= 0)
         glEnableVertexAttribArray(m_attr[attr] + index);
 }
 
-void ShaderProgramGL2::disableVertexAttribute(int attr, int index)
+void RenderProgram::disableVertexAttribute(int attr, int index)
 {
     if(m_attr[attr] >= 0)
         glDisableVertexAttribArray(m_attr[attr] + index);
 }
 
-void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
+void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
 {
     const Vertex *vd = meshBuf->vertices.constData();
     const uint8_t *posPointer = (const uint8_t *)&vd->position;
@@ -375,7 +375,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
+void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
                                      const BoneTransform *bones, uint32_t boneCount)
 {
     if(m_meshData.pending || !meshBuf)
@@ -409,13 +409,13 @@ void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *mat
     uploadVertexAttributes(meshBuf);
 }
 
-void ShaderProgramGL2::drawMesh()
+void RenderProgram::drawMesh()
 {
     setProjectionMatrix(m_renderCtx->matrix(RenderContext::Projection));
     drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, 1);
 }
 
-void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
+void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
 {
     // No material - nothing is drawn.
     if(!m_meshData.pending || !m_meshData.materials)
@@ -509,7 +509,7 @@ void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegm
     }
 }
 
-void ShaderProgramGL2::bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor)
+void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor)
 {
     // Make sure the attribute is actually used by the shader.
     if(m_attr[A_COLOR] < 0)
@@ -553,7 +553,7 @@ void ShaderProgramGL2::bindColorBuffer(const BufferSegment *colorSegments, int i
     }
 }
 
-void ShaderProgramGL2::drawMaterialGroup(const MaterialGroup &mg)
+void RenderProgram::drawMaterialGroup(const MaterialGroup &mg)
 {
     // Enable or disable blending based on the current material.
     if(m_currentMatNeedsBlending && !m_blendingEnabled)
@@ -576,7 +576,7 @@ void ShaderProgramGL2::drawMaterialGroup(const MaterialGroup &mg)
     m_drawCalls++;
 }
 
-void ShaderProgramGL2::endDrawMesh()
+void RenderProgram::endDrawMesh()
 {
     if(!m_meshData.pending)
         return;
@@ -594,7 +594,7 @@ void ShaderProgramGL2::endDrawMesh()
     m_meshData.clear();
 }
 
-void ShaderProgramGL2::beginSkinMesh()
+void RenderProgram::beginSkinMesh()
 {
     // We can only do mesh skinning in software with a VBO as we can't overwrite the Mesh data.
     const MeshBuffer *meshBuf = m_meshData.meshBuf;
@@ -624,7 +624,7 @@ void ShaderProgramGL2::beginSkinMesh()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void ShaderProgramGL2::endSkinMesh()
+void RenderProgram::endSkinMesh()
 {
     // Restore the old mesh data that was overwritten by beginSkinMesh.
     const MeshBuffer *meshBuf = m_meshData.meshBuf;
@@ -637,7 +637,7 @@ void ShaderProgramGL2::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-UniformSkinningProgram::UniformSkinningProgram(RenderContext *renderCtx) : ShaderProgramGL2(renderCtx)
+UniformSkinningProgram::UniformSkinningProgram(RenderContext *renderCtx) : RenderProgram(renderCtx)
 {
     m_bonesLoc = -1;
 }
@@ -659,7 +659,7 @@ void UniformSkinningProgram::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TextureSkinningProgram::TextureSkinningProgram(RenderContext *renderCtx) : ShaderProgramGL2(renderCtx)
+TextureSkinningProgram::TextureSkinningProgram(RenderContext *renderCtx) : RenderProgram(renderCtx)
 {
     m_boneTexture = 0;
     m_bonesLoc = -1;

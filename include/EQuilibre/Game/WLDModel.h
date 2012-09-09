@@ -32,7 +32,7 @@ class Material;
 class MaterialMap;
 class PFSArchive;
 class RenderContext;
-class ShaderProgramGL2;
+class RenderProgram;
 class MeshData;
 class MeshBuffer;
 class WLDMesh;
@@ -164,7 +164,7 @@ public:
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
 
-    void draw(ShaderProgramGL2 *prog, const BoneTransform *bones = 0, uint32_t boneCount = 0);
+    void draw(RenderProgram *prog, const BoneTransform *bones = 0, uint32_t boneCount = 0);
 
 private:
     void updateBounds();

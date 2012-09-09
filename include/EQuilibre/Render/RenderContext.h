@@ -34,7 +34,7 @@ class MaterialMap;
 class FrameStat;
 class MeshBuffer;
 class RenderContextPrivate;
-class ShaderProgramGL2;
+class RenderProgram;
 
 struct RENDER_DLL LightParams
 {
@@ -69,9 +69,9 @@ public:
         SkinningTextureShader = 2
     };
     
-    ShaderProgramGL2 * program() const;
-    ShaderProgramGL2 * programByID(Shader shaderID) const;
-    void setCurrentProgram(ShaderProgramGL2 *prog);
+    RenderProgram * program() const;
+    RenderProgram * programByID(Shader shaderID) const;
+    void setCurrentProgram(RenderProgram *prog);
 
     // matrix operations
 

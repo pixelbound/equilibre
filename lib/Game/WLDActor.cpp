@@ -232,7 +232,7 @@ QString WLDCharActor::slotName(EquipSlot slot)
     return QString::null;
 }
 
-void WLDCharActor::draw(RenderContext *renderCtx, ShaderProgramGL2 *prog)
+void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_model)
         return;

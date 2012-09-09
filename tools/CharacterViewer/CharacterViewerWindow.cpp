@@ -408,7 +408,7 @@ void CharacterScene::draw()
     m_renderCtx->endFrame();
 }
 
-ShaderProgramGL2 * CharacterScene::program(RenderMode renderMode)
+RenderProgram * CharacterScene::program(RenderMode renderMode)
 {
     RenderContext::Shader shader;
     switch(renderMode)
@@ -444,7 +444,7 @@ void CharacterScene::drawFrame()
     m_renderCtx->rotate(rot.z, 0.0, 0.0, 1.0);
     m_renderCtx->scale(m_sigma, m_sigma, m_sigma);
     
-    ShaderProgramGL2 *prog = program(Skinning);
+    RenderProgram *prog = program(Skinning);
     vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
     m_renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);

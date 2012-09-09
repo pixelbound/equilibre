@@ -298,7 +298,7 @@ void Zone::draw(RenderContext *renderCtx)
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
     
     // Setup the render program.
-    ShaderProgramGL2 *prog = renderCtx->programByID(RenderContext::BasicShader);
+    RenderProgram *prog = renderCtx->programByID(RenderContext::BasicShader);
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
@@ -569,7 +569,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     return meshBuf;
 }
 
-void ZoneTerrain::draw(RenderContext *renderCtx, ShaderProgramGL2 *prog)
+void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     // draw geometry
     if(!m_zoneStat)
@@ -731,7 +731,7 @@ static bool zoneActorGroupLessThan(const WLDStaticActor *a, const WLDStaticActor
     return a->mesh()->def() < b->mesh()->def();
 }
 
-void ZoneObjects::draw(RenderContext *renderCtx, ShaderProgramGL2 *prog)
+void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_objectsStat)
         m_objectsStat = renderCtx->createStat("Objects CPU (ms)", FrameStat::CPUTime);

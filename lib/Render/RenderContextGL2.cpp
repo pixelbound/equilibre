@@ -39,7 +39,7 @@ public:
     RenderContext::MatrixMode matrixMode;
     matrix4 matrix[3];
     std::vector<matrix4> matrixStack[3];
-    ShaderProgramGL2 *programs[3];
+    RenderProgram *programs[3];
     uint32_t currentProgram;
     MeshBuffer *cube;
     MaterialMap *cubeMats;
@@ -87,7 +87,7 @@ void RenderContextPrivate::createCube()
 
 bool RenderContextPrivate::initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile)
 {
-    ShaderProgramGL2 *prog = programs[(int)shader];
+    RenderProgram *prog = programs[(int)shader];
     if(!prog->load(vertexFile, fragmentFile))
     {
         delete prog;
@@ -105,7 +105,7 @@ RenderContext::RenderContext()
     d->matrix[(int)RenderContext::ModelView].setIdentity();
     d->matrix[(int)RenderContext::Projection].setIdentity();
     d->matrix[(int)RenderContext::Texture].setIdentity();
-    d->programs[(int)BasicShader] = new ShaderProgramGL2(this);
+    d->programs[(int)BasicShader] = new RenderProgram(this);
     d->programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     d->programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
     d->createCube();
@@ -125,7 +125,7 @@ RenderContext::~RenderContext()
     delete d;
 }
 
-ShaderProgramGL2 * RenderContext::programByID(Shader shaderID) const
+RenderProgram * RenderContext::programByID(Shader shaderID) const
 {
     if((shaderID >= BasicShader) && (shaderID <= SkinningTextureShader))
         return d->programs[(int)shaderID];
@@ -133,7 +133,7 @@ ShaderProgramGL2 * RenderContext::programByID(Shader shaderID) const
         return NULL;
 }
 
-void RenderContext::setCurrentProgram(ShaderProgramGL2 *prog)
+void RenderContext::setCurrentProgram(RenderProgram *prog)
 {
     uint32_t name = prog ? prog->program() : 0;
     if(d->currentProgram != name)
@@ -465,7 +465,7 @@ bool RenderContext::beginFrame(const vec4 &clearColor)
 {
     d->frameStat->beginTime();
     d->currentProgram = 0;
-    ShaderProgramGL2 *prog = programByID(BasicShader);
+    RenderProgram *prog = programByID(BasicShader);
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
@@ -491,7 +491,7 @@ void RenderContext::endFrame()
     int totalTextureBinds = 0;
     for(int i = 0; i < 3; i++)
     {
-        ShaderProgramGL2 *prog = d->programs[i];
+        RenderProgram *prog = d->programs[i];
         if(prog)
         {
             totalDrawCalls += prog->drawCalls();

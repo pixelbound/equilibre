@@ -146,7 +146,7 @@ public:
 
     bool load(PFSArchive *archive, WLDData *wld);
     void addTo(OctreeIndex *tree);
-    void draw(RenderContext *renderCtx, ShaderProgramGL2 *prog);
+    void draw(RenderContext *renderCtx, RenderProgram *prog);
     void clear(RenderContext *renderCtx);
     void resetVisible();
 
@@ -178,7 +178,7 @@ public:
 
     bool load(QString path, QString name, PFSArchive *mainArchive);
     void addTo(OctreeIndex *tree);
-    void draw(RenderContext *renderCtx, ShaderProgramGL2 *prog);
+    void draw(RenderContext *renderCtx, RenderProgram *prog);
     void clear(RenderContext *renderCtx);
     void resetVisible();
 

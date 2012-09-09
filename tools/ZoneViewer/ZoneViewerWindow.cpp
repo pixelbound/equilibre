@@ -178,16 +178,16 @@ void ZoneViewerWindow::updateMenus()
     switch(m_scene->lightingMode())
     {
     default:
-    case ShaderProgramGL2::NoLighting:
+    case RenderProgram::NoLighting:
         m_noLightingAction->setChecked(true);
         break;
-    case ShaderProgramGL2::BakedLighting:
+    case RenderProgram::BakedLighting:
         m_bakedLightingAction->setChecked(true);
         break;
-    case ShaderProgramGL2::DebugVertexColor:
+    case RenderProgram::DebugVertexColor:
         m_debugVertexColorAction->setChecked(true);
         break;
-    case ShaderProgramGL2::DebugTextureFactor:
+    case RenderProgram::DebugTextureFactor:
         m_debugTextureFactorAction->setChecked(true);
         break;
     }
@@ -197,25 +197,25 @@ void ZoneViewerWindow::updateMenus()
 
 void ZoneViewerWindow::setNoLighting()
 {
-    m_scene->setLightingMode(ShaderProgramGL2::NoLighting);
+    m_scene->setLightingMode(RenderProgram::NoLighting);
     updateMenus();
 }
 
 void ZoneViewerWindow::setBakedLighting()
 {
-    m_scene->setLightingMode(ShaderProgramGL2::BakedLighting);
+    m_scene->setLightingMode(RenderProgram::BakedLighting);
     updateMenus();
 }
 
 void ZoneViewerWindow::setDebugVertexColor()
 {
-    m_scene->setLightingMode(ShaderProgramGL2::DebugVertexColor);
+    m_scene->setLightingMode(RenderProgram::DebugVertexColor);
     updateMenus();
 }
 
 void ZoneViewerWindow::setDebugTextureFactor()
 {
-    m_scene->setLightingMode(ShaderProgramGL2::DebugTextureFactor);
+    m_scene->setLightingMode(RenderProgram::DebugTextureFactor);
     updateMenus();
 }
 
@@ -225,7 +225,7 @@ ZoneScene::ZoneScene(RenderContext *renderCtx) : Scene(renderCtx)
 {
     m_zone = new Zone(this);
     m_program = renderCtx->programByID(RenderContext::BasicShader);
-    m_lightingMode = (int)ShaderProgramGL2::NoLighting;
+    m_lightingMode = (int)RenderProgram::NoLighting;
     m_rotState.last = vec3();
     m_rotState.active = false;
 }
@@ -288,7 +288,7 @@ void ZoneScene::drawFrame()
         .arg(camPos.x, 0, 'f', 2)
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
-    m_program->setLightingMode((ShaderProgramGL2::LightingMode)m_lightingMode);
+    m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
     m_zone->draw(m_renderCtx);
     
     if(m_zone->showSoundTriggers())

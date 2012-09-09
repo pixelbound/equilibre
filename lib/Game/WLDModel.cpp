@@ -578,7 +578,7 @@ void WLDModelSkin::updateBounds()
     }
 }
 
-void WLDModelSkin::draw(ShaderProgramGL2 *prog, const BoneTransform *bones, uint32_t boneCount)
+void WLDModelSkin::draw(RenderProgram *prog, const BoneTransform *bones, uint32_t boneCount)
 {
     MeshBuffer *meshBuf = m_model->buffer();
     if(!meshBuf)

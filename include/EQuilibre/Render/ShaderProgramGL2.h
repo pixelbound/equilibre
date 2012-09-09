@@ -73,11 +73,11 @@ public:
     bool pending;
 };
 
-class RENDER_DLL ShaderProgramGL2
+class RENDER_DLL RenderProgram
 {
 public:
-    ShaderProgramGL2(RenderContext *renderCtx);
-    virtual ~ShaderProgramGL2();
+    RenderProgram(RenderContext *renderCtx);
+    virtual ~RenderProgram();
 
     bool loaded() const;
     bool current() const;
@@ -162,7 +162,7 @@ protected:
     bool m_currentMatNeedsBlending;
 };
 
-class UniformSkinningProgram : public ShaderProgramGL2
+class UniformSkinningProgram : public RenderProgram
 {
 public:
     UniformSkinningProgram(RenderContext *renderCtx);
@@ -174,7 +174,7 @@ private:
     int m_bonesLoc;
 };
 
-class TextureSkinningProgram : public ShaderProgramGL2
+class TextureSkinningProgram : public RenderProgram
 {
 public:
     TextureSkinningProgram(RenderContext *renderCtx);

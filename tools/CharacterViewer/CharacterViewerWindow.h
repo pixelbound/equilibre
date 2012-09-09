@@ -24,7 +24,7 @@ class QComboBox;
 class QVBoxLayout;
 class QAction;
 class RenderContext;
-class ShaderProgramGL2;
+class RenderProgram;
 class SceneViewport;
 class WLDSkeleton;
 class WLDCharActor;
@@ -117,7 +117,7 @@ public slots:
     void setSelectedModelName(QString name);
 
 private:
-    ShaderProgramGL2 * program(RenderMode renderMode);
+    RenderProgram * program(RenderMode renderMode);
     void drawFrame();
     
     QString m_meshName;
