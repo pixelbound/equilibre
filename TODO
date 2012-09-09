@@ -1,4 +1,3 @@
-set projection matrix once per frame
 pimpl for ShaderProgramGL2
 lights
     try out deferred lighting

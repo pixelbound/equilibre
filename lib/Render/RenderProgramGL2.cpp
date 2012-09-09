@@ -416,7 +416,6 @@ void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materi
 
 void RenderProgram::drawMesh()
 {
-    setProjectionMatrix(m_renderCtx->matrix(RenderContext::Projection));
     drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, 1);
 }
 

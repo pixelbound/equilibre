@@ -121,6 +121,87 @@ void RenderContext::setMatrixMode(RenderContext::MatrixMode newMode)
     d->matrixMode = newMode;
 }
 
+bool RenderContext::beginFrame(const vec4 &clearColor)
+{
+    d->frameStat->beginTime();
+    d->currentProgram = 0;
+    RenderProgram *prog = programByID(BasicShader);
+    bool shaderLoaded = prog && prog->loaded();
+    glPushAttrib(GL_ENABLE_BIT);
+    if(shaderLoaded)
+        setCurrentProgram(prog);
+    glEnable(GL_DEPTH_TEST);
+    setMatrixMode(ModelView);
+    pushMatrix();
+    loadIdentity();
+    if(shaderLoaded)
+        glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+    else
+        glClearColor(0.6, 0.2, 0.2, 1.0);
+    d->clearStat->beginTime();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    d->clearStat->endTime();
+    for(int i = 0; i < 3; i++)
+    {
+        RenderProgram *prog = d->programs[i];
+        if(prog)
+            prog->setProjectionMatrix(matrix(Projection));
+    }
+    return shaderLoaded;
+}
+
+void RenderContext::endFrame()
+{
+    // Count draw calls and texture binds made by all programs.
+    int totalDrawCalls = 0;
+    int totalTextureBinds = 0;
+    for(int i = 0; i < 3; i++)
+    {
+        RenderProgram *prog = d->programs[i];
+        if(prog)
+        {
+            totalDrawCalls += prog->drawCalls();
+            totalTextureBinds += prog->textureBinds();
+            prog->resetFrameStats();
+        }
+    }
+    d->drawCallsStat->setCurrent(totalDrawCalls);
+    d->textureBindsStat->setCurrent(totalTextureBinds);
+    
+    // Reset state.
+    setMatrixMode(ModelView);
+    popMatrix();
+    setCurrentProgram(NULL);
+    glPopAttrib();
+
+    // Wait for the GPU to finish rendering the scene if we are profiling it.
+    if(d->gpuTimers > 0)
+        glFinish();
+
+    // Update the frame time and FPS.
+    d->frameStat->endTime();
+
+    // Move each frame stat to the next sample.
+    foreach(FrameStat *stat, d->stats)
+        stat->next();
+}
+
+Frustum & RenderContext::viewFrustum()
+{
+    return d->frustum;
+}
+
+void RenderContext::setupViewport(int w, int h)
+{
+    float r = (float)w / (float)h;
+    d->frustum.setAspect(r);
+    glViewport(0, 0, w, h);
+    setMatrixMode(Projection);
+    loadIdentity();
+    multiplyMatrix(d->frustum.projection());
+    setMatrixMode(ModelView);
+}
+
 void RenderContext::loadIdentity()
 {
     int i = (int)d->matrixMode;
@@ -369,81 +450,6 @@ void RenderContext::freeTexture(texture_t tex)
 {
     if(tex != 0)
         glDeleteTextures(1, &tex);
-}
-
-bool RenderContext::beginFrame(const vec4 &clearColor)
-{
-    d->frameStat->beginTime();
-    d->currentProgram = 0;
-    RenderProgram *prog = programByID(BasicShader);
-    bool shaderLoaded = prog && prog->loaded();
-    glPushAttrib(GL_ENABLE_BIT);
-    if(shaderLoaded)
-        setCurrentProgram(prog);
-    glEnable(GL_DEPTH_TEST);
-    setMatrixMode(ModelView);
-    pushMatrix();
-    loadIdentity();
-    if(shaderLoaded)
-        glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
-    else
-        glClearColor(0.6, 0.2, 0.2, 1.0);
-    d->clearStat->beginTime();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    d->clearStat->endTime();
-    return shaderLoaded;
-}
-
-void RenderContext::endFrame()
-{
-    // Count draw calls and texture binds made by all programs.
-    int totalDrawCalls = 0;
-    int totalTextureBinds = 0;
-    for(int i = 0; i < 3; i++)
-    {
-        RenderProgram *prog = d->programs[i];
-        if(prog)
-        {
-            totalDrawCalls += prog->drawCalls();
-            totalTextureBinds += prog->textureBinds();
-            prog->resetFrameStats();
-        }
-    }
-    d->drawCallsStat->setCurrent(totalDrawCalls);
-    d->textureBindsStat->setCurrent(totalTextureBinds);
-    
-    // Reset state.
-    setMatrixMode(ModelView);
-    popMatrix();
-    setCurrentProgram(NULL);
-    glPopAttrib();
-
-    // Wait for the GPU to finish rendering the scene if we are profiling it.
-    if(d->gpuTimers > 0)
-        glFinish();
-
-    // Update the frame time and FPS.
-    d->frameStat->endTime();
-
-    // Move each frame stat to the next sample.
-    foreach(FrameStat *stat, d->stats)
-        stat->next();
-}
-
-Frustum & RenderContext::viewFrustum()
-{
-    return d->frustum;
-}
-
-void RenderContext::setupViewport(int w, int h)
-{
-    float r = (float)w / (float)h;
-    d->frustum.setAspect(r);
-    glViewport(0, 0, w, h);
-    setMatrixMode(Projection);
-    loadIdentity();
-    multiplyMatrix(d->frustum.projection());
-    setMatrixMode(ModelView);
 }
 
 buffer_t RenderContext::createBuffer(const void *data, size_t size)
