@@ -223,6 +223,21 @@ public:
 };
 
 /*!
+  \brief This type of fragment (0x2A) describes the ambient light used for a list of regions.
+  */
+class RegionLightFragment : public WLDFragment
+{
+public:
+    RegionLightFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x2a;
+    LightFragment *m_ref;
+    uint32_t m_flags;
+    QVector<uint32_t> m_regions;
+};
+
+/*!
   \brief This type of fragment (0x26) defines spell particle bolts.
   */
 class SpellParticleDefFragment : public WLDFragment

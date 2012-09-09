@@ -247,10 +247,14 @@ LightDefFragment::LightDefFragment(QString name) : WLDFragment(ID, name)
 bool LightDefFragment::unpack(WLDReader *s)
 {
     s->unpackFields("II", &m_flags, &m_params2);
-    if(m_flags & 0x8)
+    if(m_flags & 0x10)
     {
         // ARGB light source.
-        s->unpackFields("Ifff", &m_attenuation, &m_color.w, &m_color.x, &m_color.y, &m_color.z);
+        if(m_flags & 0x08)
+            s->unpackFields("I", &m_attenuation);
+        else
+            m_attenuation = 0;
+        s->unpackFields("ffff", &m_color.w, &m_color.x, &m_color.y, &m_color.z);
     }
     else
     {
@@ -286,6 +290,22 @@ bool LightSourceFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_ref);
     s->unpackFields("Iffff", &m_flags, &m_pos.x, &m_pos.y, &m_pos.z, &m_radius);
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+RegionLightFragment::RegionLightFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool RegionLightFragment::unpack(WLDReader *s)
+{
+    uint32_t regionCount = 0;
+    s->unpackReference(&m_ref);
+    s->unpackFields("II", &m_flags, &regionCount);
+    m_regions.resize(regionCount);
+    s->unpackArray("I", regionCount, m_regions.data());
     return true;
 }
 
