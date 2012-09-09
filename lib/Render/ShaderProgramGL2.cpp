@@ -48,7 +48,7 @@ static const ShaderSymbolInfo Attributes[] =
     {0, NULL}
 };
 
-ShaderProgramGL2::ShaderProgramGL2(RenderStateGL2 *state)
+ShaderProgramGL2::ShaderProgramGL2(RenderState *state)
 {
     m_state = state;
     m_program = 0;
@@ -637,7 +637,7 @@ void ShaderProgramGL2::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-UniformSkinningProgram::UniformSkinningProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
+UniformSkinningProgram::UniformSkinningProgram(RenderState *state) : ShaderProgramGL2(state)
 {
     m_bonesLoc = -1;
 }
@@ -659,7 +659,7 @@ void UniformSkinningProgram::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TextureSkinningProgram::TextureSkinningProgram(RenderStateGL2 *state) : ShaderProgramGL2(state)
+TextureSkinningProgram::TextureSkinningProgram(RenderState *state) : ShaderProgramGL2(state)
 {
     m_boneTexture = 0;
     m_bonesLoc = -1;

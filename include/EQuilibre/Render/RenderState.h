@@ -34,8 +34,6 @@ class MaterialMap;
 class FrameStat;
 class MeshBuffer;
 struct RenderStateData;
-class RenderState;
-typedef RenderState RenderStateGL2;
 class ShaderProgramGL2;
 
 struct RENDER_DLL LightParams

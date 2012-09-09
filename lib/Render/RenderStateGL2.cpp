@@ -98,7 +98,7 @@ bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RenderStateGL2::RenderState()
+RenderState::RenderState()
 {
     d = new RenderStateData();
     d->matrix[(int)RenderState::ModelView].setIdentity();
@@ -114,7 +114,7 @@ RenderStateGL2::RenderState()
     d->clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
 
-RenderStateGL2::~RenderState()
+RenderState::~RenderState()
 {
     delete d->programs[(int)BasicShader];
     delete d->programs[(int)SkinningUniformShader];
@@ -124,7 +124,7 @@ RenderStateGL2::~RenderState()
     delete d;
 }
 
-ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
+ShaderProgramGL2 * RenderState::programByID(Shader shaderID) const
 {
     if((shaderID >= BasicShader) && (shaderID <= SkinningTextureShader))
         return d->programs[(int)shaderID];
@@ -132,7 +132,7 @@ ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
         return NULL;
 }
 
-void RenderStateGL2::setCurrentProgram(ShaderProgramGL2 *prog)
+void RenderState::setCurrentProgram(ShaderProgramGL2 *prog)
 {
     uint32_t name = prog ? prog->program() : 0;
     if(d->currentProgram != name)
@@ -176,7 +176,7 @@ static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
     }
 }
 
-void RenderStateGL2::drawBox(const AABox &box)
+void RenderState::drawBox(const AABox &box)
 {
 #if 0
     const vec4 boxColor(0.4, 0.2, 0.2, 0.4);
@@ -195,7 +195,7 @@ void RenderStateGL2::drawBox(const AABox &box)
 #endif
 }
 
-void RenderStateGL2::drawFrustum(const Frustum &frustum)
+void RenderState::drawFrustum(const Frustum &frustum)
 {
 #if 0
     const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
@@ -208,57 +208,57 @@ void RenderStateGL2::drawFrustum(const Frustum &frustum)
 #endif
 }
 
-void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
+void RenderState::setMatrixMode(RenderState::MatrixMode newMode)
 {
     d->matrixMode = newMode;
 }
 
-void RenderStateGL2::loadIdentity()
+void RenderState::loadIdentity()
 {
     int i = (int)d->matrixMode;
     d->matrix[i].setIdentity();
 }
 
-void RenderStateGL2::multiplyMatrix(const matrix4 &m)
+void RenderState::multiplyMatrix(const matrix4 &m)
 {
     int i = (int)d->matrixMode;
     d->matrix[i] = d->matrix[i] * m;
 }
 
-void RenderStateGL2::pushMatrix()
+void RenderState::pushMatrix()
 {
     int i = (int)d->matrixMode;
     d->matrixStack[i].push_back(d->matrix[i]);
 }
 
-void RenderStateGL2::popMatrix()
+void RenderState::popMatrix()
 {
     int i = (int)d->matrixMode;
     d->matrix[i] = d->matrixStack[i].back();
     d->matrixStack[i].pop_back();
 }
 
-void RenderStateGL2::translate(float dx, float dy, float dz)
+void RenderState::translate(float dx, float dy, float dz)
 {
     multiplyMatrix(matrix4::translate(dx, dy, dz));
 }
 
-void RenderStateGL2::rotate(float angle, float rx, float ry, float rz)
+void RenderState::rotate(float angle, float rx, float ry, float rz)
 {
     multiplyMatrix(matrix4::rotate(angle, rx, ry, rz));
 }
 
-void RenderStateGL2::scale(float sx, float sy, float sz)
+void RenderState::scale(float sx, float sy, float sz)
 {
     multiplyMatrix(matrix4::scale(sx, sy, sz));
 }
 
-void RenderStateGL2::translate(const QVector3D &v)
+void RenderState::translate(const QVector3D &v)
 {
     translate(v.x(), v.y(), v.z());
 }
 
-void RenderStateGL2::rotate(const QQuaternion &q)
+void RenderState::rotate(const QQuaternion &q)
 {
     QMatrix4x4 m;
     m.setToIdentity();
@@ -267,12 +267,12 @@ void RenderStateGL2::rotate(const QQuaternion &q)
     multiplyMatrix(m2);
 }
 
-matrix4 RenderStateGL2::currentMatrix() const
+matrix4 RenderState::currentMatrix() const
 {
     return d->matrix[(int)d->matrixMode];
 }
 
-const matrix4 & RenderStateGL2::matrix(RenderState::MatrixMode mode) const
+const matrix4 & RenderState::matrix(RenderState::MatrixMode mode) const
 {
     return d->matrix[(int)mode];
 }
@@ -374,7 +374,7 @@ static uint32_t maxMipmapLevel(uint32_t texWidth, uint32_t texHeight, uint32_t m
     return level;
 }
 
-texture_t RenderStateGL2::loadTexture(QImage img)
+texture_t RenderState::loadTexture(QImage img)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -401,7 +401,7 @@ texture_t RenderStateGL2::loadTexture(QImage img)
     return texID;
 }
 
-texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
+texture_t RenderState::loadTextures(const QImage *images, size_t count)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -454,13 +454,13 @@ texture_t RenderStateGL2::loadTextures(const QImage *images, size_t count)
     return texID;
 }
 
-void RenderStateGL2::freeTexture(texture_t tex)
+void RenderState::freeTexture(texture_t tex)
 {
     if(tex != 0)
         glDeleteTextures(1, &tex);
 }
 
-bool RenderStateGL2::beginFrame(const vec4 &clearColor)
+bool RenderState::beginFrame(const vec4 &clearColor)
 {
     d->frameStat->beginTime();
     d->currentProgram = 0;
@@ -483,7 +483,7 @@ bool RenderStateGL2::beginFrame(const vec4 &clearColor)
     return shaderLoaded;
 }
 
-void RenderStateGL2::endFrame()
+void RenderState::endFrame()
 {
     // Count draw calls and texture binds made by all programs.
     int totalDrawCalls = 0;
@@ -519,12 +519,12 @@ void RenderStateGL2::endFrame()
         stat->next();
 }
 
-Frustum & RenderStateGL2::viewFrustum()
+Frustum & RenderState::viewFrustum()
 {
     return d->frustum;
 }
 
-void RenderStateGL2::setupViewport(int w, int h)
+void RenderState::setupViewport(int w, int h)
 {
     float r = (float)w / (float)h;
     d->frustum.setAspect(r);
@@ -535,7 +535,7 @@ void RenderStateGL2::setupViewport(int w, int h)
     setMatrixMode(ModelView);
 }
 
-buffer_t RenderStateGL2::createBuffer(const void *data, size_t size)
+buffer_t RenderState::createBuffer(const void *data, size_t size)
 {
     buffer_t buffer;
     glGenBuffers(1, &buffer);
@@ -545,7 +545,7 @@ buffer_t RenderStateGL2::createBuffer(const void *data, size_t size)
     return buffer;
 }
 
-void RenderStateGL2::freeBuffers(buffer_t *buffers, int count)
+void RenderState::freeBuffers(buffer_t *buffers, int count)
 {
     if(!buffers)
         return;
@@ -553,19 +553,19 @@ void RenderStateGL2::freeBuffers(buffer_t *buffers, int count)
     memset(buffers, 0, sizeof(buffer_t) * count);
 }
 
-void RenderStateGL2::init()
+void RenderState::init()
 {
     d->initShader(BasicShader, "vertex.glsl", "fragment.glsl");
     d->initShader(SkinningUniformShader, "vertex_skinned_uniform.glsl", "fragment.glsl");
     d->initShader(SkinningTextureShader, "vertex_skinned_texture.glsl", "fragment.glsl");
 }
 
-const QVector<FrameStat *> & RenderStateGL2::stats() const
+const QVector<FrameStat *> & RenderState::stats() const
 {
     return d->stats;
 }
 
-FrameStat * RenderStateGL2::createStat(QString name, FrameStat::Type type)
+FrameStat * RenderState::createStat(QString name, FrameStat::Type type)
 {
     FrameStat *stat = new FrameStat(name, 64, type);
     d->stats.append(stat);
@@ -574,7 +574,7 @@ FrameStat * RenderStateGL2::createStat(QString name, FrameStat::Type type)
     return stat;
 }
 
-void RenderStateGL2::destroyStat(FrameStat *stat)
+void RenderState::destroyStat(FrameStat *stat)
 {
     int pos = d->stats.indexOf(stat);
     if(pos >= 0)

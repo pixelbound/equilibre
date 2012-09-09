@@ -1,4 +1,5 @@
 set projection matrix once per frame
+pimpl for ShaderProgramGL2
 rename RenderState to RenderContext, ShaderProgramGL2 to RenderProgram
 lights
     try out deferred lighting
