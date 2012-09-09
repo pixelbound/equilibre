@@ -19,6 +19,7 @@
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/ShaderProgramGL2.h"
 
 WLDActor::WLDActor(ActorType type)
 {
@@ -231,7 +232,7 @@ QString WLDCharActor::slotName(EquipSlot slot)
     return QString::null;
 }
 
-void WLDCharActor::draw(RenderState *state)
+void WLDCharActor::draw(RenderState *state, ShaderProgramGL2 *prog)
 {
     if(!m_model)
         return;
@@ -254,7 +255,7 @@ void WLDCharActor::draw(RenderState *state)
     state->scale(m_scale.x, m_scale.y, m_scale.z);
     
     // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)
-    skin->draw(state, bones.constData(), (uint32_t)bones.count());
+    skin->draw(state, prog, bones.constData(), (uint32_t)bones.count());
     foreach(ActorEquip eq, m_equip)
     {
         state->pushMatrix();
@@ -264,9 +265,9 @@ void WLDCharActor::draw(RenderState *state)
         MeshBuffer *meshBuf = eq.Mesh->data()->buffer;
         meshBuf->matGroups.clear();
         meshBuf->addMaterialGroups(eq.Mesh->data());
-        state->beginDrawMesh(meshBuf, eq.Materials);
-        state->drawMesh();
-        state->endDrawMesh();
+        prog->beginDrawMesh(meshBuf, eq.Materials);
+        prog->drawMesh();
+        prog->endDrawMesh();
         state->popMatrix();
     }
     state->popMatrix();

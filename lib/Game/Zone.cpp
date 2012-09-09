@@ -287,8 +287,7 @@ void Zone::draw(RenderState *state)
 {
     if(!m_actorTree)
         return;
-    ShaderProgramGL2 *prog = state->program();
-    
+   
     Frustum &frustum = state->viewFrustum();
     setPlayerViewFrustum(frustum);
     state->pushMatrix();
@@ -298,7 +297,10 @@ void Zone::draw(RenderState *state)
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
     
+    // Setup the render program.
+    ShaderProgramGL2 *prog = state->programByID(RenderState::BasicShader);
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
+    state->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
     prog->setFogParams(m_fogParams);
     
@@ -594,9 +596,9 @@ void ZoneTerrain::draw(RenderState *state, ShaderProgramGL2 *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
-    state->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
-    state->drawMesh();
-    state->endDrawMesh();
+    prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
+    prog->drawMesh();
+    prog->endDrawMesh();
     
     m_zoneStatGPU->endTime();
     m_zoneStat->endTime();
@@ -759,10 +761,10 @@ void ZoneObjects::draw(RenderState *state, ShaderProgramGL2 *prog)
         if(currentMesh != previousMesh)
         {
             if(previousMesh)
-                state->endDrawMesh();
+                prog->endDrawMesh();
             meshBuf->matGroups.clear();
             meshBuf->addMaterialGroups(currentMesh->data());
-            state->beginDrawMesh(meshBuf, m_pack->materials());
+            prog->beginDrawMesh(meshBuf, m_pack->materials());
             previousMesh = currentMesh;
             meshCount++;
         }
@@ -779,11 +781,11 @@ void ZoneObjects::draw(RenderState *state, ShaderProgramGL2 *prog)
             m_lightsInRange[i] = lightSources[lightID]->params();
         }
         prog->setLightSources(m_lightsInRange, actorLights.count());
-        state->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
+        prog->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
         state->popMatrix();
     }
     if(previousMesh)
-        state->endDrawMesh();
+        prog->endDrawMesh();
     
     if(m_drawnObjectsStat == NULL)
         m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);

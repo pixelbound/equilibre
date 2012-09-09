@@ -147,7 +147,7 @@ public:
     };
 
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialMap *materials);
-    void draw(RenderState *state);
+    void draw(RenderState *state, ShaderProgramGL2 *prog);
 
 private:
     static QString slotName(EquipSlot slot);

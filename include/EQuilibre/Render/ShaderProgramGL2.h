@@ -90,9 +90,31 @@ public:
 
     virtual bool init();
     
-    virtual void beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
-                               const BoneTransform *bones, int boneCount);
-    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances);
+    /**
+     * @brief Prepare the GPU for drawing one or more mesh with the same geometry.
+     * For example, send the geometry to the GPU if it isn't there already.
+     * @param geom Geometry of the mesh (vertices and indices).
+     * @param materials Mesh materials or NULL if the mesh has no material.
+     * @param bones Array of bone transformations or NULL if the mesh is not skinned.
+     * @param boneCount Number of bone transformations.
+     */
+    virtual void beginDrawMesh(const MeshBuffer *geom, MaterialMap *materials,
+                               const BoneTransform *bones = 0, uint32_t boneCount = 0);
+    /**
+     * @brief Draw a mesh whose geometry was passed to @ref beginDrawMesh.
+     * Multiple instances of the same mesh can be drawn by calling @ref drawMesh
+     * multiple times with different transformations.
+     */
+    virtual void drawMesh();
+    /**
+     * @brief Draw several instances of a mesh whose geometry was passed to
+     * @ref beginDrawMesh, each with a different model-view matrix.
+     */
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances) ;
+    /**
+     * @brief Clean up the resources used by @ref beginDrawMesh and allow it to be
+     * called again.
+     */
     virtual void endDrawMesh();
     
     enum LightingMode

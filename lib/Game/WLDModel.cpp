@@ -21,6 +21,7 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "EQuilibre/Game/PFSArchive.h"
 #include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Material.h"
 
 WLDModel::WLDModel(PFSArchive *archive)
@@ -577,7 +578,7 @@ void WLDModelSkin::updateBounds()
     }
 }
 
-void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t boneCount)
+void WLDModelSkin::draw(RenderState *state, ShaderProgramGL2 *prog, const BoneTransform *bones, uint32_t boneCount)
 {
     MeshBuffer *meshBuf = m_model->buffer();
     if(!meshBuf)
@@ -589,7 +590,7 @@ void WLDModelSkin::draw(RenderState *state, const BoneTransform *bones, uint32_t
         meshBuf->addMaterialGroups(mesh->data());
 
     // Draw all the material groups in one draw call.
-    state->beginDrawMesh(meshBuf, m_materials, bones, boneCount);
-    state->drawMesh();
-    state->endDrawMesh();
+    prog->beginDrawMesh(meshBuf, m_materials, bones, boneCount);
+    prog->drawMesh();
+    prog->endDrawMesh();
 }

@@ -24,6 +24,7 @@ class QComboBox;
 class QVBoxLayout;
 class QAction;
 class RenderState;
+class ShaderProgramGL2;
 class SceneViewport;
 class WLDSkeleton;
 class WLDCharActor;
@@ -83,6 +84,9 @@ public:
     void init();
 
     Zone * zone() const;
+    int skinningMode() const;
+    void setSkinningMode(int newMode);
+    
     WLDCharActor *selectedCharacter() const;
     QString selectedModelName() const;
     
@@ -100,6 +104,7 @@ public slots:
     void setSelectedModelName(QString name);
 
 private:
+    ShaderProgramGL2 * program(int renderMode);
     void drawFrame();
     
     QString m_meshName;
@@ -108,6 +113,7 @@ private:
     vec3 m_theta;
     float m_sigma;
     Zone *m_zone;
+    int m_skinningMode;
     // viewer settings
     MouseState m_transState;
     MouseState m_rotState;

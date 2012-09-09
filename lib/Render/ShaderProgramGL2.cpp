@@ -376,7 +376,7 @@ void ShaderProgramGL2::uploadVertexAttributes(const MeshBuffer *meshBuf)
 }
 
 void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
-                                     const BoneTransform *bones, int boneCount)
+                                     const BoneTransform *bones, uint32_t boneCount)
 {
     if(m_meshData.pending || !meshBuf)
         return;
@@ -407,6 +407,12 @@ void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *mat
     if(bones && (boneCount > 0))
         beginSkinMesh();
     uploadVertexAttributes(meshBuf);
+}
+
+void ShaderProgramGL2::drawMesh()
+{
+    setProjectionMatrix(m_state->matrix(RenderState::Projection));
+    drawMeshBatch(&m_state->matrix(RenderState::ModelView), NULL, 1);
 }
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)

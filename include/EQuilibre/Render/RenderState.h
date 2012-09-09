@@ -59,33 +59,6 @@ public:
     virtual ~RenderState();
 
     void init();
-
-    /**
-     * @brief Prepare the GPU for drawing one or more mesh with the same geometry.
-     * For example, send the geometry to the GPU if it isn't there already.
-     * @param geom Geometry of the mesh (vertices and indices).
-     * @param materials Mesh materials or NULL if the mesh has no material.
-     * @param bones Array of bone transformations or NULL if the mesh is not skinned.
-     * @param boneCount Number of bone transformations.
-     */
-    void beginDrawMesh(const MeshBuffer *geom, MaterialMap *materials,
-                       const BoneTransform *bones = 0, int boneCount = 0);
-    /**
-     * @brief Draw a mesh whose geometry was passed to @ref beginDrawMesh.
-     * Multiple instances of the same mesh can be drawn by calling @ref drawMesh
-     * multiple times with different transformations.
-     */
-    void drawMesh();
-    /**
-     * @brief Draw several instances of a mesh whose geometry was passed to
-     * @ref beginDrawMesh, each with a different model-view matrix.
-     */
-    void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances) ;
-    /**
-     * @brief Clean up the resources used by @ref beginDrawMesh and allow it to be
-     * called again.
-     */
-    void endDrawMesh();
     
     // debug operations
     void drawBox(const AABox &box);
@@ -100,6 +73,7 @@ public:
     
     ShaderProgramGL2 * program() const;
     ShaderProgramGL2 * programByID(Shader shaderID) const;
+    void setCurrentProgram(ShaderProgramGL2 *prog);
 
     enum SkinningMode
     {
@@ -145,7 +119,7 @@ public:
     void scale(float sx, float sy, float sz);
 
     matrix4 currentMatrix() const;
-    matrix4 matrix(RenderState::MatrixMode mode) const;
+    const matrix4 & matrix(RenderState::MatrixMode mode) const;
 
     // general state operations
 

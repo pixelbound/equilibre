@@ -41,6 +41,7 @@ struct RenderStateData
     matrix4 matrix[3];
     std::vector<matrix4> matrixStack[3];
     ShaderProgramGL2 *programs[3];
+    uint32_t currentProgram;
     RenderState::RenderMode renderMode;
     RenderState::SkinningMode skinningMode;
     RenderState::Shader shader;
@@ -62,6 +63,7 @@ RenderStateData::RenderStateData()
     shader = RenderState::BasicShader;
     for(int i = 0; i < 3; i++)
         programs[i] = NULL;
+    currentProgram = 0;
     cube = NULL;
     cubeMats = NULL;
     gpuTimers = 0;
@@ -153,41 +155,20 @@ ShaderProgramGL2 * RenderStateGL2::program() const
 
 ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
 {
-    if((shaderID >= BasicShader) && (shaderID < SkinningTextureShader))
+    if((shaderID >= BasicShader) && (shaderID <= SkinningTextureShader))
         return d->programs[(int)shaderID];
     else
         return NULL;
 }
 
-void RenderStateGL2::beginDrawMesh(const MeshBuffer *m, MaterialMap *materials,
-                                   const BoneTransform *bones, int boneCount)
+void RenderStateGL2::setCurrentProgram(ShaderProgramGL2 *prog)
 {
-    ShaderProgramGL2 *prog = program();
-    if(!prog || !prog->loaded())
-        return;
-    prog->beginDrawMesh(m, materials, bones, boneCount);
-}
-
-void RenderStateGL2::drawMesh()
-{
-    drawMeshBatch(&d->matrix[(int)ModelView], NULL, 1);
-}
-
-void RenderStateGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
-{
-    ShaderProgramGL2 *prog = program();
-    if(!prog || !prog->loaded())
-        return;
-    prog->setProjectionMatrix(d->matrix[(int)Projection]);
-    prog->drawMeshBatch(mvMatrices, colorSegments, instances);
-}
-
-void RenderStateGL2::endDrawMesh()
-{
-    ShaderProgramGL2 *prog = program();
-    if(!prog || !prog->loaded())
-        return;
-    prog->endDrawMesh();
+    uint32_t name = prog ? prog->program() : 0;
+    if(d->currentProgram != name)
+    {
+        glUseProgram(name);
+        d->currentProgram = name;
+    }
 }
 
 static const vec3 cubeVertices[] =
@@ -226,6 +207,7 @@ static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
 
 void RenderStateGL2::drawBox(const AABox &box)
 {
+#if 0
     const vec4 boxColor(0.4, 0.2, 0.2, 0.4);
     vec3 size = box.high - box.low;
     pushMatrix();
@@ -239,10 +221,12 @@ void RenderStateGL2::drawBox(const AABox &box)
     endDrawMesh();
     program()->setAmbientLight(d->ambientLightColor);
     popMatrix();
+#endif
 }
 
 void RenderStateGL2::drawFrustum(const Frustum &frustum)
 {
+#if 0
     const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
     fromEightCorners(d->cube, frustum.corners());
     program()->setAmbientLight(frustumColor);
@@ -250,6 +234,7 @@ void RenderStateGL2::drawFrustum(const Frustum &frustum)
     drawMesh();
     endDrawMesh();
     program()->setAmbientLight(d->ambientLightColor);
+#endif
 }
 
 static RenderState::Shader shaderFromModes(RenderState::RenderMode render, RenderState::SkinningMode skinning)
@@ -359,7 +344,7 @@ matrix4 RenderStateGL2::currentMatrix() const
     return d->matrix[(int)d->matrixMode];
 }
 
-matrix4 RenderStateGL2::matrix(RenderState::MatrixMode mode) const
+const matrix4 & RenderStateGL2::matrix(RenderState::MatrixMode mode) const
 {
     return d->matrix[(int)mode];
 }
@@ -557,11 +542,12 @@ void RenderStateGL2::setAmbientLight(vec4 lightColor)
 bool RenderStateGL2::beginFrame(const vec4 &clearColor)
 {
     d->frameStat->beginTime();
-    ShaderProgramGL2 *prog = program();
+    d->currentProgram = 0;
+    ShaderProgramGL2 *prog = programByID(BasicShader);
     bool shaderLoaded = prog && prog->loaded();
     glPushAttrib(GL_ENABLE_BIT);
     if(shaderLoaded)
-        glUseProgram(prog->program());
+        setCurrentProgram(prog);
     glEnable(GL_DEPTH_TEST);
     setMatrixMode(ModelView);
     pushMatrix();
@@ -597,7 +583,7 @@ void RenderStateGL2::endFrame()
     // Reset state.
     setMatrixMode(ModelView);
     popMatrix();
-    glUseProgram(0);
+    setCurrentProgram(NULL);
     glPopAttrib();
 
     // Wait for the GPU to finish rendering the scene if we are profiling it.
