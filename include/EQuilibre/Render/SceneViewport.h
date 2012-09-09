@@ -30,7 +30,7 @@ class QTimer;
 class QPainter;
 class QGLFormat;
 class Scene;
-class RenderState;
+class RenderContext;
 class FrameStat;
 
 class RENDER_DLL SceneViewport : public QGLWidget
@@ -38,7 +38,7 @@ class RENDER_DLL SceneViewport : public QGLWidget
     Q_OBJECT
 
 public:
-    SceneViewport(Scene *scene, RenderState *state, QWidget *parent = 0);
+    SceneViewport(Scene *scene, RenderContext *renderCtx, QWidget *parent = 0);
     virtual ~SceneViewport();
 
     void setAnimation(bool enabled);
@@ -72,7 +72,7 @@ private:
     void toggleAnimation();
 
     Scene *m_scene;
-    RenderState *m_state;
+    RenderContext *m_renderCtx;
     QTimer *m_renderTimer;
     bool m_animate;
 

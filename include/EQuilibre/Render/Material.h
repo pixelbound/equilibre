@@ -22,7 +22,7 @@
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 
-class RenderState;
+class RenderContext;
 
 class RENDER_DLL Material
 {
@@ -72,8 +72,8 @@ public:
     texture_t arrayTexture() const;
     bool uploaded() const;
     
-    void upload(RenderState *state);
-    void uploadArray(RenderState *state);
+    void upload(RenderContext *renderCtx);
+    void uploadArray(RenderContext *renderCtx);
     void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:

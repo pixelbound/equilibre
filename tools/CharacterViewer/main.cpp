@@ -27,10 +27,10 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "CharacterViewerWindow.h"
 
-QWidget * showCharViewer(RenderState *state)
+QWidget * showCharViewer(RenderContext *renderCtx)
 {
     // create viewport for rendering the scene
-    CharacterViewerWindow *v = new CharacterViewerWindow(state);
+    CharacterViewerWindow *v = new CharacterViewerWindow(renderCtx);
     CharacterScene *scene = v->scene();
     Zone *z = scene->zone();
     QDir assetDir(scene->assetPath());
@@ -69,10 +69,10 @@ int main(int argc, char **argv)
     f.setSampleBuffers(true);
     f.setSwapInterval(0);
     QGLFormat::setDefaultFormat(f);
-    RenderState state;
+    RenderContext renderCtx;
 
     // main window loop
-    QWidget *v = showCharViewer(&state);
+    QWidget *v = showCharViewer(&renderCtx);
     v->setWindowState(Qt::WindowMaximized);
     v->show();
     app.exec();

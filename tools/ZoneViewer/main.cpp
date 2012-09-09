@@ -27,11 +27,11 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "ZoneViewerWindow.h"
 
-QWidget * showZoneViewer(RenderState *state)
+QWidget * showZoneViewer(RenderContext *renderCtx)
 {
-    //ZoneViewerWindow *v = new ZoneViewerWindow(state);
+    //ZoneViewerWindow *v = new ZoneViewerWindow(renderCtx);
     //v->scene()->zone()->load(v->scene()->assetPath(), "gfaydark");
-    return new ZoneViewerWindow(state);
+    return new ZoneViewerWindow(renderCtx);
 }
 
 int main(int argc, char **argv)
@@ -44,10 +44,10 @@ int main(int argc, char **argv)
     f.setSampleBuffers(true);
     f.setSwapInterval(0);
     QGLFormat::setDefaultFormat(f);
-    RenderState state;
+    RenderContext renderCtx;
 
     // main window loop
-    QWidget *v = showZoneViewer(&state);
+    QWidget *v = showZoneViewer(&renderCtx);
     v->setWindowState(Qt::WindowMaximized);
     v->show();
     app.exec();

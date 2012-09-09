@@ -31,7 +31,7 @@ class LightSourceFragment;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
-class RenderState;
+class RenderContext;
 class Octree;
 class OctreeIndex;
 
@@ -147,7 +147,7 @@ public:
     };
 
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialMap *materials);
-    void draw(RenderState *state, ShaderProgramGL2 *prog);
+    void draw(RenderContext *renderCtx, ShaderProgramGL2 *prog);
 
 private:
     static QString slotName(EquipSlot slot);

@@ -23,7 +23,7 @@
 
 class MeshBuffer;
 class MaterialMap;
-class RenderState;
+class RenderContext;
 
 class RENDER_DLL Vertex
 {
@@ -79,8 +79,8 @@ public:
     void addMaterialGroups(MeshData *mesh);
     void updateTexCoords(MaterialMap *map);
     void updateTexCoords(MaterialMap *map, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex);
-    void upload(RenderState *state);
-    void clear(RenderState *state);
+    void upload(RenderContext *renderCtx);
+    void clear(RenderContext *renderCtx);
     void clearVertices();
     void clearIndices();
     void clearColors();

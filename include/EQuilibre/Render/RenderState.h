@@ -50,11 +50,11 @@ struct RENDER_DLL FogParams
     vec4 color;
 };
 
-class RENDER_DLL RenderState
+class RENDER_DLL RenderContext
 {
 public:
-    RenderState();
-    virtual ~RenderState();
+    RenderContext();
+    virtual ~RenderContext();
 
     void init();
     
@@ -98,7 +98,7 @@ public:
     void scale(float sx, float sy, float sz);
 
     matrix4 currentMatrix() const;
-    const matrix4 & matrix(RenderState::MatrixMode mode) const;
+    const matrix4 & matrix(RenderContext::MatrixMode mode) const;
 
     // general state operations
 

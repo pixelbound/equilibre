@@ -28,11 +28,11 @@
 #include "EQuilibre/Render/RenderState.h"
 #include "EQuilibre/Render/FrameStat.h"
 
-SceneViewport::SceneViewport(Scene *scene, RenderState *state, QWidget *parent) : QGLWidget(parent)
+SceneViewport::SceneViewport(Scene *scene, RenderContext *renderCtx, QWidget *parent) : QGLWidget(parent)
 {
     setMinimumSize(640, 480);
     m_scene = scene;
-    m_state = state;
+    m_renderCtx = renderCtx;
     m_renderTimer = new QTimer(this);
     m_renderTimer->setInterval(0);
     m_statsTimer = new QTimer(this);
@@ -68,14 +68,14 @@ void SceneViewport::initializeGL()
         return;
     }
     
-    m_state->init();
+    m_renderCtx->init();
     m_scene->init();
     emit initialized();
 }
 
 void SceneViewport::resizeGL(int w, int h)
 {
-    m_state->setupViewport(w, h);
+    m_renderCtx->setupViewport(w, h);
 }
 
 void SceneViewport::paintEvent(QPaintEvent *)
@@ -134,13 +134,13 @@ void SceneViewport::setShowStats(bool show)
 
 void SceneViewport::startStats()
 {
-    foreach(FrameStat *stat, m_state->stats())
+    foreach(FrameStat *stat, m_renderCtx->stats())
         stat->clear();
 }
 
 void SceneViewport::updateStats()
 {
-    const QVector<FrameStat *> stats = m_state->stats();
+    const QVector<FrameStat *> stats = m_renderCtx->stats();
     for(int i = 0; i < stats.count(); i++)
     {
         if(i >= m_lastStats.count())
@@ -156,7 +156,7 @@ void SceneViewport::paintStats(QPainter *p)
     f.setWeight(QFont::Bold);
     p->setFont(f);
     QString text;
-    const QVector<FrameStat *> stats = m_state->stats();
+    const QVector<FrameStat *> stats = m_renderCtx->stats();
     for(int i = 0; i < stats.count(); i++)
     {
         FrameStat *stat = stats[i];

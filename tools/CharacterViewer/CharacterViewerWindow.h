@@ -23,7 +23,7 @@
 class QComboBox;
 class QVBoxLayout;
 class QAction;
-class RenderState;
+class RenderContext;
 class ShaderProgramGL2;
 class SceneViewport;
 class WLDSkeleton;
@@ -36,7 +36,7 @@ class CharacterViewerWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    CharacterViewerWindow(RenderState *state, QWidget *parent = 0);
+    CharacterViewerWindow(RenderContext *renderCtx, QWidget *parent = 0);
 
     CharacterScene *scene() const;
 
@@ -63,7 +63,7 @@ private:
 
     SceneViewport *m_viewport;
     CharacterScene *m_scene;
-    RenderState *m_state;
+    RenderContext *m_renderCtx;
     QComboBox *m_actorText;
     QComboBox *m_paletteText;
     QComboBox *m_animationText;
@@ -79,7 +79,7 @@ class CharacterScene : public Scene
     Q_OBJECT
 
 public:
-    CharacterScene(RenderState *state);
+    CharacterScene(RenderContext *renderCtx);
     
     enum SkinningMode
     {

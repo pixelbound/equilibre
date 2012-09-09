@@ -32,10 +32,10 @@ struct RenderStateData
     RenderStateData();
     
     void createCube();
-    bool initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile);
+    bool initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile);
     
     Frustum frustum;
-    RenderState::MatrixMode matrixMode;
+    RenderContext::MatrixMode matrixMode;
     matrix4 matrix[3];
     std::vector<matrix4> matrixStack[3];
     ShaderProgramGL2 *programs[3];
@@ -52,7 +52,7 @@ struct RenderStateData
 
 RenderStateData::RenderStateData()
 {
-    matrixMode = RenderState::ModelView;
+    matrixMode = RenderContext::ModelView;
     for(int i = 0; i < 3; i++)
         programs[i] = NULL;
     currentProgram = 0;
@@ -84,7 +84,7 @@ void RenderStateData::createCube()
     cubeMats->setMaterial(mg.matID, mat);
 }
 
-bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile)
+bool RenderStateData::initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile)
 {
     ShaderProgramGL2 *prog = programs[(int)shader];
     if(!prog->load(vertexFile, fragmentFile))
@@ -98,12 +98,12 @@ bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RenderState::RenderState()
+RenderContext::RenderContext()
 {
     d = new RenderStateData();
-    d->matrix[(int)RenderState::ModelView].setIdentity();
-    d->matrix[(int)RenderState::Projection].setIdentity();
-    d->matrix[(int)RenderState::Texture].setIdentity();
+    d->matrix[(int)RenderContext::ModelView].setIdentity();
+    d->matrix[(int)RenderContext::Projection].setIdentity();
+    d->matrix[(int)RenderContext::Texture].setIdentity();
     d->programs[(int)BasicShader] = new ShaderProgramGL2(this);
     d->programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     d->programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
@@ -114,7 +114,7 @@ RenderState::RenderState()
     d->clearStat = createStat("Clear (ms)", FrameStat::WallTime);
 }
 
-RenderState::~RenderState()
+RenderContext::~RenderContext()
 {
     delete d->programs[(int)BasicShader];
     delete d->programs[(int)SkinningUniformShader];
@@ -124,7 +124,7 @@ RenderState::~RenderState()
     delete d;
 }
 
-ShaderProgramGL2 * RenderState::programByID(Shader shaderID) const
+ShaderProgramGL2 * RenderContext::programByID(Shader shaderID) const
 {
     if((shaderID >= BasicShader) && (shaderID <= SkinningTextureShader))
         return d->programs[(int)shaderID];
@@ -132,7 +132,7 @@ ShaderProgramGL2 * RenderState::programByID(Shader shaderID) const
         return NULL;
 }
 
-void RenderState::setCurrentProgram(ShaderProgramGL2 *prog)
+void RenderContext::setCurrentProgram(ShaderProgramGL2 *prog)
 {
     uint32_t name = prog ? prog->program() : 0;
     if(d->currentProgram != name)
@@ -176,7 +176,7 @@ static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
     }
 }
 
-void RenderState::drawBox(const AABox &box)
+void RenderContext::drawBox(const AABox &box)
 {
 #if 0
     const vec4 boxColor(0.4, 0.2, 0.2, 0.4);
@@ -195,7 +195,7 @@ void RenderState::drawBox(const AABox &box)
 #endif
 }
 
-void RenderState::drawFrustum(const Frustum &frustum)
+void RenderContext::drawFrustum(const Frustum &frustum)
 {
 #if 0
     const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
@@ -208,57 +208,57 @@ void RenderState::drawFrustum(const Frustum &frustum)
 #endif
 }
 
-void RenderState::setMatrixMode(RenderState::MatrixMode newMode)
+void RenderContext::setMatrixMode(RenderContext::MatrixMode newMode)
 {
     d->matrixMode = newMode;
 }
 
-void RenderState::loadIdentity()
+void RenderContext::loadIdentity()
 {
     int i = (int)d->matrixMode;
     d->matrix[i].setIdentity();
 }
 
-void RenderState::multiplyMatrix(const matrix4 &m)
+void RenderContext::multiplyMatrix(const matrix4 &m)
 {
     int i = (int)d->matrixMode;
     d->matrix[i] = d->matrix[i] * m;
 }
 
-void RenderState::pushMatrix()
+void RenderContext::pushMatrix()
 {
     int i = (int)d->matrixMode;
     d->matrixStack[i].push_back(d->matrix[i]);
 }
 
-void RenderState::popMatrix()
+void RenderContext::popMatrix()
 {
     int i = (int)d->matrixMode;
     d->matrix[i] = d->matrixStack[i].back();
     d->matrixStack[i].pop_back();
 }
 
-void RenderState::translate(float dx, float dy, float dz)
+void RenderContext::translate(float dx, float dy, float dz)
 {
     multiplyMatrix(matrix4::translate(dx, dy, dz));
 }
 
-void RenderState::rotate(float angle, float rx, float ry, float rz)
+void RenderContext::rotate(float angle, float rx, float ry, float rz)
 {
     multiplyMatrix(matrix4::rotate(angle, rx, ry, rz));
 }
 
-void RenderState::scale(float sx, float sy, float sz)
+void RenderContext::scale(float sx, float sy, float sz)
 {
     multiplyMatrix(matrix4::scale(sx, sy, sz));
 }
 
-void RenderState::translate(const QVector3D &v)
+void RenderContext::translate(const QVector3D &v)
 {
     translate(v.x(), v.y(), v.z());
 }
 
-void RenderState::rotate(const QQuaternion &q)
+void RenderContext::rotate(const QQuaternion &q)
 {
     QMatrix4x4 m;
     m.setToIdentity();
@@ -267,12 +267,12 @@ void RenderState::rotate(const QQuaternion &q)
     multiplyMatrix(m2);
 }
 
-matrix4 RenderState::currentMatrix() const
+matrix4 RenderContext::currentMatrix() const
 {
     return d->matrix[(int)d->matrixMode];
 }
 
-const matrix4 & RenderState::matrix(RenderState::MatrixMode mode) const
+const matrix4 & RenderContext::matrix(RenderContext::MatrixMode mode) const
 {
     return d->matrix[(int)mode];
 }
@@ -374,7 +374,7 @@ static uint32_t maxMipmapLevel(uint32_t texWidth, uint32_t texHeight, uint32_t m
     return level;
 }
 
-texture_t RenderState::loadTexture(QImage img)
+texture_t RenderContext::loadTexture(QImage img)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -401,7 +401,7 @@ texture_t RenderState::loadTexture(QImage img)
     return texID;
 }
 
-texture_t RenderState::loadTextures(const QImage *images, size_t count)
+texture_t RenderContext::loadTextures(const QImage *images, size_t count)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -454,13 +454,13 @@ texture_t RenderState::loadTextures(const QImage *images, size_t count)
     return texID;
 }
 
-void RenderState::freeTexture(texture_t tex)
+void RenderContext::freeTexture(texture_t tex)
 {
     if(tex != 0)
         glDeleteTextures(1, &tex);
 }
 
-bool RenderState::beginFrame(const vec4 &clearColor)
+bool RenderContext::beginFrame(const vec4 &clearColor)
 {
     d->frameStat->beginTime();
     d->currentProgram = 0;
@@ -483,7 +483,7 @@ bool RenderState::beginFrame(const vec4 &clearColor)
     return shaderLoaded;
 }
 
-void RenderState::endFrame()
+void RenderContext::endFrame()
 {
     // Count draw calls and texture binds made by all programs.
     int totalDrawCalls = 0;
@@ -519,12 +519,12 @@ void RenderState::endFrame()
         stat->next();
 }
 
-Frustum & RenderState::viewFrustum()
+Frustum & RenderContext::viewFrustum()
 {
     return d->frustum;
 }
 
-void RenderState::setupViewport(int w, int h)
+void RenderContext::setupViewport(int w, int h)
 {
     float r = (float)w / (float)h;
     d->frustum.setAspect(r);
@@ -535,7 +535,7 @@ void RenderState::setupViewport(int w, int h)
     setMatrixMode(ModelView);
 }
 
-buffer_t RenderState::createBuffer(const void *data, size_t size)
+buffer_t RenderContext::createBuffer(const void *data, size_t size)
 {
     buffer_t buffer;
     glGenBuffers(1, &buffer);
@@ -545,7 +545,7 @@ buffer_t RenderState::createBuffer(const void *data, size_t size)
     return buffer;
 }
 
-void RenderState::freeBuffers(buffer_t *buffers, int count)
+void RenderContext::freeBuffers(buffer_t *buffers, int count)
 {
     if(!buffers)
         return;
@@ -553,19 +553,19 @@ void RenderState::freeBuffers(buffer_t *buffers, int count)
     memset(buffers, 0, sizeof(buffer_t) * count);
 }
 
-void RenderState::init()
+void RenderContext::init()
 {
     d->initShader(BasicShader, "vertex.glsl", "fragment.glsl");
     d->initShader(SkinningUniformShader, "vertex_skinned_uniform.glsl", "fragment.glsl");
     d->initShader(SkinningTextureShader, "vertex_skinned_texture.glsl", "fragment.glsl");
 }
 
-const QVector<FrameStat *> & RenderState::stats() const
+const QVector<FrameStat *> & RenderContext::stats() const
 {
     return d->stats;
 }
 
-FrameStat * RenderState::createStat(QString name, FrameStat::Type type)
+FrameStat * RenderContext::createStat(QString name, FrameStat::Type type)
 {
     FrameStat *stat = new FrameStat(name, 64, type);
     d->stats.append(stat);
@@ -574,7 +574,7 @@ FrameStat * RenderState::createStat(QString name, FrameStat::Type type)
     return stat;
 }
 
-void RenderState::destroyStat(FrameStat *stat)
+void RenderContext::destroyStat(FrameStat *stat)
 {
     int pos = d->stats.indexOf(stat);
     if(pos >= 0)

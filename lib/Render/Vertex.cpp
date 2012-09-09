@@ -126,16 +126,16 @@ void MeshBuffer::updateTexCoords(MaterialMap *map, const MaterialGroup *matGroup
     }
 }
 
-void MeshBuffer::upload(RenderState *state)
+void MeshBuffer::upload(RenderContext *renderCtx)
 {
     // Create the GPU buffers.
     vertexBufferSize = vertices.count() * sizeof(Vertex);
     indexBufferSize = indices.count() * sizeof(uint32_t);
-    vertexBuffer = state->createBuffer(vertices.constData(), vertexBufferSize);
-    indexBuffer = state->createBuffer(indices.constData(), indexBufferSize);
+    vertexBuffer = renderCtx->createBuffer(vertices.constData(), vertexBufferSize);
+    indexBuffer = renderCtx->createBuffer(indices.constData(), indexBufferSize);
 }
 
-void MeshBuffer::clear(RenderState *state)
+void MeshBuffer::clear(RenderContext *renderCtx)
 {
     foreach(MeshData *m, meshes)
         delete m;
@@ -143,11 +143,11 @@ void MeshBuffer::clear(RenderState *state)
     clearVertices();
     clearIndices();
     clearColors();
-    if(state)
+    if(renderCtx)
     {
-        state->freeBuffers(&vertexBuffer, 1);
-        state->freeBuffers(&indexBuffer, 1);
-        state->freeBuffers(&colorBuffer, 1);
+        renderCtx->freeBuffers(&vertexBuffer, 1);
+        renderCtx->freeBuffers(&indexBuffer, 1);
+        renderCtx->freeBuffers(&colorBuffer, 1);
     }
 }
 

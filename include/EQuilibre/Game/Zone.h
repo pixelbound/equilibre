@@ -41,7 +41,7 @@ class WLDMaterialPalette;
 class MaterialMap;
 class ActorDefFragment;
 class SoundTrigger;
-class RenderState;
+class RenderContext;
 class FrameStat;
 class MeshBuffer;
 class ZoneTerrain;
@@ -71,8 +71,8 @@ public:
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     WLDCharActor * findCharacter(QString name) const;
 
-    void clear(RenderState *state);
-    void draw(RenderState *state);
+    void clear(RenderContext *renderCtx);
+    void draw(RenderContext *renderCtx);
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;
@@ -98,7 +98,7 @@ public:
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
     
-    void freezeFrustum(RenderState *state);
+    void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
     void currentSoundTriggers(QVector<SoundTrigger *> &triggers) const;
@@ -146,12 +146,12 @@ public:
 
     bool load(PFSArchive *archive, WLDData *wld);
     void addTo(OctreeIndex *tree);
-    void draw(RenderState *state, ShaderProgramGL2 *prog);
-    void clear(RenderState *state);
+    void draw(RenderContext *renderCtx, ShaderProgramGL2 *prog);
+    void clear(RenderContext *renderCtx);
     void resetVisible();
 
 private:
-    MeshBuffer * upload(RenderState *state);
+    MeshBuffer * upload(RenderContext *renderCtx);
 
     Zone *m_zone;
     QVector<WLDStaticActor *> m_zoneParts;
@@ -178,14 +178,14 @@ public:
 
     bool load(QString path, QString name, PFSArchive *mainArchive);
     void addTo(OctreeIndex *tree);
-    void draw(RenderState *state, ShaderProgramGL2 *prog);
-    void clear(RenderState *state);
+    void draw(RenderContext *renderCtx, ShaderProgramGL2 *prog);
+    void clear(RenderContext *renderCtx);
     void resetVisible();
 
 private:
     void importMeshes();
     void importActors();
-    void upload(RenderState *state);
+    void upload(RenderContext *renderCtx);
     
     Zone *m_zone;
     AABox m_bounds;
@@ -213,8 +213,8 @@ public:
     MaterialMap * materials() const;
     
     bool load(QString archivePath, QString wldName);
-    MeshBuffer * upload(RenderState *state);
-    void clear(RenderState *state);
+    MeshBuffer * upload(RenderContext *renderCtx);
+    void clear(RenderContext *renderCtx);
     
 private:
     PFSArchive *m_archive;
@@ -236,14 +236,14 @@ public:
     const QMap<QString, WLDCharActor *> models() const;
     
     bool load(QString archivePath, QString wldName);
-    void upload(RenderState *state);
-    void clear(RenderState *state);
+    void upload(RenderContext *renderCtx);
+    void clear(RenderContext *renderCtx);
     
 private:
     void importSkeletons(WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void upload(RenderState *state, WLDCharActor *actor);
+    void upload(RenderContext *renderCtx, WLDCharActor *actor);
     
     PFSArchive *m_archive;
     WLDData *m_wld;

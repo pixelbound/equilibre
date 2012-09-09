@@ -76,7 +76,7 @@ public:
 class RENDER_DLL ShaderProgramGL2
 {
 public:
-    ShaderProgramGL2(RenderState *state);
+    ShaderProgramGL2(RenderContext *renderCtx);
     virtual ~ShaderProgramGL2();
 
     bool loaded() const;
@@ -148,7 +148,7 @@ protected:
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
 
-    RenderState *m_state;
+    RenderContext *m_renderCtx;
     uint32_t m_vertexShader;
     uint32_t m_fragmentShader;
     uint32_t m_program;
@@ -165,7 +165,7 @@ protected:
 class UniformSkinningProgram : public ShaderProgramGL2
 {
 public:
-    UniformSkinningProgram(RenderState *state);
+    UniformSkinningProgram(RenderContext *renderCtx);
     virtual bool init();
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
@@ -177,7 +177,7 @@ private:
 class TextureSkinningProgram : public ShaderProgramGL2
 {
 public:
-    TextureSkinningProgram(RenderState *state);
+    TextureSkinningProgram(RenderContext *renderCtx);
     virtual ~TextureSkinningProgram();
     virtual bool init();
     virtual void beginSkinMesh();

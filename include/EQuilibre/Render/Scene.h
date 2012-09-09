@@ -25,7 +25,7 @@
 class WLDModel;
 class WLDActor;
 class Zone;
-class RenderState;
+class RenderContext;
 class QSettings;
 class QKeyEvent;
 class QMouseEvent;
@@ -44,7 +44,7 @@ class RENDER_DLL Scene : public QObject
     Q_OBJECT
 
 public:
-    Scene(RenderState *state);
+    Scene(RenderContext *renderCtx);
     virtual ~Scene();
 
     QString assetPath() const;
@@ -64,7 +64,7 @@ public:
     virtual void wheelEvent(QWheelEvent *e);
 
 protected:
-    RenderState *m_state;
+    RenderContext *m_renderCtx;
     QSettings *m_settings;
     QString m_frameLog;
 };

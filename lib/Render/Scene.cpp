@@ -25,9 +25,9 @@
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/Zone.h"
 
-Scene::Scene(RenderState *state)
+Scene::Scene(RenderContext *renderCtx)
 {
-    m_state = state;
+    m_renderCtx = renderCtx;
     m_settings = new QSettings(QSettings::IniFormat, QSettings::UserScope,
         "EQuilibre", QString(), this);
 }

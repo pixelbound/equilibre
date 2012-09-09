@@ -25,7 +25,7 @@ class QComboBox;
 class QVBoxLayout;
 class QAction;
 class ZoneScene;
-class RenderState;
+class RenderContext;
 class SceneViewport;
 class WLDSkeleton;
 class Zone;
@@ -36,7 +36,7 @@ class ZoneViewerWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    ZoneViewerWindow(RenderState *state, QWidget *parent = 0);
+    ZoneViewerWindow(RenderContext *renderCtx, QWidget *parent = 0);
 
     ZoneScene * scene() const;
 
@@ -57,7 +57,7 @@ private:
 
     SceneViewport *m_viewport;
     ZoneScene *m_scene;
-    RenderState *m_state;
+    RenderContext *m_renderCtx;
     QAction *m_noLightingAction;
     QAction *m_bakedLightingAction;
     QAction *m_debugVertexColorAction;
@@ -74,7 +74,7 @@ class ZoneScene : public Scene
     Q_OBJECT
 
 public:
-    ZoneScene(RenderState *state);
+    ZoneScene(RenderContext *renderCtx);
 
     Zone * zone() const;
     int lightingMode() const;

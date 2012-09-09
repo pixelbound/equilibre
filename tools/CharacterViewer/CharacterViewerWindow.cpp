@@ -39,13 +39,13 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "EQuilibre/Game/Zone.h"
 
-CharacterViewerWindow::CharacterViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
+CharacterViewerWindow::CharacterViewerWindow(RenderContext *renderCtx, QWidget *parent) : QMainWindow(parent)
 {
-    m_scene = new CharacterScene(state);
-    m_state = state;
+    m_scene = new CharacterScene(renderCtx);
+    m_renderCtx = renderCtx;
     m_lastDir = m_scene->assetPath();
     setWindowTitle("EQuilibre Character Viewer");
-    m_viewport = new SceneViewport(m_scene, state);
+    m_viewport = new SceneViewport(m_scene, renderCtx);
     m_actorText = new QComboBox();
     m_paletteText = new QComboBox();
     m_animationText = new QComboBox();
@@ -308,7 +308,7 @@ void CharacterViewerWindow::updateMenus()
 void CharacterViewerWindow::clear()
 {
     m_viewport->makeCurrent();
-    m_scene->zone()->clear(m_state);
+    m_scene->zone()->clear(m_renderCtx);
     updateLists();
 }
 
@@ -332,9 +332,9 @@ void CharacterViewerWindow::setHardwareSkinningTexture()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-CharacterScene::CharacterScene(RenderState *state) : Scene(state)
+CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
 {
-    m_state = state;
+    m_renderCtx = renderCtx;
     m_sigma = 1.0;
     m_zone = new Zone(this);
     m_skinningMode = SoftwareSkinning;
@@ -381,9 +381,9 @@ void CharacterScene::init()
 {
     m_started = currentTime();
     foreach(CharacterPack *charPack, m_zone->characterPacks())
-        charPack->upload(m_state);
+        charPack->upload(m_renderCtx);
     foreach(ObjectPack *objPack, m_zone->objectPacks())
-        objPack->upload(m_state);
+        objPack->upload(m_renderCtx);
 }
 
 CharacterPack * CharacterScene::loadCharacters(QString archivePath)
@@ -391,7 +391,7 @@ CharacterPack * CharacterScene::loadCharacters(QString archivePath)
     CharacterPack *charPack = m_zone->loadCharacters(archivePath);
     if(charPack)
     {
-        charPack->upload(m_state);
+        charPack->upload(m_renderCtx);
         return charPack;
     }
     return NULL;
@@ -400,60 +400,60 @@ CharacterPack * CharacterScene::loadCharacters(QString archivePath)
 void CharacterScene::draw()
 {
     vec4 clearColor(0.6, 0.6, 0.9, 1.0);
-    if(m_state->beginFrame(clearColor))
+    if(m_renderCtx->beginFrame(clearColor))
     {
         clearLog();
         drawFrame();
     }
-    m_state->endFrame();
+    m_renderCtx->endFrame();
 }
 
 ShaderProgramGL2 * CharacterScene::program(RenderMode renderMode)
 {
-    RenderState::Shader shader;
+    RenderContext::Shader shader;
     switch(renderMode)
     {
     default:
     case Basic:
-        shader = RenderState::BasicShader;
+        shader = RenderContext::BasicShader;
         break;
     case Skinning:
           switch(m_skinningMode)
           {
           default:
           case SoftwareSkinning:
-              shader = RenderState::BasicShader;
+              shader = RenderContext::BasicShader;
               break;
           case HardwareSkinningUniform:
-              shader = RenderState::SkinningUniformShader;
+              shader = RenderContext::SkinningUniformShader;
               break;
           case HardwareSkinningTexture:
-              shader = RenderState::SkinningTextureShader;
+              shader = RenderContext::SkinningTextureShader;
               break;
           }
     }
-    return m_state->programByID(shader);
+    return m_renderCtx->programByID(shader);
 }
 
 void CharacterScene::drawFrame()
 {
     vec3 rot = m_theta;
-    m_state->translate(m_delta.x, m_delta.y, m_delta.z);
-    m_state->rotate(rot.x, 1.0, 0.0, 0.0);
-    m_state->rotate(rot.y, 0.0, 1.0, 0.0);
-    m_state->rotate(rot.z, 0.0, 0.0, 1.0);
-    m_state->scale(m_sigma, m_sigma, m_sigma);
+    m_renderCtx->translate(m_delta.x, m_delta.y, m_delta.z);
+    m_renderCtx->rotate(rot.x, 1.0, 0.0, 0.0);
+    m_renderCtx->rotate(rot.y, 0.0, 1.0, 0.0);
+    m_renderCtx->rotate(rot.z, 0.0, 0.0, 1.0);
+    m_renderCtx->scale(m_sigma, m_sigma, m_sigma);
     
     ShaderProgramGL2 *prog = program(Skinning);
     vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
-    m_state->setCurrentProgram(prog);
+    m_renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
     
     WLDCharActor *charModel = selectedCharacter();
     if(charModel)
     {
         charModel->setAnimTime(currentTime());
-        charModel->draw(m_state, prog);
+        charModel->draw(m_renderCtx, prog);
     }
 }
 

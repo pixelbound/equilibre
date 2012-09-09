@@ -48,9 +48,9 @@ static const ShaderSymbolInfo Attributes[] =
     {0, NULL}
 };
 
-ShaderProgramGL2::ShaderProgramGL2(RenderState *state)
+ShaderProgramGL2::ShaderProgramGL2(RenderContext *renderCtx)
 {
-    m_state = state;
+    m_renderCtx = renderCtx;
     m_program = 0;
     m_vertexShader = 0;
     m_fragmentShader = 0;
@@ -411,8 +411,8 @@ void ShaderProgramGL2::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *mat
 
 void ShaderProgramGL2::drawMesh()
 {
-    setProjectionMatrix(m_state->matrix(RenderState::Projection));
-    drawMeshBatch(&m_state->matrix(RenderState::ModelView), NULL, 1);
+    setProjectionMatrix(m_renderCtx->matrix(RenderContext::Projection));
+    drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, 1);
 }
 
 void ShaderProgramGL2::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
@@ -637,7 +637,7 @@ void ShaderProgramGL2::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-UniformSkinningProgram::UniformSkinningProgram(RenderState *state) : ShaderProgramGL2(state)
+UniformSkinningProgram::UniformSkinningProgram(RenderContext *renderCtx) : ShaderProgramGL2(renderCtx)
 {
     m_bonesLoc = -1;
 }
@@ -659,7 +659,7 @@ void UniformSkinningProgram::endSkinMesh()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TextureSkinningProgram::TextureSkinningProgram(RenderState *state) : ShaderProgramGL2(state)
+TextureSkinningProgram::TextureSkinningProgram(RenderContext *renderCtx) : ShaderProgramGL2(renderCtx)
 {
     m_boneTexture = 0;
     m_bonesLoc = -1;

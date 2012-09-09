@@ -232,7 +232,7 @@ QString WLDCharActor::slotName(EquipSlot slot)
     return QString::null;
 }
 
-void WLDCharActor::draw(RenderState *state, ShaderProgramGL2 *prog)
+void WLDCharActor::draw(RenderContext *renderCtx, ShaderProgramGL2 *prog)
 {
     if(!m_model)
         return;
@@ -247,30 +247,30 @@ void WLDCharActor::draw(RenderState *state, ShaderProgramGL2 *prog)
             bones = anim->transformationsAtTime(m_animTime);
     }
     
-    state->pushMatrix();
-    state->translate(m_location.x, m_location.y, m_location.z);
-    state->rotate(m_rotation.x, 1.0, 0.0, 0.0);
-    state->rotate(m_rotation.y, 0.0, 1.0, 0.0);
-    state->rotate(m_rotation.z, 0.0, 0.0, 1.0);
-    state->scale(m_scale.x, m_scale.y, m_scale.z);
+    renderCtx->pushMatrix();
+    renderCtx->translate(m_location.x, m_location.y, m_location.z);
+    renderCtx->rotate(m_rotation.x, 1.0, 0.0, 0.0);
+    renderCtx->rotate(m_rotation.y, 0.0, 1.0, 0.0);
+    renderCtx->rotate(m_rotation.z, 0.0, 0.0, 1.0);
+    renderCtx->scale(m_scale.x, m_scale.y, m_scale.z);
     
     // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)
-    skin->draw(state, prog, bones.constData(), (uint32_t)bones.count());
+    skin->draw(prog, bones.constData(), (uint32_t)bones.count());
     foreach(ActorEquip eq, m_equip)
     {
-        state->pushMatrix();
+        renderCtx->pushMatrix();
         BoneTransform bone = bones.value(eq.TrackID);
-        state->translate(bone.location.toVector3D());
-        state->rotate(bone.rotation);
+        renderCtx->translate(bone.location.toVector3D());
+        renderCtx->rotate(bone.rotation);
         MeshBuffer *meshBuf = eq.Mesh->data()->buffer;
         meshBuf->matGroups.clear();
         meshBuf->addMaterialGroups(eq.Mesh->data());
         prog->beginDrawMesh(meshBuf, eq.Materials);
         prog->drawMesh();
         prog->endDrawMesh();
-        state->popMatrix();
+        renderCtx->popMatrix();
     }
-    state->popMatrix();
+    renderCtx->popMatrix();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

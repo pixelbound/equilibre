@@ -203,16 +203,16 @@ WLDCharActor * Zone::findCharacter(QString name) const
     return NULL;
 }
 
-void Zone::clear(RenderState *state)
+void Zone::clear(RenderContext *renderCtx)
 {
     foreach(CharacterPack *pack, m_charPacks)
     {
-        pack->clear(state);
+        pack->clear(renderCtx);
         delete pack;
     }
     foreach(ObjectPack *pack, m_objectPacks)
     {
-        pack->clear(state);
+        pack->clear(renderCtx);
         delete pack;
     }
     foreach(WLDLightActor *light, m_lights)
@@ -222,12 +222,12 @@ void Zone::clear(RenderState *state)
     m_objectPacks.clear();
     if(m_objects)
     {
-        m_objects->clear(state);
+        m_objects->clear(renderCtx);
         delete m_objects;
     }
     if(m_terrain)
     {
-        m_terrain->clear(state);
+        m_terrain->clear(renderCtx);
         delete m_terrain;
     }
     delete m_actorTree;
@@ -283,56 +283,56 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
     }
 }
 
-void Zone::draw(RenderState *state)
+void Zone::draw(RenderContext *renderCtx)
 {
     if(!m_actorTree)
         return;
    
-    Frustum &frustum = state->viewFrustum();
+    Frustum &frustum = renderCtx->viewFrustum();
     setPlayerViewFrustum(frustum);
-    state->pushMatrix();
-    state->multiplyMatrix(frustum.camera());
+    renderCtx->pushMatrix();
+    renderCtx->multiplyMatrix(frustum.camera());
     
     // Build a list of visible actors.
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
     
     // Setup the render program.
-    ShaderProgramGL2 *prog = state->programByID(RenderState::BasicShader);
+    ShaderProgramGL2 *prog = renderCtx->programByID(RenderContext::BasicShader);
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
-    state->setCurrentProgram(prog);
+    renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
     prog->setFogParams(m_fogParams);
     
     // Draw the zone's static objects.
     if(m_showObjects && m_objects)
-        m_objects->draw(state, prog);
+        m_objects->draw(renderCtx, prog);
 
     // Draw the zone's terrain.
     if(m_showZone && m_terrain)
-        m_terrain->draw(state, prog);
+        m_terrain->draw(renderCtx, prog);
     
     // draw sound trigger volumes
     if(m_showSoundTriggers)
     {
         foreach(SoundTrigger *trigger, m_soundTriggers)
-            state->drawBox(trigger->bounds());
+            renderCtx->drawBox(trigger->bounds());
     }
     
     // Draw the viewing frustum and bounding boxes of visible zone parts. if frozen.
     if(m_frustumIsFrozen)
     {
-        state->drawFrustum(m_frozenFrustum);
+        renderCtx->drawFrustum(m_frozenFrustum);
         //foreach(WLDZoneActor *actor, visibleZoneParts)
-        //    state->drawBox(actor->boundsAA);
+        //    renderCtx->drawBox(actor->boundsAA);
         //foreach(WLDZoneActor *actor, visibleObjects)
-        //    state->drawBox(actor->boundsAA);
+        //    renderCtx->drawBox(actor->boundsAA);
     }
     
     m_terrain->resetVisible();
     m_objects->resetVisible();
     
-    state->popMatrix();
+    renderCtx->popMatrix();
 }
 
 const vec3 & Zone::playerPos() const
@@ -400,11 +400,11 @@ bool Zone::frustumIsFrozen() const
     return m_frustumIsFrozen;
 }
 
-void Zone::freezeFrustum(RenderState *state)
+void Zone::freezeFrustum(RenderContext *renderCtx)
 {
     if(!m_frustumIsFrozen)
     {
-        m_frozenFrustum = state->viewFrustum();
+        m_frozenFrustum = renderCtx->viewFrustum();
         setPlayerViewFrustum(m_frozenFrustum);
         m_frustumIsFrozen = true;    
     }
@@ -473,7 +473,7 @@ QVector<WLDStaticActor *> & ZoneTerrain::visibleZoneParts()
     return m_visibleZoneParts;
 }
 
-void ZoneTerrain::clear(RenderState *state)
+void ZoneTerrain::clear(RenderContext *renderCtx)
 {
     foreach(WLDStaticActor *part, m_zoneParts)
     {
@@ -484,7 +484,7 @@ void ZoneTerrain::clear(RenderState *state)
     
     if(m_zoneBuffer)
     {
-        m_zoneBuffer->clear(state);
+        m_zoneBuffer->clear(renderCtx);
         delete m_zoneBuffer;
         m_zoneBuffer = NULL;
     }
@@ -492,10 +492,10 @@ void ZoneTerrain::clear(RenderState *state)
     delete m_zoneMaterials;
     m_zoneMaterials = NULL;
     
-    if(state)
+    if(renderCtx)
     {
-        state->destroyStat(m_zoneStat);
-        state->destroyStat(m_zoneStatGPU);
+        renderCtx->destroyStat(m_zoneStat);
+        renderCtx->destroyStat(m_zoneStatGPU);
         m_zoneStat = NULL;
         m_zoneStatGPU = NULL;
     }
@@ -541,12 +541,12 @@ void ZoneTerrain::resetVisible()
     m_visibleZoneParts.clear();
 }
 
-MeshBuffer * ZoneTerrain::upload(RenderState *state)
+MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
 {
     MeshBuffer *meshBuf = NULL;
     
     // Upload the materials as a texture array, assigning z coordinates to materials.
-    m_zoneMaterials->uploadArray(state);
+    m_zoneMaterials->uploadArray(renderCtx);
     
 #if !defined(COMBINE_ZONE_PARTS)
     meshBuf = new MeshBuffer();
@@ -563,25 +563,25 @@ MeshBuffer * ZoneTerrain::upload(RenderState *state)
 #endif
     
     // Create the GPU buffers and free the memory used for vertices and indices.
-    meshBuf->upload(state);
+    meshBuf->upload(renderCtx);
     meshBuf->clearVertices();
     meshBuf->clearIndices();
     return meshBuf;
 }
 
-void ZoneTerrain::draw(RenderState *state, ShaderProgramGL2 *prog)
+void ZoneTerrain::draw(RenderContext *renderCtx, ShaderProgramGL2 *prog)
 {
     // draw geometry
     if(!m_zoneStat)
-        m_zoneStat = state->createStat("Zone CPU (ms)", FrameStat::CPUTime);
+        m_zoneStat = renderCtx->createStat("Zone CPU (ms)", FrameStat::CPUTime);
     if(!m_zoneStatGPU)
-        m_zoneStatGPU = state->createStat("Zone GPU (ms)", FrameStat::GPUTime);
+        m_zoneStatGPU = renderCtx->createStat("Zone GPU (ms)", FrameStat::GPUTime);
     m_zoneStat->beginTime();
     m_zoneStatGPU->beginTime();
     
     // Create a GPU buffer for the zone's vertices and indices if needed.
     if(m_zoneBuffer == NULL)
-        m_zoneBuffer = upload(state);
+        m_zoneBuffer = upload(renderCtx);
     
 #if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
@@ -637,23 +637,23 @@ QVector<WLDStaticActor *> & ZoneObjects::visibleObjects()
     return m_visibleObjects;
 }
 
-void ZoneObjects::clear(RenderState *state)
+void ZoneObjects::clear(RenderContext *renderCtx)
 {
     foreach(WLDActor *actor, m_objects)
         delete actor;
     m_objects.clear();
     if(m_pack)
     {
-        m_pack->clear(state);
+        m_pack->clear(renderCtx);
         delete m_pack;
         m_pack = NULL;
     }
     delete m_objDefWld;
     m_objDefWld = NULL;
-    if(state)
+    if(renderCtx)
     {
-        state->destroyStat(m_objectsStat);
-        state->destroyStat(m_objectsStatGPU);
+        renderCtx->destroyStat(m_objectsStat);
+        renderCtx->destroyStat(m_objectsStatGPU);
         m_objectsStat = NULL;
         m_objectsStatGPU = NULL;
     }
@@ -712,16 +712,16 @@ void ZoneObjects::resetVisible()
     m_visibleObjects.clear();
 }
 
-void ZoneObjects::upload(RenderState *state)
+void ZoneObjects::upload(RenderContext *renderCtx)
 {
     // Copy objects' lighting colors to a GPU buffer.
-    MeshBuffer *meshBuf = m_pack->upload(state);
+    MeshBuffer *meshBuf = m_pack->upload(renderCtx);
     foreach(WLDStaticActor *actor, m_objects)
         actor->importColorData(meshBuf);
     meshBuf->colorBufferSize = meshBuf->colors.count() * sizeof(uint32_t);
     if(meshBuf->colorBufferSize > 0)
     {
-        meshBuf->colorBuffer = state->createBuffer(meshBuf->colors.constData(), meshBuf->colorBufferSize);
+        meshBuf->colorBuffer = renderCtx->createBuffer(meshBuf->colors.constData(), meshBuf->colorBufferSize);
         meshBuf->clearColors();
     }
 }
@@ -731,18 +731,18 @@ static bool zoneActorGroupLessThan(const WLDStaticActor *a, const WLDStaticActor
     return a->mesh()->def() < b->mesh()->def();
 }
 
-void ZoneObjects::draw(RenderState *state, ShaderProgramGL2 *prog)
+void ZoneObjects::draw(RenderContext *renderCtx, ShaderProgramGL2 *prog)
 {
     if(!m_objectsStat)
-        m_objectsStat = state->createStat("Objects CPU (ms)", FrameStat::CPUTime);
+        m_objectsStat = renderCtx->createStat("Objects CPU (ms)", FrameStat::CPUTime);
     if(!m_objectsStatGPU)
-        m_objectsStatGPU = state->createStat("Objects GPU (ms)", FrameStat::GPUTime);
+        m_objectsStatGPU = renderCtx->createStat("Objects GPU (ms)", FrameStat::GPUTime);
     m_objectsStat->beginTime();
     m_objectsStatGPU->beginTime();
     
     // Create a GPU buffer for the objects' vertices and indices if needed.
     if(m_pack->buffer() == NULL)
-        upload(state);
+        upload(renderCtx);
     
     // Sort the list of visible objects by mesh.
     qSort(m_visibleObjects.begin(), m_visibleObjects.end(), zoneActorGroupLessThan);
@@ -770,9 +770,9 @@ void ZoneObjects::draw(RenderState *state, ShaderProgramGL2 *prog)
         }
         
         // Draw the zone object.
-        state->pushMatrix();
-        state->multiplyMatrix(staticActor->modelMatrix());
-        matrix4 mvMatrix = state->matrix(RenderState::ModelView);
+        renderCtx->pushMatrix();
+        renderCtx->multiplyMatrix(staticActor->modelMatrix());
+        matrix4 mvMatrix = renderCtx->matrix(RenderContext::ModelView);
         QVector<uint16_t> &actorLights = staticActor->lightsInRange();
         for(int i = 0; i < actorLights.count(); i++)
         {
@@ -782,13 +782,13 @@ void ZoneObjects::draw(RenderState *state, ShaderProgramGL2 *prog)
         }
         prog->setLightSources(m_lightsInRange, actorLights.count());
         prog->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
-        state->popMatrix();
+        renderCtx->popMatrix();
     }
     if(previousMesh)
         prog->endDrawMesh();
     
     if(m_drawnObjectsStat == NULL)
-        m_drawnObjectsStat = state->createStat("Objects", FrameStat::Counter);
+        m_drawnObjectsStat = renderCtx->createStat("Objects", FrameStat::Counter);
     m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
     m_objectsStatGPU->endTime();
     m_objectsStat->endTime();
@@ -823,14 +823,14 @@ MaterialMap * ObjectPack::materials() const
     return m_materials;
 }
 
-void ObjectPack::clear(RenderState *state)
+void ObjectPack::clear(RenderContext *renderCtx)
 {
     foreach(WLDMesh *model, m_models)
         delete model;
     m_models.clear();
     if(m_meshBuf)
     {
-        m_meshBuf->clear(state);
+        m_meshBuf->clear(renderCtx);
         delete m_meshBuf;
         m_meshBuf = NULL;
     }
@@ -871,9 +871,9 @@ bool ObjectPack::load(QString archivePath, QString wldName)
     return true;
 }
 
-MeshBuffer * ObjectPack::upload(RenderState *state)
+MeshBuffer * ObjectPack::upload(RenderContext *renderCtx)
 {
-    m_materials->uploadArray(state);
+    m_materials->uploadArray(renderCtx);
     
     // Import vertices and indices for each mesh.
     m_meshBuf = new MeshBuffer();
@@ -884,7 +884,7 @@ MeshBuffer * ObjectPack::upload(RenderState *state)
     }
     
     // Create the GPU buffers.
-    m_meshBuf->upload(state);
+    m_meshBuf->upload(renderCtx);
     m_meshBuf->clearVertices();
     m_meshBuf->clearIndices();
     return m_meshBuf;
@@ -908,7 +908,7 @@ const QMap<QString, WLDCharActor *> CharacterPack::models() const
     return m_models;
 }
 
-void CharacterPack::clear(RenderState *state)
+void CharacterPack::clear(RenderContext *renderCtx)
 {
     foreach(WLDCharActor *actor, m_models)
     {
@@ -916,7 +916,7 @@ void CharacterPack::clear(RenderState *state)
         MeshBuffer *meshBuf = model->buffer();
         if(meshBuf)
         {
-            meshBuf->clear(state);
+            meshBuf->clear(renderCtx);
             delete meshBuf;
         }
         delete model->skeleton();
@@ -1050,13 +1050,13 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     }
 }
 
-void CharacterPack::upload(RenderState *state)
+void CharacterPack::upload(RenderContext *renderCtx)
 {
     foreach(WLDCharActor *actor, m_models)
-        upload(state, actor);
+        upload(renderCtx, actor);
 }
 
-void CharacterPack::upload(RenderState *state, WLDCharActor *actor)
+void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
 {
     // Make sure we haven't uploaded this character before.
     WLDModel *model = actor->model();
@@ -1078,11 +1078,11 @@ void CharacterPack::upload(RenderState *state, WLDCharActor *actor)
             materials = skin->palette()->loadMaterials();
             skin->setMaterials(materials);
         }
-        materials->upload(state);
+        materials->upload(renderCtx);
     }
 
     // Create the GPU buffers.
-    meshBuf->upload(state);
+    meshBuf->upload(renderCtx);
 
     // Free the memory used for indices. We need to keep the vertices around for software skinning.
     meshBuf->clearIndices();

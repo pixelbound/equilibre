@@ -37,12 +37,12 @@
 #include "EQuilibre/Game/Zone.h"
 #include "EQuilibre/Game/SoundTrigger.h"
 
-ZoneViewerWindow::ZoneViewerWindow(RenderState *state, QWidget *parent) : QMainWindow(parent)
+ZoneViewerWindow::ZoneViewerWindow(RenderContext *renderCtx, QWidget *parent) : QMainWindow(parent)
 {
-    m_scene = new ZoneScene(state);
-    m_state = state;
+    m_scene = new ZoneScene(renderCtx);
+    m_renderCtx = renderCtx;
     setWindowTitle("EQuilibre Zone Viewer");
-    m_viewport = new SceneViewport(m_scene, state);
+    m_viewport = new SceneViewport(m_scene, renderCtx);
     setCentralWidget(m_viewport);
     initMenus();
 }
@@ -163,7 +163,7 @@ void ZoneViewerWindow::selectAssetDir()
 bool ZoneViewerWindow::loadZone(QString path, QString name)
 {
     m_viewport->makeCurrent();
-    m_scene->zone()->clear(m_state);
+    m_scene->zone()->clear(m_renderCtx);
     return m_scene->zone()->load(path, name);
 }
 
@@ -221,10 +221,10 @@ void ZoneViewerWindow::setDebugTextureFactor()
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ZoneScene::ZoneScene(RenderState *state) : Scene(state)
+ZoneScene::ZoneScene(RenderContext *renderCtx) : Scene(renderCtx)
 {
     m_zone = new Zone(this);
-    m_program = state->programByID(RenderState::BasicShader);
+    m_program = renderCtx->programByID(RenderContext::BasicShader);
     m_lightingMode = (int)ShaderProgramGL2::NoLighting;
     m_rotState.last = vec3();
     m_rotState.active = false;
@@ -268,17 +268,17 @@ void ZoneScene::showSoundTriggers(bool show)
 void ZoneScene::init()
 {
     m_started = currentTime();
-    m_state->viewFrustum().setFarPlane(1000.0);
+    m_renderCtx->viewFrustum().setFarPlane(1000.0);
 }
 
 void ZoneScene::draw()
 {
-    if(m_state->beginFrame(m_zone->fogParams().color))
+    if(m_renderCtx->beginFrame(m_zone->fogParams().color))
     {
         clearLog();
         drawFrame();
     }
-    m_state->endFrame();
+    m_renderCtx->endFrame();
 }
 
 void ZoneScene::drawFrame()
@@ -289,7 +289,7 @@ void ZoneScene::drawFrame()
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
     m_program->setLightingMode((ShaderProgramGL2::LightingMode)m_lightingMode);
-    m_zone->draw(m_state);
+    m_zone->draw(m_renderCtx);
     
     if(m_zone->showSoundTriggers())
     {
@@ -320,7 +320,7 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
         if(m_zone->frustumIsFrozen())
             m_zone->unFreezeFrustum();
         else
-            m_zone->freezeFrustum(m_state);
+            m_zone->freezeFrustum(m_renderCtx);
     }
 }
 

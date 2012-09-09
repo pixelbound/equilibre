@@ -177,7 +177,7 @@ void MaterialMap::textureArrayInfo(int &maxWidth, int &maxHeight,
     totalMem = maxWidth * maxHeight * pixelSize * count;
 }
 
-void MaterialMap::upload(RenderState *state)
+void MaterialMap::upload(RenderContext *renderCtx)
 {
     if(m_uploaded)
         return;
@@ -190,13 +190,13 @@ void MaterialMap::upload(RenderState *state)
             QImage img = mat->image();
             if(mat->origin() != Material::LowerLeft)
               img = QGLWidget::convertToGLFormat(img);
-            mat->setTexture(state->loadTexture(img));
+            mat->setTexture(renderCtx->loadTexture(img));
         }
     }
     m_uploaded = true;
 }
 
-void MaterialMap::uploadArray(RenderState *state)
+void MaterialMap::uploadArray(RenderContext *renderCtx)
 {
     if(m_uploaded)
         return;
@@ -216,7 +216,7 @@ void MaterialMap::uploadArray(RenderState *state)
         }
     }
     
-    m_arrayTexture = state->loadTextures(images.constData(), images.count());
+    m_arrayTexture = renderCtx->loadTextures(images.constData(), images.count());
     for(uint i = 0; i < uploadMats.count(); i++)
     {
         Material *mat = uploadMats[i];
