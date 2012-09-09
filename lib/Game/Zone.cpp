@@ -578,22 +578,31 @@ static vec3 lightDiffuseValue(const LightParams &light, const Vertex &v)
     float lightIntensity = (lightRadius > 0.0f) ? clamp(1.0f - (lightDist / lightRadius), 0.0f, 1.0f) : 0.0f;
     float lambert = qMax(vec3::dot(v.normal, lightDir), 0.0f);
     vec3 lightContrib = light.color * lightIntensity * lambert;
-    return (lightDist < lightRadius) ? lightContrib : vec3(0.0f, 0.0f, 0.0f);
+    return lightContrib;
 }
 
 void ZoneTerrain::computeLights(WLDStaticActor *part)
 {
+    // Determine which lights affect this part of the zone.
+    const QVector<WLDLightActor *> &lights = m_zone->lights();
+    QVector<WLDLightActor *> nearbyLights;
+    AABox actorBounds = part->boundsAA();
+    foreach(WLDLightActor *light, lights)
+    {
+        const LightParams &params = light->params();
+        if(params.bounds.containsAABox(actorBounds) != OUTSIDE)
+            nearbyLights.append(light);
+    }
+    
+    // Compute the diffuse color of nearby lights for each vertex.
     MeshData *mesh = part->mesh()->data();
     Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
-    const QVector<WLDLightActor *> &lights = m_zone->lights();
-    const QVector<uint16_t> &nearbyLights = part->lightsInRange();
     uint32_t vertexCount = mesh->vertexSegment.count;
     for(uint32_t i = 0; i < vertexCount; i++, v++)
     {
         vec3 totalDiffuse;
-        for(uint32_t j = 0; j < nearbyLights.count(); j++)
+        foreach(WLDLightActor *light, nearbyLights)
         {
-            WLDLightActor *light = lights.value(nearbyLights[j]);
             const LightParams &params = light->params();
             vec3 diffuse = lightDiffuseValue(params, *v);
             totalDiffuse = totalDiffuse + diffuse;
