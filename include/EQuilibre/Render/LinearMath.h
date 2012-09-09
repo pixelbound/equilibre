@@ -102,6 +102,19 @@ public:
         this->w = w;
     }
     
+    inline vec4(vec3 v)
+    {
+        x = v.x;
+        y = v.y;
+        z = v.z;
+        w = 1.0;
+    }
+    
+    inline vec3 toVec3() const
+    {
+        return vec3(x, y, z);
+    }
+    
     static float dot(const vec4 &a, const vec4 &b);
 };
 

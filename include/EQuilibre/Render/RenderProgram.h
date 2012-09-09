@@ -41,13 +41,10 @@ const int U_AMBIENT_LIGHT = 2;
 const int U_MAT_HAS_TEXTURE = 3;
 const int U_MAT_TEXTURE = 4;
 const int U_LIGHTING_MODE = 5;
-const int U_LIGHT_POS = 7;
-const int U_LIGHT_RADIUS = 7;
-const int U_LIGHT_COLOR = 8;
-const int U_FOG_START = 9;
-const int U_FOG_END = 10;
-const int U_FOG_DENSITY = 11;
-const int U_FOG_COLOR = 12;
+const int U_FOG_START = 6;
+const int U_FOG_END = 7;
+const int U_FOG_DENSITY = 8;
+const int U_FOG_COLOR = 9;
 const int U_MAX = U_FOG_COLOR;
 
 struct RENDER_DLL ShaderSymbolInfo
@@ -111,7 +108,8 @@ public:
      * @brief Draw several instances of a mesh whose geometry was passed to
      * @ref beginDrawMesh, each with a different model-view matrix.
      */
-    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances) ;
+    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments,
+                               const BufferSegment *lightSegments, uint32_t instances);
     /**
      * @brief Clean up the resources used by @ref beginDrawMesh and allow it to be
      * called again.
@@ -137,7 +135,6 @@ public:
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
     void setLightingMode(LightingMode newMode);
-    void setLightSources(const LightParams *sources, int count);
     void setFogParams(const FogParams &fogParams);
 
 protected:
@@ -149,7 +146,10 @@ protected:
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
     void drawMaterialGroup(const MaterialGroup &mg);
-    void bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor);
+    void bindColorBuffer(const BufferSegment *colorSegments,
+                         int instanceID, bool &enabledColor);
+    void bindLightBuffer(const BufferSegment *lightSegments,
+                         int instanceID, bool &enabledLight);
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
     void createCube();

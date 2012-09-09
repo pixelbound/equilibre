@@ -128,10 +128,6 @@ bool Zone::load(QString path, QString name)
     if(!importLightSources(m_mainArchive))
         return false;
     
-    // Find which lights affect which actors.
-    foreach(WLDLightActor *light, m_lights)
-        light->checkCoverage(m_actorTree);
-    
     // Load the zone's characters.
     QString charPath = QString("%1/%2_chr.s3d").arg(path).arg(name);
     QString charFile = QString("%1_chr.wld").arg(name);
@@ -549,7 +545,8 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     meshBuf->updateTexCoords(m_zoneMaterials);
 #endif
     
-    computeLights();
+    foreach(WLDStaticActor *part, m_zoneParts)
+        computeLights(part);
     
     // Create the GPU buffers and free the memory used for vertices and indices.
     meshBuf->upload(renderCtx);
@@ -558,27 +555,37 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     return meshBuf;
 }
 
-void ZoneTerrain::computeLights()
-{
-    foreach(WLDStaticActor *part, m_zoneParts)
-        computeLights(part);
-}
-
 static float clamp(float x, float min, float max)
 {
     return qMin(qMax(x, min), max);
 }
 
-static vec3 lightDiffuseValue(const LightParams &light, const Vertex &v)
+static vec3 lightDiffuseValue(const LightParams &light, const vec3 &position, const vec3 &normal)
 {
     float lightRadius = light.bounds.radius;
-    vec3 lightDir = light.bounds.pos - v.position;
+    vec3 lightDir = light.bounds.pos - position;
     float lightDist = lightDir.length();
     lightDir = lightDir.normalized();
     float lightIntensity = (lightRadius > 0.0f) ? clamp(1.0f - (lightDist / lightRadius), 0.0f, 1.0f) : 0.0f;
-    float lambert = qMax(vec3::dot(v.normal, lightDir), 0.0f);
+    float lambert = qMax(vec3::dot(normal, lightDir), 0.0f);
     vec3 lightContrib = light.color * lightIntensity * lambert;
     return lightContrib;
+}
+
+static uint32_t lightDiffuseValue(const QVector<WLDLightActor *> &nearbyLights, const vec3 &position, const vec3 &normal)
+{
+    vec3 totalDiffuse;
+    foreach(WLDLightActor *light, nearbyLights)
+    {
+        const LightParams &params = light->params();
+        vec3 diffuse = lightDiffuseValue(params, position, normal);
+        totalDiffuse = totalDiffuse + diffuse;
+    }
+    uint8_t r = (uint8_t)qRound(totalDiffuse.x * 255.0f);
+    uint8_t g = (uint8_t)qRound(totalDiffuse.y * 255.0f);
+    uint8_t b = (uint8_t)qRound(totalDiffuse.z * 255.0f);
+    uint8_t a = 255;
+    return r + (g << 8) + (b << 16) + (a << 24);
 }
 
 void ZoneTerrain::computeLights(WLDStaticActor *part)
@@ -600,18 +607,7 @@ void ZoneTerrain::computeLights(WLDStaticActor *part)
     uint32_t vertexCount = mesh->vertexSegment.count;
     for(uint32_t i = 0; i < vertexCount; i++, v++)
     {
-        vec3 totalDiffuse;
-        foreach(WLDLightActor *light, nearbyLights)
-        {
-            const LightParams &params = light->params();
-            vec3 diffuse = lightDiffuseValue(params, *v);
-            totalDiffuse = totalDiffuse + diffuse;
-        }
-        uint8_t r = (uint8_t)qRound(totalDiffuse.x * 255.0f);
-        uint8_t g = (uint8_t)qRound(totalDiffuse.y * 255.0f);
-        uint8_t b = (uint8_t)qRound(totalDiffuse.z * 255.0f);
-        uint8_t a = 255;
-        v->diffuse = r + (g << 8) + (b << 16) + (a << 24);
+        v->diffuse = lightDiffuseValue(nearbyLights, v->position, v->normal);
     }
 }
 
@@ -632,7 +628,6 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
-    prog->setLightSources(NULL, 0);
     foreach(WLDActor *actor, m_visibleZoneParts)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -642,7 +637,6 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
-    // XXX lights?
     prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
     prog->drawMesh();
     prog->endDrawMesh();
@@ -763,11 +757,54 @@ void ZoneObjects::upload(RenderContext *renderCtx)
     MeshBuffer *meshBuf = m_pack->upload(renderCtx);
     foreach(WLDStaticActor *actor, m_objects)
         actor->importColorData(meshBuf);
+    foreach(WLDStaticActor *obj, m_objects)
+        computeLights(obj);
     meshBuf->colorBufferSize = meshBuf->colors.count() * sizeof(uint32_t);
     if(meshBuf->colorBufferSize > 0)
     {
         meshBuf->colorBuffer = renderCtx->createBuffer(meshBuf->colors.constData(), meshBuf->colorBufferSize);
         meshBuf->clearColors();
+    }
+    meshBuf->lightBufferSize = meshBuf->light.count() * sizeof(uint32_t);
+    if(meshBuf->lightBufferSize > 0)
+    {
+        meshBuf->lightBuffer = renderCtx->createBuffer(meshBuf->light.constData(), meshBuf->lightBufferSize);
+        meshBuf->clearLight();
+    }
+    meshBuf->clearVertices();
+}
+
+void ZoneObjects::computeLights(WLDStaticActor *obj)
+{
+    // Determine which lights affect this object.
+    const QVector<WLDLightActor *> &lights = m_zone->lights();
+    QVector<WLDLightActor *> nearbyLights;
+    AABox actorBounds = obj->boundsAA();
+    foreach(WLDLightActor *light, lights)
+    {
+        const LightParams &params = light->params();
+        // XXX this almost always returns outside for some reason.
+        if(params.bounds.containsAABox(actorBounds) != OUTSIDE)
+            nearbyLights.append(light);
+    }
+    
+    // Set up the actor's segment of the light buffer.
+    MeshData *mesh = obj->mesh()->data();
+    MeshBuffer *meshBuf = mesh->buffer;
+    Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
+    uint32_t vertexCount = mesh->vertexSegment.count;
+    obj->lightSegment().offset = meshBuf->light.count();
+    obj->lightSegment().count = vertexCount;
+    obj->lightSegment().elementSize = sizeof(uint32_t);
+    
+    // Compute the diffuse color of nearby lights for each vertex.
+    const matrix4 &modelMat = obj->modelMatrix();
+    for(uint32_t i = 0; i < vertexCount; i++, v++)
+    {
+        vec3 position = modelMat.map(v->position);
+        vec3 normal = modelMat.map(v->normal).normalized(); // XXX Fix non-uniform scaling.
+        uint32_t diffuse = lightDiffuseValue(nearbyLights, position, normal);
+        meshBuf->light.append(diffuse);
     }
 }
 
@@ -796,7 +833,6 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
     MeshBuffer *meshBuf = m_pack->buffer();
-    const QVector<WLDLightActor *> &lightSources = m_zone->lights();
     foreach(WLDActor *actor, m_visibleObjects)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -818,15 +854,7 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
         renderCtx->pushMatrix();
         renderCtx->multiplyMatrix(staticActor->modelMatrix());
         matrix4 mvMatrix = renderCtx->matrix(RenderContext::ModelView);
-        QVector<uint16_t> &actorLights = staticActor->lightsInRange();
-        for(int i = 0; i < actorLights.count(); i++)
-        {
-            uint16_t lightID = actorLights[i];
-            Q_ASSERT(i < 8);
-            m_lightsInRange[i] = lightSources[lightID]->params();
-        }
-        prog->setLightSources(m_lightsInRange, actorLights.count());
-        prog->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
+        prog->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), &staticActor->lightSegment(), 1);
         renderCtx->popMatrix();
     }
     if(previousMesh)
@@ -930,7 +958,6 @@ MeshBuffer * ObjectPack::upload(RenderContext *renderCtx)
     
     // Create the GPU buffers.
     m_meshBuf->upload(renderCtx);
-    m_meshBuf->clearVertices();
     m_meshBuf->clearIndices();
     return m_meshBuf;
 }

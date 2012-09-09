@@ -85,18 +85,22 @@ public:
     void clearVertices();
     void clearIndices();
     void clearColors();
+    void clearLight();
     
     QVector<Vertex> vertices;
     QVector<uint32_t> indices;
     QVector<uint32_t> colors;
+    QVector<uint32_t> light;
     QVector<MaterialGroup> matGroups;
     QVector<MeshData *> meshes;
     buffer_t vertexBuffer;
     buffer_t indexBuffer;
     buffer_t colorBuffer;
+    buffer_t lightBuffer;
     uint32_t vertexBufferSize;
     uint32_t indexBufferSize;
     uint32_t colorBufferSize;
+    uint32_t lightBufferSize;
 };
 
 #endif

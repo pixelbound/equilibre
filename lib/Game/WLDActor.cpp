@@ -90,9 +90,9 @@ const BufferSegment & WLDStaticActor::colorSegment() const
     return m_colorSegment;
 }
 
-QVector<uint16_t> & WLDStaticActor::lightsInRange()
+BufferSegment & WLDStaticActor::lightSegment()
 {
-    return m_lightsInRange;
+    return m_lightSegment;
 }
 
 void WLDStaticActor::update()
@@ -307,24 +307,6 @@ uint16_t WLDLightActor::lightID() const
 const LightParams & WLDLightActor::params() const
 {
     return m_params;
-}
-
-void WLDLightActor::checkCoverage(OctreeIndex *index)
-{
-    index->findVisible(m_params.bounds, lightCoverageCallback, this, true);
-}
- 
-void WLDLightActor::lightCoverageCallback(WLDActor *actor, void *user)
-{
-    const int MAX_LIGHTS = 8;
-    WLDLightActor *light = (WLDLightActor *)user;
-    WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
-    if(staticActor)
-    {
-        QVector<uint16_t> &lights = staticActor->lightsInRange(); 
-        if((lights.count() < MAX_LIGHTS) || !staticActor->frag())
-            lights.append(light->m_lightID);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

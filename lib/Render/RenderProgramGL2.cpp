@@ -27,9 +27,6 @@ static const ShaderSymbolInfo Uniforms[] =
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
     {U_MAT_TEXTURE, "u_material_texture"},
     {U_LIGHTING_MODE, "u_lightingMode"},
-    {U_LIGHT_POS, "u_lightPos"},
-    {U_LIGHT_RADIUS, "u_lightRadius"},
-    {U_LIGHT_COLOR, "u_lightColor"},
     {U_FOG_START, "u_fogStart"},
     {U_FOG_END, "u_fogEnd"},
     {U_FOG_DENSITY, "u_fogDensity"},
@@ -273,27 +270,6 @@ void RenderProgram::setLightingMode(RenderProgram::LightingMode newMode)
     glUniform1i(m_uniform[U_LIGHTING_MODE], newMode);
 }
 
-void RenderProgram::setLightSources(const LightParams *sources, int count)
-{
-    for(int i = 0; i < MAX_LIGHTS; i++)
-    {
-        LightParams lp;
-        if(sources && (i < count))
-        {
-            lp = sources[i];
-        }
-        else
-        {
-            lp.color = vec3(0.0, 0.0, 0.0);
-            lp.bounds.pos = vec3(0.0, 0.0, 0.0);
-            lp.bounds.radius = 0.0;
-        }
-        glUniform3fv(m_uniform[U_LIGHT_POS], 1, (const GLfloat *)&lp.bounds.pos);
-        glUniform1f(m_uniform[U_LIGHT_RADIUS], lp.bounds.radius);
-        glUniform3fv(m_uniform[U_LIGHT_COLOR], 1, (const GLfloat *)&lp.color);
-    }
-}
-
 void RenderProgram::setFogParams(const FogParams &fogParams)
 {
     glUniform1f(m_uniform[U_FOG_START], fogParams.start);
@@ -423,10 +399,11 @@ void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materi
 
 void RenderProgram::drawMesh()
 {
-    drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, 1);
+    drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, NULL, 1);
 }
 
-void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments, uint32_t instances)
+void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments,
+                                  const BufferSegment *lightSegments, uint32_t instances)
 {
     // No material - nothing is drawn.
     if(!m_meshData.pending || !m_meshData.materials)
@@ -462,7 +439,7 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
         }
     }
     
-    bool enabledColor = false;
+    bool enabledColor = false, enabledLight = false;
     if(arrayMat != NULL)
     {
         // If all material groups use the same texture we can render them together.
@@ -473,6 +450,7 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
             
             // Bind any color attribute if needed.
             bindColorBuffer(colorSegments, i, enabledColor);
+            bindLightBuffer(lightSegments, i, enabledLight);
 
             // Assume groups are sorted by offset and merge as many as possible.
             MaterialGroup merged;
@@ -507,6 +485,7 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
             {
                 setModelViewMatrix(mvMatrices[j]);
                 bindColorBuffer(colorSegments, i, enabledColor);
+                bindLightBuffer(lightSegments, i, enabledLight);
                 drawMaterialGroup(groups[i]);
             }
             endApplyMaterial(m_meshData.materials, mat);
@@ -514,14 +493,13 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
     }
     
     if(enabledColor)
-    {
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
         disableVertexAttribute(A_COLOR);
+    if(enabledLight)
         disableVertexAttribute(A_DIFFUSE);
-    }
 }
 
-void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor)
+void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments,
+                                    int instanceID, bool &enabledColor)
 {
     // Make sure the attribute is actually used by the shader.
     if(m_attr[A_COLOR] < 0)
@@ -542,13 +520,12 @@ void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int inst
             glBindBuffer(GL_ARRAY_BUFFER, meshBuf->colorBuffer);
             glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
                                   0, (GLvoid *)colorSegment.address());
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         else if(enabledColor)
         {
             // No color information for this actor, do not reuse the previous actor's.
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
             disableVertexAttribute(A_COLOR);
-            disableVertexAttribute(A_DIFFUSE);
             enabledColor = false;
         }
     }
@@ -558,18 +535,67 @@ void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int inst
         if(!enabledColor)
         {
             const uint8_t *colorPtr = NULL;
-            const uint8_t *diffusePtr = NULL;
             enableVertexAttribute(A_COLOR);
+            if(meshBuf->vertexBuffer)
+                glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
+            else
+                colorPtr = (const uint8_t *)meshBuf->vertices.constData();
+            colorPtr += offsetof(Vertex, color);
+            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), colorPtr);
+            if(meshBuf->vertexBuffer)
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            enabledColor = true;
+        }
+    }
+}
+
+void RenderProgram::bindLightBuffer(const BufferSegment *lightSegments,
+                                    int instanceID, bool &enabledLight)
+{
+    // Make sure the attribute is actually used by the shader.
+    if(m_attr[A_DIFFUSE] < 0)
+        return;
+    
+    const MeshBuffer *meshBuf = m_meshData.meshBuf;
+    if(lightSegments)
+    {
+        // Use the actor's per-instance light buffer.
+        BufferSegment lightSegment = lightSegments[instanceID];
+        if(lightSegment.count > 0)
+        {
+            if(!enabledLight)
+            {
+                enableVertexAttribute(A_DIFFUSE);
+                enabledLight = true;
+            }
+            glBindBuffer(GL_ARRAY_BUFFER, meshBuf->lightBuffer);
+            glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE,
+                                  0, (GLvoid *)lightSegment.address());
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+        else if(enabledLight)
+        {
+            // No light information for this actor, do not reuse the previous actor's.
+            disableVertexAttribute(A_DIFFUSE);
+            enabledLight = false;
+        }
+    }
+    else
+    {
+        // Use the light inside the mesh's vertex buffer.
+        if(!enabledLight)
+        {
+            const uint8_t *lightPtr = NULL;
             enableVertexAttribute(A_DIFFUSE);
             if(meshBuf->vertexBuffer)
                 glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
             else
-                colorPtr = diffusePtr = (const uint8_t *)meshBuf->vertices.constData();
-            colorPtr += offsetof(Vertex, color);
-            diffusePtr += offsetof(Vertex, diffuse);
-            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), colorPtr);
-            glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), diffusePtr);
-            enabledColor = true;
+                lightPtr = (const uint8_t *)meshBuf->vertices.constData();
+            lightPtr += offsetof(Vertex, diffuse);
+            glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), lightPtr);
+            if(meshBuf->vertexBuffer)
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            enabledLight = true;
         }
     }
 }
