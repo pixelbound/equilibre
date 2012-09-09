@@ -1,6 +1,5 @@
 set projection matrix once per frame
 pimpl for ShaderProgramGL2
-rename ShaderProgramGL2 to RenderProgram
 lights
     try out deferred lighting
 sort items front to back

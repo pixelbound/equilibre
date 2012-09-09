@@ -7,16 +7,16 @@ set(LIB_SOURCES
     mipmap.c
     Platform.cpp
     RenderContextGL2.cpp
+    RenderProgramGL2.cpp
     Scene.cpp
     SceneViewport.cpp
-    ShaderProgramGL2.cpp
     Vertex.cpp
 )
 
 set(LIB_HEADERS
     ../../include/EQuilibre/Render/SceneViewport.h
     ../../include/EQuilibre/Render/RenderContext.h
-    ../../include/EQuilibre/Render/ShaderProgramGL2.h
+    ../../include/EQuilibre/Render/RenderProgram.h
     ../../include/EQuilibre/Render/Material.h
     ../../include/EQuilibre/Render/Vertex.h
     ../../include/EQuilibre/Render/Geometry.h

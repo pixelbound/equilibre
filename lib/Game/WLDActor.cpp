@@ -19,7 +19,7 @@
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Render/RenderContext.h"
-#include "EQuilibre/Render/ShaderProgramGL2.h"
+#include "EQuilibre/Render/RenderProgram.h"
 
 WLDActor::WLDActor(ActorType type)
 {

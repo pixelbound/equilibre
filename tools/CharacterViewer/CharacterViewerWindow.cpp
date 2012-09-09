@@ -32,7 +32,7 @@
 #include "CharacterViewerWindow.h"
 #include "EQuilibre/Render/SceneViewport.h"
 #include "EQuilibre/Render/RenderContext.h"
-#include "EQuilibre/Render/ShaderProgramGL2.h"
+#include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Scene.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDActor.h"

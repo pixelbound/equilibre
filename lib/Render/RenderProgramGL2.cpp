@@ -15,7 +15,7 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <GL/glew.h>
-#include "EQuilibre/Render/ShaderProgramGL2.h"
+#include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/Material.h"
 

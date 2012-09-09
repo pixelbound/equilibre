@@ -23,7 +23,7 @@
 #include <QMatrix4x4>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/RenderContext.h"
-#include "EQuilibre/Render/ShaderProgramGL2.h"
+#include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/FrameStat.h"
 

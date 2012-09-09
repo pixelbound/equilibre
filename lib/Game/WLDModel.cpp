@@ -21,7 +21,7 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "EQuilibre/Game/PFSArchive.h"
 #include "EQuilibre/Render/RenderContext.h"
-#include "EQuilibre/Render/ShaderProgramGL2.h"
+#include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Material.h"
 
 WLDModel::WLDModel(PFSArchive *archive)
