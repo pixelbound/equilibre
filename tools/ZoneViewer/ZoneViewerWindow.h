@@ -50,6 +50,7 @@ private slots:
     void setBakedLighting();
     void setDebugVertexColor();
     void setDebugTextureFactor();
+    void setDebugDiffuse();
 
 private:
     void initMenus();
@@ -62,6 +63,7 @@ private:
     QAction *m_bakedLightingAction;
     QAction *m_debugVertexColorAction;
     QAction *m_debugTextureFactorAction;
+    QAction *m_debugDiffuseAction;
     QAction *m_showFpsAction;
     QAction *m_showZoneAction;
     QAction *m_showZoneObjectsAction;

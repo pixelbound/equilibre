@@ -37,12 +37,12 @@ void main()
         // Discard fully transparent pixels (masked texture).
         if(texColor.w == 0.0)
             discard;
-        intermColor = mix(vec4(v_color, 1.0), texColor, v_texFactor);
+        intermColor = vec4(v_color + (texColor.xyz * v_texFactor), texColor.w);
     }
     else
     {
         // No texture bound, use the base color as is.
-        intermColor = vec4(v_color, 1.0);   
+        intermColor = vec4(v_color, 1.0);
     }
     
     // Apply fog to the intermdiate color.

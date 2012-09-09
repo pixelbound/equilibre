@@ -126,7 +126,8 @@ public:
         NoLighting = 0,
         BakedLighting = 1,
         DebugVertexColor = 2,
-        DebugTextureFactor = 3
+        DebugTextureFactor = 3,
+        DebugDiffuse = 4
     };
 
     void setModelViewMatrix(const matrix4 &modelView);

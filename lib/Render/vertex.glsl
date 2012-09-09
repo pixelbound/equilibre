@@ -33,6 +33,7 @@ const int NO_LIGHTING = 0;
 const int BAKED_LIGHTING = 1;
 const int DEBUG_VERTEX_COLOR = 2;
 const int DEBUG_TEX_FACTOR = 3;
+const int DEBUG_DIFFUSE = 4;
 uniform int u_lightingMode;
 
 uniform float u_fogStart;
@@ -64,7 +65,7 @@ void main()
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
     
-    if(u_lightingMode == BAKED_LIGHTING)
+    if((u_lightingMode == BAKED_LIGHTING) || (u_lightingMode == DEBUG_DIFFUSE))
     {
         mat3 normalMatrix;
         normalMatrix[0] = vec3(u_modelViewMatrix[0]);
@@ -75,8 +76,16 @@ void main()
         vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
         for(int i = 0; i < MAX_LIGHTS; i++)
             diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
-        v_color = vec3(u_ambientLight * diffuse);
-        v_texFactor = a_color.w;
+        if(u_lightingMode == BAKED_LIGHTING)
+        {
+            v_color = vec3((u_ambientLight * a_color.w) + diffuse);
+            v_texFactor = 0.75;
+        }
+        else
+        {
+            v_color = vec3(diffuse);
+            v_texFactor = 0.0;
+        }
     }
     else if(u_lightingMode == DEBUG_VERTEX_COLOR)
     {
@@ -96,7 +105,7 @@ void main()
     }
     else
     {
-        v_color = a_color.xyz;
+        v_color = vec3(0.0, 0.0, 0.0);
         v_texFactor = 1.0;
     }
     
