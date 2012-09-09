@@ -58,10 +58,6 @@ public:
 
     void init();
     
-    // debug operations
-    void drawBox(const AABox &box);
-    void drawFrustum(const Frustum &frustum);
-    
     enum Shader
     {
         BasicShader = 0,
@@ -109,7 +105,7 @@ public:
 
     // material operations
 
-    texture_t loadTexture(QImage img);
+    texture_t loadTexture(const QImage &img);
     texture_t loadTextures(const QImage *images, size_t count);
     void freeTexture(texture_t tex);
     

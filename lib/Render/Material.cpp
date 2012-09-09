@@ -40,12 +40,12 @@ void Material::setOpaque(bool opaque)
     m_opaque = opaque;
 }
 
-QImage Material::image() const
+const QImage & Material::image() const
 {
     return m_img;
 }
 
-void Material::setImage(QImage newImage)
+void Material::setImage(const QImage &newImage)
 {
     m_img = newImage;
 }
@@ -185,12 +185,15 @@ void MaterialMap::upload(RenderContext *renderCtx)
     {
         if(!mat)
             continue;
-        if(!mat->image().isNull() && (mat->texture() == 0))
+        const QImage &img = mat->image();
+        if(!img.isNull() && (mat->texture() == 0))
         {
-            QImage img = mat->image();
+            texture_t tex = 0;
             if(mat->origin() != Material::LowerLeft)
-              img = QGLWidget::convertToGLFormat(img);
-            mat->setTexture(renderCtx->loadTexture(img));
+                tex = renderCtx->loadTexture(QGLWidget::convertToGLFormat(img));
+            else
+                tex = renderCtx->loadTexture(img);
+            mat->setTexture(tex);
         }
     }
     m_uploaded = true;

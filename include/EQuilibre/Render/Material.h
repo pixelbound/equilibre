@@ -38,8 +38,8 @@ public:
     bool isOpaque() const;
     void setOpaque(bool opaque);
     
-    QImage image() const;
-    void setImage(QImage newImage);
+    const QImage & image() const;
+    void setImage(const QImage &newImage);
     
     OriginType origin() const;
     void setOrigin(OriginType newOrigin);

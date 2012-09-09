@@ -117,6 +117,10 @@ public:
      */
     virtual void endDrawMesh();
     
+    // debug operations
+    void drawBox(const AABox &box);
+    void drawFrustum(const Frustum &frustum);
+    
     enum LightingMode
     {
         NoLighting = 0,
@@ -147,6 +151,8 @@ protected:
     void bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor);
     virtual void beginSkinMesh();
     virtual void endSkinMesh();
+    void createCube();
+    void uploadCube();
 
     RenderContext *m_renderCtx;
     uint32_t m_vertexShader;
@@ -160,6 +166,8 @@ protected:
     int m_textureBinds;
     bool m_blendingEnabled;
     bool m_currentMatNeedsBlending;
+    MeshBuffer *m_cube;
+    MaterialMap *m_cubeMats;
 };
 
 class UniformSkinningProgram : public RenderProgram

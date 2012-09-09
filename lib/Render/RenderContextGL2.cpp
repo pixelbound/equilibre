@@ -32,7 +32,6 @@ class RenderContextPrivate
 public:
     RenderContextPrivate();
     
-    void createCube();
     bool initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile);
     
     Frustum frustum;
@@ -41,8 +40,6 @@ public:
     std::vector<matrix4> matrixStack[3];
     RenderProgram *programs[3];
     uint32_t currentProgram;
-    MeshBuffer *cube;
-    MaterialMap *cubeMats;
     QVector<FrameStat *> stats;
     int gpuTimers;
     FrameStat *frameStat;
@@ -57,32 +54,11 @@ RenderContextPrivate::RenderContextPrivate()
     for(int i = 0; i < 3; i++)
         programs[i] = NULL;
     currentProgram = 0;
-    cube = NULL;
-    cubeMats = NULL;
     gpuTimers = 0;
     frameStat = NULL;
     clearStat = NULL;
     drawCallsStat = NULL;
     textureBindsStat = NULL;
-}
-
-void RenderContextPrivate::createCube()
-{   
-    MaterialGroup mg;
-    mg.count = 36;
-    mg.offset = 0;
-    mg.id = 0;
-    mg.matID = 1;
-    
-    cube = new MeshBuffer();
-    cube->vertices.resize(36);
-    cube->matGroups.push_back(mg);
-    
-    Material *mat = new Material();
-    mat->setOpaque(false);
-    
-    cubeMats = new MaterialMap();
-    cubeMats->setMaterial(mg.matID, mat);
 }
 
 bool RenderContextPrivate::initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile)
@@ -108,7 +84,6 @@ RenderContext::RenderContext()
     d->programs[(int)BasicShader] = new RenderProgram(this);
     d->programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     d->programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);
-    d->createCube();
     d->drawCallsStat = createStat("Draw calls", FrameStat::Counter);
     d->textureBindsStat = createStat("Texture binds", FrameStat::Counter);
     d->frameStat = createStat("Frame (ms)", FrameStat::WallTime);
@@ -120,8 +95,6 @@ RenderContext::~RenderContext()
     delete d->programs[(int)BasicShader];
     delete d->programs[(int)SkinningUniformShader];
     delete d->programs[(int)SkinningTextureShader];
-    delete d->cubeMats;
-    delete d->cube;
     delete d;
 }
 
@@ -141,72 +114,6 @@ void RenderContext::setCurrentProgram(RenderProgram *prog)
         glUseProgram(name);
         d->currentProgram = name;
     }
-}
-
-static const vec3 cubeVertices[] =
-{
-    vec3(-0.5, -0.5,  0.5), vec3(  0.5, -0.5,  0.5),
-    vec3( 0.5,  0.5,  0.5), vec3( -0.5,  0.5,  0.5),
-    vec3(-0.5, -0.5, -0.5), vec3(  0.5, -0.5, -0.5),
-    vec3( 0.5,  0.5, -0.5), vec3( -0.5,  0.5, -0.5)
-};
-
-static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
-{
-    static const uint8_t faces_indices[] =
-    {
-        0, 1, 3,   3, 1, 2,   2, 1, 6,   6, 1, 5,
-        0, 4, 1,   1, 4, 5,   3, 2, 7,   7, 2, 6,
-        4, 7, 5,   5, 7, 6,   0, 3, 4,   4, 3, 7
-    };
-    
-    Vertex *v = meshBuffer->vertices.data();
-    for(uint32_t i = 0; i < 12; i++)
-    {
-        uint8_t idx1 = faces_indices[(i * 3) + 0];
-        uint8_t idx2 = faces_indices[(i * 3) + 1];
-        uint8_t idx3 = faces_indices[(i * 3) + 2];
-        Vertex &v1 = v[(i * 3) + 0];
-        Vertex &v2 = v[(i * 3) + 1];
-        Vertex &v3 = v[(i * 3) + 2];
-        v1.position = corners[idx1];
-        v2.position = corners[idx2];
-        v3.position = corners[idx3];
-        vec3 u = (v2.position - v1.position), v = (v3.position - v1.position);
-        v1.normal = v2.normal = v3.normal = vec3::cross(u, v).normalized();
-    }
-}
-
-void RenderContext::drawBox(const AABox &box)
-{
-#if 0
-    const vec4 boxColor(0.4, 0.2, 0.2, 0.4);
-    vec3 size = box.high - box.low;
-    pushMatrix();
-    translate(box.low.x, box.low.y, box.low.z);
-    scale(size.x, size.y, size.z);
-    translate(0.5, 0.5, 0.5);
-    fromEightCorners(d->cube, cubeVertices);
-    program()->setAmbientLight(boxColor);
-    beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
-    drawMesh();
-    endDrawMesh();
-    program()->setAmbientLight(d->ambientLightColor);
-    popMatrix();
-#endif
-}
-
-void RenderContext::drawFrustum(const Frustum &frustum)
-{
-#if 0
-    const vec4 frustumColor(0.2, 0.4, 0.2, 0.4);
-    fromEightCorners(d->cube, frustum.corners());
-    program()->setAmbientLight(frustumColor);
-    beginDrawMesh(d->cube, d->cubeMats, NULL, 0);
-    drawMesh();
-    endDrawMesh();
-    program()->setAmbientLight(d->ambientLightColor);
-#endif
 }
 
 void RenderContext::setMatrixMode(RenderContext::MatrixMode newMode)
@@ -317,11 +224,13 @@ static void defineImage(uint32_t target, int width, int height, uint32_t depth, 
     }
 }
 
-static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeatX, uint32_t repeatY, int maxLevel)
+static void uploadImage(uint32_t target, const QImage &img, uint32_t z,
+                        uint32_t repeatX, uint32_t repeatY, int maxLevel)
 {
     const GLenum format = GL_RGBA;
     const GLenum type = GL_UNSIGNED_BYTE;
     QImage levelImg = img;
+    const QRgb *levelBits = (const QRgb *)img.constBits();
     int width = img.width(), height = img.height();
     int level = 0;
     uint32_t i = 0, j = 0;
@@ -335,6 +244,7 @@ static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeat
             // create mipmap image
             levelImg = levelImg.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         }
+        levelBits = (const QRgb *)levelImg.constBits();
         for(i = 0; i < repeatX; i++)
         {
             for(j = 0; j < repeatY; j++)
@@ -345,12 +255,12 @@ static void uploadImage(uint32_t target, QImage img, uint32_t z, uint32_t repeat
                 case GL_TEXTURE_2D:
                 case GL_TEXTURE_RECTANGLE:
                     glTexSubImage2D(target, level, i * width, j * height, width, height,
-                                    format, type, levelImg.bits());    
+                                    format, type, levelBits);    
                     break;
                 case GL_TEXTURE_3D:
                 case GL_TEXTURE_2D_ARRAY:
                     glTexSubImage3D(target, level, i * width, j * height, z, width, height, 1,
-                                    format, type, levelImg.bits());
+                                    format, type, levelBits);
                     break;
                 }
             }
@@ -375,7 +285,7 @@ static uint32_t maxMipmapLevel(uint32_t texWidth, uint32_t texHeight, uint32_t m
     return level;
 }
 
-texture_t RenderContext::loadTexture(QImage img)
+texture_t RenderContext::loadTexture(const QImage &img)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;

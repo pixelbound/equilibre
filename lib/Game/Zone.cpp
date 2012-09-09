@@ -316,17 +316,17 @@ void Zone::draw(RenderContext *renderCtx)
     if(m_showSoundTriggers)
     {
         foreach(SoundTrigger *trigger, m_soundTriggers)
-            renderCtx->drawBox(trigger->bounds());
+            prog->drawBox(trigger->bounds());
     }
     
     // Draw the viewing frustum and bounding boxes of visible zone parts. if frozen.
     if(m_frustumIsFrozen)
     {
-        renderCtx->drawFrustum(m_frozenFrustum);
+        prog->drawFrustum(m_frozenFrustum);
         //foreach(WLDZoneActor *actor, visibleZoneParts)
-        //    renderCtx->drawBox(actor->boundsAA);
+        //    prog->drawBox(actor->boundsAA);
         //foreach(WLDZoneActor *actor, visibleObjects)
-        //    renderCtx->drawBox(actor->boundsAA);
+        //    prog->drawBox(actor->boundsAA);
     }
     
     m_terrain->resetVisible();

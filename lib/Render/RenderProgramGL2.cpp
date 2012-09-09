@@ -62,11 +62,16 @@ RenderProgram::RenderProgram(RenderContext *renderCtx)
     m_textureBinds = 0;
     m_blendingEnabled = m_currentMatNeedsBlending = false;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
+    m_cube = NULL;
+    m_cubeMats = NULL;
+    createCube();
     m_meshData.clear();
 }
 
 RenderProgram::~RenderProgram()
 {
+    delete m_cubeMats;
+    delete m_cube;
     delete [] m_bones;
 
     if(current())
@@ -539,15 +544,19 @@ void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int inst
             enabledColor = false;
         }
     }
-    else if(meshBuf->vertexBuffer)
+    else
     {
         // Use the color inside the mesh's vertex buffer.
         if(!enabledColor)
         {
+            const uint8_t *colorPtr = NULL;
             enableVertexAttribute(A_COLOR);
-            glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
-            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
-                                  sizeof(Vertex), (GLvoid *)offsetof(Vertex, color));
+            if(meshBuf->vertexBuffer)
+                glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
+            else
+                colorPtr = (const uint8_t *)meshBuf->vertices.constData();
+            colorPtr += offsetof(Vertex, color);
+            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), colorPtr);
             enabledColor = true;
         }
     }
@@ -633,6 +642,104 @@ void RenderProgram::endSkinMesh()
     glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
     glBufferSubData(GL_ARRAY_BUFFER, 0, meshBuf->vertexBufferSize, meshBuf->vertices.constData());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+static const vec3 cubeVertices[] =
+{
+    vec3(-0.5, -0.5,  0.5), vec3(  0.5, -0.5,  0.5),
+    vec3( 0.5,  0.5,  0.5), vec3( -0.5,  0.5,  0.5),
+    vec3(-0.5, -0.5, -0.5), vec3(  0.5, -0.5, -0.5),
+    vec3( 0.5,  0.5, -0.5), vec3( -0.5,  0.5, -0.5)
+};
+
+static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
+{
+    static const uint8_t faces_indices[] =
+    {
+        0, 1, 3,   3, 1, 2,   2, 1, 6,   6, 1, 5,
+        0, 4, 1,   1, 4, 5,   3, 2, 7,   7, 2, 6,
+        4, 7, 5,   5, 7, 6,   0, 3, 4,   4, 3, 7
+    };
+    
+    Vertex *v = meshBuffer->vertices.data();
+    for(uint32_t i = 0; i < 12; i++)
+    {
+        uint8_t idx1 = faces_indices[(i * 3) + 0];
+        uint8_t idx2 = faces_indices[(i * 3) + 1];
+        uint8_t idx3 = faces_indices[(i * 3) + 2];
+        Vertex &v1 = v[(i * 3) + 0];
+        Vertex &v2 = v[(i * 3) + 1];
+        Vertex &v3 = v[(i * 3) + 2];
+        v1.position = corners[idx1];
+        v2.position = corners[idx2];
+        v3.position = corners[idx3];
+        vec3 u = (v2.position - v1.position), v = (v3.position - v1.position);
+        v1.normal = v2.normal = v3.normal = vec3::cross(u, v).normalized();
+        v1.texCoords = v2.texCoords = v3.texCoords = vec3(0.0, 0.0, 1.0);
+        v1.color = v2.color = v3.color = 0xff000000;
+    }
+}
+
+void RenderProgram::createCube()
+{   
+    MaterialGroup mg;
+    mg.count = 36;
+    mg.offset = 0;
+    mg.id = 0;
+    mg.matID = 1;
+    
+    m_cube = new MeshBuffer();
+    m_cube->vertices.resize(36);
+    m_cube->matGroups.push_back(mg);
+    
+    Material *mat = new Material();
+    mat->setOpaque(false);
+
+    m_cubeMats = new MaterialMap();
+    m_cubeMats->setMaterial(mg.matID, mat);
+}
+
+void RenderProgram::uploadCube()
+{
+    Material *mat = m_cubeMats->material(1);
+    if(!mat || mat->texture())
+        return;
+    uint32_t colorABGR = 0x66333366; // A=0.4, B=0.2, G=0.2, R=0.4
+    texture_t texID = 0;
+    uint32_t target = GL_TEXTURE_2D_ARRAY;
+    glGenTextures(1, &texID);
+    glBindTexture(target, texID);
+    glTexImage3D(target, 0, GL_RGBA, 1, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &colorABGR);
+    glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(target, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameterf(target, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(target, 0);
+    mat->setTexture(texID);
+    mat->setSubTexture(0);
+}
+
+void RenderProgram::drawBox(const AABox &box)
+{
+    vec3 size = box.high - box.low;
+    m_renderCtx->pushMatrix();
+    m_renderCtx->translate(box.low.x, box.low.y, box.low.z);
+    m_renderCtx->scale(size.x, size.y, size.z);
+    m_renderCtx->translate(0.5, 0.5, 0.5);
+    fromEightCorners(m_cube, cubeVertices);
+    uploadCube();
+    beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
+    drawMesh();
+    endDrawMesh();
+    m_renderCtx->popMatrix();
+}
+
+void RenderProgram::drawFrustum(const Frustum &frustum)
+{
+    fromEightCorners(m_cube, frustum.corners());
+    beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
+    drawMesh();
+    endDrawMesh();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
