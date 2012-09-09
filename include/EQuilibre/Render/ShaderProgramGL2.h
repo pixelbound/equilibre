@@ -21,7 +21,7 @@
 #include <QString>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 
 const int MAX_TRANSFORMS = 256;
 const int MAX_LIGHTS = 8;

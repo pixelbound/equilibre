@@ -18,7 +18,7 @@
 #include <QGLWidget>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Material.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/dds.h"
 #include "EQuilibre/Render/dxt.h"
 

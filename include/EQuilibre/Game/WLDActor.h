@@ -23,7 +23,7 @@
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 
 class PFSArchive;
 class ActorFragment;

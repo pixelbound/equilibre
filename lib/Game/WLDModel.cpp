@@ -20,7 +20,7 @@
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "EQuilibre/Game/PFSArchive.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Material.h"
 

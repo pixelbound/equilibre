@@ -33,7 +33,7 @@ class Material;
 class MaterialMap;
 class FrameStat;
 class MeshBuffer;
-struct RenderStateData;
+class RenderContextPrivate;
 class ShaderProgramGL2;
 
 struct RENDER_DLL LightParams
@@ -125,7 +125,7 @@ public:
     const QVector<FrameStat *> &stats() const;
     
 protected:
-    RenderStateData *d;
+    RenderContextPrivate *d;
 };
 
 #endif

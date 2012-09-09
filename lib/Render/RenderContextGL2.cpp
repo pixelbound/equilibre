@@ -22,14 +22,15 @@
 #include <QQuaternion>
 #include <QMatrix4x4>
 #include "EQuilibre/Render/Platform.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/FrameStat.h"
 
-struct RenderStateData
+class RenderContextPrivate
 {
-    RenderStateData();
+public:
+    RenderContextPrivate();
     
     void createCube();
     bool initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile);
@@ -50,7 +51,7 @@ struct RenderStateData
     FrameStat *textureBindsStat;
 };
 
-RenderStateData::RenderStateData()
+RenderContextPrivate::RenderContextPrivate()
 {
     matrixMode = RenderContext::ModelView;
     for(int i = 0; i < 3; i++)
@@ -65,7 +66,7 @@ RenderStateData::RenderStateData()
     textureBindsStat = NULL;
 }
 
-void RenderStateData::createCube()
+void RenderContextPrivate::createCube()
 {   
     MaterialGroup mg;
     mg.count = 36;
@@ -84,7 +85,7 @@ void RenderStateData::createCube()
     cubeMats->setMaterial(mg.matID, mat);
 }
 
-bool RenderStateData::initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile)
+bool RenderContextPrivate::initShader(RenderContext::Shader shader, QString vertexFile, QString fragmentFile)
 {
     ShaderProgramGL2 *prog = programs[(int)shader];
     if(!prog->load(vertexFile, fragmentFile))
@@ -100,7 +101,7 @@ bool RenderStateData::initShader(RenderContext::Shader shader, QString vertexFil
 
 RenderContext::RenderContext()
 {
-    d = new RenderStateData();
+    d = new RenderContextPrivate();
     d->matrix[(int)RenderContext::ModelView].setIdentity();
     d->matrix[(int)RenderContext::Projection].setIdentity();
     d->matrix[(int)RenderContext::Texture].setIdentity();

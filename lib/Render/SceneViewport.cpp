@@ -25,7 +25,7 @@
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Scene.h"
 #include "EQuilibre/Render/Material.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/FrameStat.h"
 
 SceneViewport::SceneViewport(Scene *scene, RenderContext *renderCtx, QWidget *parent) : QGLWidget(parent)

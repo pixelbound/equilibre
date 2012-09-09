@@ -20,7 +20,7 @@
 #include <QDir>
 #include <QMessageBox>
 #include "EQuilibre/Render/Scene.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Game/Zone.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDModel.h"

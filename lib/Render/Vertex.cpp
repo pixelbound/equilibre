@@ -16,7 +16,7 @@
 
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Material.h"
-#include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/RenderContext.h"
 
 BufferSegment::BufferSegment()
 {
