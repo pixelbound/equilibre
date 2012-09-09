@@ -33,18 +33,13 @@ struct RenderStateData
     
     void createCube();
     bool initShader(RenderState::Shader shader, QString vertexFile, QString fragmentFile);
-    void setShader(RenderState::Shader newShader);
     
     Frustum frustum;
-    vec4 ambientLightColor;
     RenderState::MatrixMode matrixMode;
     matrix4 matrix[3];
     std::vector<matrix4> matrixStack[3];
     ShaderProgramGL2 *programs[3];
     uint32_t currentProgram;
-    RenderState::RenderMode renderMode;
-    RenderState::SkinningMode skinningMode;
-    RenderState::Shader shader;
     MeshBuffer *cube;
     MaterialMap *cubeMats;
     QVector<FrameStat *> stats;
@@ -58,9 +53,6 @@ struct RenderStateData
 RenderStateData::RenderStateData()
 {
     matrixMode = RenderState::ModelView;
-    renderMode = RenderState::Basic;
-    skinningMode = RenderState::SoftwareSkinning;
-    shader = RenderState::BasicShader;
     for(int i = 0; i < 3; i++)
         programs[i] = NULL;
     currentProgram = 0;
@@ -104,27 +96,11 @@ bool RenderStateData::initShader(RenderState::Shader shader, QString vertexFile,
     return true;
 }
 
-void RenderStateData::setShader(RenderState::Shader newShader)
-{
-    ShaderProgramGL2 *oldProg = programs[(int)shader];
-    ShaderProgramGL2 *newProg = programs[(int)newShader];
-    if(oldProg != newProg)
-    {
-        // Change to the new program only if the program loaded correctly.
-        if(newProg && newProg->loaded())
-        {
-            shader = newShader;
-            glUseProgram(newProg->program());
-        }
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 
 RenderStateGL2::RenderState()
 {
     d = new RenderStateData();
-    d->ambientLightColor = vec4(1.0, 1.0, 1.0, 1.0);
     d->matrix[(int)RenderState::ModelView].setIdentity();
     d->matrix[(int)RenderState::Projection].setIdentity();
     d->matrix[(int)RenderState::Texture].setIdentity();
@@ -146,11 +122,6 @@ RenderStateGL2::~RenderState()
     delete d->cubeMats;
     delete d->cube;
     delete d;
-}
-
-ShaderProgramGL2 * RenderStateGL2::program() const
-{
-    return d->programs[(int)d->shader];
 }
 
 ShaderProgramGL2 * RenderStateGL2::programByID(Shader shaderID) const
@@ -237,52 +208,9 @@ void RenderStateGL2::drawFrustum(const Frustum &frustum)
 #endif
 }
 
-static RenderState::Shader shaderFromModes(RenderState::RenderMode render, RenderState::SkinningMode skinning)
-{
-    switch(render)
-    {
-    default:
-    case RenderState::Basic:
-        return RenderState::BasicShader;
-    case RenderState::Skinning:
-      switch(skinning)
-      {
-      default:
-      case RenderState::SoftwareSkinning:
-          return RenderState::BasicShader;
-      case RenderState::HardwareSkinningUniform:
-          return RenderState::SkinningUniformShader;
-      case RenderState::HardwareSkinningTexture:
-          return RenderState::SkinningTextureShader;
-      }
-    }
-}
-
-RenderStateGL2::SkinningMode RenderStateGL2::skinningMode() const
-{
-    return d->skinningMode;
-}
-
-void RenderStateGL2::setSkinningMode(RenderStateGL2::SkinningMode newMode)
-{
-    d->skinningMode = newMode;
-    d->setShader(shaderFromModes(d->renderMode, newMode));
-}
-
 void RenderStateGL2::setMatrixMode(RenderStateGL2::MatrixMode newMode)
 {
     d->matrixMode = newMode;
-}
-
-RenderState::RenderMode RenderStateGL2::renderMode() const
-{
-    return d->renderMode;
-}
-
-void RenderStateGL2::setRenderMode(RenderState::RenderMode newMode)
-{
-    d->renderMode = newMode;
-    d->setShader(shaderFromModes(newMode, d->skinningMode));
 }
 
 void RenderStateGL2::loadIdentity()
@@ -530,13 +458,6 @@ void RenderStateGL2::freeTexture(texture_t tex)
 {
     if(tex != 0)
         glDeleteTextures(1, &tex);
-}
-
-void RenderStateGL2::setAmbientLight(vec4 lightColor)
-{
-    d->ambientLightColor = lightColor;
-    if(program())
-        program()->setAmbientLight(lightColor);
 }
 
 bool RenderStateGL2::beginFrame(const vec4 &clearColor)

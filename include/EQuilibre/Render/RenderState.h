@@ -75,25 +75,6 @@ public:
     ShaderProgramGL2 * programByID(Shader shaderID) const;
     void setCurrentProgram(ShaderProgramGL2 *prog);
 
-    enum SkinningMode
-    {
-        SoftwareSkinning = 0,
-        HardwareSkinningUniform = 1,
-        HardwareSkinningTexture = 2
-    };
-
-    SkinningMode skinningMode() const;
-    void setSkinningMode(SkinningMode newMode);
-    
-    enum RenderMode
-    {
-        Basic = 0,
-        Skinning = 1
-    };
-
-    RenderMode renderMode() const;
-    void setRenderMode(RenderMode newMode);
-
     // matrix operations
 
     enum MatrixMode
@@ -133,7 +114,6 @@ public:
     texture_t loadTexture(QImage img);
     texture_t loadTextures(const QImage *images, size_t count);
     void freeTexture(texture_t tex);
-    void setAmbientLight(vec4 lightColor);
     
     // buffer operations
     

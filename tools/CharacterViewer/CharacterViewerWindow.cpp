@@ -32,6 +32,7 @@
 #include "CharacterViewerWindow.h"
 #include "EQuilibre/Render/SceneViewport.h"
 #include "EQuilibre/Render/RenderState.h"
+#include "EQuilibre/Render/ShaderProgramGL2.h"
 #include "EQuilibre/Render/Scene.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDActor.h"
@@ -291,13 +292,13 @@ void CharacterViewerWindow::updateMenus()
     switch(m_scene->skinningMode())
     {
     default:
-    case RenderState::SoftwareSkinning:
+    case CharacterScene::SoftwareSkinning:
         m_softwareSkinningAction->setChecked(true);
         break;
-    case RenderState::HardwareSkinningUniform:
+    case CharacterScene::HardwareSkinningUniform:
         m_hardwareSkinningUniformAction->setChecked(true);
         break;
-    case RenderState::HardwareSkinningTexture:
+    case CharacterScene::HardwareSkinningTexture:
         m_hardwareSkinningTextureAction->setChecked(true);
         break;
     }
@@ -313,19 +314,19 @@ void CharacterViewerWindow::clear()
 
 void CharacterViewerWindow::setSoftwareSkinning()
 {
-    m_scene->setSkinningMode(RenderState::SoftwareSkinning);
+    m_scene->setSkinningMode(CharacterScene::SoftwareSkinning);
     updateMenus();
 }
 
 void CharacterViewerWindow::setHardwareSkinningUniform()
 {
-    m_scene->setSkinningMode(RenderState::HardwareSkinningUniform);
+    m_scene->setSkinningMode(CharacterScene::HardwareSkinningUniform);
     updateMenus();
 }
 
 void CharacterViewerWindow::setHardwareSkinningTexture()
 {
-    m_scene->setSkinningMode(RenderState::HardwareSkinningTexture);
+    m_scene->setSkinningMode(CharacterScene::HardwareSkinningTexture);
     updateMenus();
 }
 
@@ -336,7 +337,7 @@ CharacterScene::CharacterScene(RenderState *state) : Scene(state)
     m_state = state;
     m_sigma = 1.0;
     m_zone = new Zone(this);
-    m_skinningMode = (int)RenderState::SoftwareSkinning;
+    m_skinningMode = SoftwareSkinning;
     m_transState.last = vec3();
     m_rotState.last = vec3();
     m_transState.active = false;
@@ -351,15 +352,14 @@ Zone * CharacterScene::zone() const
     return m_zone;
 }
 
-int CharacterScene::skinningMode() const
+CharacterScene::SkinningMode CharacterScene::skinningMode() const
 {
     return m_skinningMode;
 }
 
-void CharacterScene::setSkinningMode(int newMode)
+void CharacterScene::setSkinningMode(SkinningMode newMode)
 {
     m_skinningMode = newMode;
-    m_state->setSkinningMode((RenderState::SkinningMode)newMode);
 }
 
 QString CharacterScene::selectedModelName() const
@@ -408,26 +408,26 @@ void CharacterScene::draw()
     m_state->endFrame();
 }
 
-ShaderProgramGL2 * CharacterScene::program(int renderMode)
+ShaderProgramGL2 * CharacterScene::program(RenderMode renderMode)
 {
     RenderState::Shader shader;
-    switch((RenderState::RenderMode)renderMode)
+    switch(renderMode)
     {
     default:
-    case RenderState::Basic:
+    case Basic:
         shader = RenderState::BasicShader;
         break;
-    case RenderState::Skinning:
-          switch((RenderState::SkinningMode)m_skinningMode)
+    case Skinning:
+          switch(m_skinningMode)
           {
           default:
-          case RenderState::SoftwareSkinning:
+          case SoftwareSkinning:
               shader = RenderState::BasicShader;
               break;
-          case RenderState::HardwareSkinningUniform:
+          case HardwareSkinningUniform:
               shader = RenderState::SkinningUniformShader;
               break;
-          case RenderState::HardwareSkinningTexture:
+          case HardwareSkinningTexture:
               shader = RenderState::SkinningTextureShader;
               break;
           }
@@ -444,14 +444,14 @@ void CharacterScene::drawFrame()
     m_state->rotate(rot.z, 0.0, 0.0, 1.0);
     m_state->scale(m_sigma, m_sigma, m_sigma);
     
+    ShaderProgramGL2 *prog = program(Skinning);
     vec4 ambientLight(1.0, 1.0, 1.0, 1.0);
-    m_state->setAmbientLight(ambientLight);
+    m_state->setCurrentProgram(prog);
+    prog->setAmbientLight(ambientLight);
     
     WLDCharActor *charModel = selectedCharacter();
     if(charModel)
     {
-        ShaderProgramGL2 *prog = program(RenderState::Skinning);
-        m_state->setCurrentProgram(prog);
         charModel->setAnimTime(currentTime());
         charModel->draw(m_state, prog);
     }

@@ -80,12 +80,25 @@ class CharacterScene : public Scene
 
 public:
     CharacterScene(RenderState *state);
+    
+    enum SkinningMode
+    {
+        SoftwareSkinning = 0,
+        HardwareSkinningUniform = 1,
+        HardwareSkinningTexture = 2
+    };
+    
+    enum RenderMode
+    {
+        Basic = 0,
+        Skinning = 1
+    };
 
     void init();
 
     Zone * zone() const;
-    int skinningMode() const;
-    void setSkinningMode(int newMode);
+    SkinningMode skinningMode() const;
+    void setSkinningMode(SkinningMode newMode);
     
     WLDCharActor *selectedCharacter() const;
     QString selectedModelName() const;
@@ -104,7 +117,7 @@ public slots:
     void setSelectedModelName(QString name);
 
 private:
-    ShaderProgramGL2 * program(int renderMode);
+    ShaderProgramGL2 * program(RenderMode renderMode);
     void drawFrame();
     
     QString m_meshName;
@@ -113,7 +126,7 @@ private:
     vec3 m_theta;
     float m_sigma;
     Zone *m_zone;
-    int m_skinningMode;
+    SkinningMode m_skinningMode;
     // viewer settings
     MouseState m_transState;
     MouseState m_rotState;
