@@ -309,6 +309,24 @@ const LightParams & WLDLightActor::params() const
     return m_params;
 }
 
+void WLDLightActor::checkCoverage(OctreeIndex *index)
+{
+    index->findVisible(m_params.bounds, lightCoverageCallback, this, true);
+}
+ 
+void WLDLightActor::lightCoverageCallback(WLDActor *actor, void *user)
+{
+    const int MAX_LIGHTS = 8;
+    WLDLightActor *light = (WLDLightActor *)user;
+    WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
+    if(staticActor)
+    {
+        QVector<uint16_t> &lights = staticActor->lightsInRange(); 
+        if(lights.count() < MAX_LIGHTS)
+            lights.append(light->m_lightID);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)

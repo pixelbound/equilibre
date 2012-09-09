@@ -736,6 +736,7 @@ void RenderProgram::drawBox(const AABox &box)
 void RenderProgram::drawFrustum(const Frustum &frustum)
 {
     fromEightCorners(m_cube, frustum.corners());
+    uploadCube();
     beginDrawMesh(m_cube, m_cubeMats, NULL, 0);
     drawMesh();
     endDrawMesh();

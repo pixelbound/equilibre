@@ -138,13 +138,12 @@ public:
     void setLightSources(const LightParams *sources, int count);
     void setFogParams(const FogParams &fogParams);
 
-    void enableVertexAttribute(int attr, int index = 0);
-    void disableVertexAttribute(int attr, int index = 0);
-    void uploadVertexAttributes(const MeshBuffer *meshBuf);
-
 protected:
     bool compileProgram(QString vertexFile, QString fragmentFile);
     static uint32_t loadShader(QString path, uint32_t type);
+    void enableVertexAttribute(int attr, int index = 0);
+    void disableVertexAttribute(int attr, int index = 0);
+    void uploadVertexAttributes(const MeshBuffer *meshBuf);
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
     void drawMaterialGroup(const MaterialGroup &mg);

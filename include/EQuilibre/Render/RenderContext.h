@@ -65,7 +65,6 @@ public:
         SkinningTextureShader = 2
     };
     
-    RenderProgram * program() const;
     RenderProgram * programByID(Shader shaderID) const;
     void setCurrentProgram(RenderProgram *prog);
 

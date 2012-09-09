@@ -128,6 +128,10 @@ bool Zone::load(QString path, QString name)
     if(!importLightSources(m_mainArchive))
         return false;
     
+    // Find which lights affect which actors.
+    foreach(WLDLightActor *light, m_lights)
+        light->checkCoverage(m_actorTree);    
+    
     // Load the zone's characters.
     QString charPath = QString("%1/%2_chr.s3d").arg(path).arg(name);
     QString charFile = QString("%1_chr.wld").arg(name);
@@ -265,21 +269,6 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
             z->objects()->visibleObjects().append(staticActor);
         else
             z->terrain()->visibleZoneParts().append(staticActor);
-        
-        // Check which lights affect this actor.
-        const int MAX_LIGHTS = 8;
-        const QVector<WLDLightActor *> &zoneLights = z->m_lights;
-        const AABox &actorBounds = staticActor->boundsAA();
-        foreach(WLDLightActor *light, zoneLights)
-        {
-            if(light->params().bounds.containsAABox(actorBounds))
-            {
-                QVector<uint16_t> &actorLights = staticActor->lightsInRange(); 
-                actorLights.append(light->lightID());
-                if(actorLights.count() >= MAX_LIGHTS)
-                    break;
-            }
-        }
     }
 }
 
@@ -536,8 +525,6 @@ void ZoneTerrain::addTo(OctreeIndex *tree)
 
 void ZoneTerrain::resetVisible()
 {
-    foreach(WLDStaticActor *actor, m_visibleZoneParts)
-        actor->lightsInRange().clear();
     m_visibleZoneParts.clear();
 }
 
@@ -596,6 +583,7 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
+    // XXX lights?
     prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
     prog->drawMesh();
     prog->endDrawMesh();
@@ -707,8 +695,6 @@ void ZoneObjects::addTo(OctreeIndex *tree)
 
 void ZoneObjects::resetVisible()
 {
-    foreach(WLDStaticActor *actor, m_visibleObjects)
-        actor->lightsInRange().clear();
     m_visibleObjects.clear();
 }
 
