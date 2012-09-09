@@ -130,7 +130,7 @@ bool Zone::load(QString path, QString name)
     
     // Find which lights affect which actors.
     foreach(WLDLightActor *light, m_lights)
-        light->checkCoverage(m_actorTree);    
+        light->checkCoverage(m_actorTree);
     
     // Load the zone's characters.
     QString charPath = QString("%1/%2_chr.s3d").arg(path).arg(name);
@@ -549,11 +549,61 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     meshBuf->updateTexCoords(m_zoneMaterials);
 #endif
     
+    computeLights();
+    
     // Create the GPU buffers and free the memory used for vertices and indices.
     meshBuf->upload(renderCtx);
     meshBuf->clearVertices();
     meshBuf->clearIndices();
     return meshBuf;
+}
+
+void ZoneTerrain::computeLights()
+{
+    foreach(WLDStaticActor *part, m_zoneParts)
+        computeLights(part);
+}
+
+static float clamp(float x, float min, float max)
+{
+    return qMin(qMax(x, min), max);
+}
+
+static vec3 lightDiffuseValue(const LightParams &light, const Vertex &v)
+{
+    float lightRadius = light.bounds.radius;
+    vec3 lightDir = light.bounds.pos - v.position;
+    float lightDist = lightDir.length();
+    lightDir = lightDir.normalized();
+    float lightIntensity = (lightRadius > 0.0f) ? clamp(1.0f - (lightDist / lightRadius), 0.0f, 1.0f) : 0.0f;
+    float lambert = qMax(vec3::dot(v.normal, lightDir), 0.0f);
+    vec3 lightContrib = light.color * lightIntensity * lambert;
+    return (lightDist < lightRadius) ? lightContrib : vec3(0.0f, 0.0f, 0.0f);
+}
+
+void ZoneTerrain::computeLights(WLDStaticActor *part)
+{
+    MeshData *mesh = part->mesh()->data();
+    Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
+    const QVector<WLDLightActor *> &lights = m_zone->lights();
+    const QVector<uint16_t> &nearbyLights = part->lightsInRange();
+    uint32_t vertexCount = mesh->vertexSegment.count;
+    for(uint32_t i = 0; i < vertexCount; i++, v++)
+    {
+        vec3 totalDiffuse;
+        for(uint32_t j = 0; j < nearbyLights.count(); j++)
+        {
+            WLDLightActor *light = lights.value(nearbyLights[j]);
+            const LightParams &params = light->params();
+            vec3 diffuse = lightDiffuseValue(params, *v);
+            totalDiffuse = totalDiffuse + diffuse;
+        }
+        uint8_t r = (uint8_t)qRound(totalDiffuse.x * 255.0f);
+        uint8_t g = (uint8_t)qRound(totalDiffuse.y * 255.0f);
+        uint8_t b = (uint8_t)qRound(totalDiffuse.z * 255.0f);
+        uint8_t a = 255;
+        v->diffuse = r + (g << 8) + (b << 16) + (a << 24);
+    }
 }
 
 void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)

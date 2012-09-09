@@ -322,7 +322,7 @@ void WLDLightActor::lightCoverageCallback(WLDActor *actor, void *user)
     if(staticActor)
     {
         QVector<uint16_t> &lights = staticActor->lightsInRange(); 
-        if(lights.count() < MAX_LIGHTS)
+        if((lights.count() < MAX_LIGHTS) || !staticActor->frag())
             lights.append(light->m_lightID);
     }
 }

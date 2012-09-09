@@ -43,6 +43,7 @@ static const ShaderSymbolInfo Attributes[] =
     {A_NORMAL, "a_normal"},
     {A_TEX_COORDS, "a_texCoords"},
     {A_COLOR, "a_color"},
+    {A_DIFFUSE, "a_diffuse"},
     {A_BONE_INDEX, "a_boneIndex"},
     {A_MODEL_VIEW_0, "a_modelViewMatrix"},
     {0, NULL}
@@ -352,6 +353,7 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
     const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
     const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
     const uint8_t *colorPointer = (const uint8_t *)&vd->color;
+    const uint8_t *diffusePointer = (const uint8_t *)&vd->diffuse;
     const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
     if(meshBuf->vertexBuffer != 0)
     {
@@ -360,7 +362,8 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
         normalPointer = posPointer + sizeof(vec3);
         texCoordsPointer = normalPointer + sizeof(vec3);
         colorPointer = texCoordsPointer + sizeof(vec3);
-        bonePointer = colorPointer + sizeof(uint32_t);
+        diffusePointer = colorPointer + sizeof(uint32_t);
+        bonePointer = diffusePointer + sizeof(uint32_t);
     }
     glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), posPointer);
@@ -370,9 +373,13 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
     if(m_attr[A_TEX_COORDS] >= 0)
         glVertexAttribPointer(m_attr[A_TEX_COORDS], 3, GL_FLOAT, GL_FALSE,
             sizeof(Vertex), texCoordsPointer);
+    // XXX Is enabling color and diffuse needed here? It's done in bindColorBuffer.
     if(m_attr[A_COLOR] >= 0)
         glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
             sizeof(Vertex), colorPointer);
+    if(m_attr[A_DIFFUSE] >= 0)
+        glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE,
+            sizeof(Vertex), diffusePointer);
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
             sizeof(Vertex), bonePointer);
@@ -510,6 +517,7 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
     {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         disableVertexAttribute(A_COLOR);
+        disableVertexAttribute(A_DIFFUSE);
     }
 }
 
@@ -540,6 +548,7 @@ void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int inst
             // No color information for this actor, do not reuse the previous actor's.
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             disableVertexAttribute(A_COLOR);
+            disableVertexAttribute(A_DIFFUSE);
             enabledColor = false;
         }
     }
@@ -549,13 +558,17 @@ void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments, int inst
         if(!enabledColor)
         {
             const uint8_t *colorPtr = NULL;
+            const uint8_t *diffusePtr = NULL;
             enableVertexAttribute(A_COLOR);
+            enableVertexAttribute(A_DIFFUSE);
             if(meshBuf->vertexBuffer)
                 glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
             else
-                colorPtr = (const uint8_t *)meshBuf->vertices.constData();
+                colorPtr = diffusePtr = (const uint8_t *)meshBuf->vertices.constData();
             colorPtr += offsetof(Vertex, color);
+            diffusePtr += offsetof(Vertex, diffuse);
             glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), colorPtr);
+            glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), diffusePtr);
             enabledColor = true;
         }
     }
@@ -599,6 +612,7 @@ void RenderProgram::endDrawMesh()
     disableVertexAttribute(A_NORMAL);
     disableVertexAttribute(A_TEX_COORDS);
     disableVertexAttribute(A_COLOR);
+    disableVertexAttribute(A_DIFFUSE);
     m_meshData.clear();
 }
 

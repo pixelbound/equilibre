@@ -36,6 +36,11 @@ float vec3::lengthSquared() const
     return x * x + y * y + z * z;
 }
 
+float vec3::length() const
+{
+    return sqrt(lengthSquared());
+}
+
 float vec3::dot(const vec3 &a, const vec3 &b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;

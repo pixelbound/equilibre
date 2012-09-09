@@ -18,6 +18,7 @@ attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec3 a_texCoords;
 attribute vec4 a_color;
+attribute vec4 a_diffuse;
 
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
@@ -45,47 +46,21 @@ varying float v_texFactor;
 varying vec3 v_texCoords;
 varying float v_fogFactor;
 
-vec4 lightDiffuseValue(int index, vec4 eyeVertex, vec3 eyeNormal)
-{
-    vec4 lightPos = vec4(u_lightPos[index], 1.0);
-    float lightRadius = u_lightRadius[index];
-    vec4 eyeLightPos = u_modelViewMatrix * lightPos;
-    vec3 lightDir = vec3(eyeLightPos - eyeVertex);
-    float lightDist = length(lightDir);
-    lightDir = normalize(lightDir);
-    float lightIntensity = (lightRadius > 0.0) ? clamp(1.0 - (lightDist / lightRadius), 0.0, 1.0) : 0.0;
-    vec4 lightColor = vec4(u_lightColor[index] * lightIntensity, 1.0);
-    vec4 lightContrib = max(dot(eyeNormal, lightDir), 0.0) * lightColor;
-    return (lightDist < lightRadius) ? lightContrib : vec4(0.0, 0.0, 0.0, 1.0);
-}
-
 void main()
 {
     vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
     
-    if((u_lightingMode == BAKED_LIGHTING) || (u_lightingMode == DEBUG_DIFFUSE))
+    if(u_lightingMode == BAKED_LIGHTING)
     {
-        mat3 normalMatrix;
-        normalMatrix[0] = vec3(u_modelViewMatrix[0]);
-        normalMatrix[1] = vec3(u_modelViewMatrix[1]);
-        normalMatrix[2] = vec3(u_modelViewMatrix[2]);
-        vec3 normal = normalize(normalMatrix * a_normal);
-      
-        vec4 diffuse = vec4(0.0, 0.0, 0.0, 1.0);
-        for(int i = 0; i < MAX_LIGHTS; i++)
-            diffuse += a_color * lightDiffuseValue(i, viewPos, normal);
-        if(u_lightingMode == BAKED_LIGHTING)
-        {
-            v_color = vec3((u_ambientLight * a_color.w) + diffuse);
-            v_texFactor = 0.75;
-        }
-        else
-        {
-            v_color = vec3(diffuse);
-            v_texFactor = 0.0;
-        }
+        v_color = (u_ambientLight.xyz * a_color.w) + (a_diffuse.xyz * a_color.xyz);
+        v_texFactor = 0.75;
+    }
+    else if(u_lightingMode == DEBUG_DIFFUSE)
+    {
+        v_color = vec3(a_diffuse);
+        v_texFactor = 0.0;
     }
     else if(u_lightingMode == DEBUG_VERTEX_COLOR)
     {
@@ -94,13 +69,7 @@ void main()
     }
     else if(u_lightingMode == DEBUG_TEX_FACTOR)
     {
-        // Show extreme texture factors as solid red/blue, or grayscale otherwise.
-        if(a_color.w == 0.0)
-            v_color = vec3(1.0, 0.0, 0.0);
-        else if(a_color.w == 1.0)
-            v_color = vec3(0.0, 0.0, 1.0);
-        else
-            v_color = a_color.www;
+        v_color = a_color.www;
         v_texFactor = 0.0;
     }
     else

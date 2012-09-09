@@ -30,8 +30,9 @@ const int A_POSITION = 0;
 const int A_NORMAL = 1;
 const int A_TEX_COORDS = 2;
 const int A_COLOR = 3;
-const int A_BONE_INDEX = 4;
-const int A_MODEL_VIEW_0 = 5;
+const int A_DIFFUSE = 4;
+const int A_BONE_INDEX = 5;
+const int A_MODEL_VIEW_0 = 6;
 const int A_MAX = A_MODEL_VIEW_0;
 
 const int U_MODELVIEW_MATRIX = 0;

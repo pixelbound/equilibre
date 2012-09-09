@@ -75,19 +75,20 @@ void ZoneViewerWindow::initMenus()
     m_noLightingAction = new QAction("No Lighting", this);
     m_bakedLightingAction = new QAction("Baked Lighting", this);
     m_debugVertexColorAction = new QAction("Show Vertex Color", this);
-    m_debugTextureFactorAction = new QAction("Show Texture Blend Factor", this);
     m_debugDiffuseAction = new QAction("Show Diffuse Factor", this);
+    m_debugTextureFactorAction = new QAction("Show Texture Blend Factor", this);
     m_noLightingAction->setCheckable(true);
     m_bakedLightingAction->setCheckable(true);
     m_debugVertexColorAction->setCheckable(true);
-    m_debugTextureFactorAction->setCheckable(true);
     m_debugDiffuseAction->setCheckable(true);
+    m_debugTextureFactorAction->setCheckable(true);
+    
     QActionGroup *lightingActions = new QActionGroup(this);
     lightingActions->addAction(m_noLightingAction);
     lightingActions->addAction(m_bakedLightingAction);
     lightingActions->addAction(m_debugVertexColorAction);
-    lightingActions->addAction(m_debugTextureFactorAction);
     lightingActions->addAction(m_debugDiffuseAction);
+    lightingActions->addAction(m_debugTextureFactorAction);
 
     m_showFpsAction = new QAction("Show Stats", this);
     m_showFpsAction->setCheckable(true);
@@ -106,8 +107,8 @@ void ZoneViewerWindow::initMenus()
     renderMenu->addAction(m_noLightingAction);
     renderMenu->addAction(m_bakedLightingAction);
     renderMenu->addAction(m_debugVertexColorAction);
-    renderMenu->addAction(m_debugTextureFactorAction);
     renderMenu->addAction(m_debugDiffuseAction);
+    renderMenu->addAction(m_debugTextureFactorAction);
     renderMenu->addSeparator();
     renderMenu->addAction(m_showFpsAction);
     renderMenu->addAction(m_showZoneAction);
@@ -127,8 +128,8 @@ void ZoneViewerWindow::initMenus()
     connect(m_noLightingAction, SIGNAL(triggered()), this, SLOT(setNoLighting()));
     connect(m_bakedLightingAction, SIGNAL(triggered()), this, SLOT(setBakedLighting()));
     connect(m_debugVertexColorAction, SIGNAL(triggered()), this, SLOT(setDebugVertexColor()));
-    connect(m_debugTextureFactorAction, SIGNAL(triggered()), this, SLOT(setDebugTextureFactor()));
     connect(m_debugDiffuseAction, SIGNAL(triggered()), this, SLOT(setDebugDiffuse()));
+    connect(m_debugTextureFactorAction, SIGNAL(triggered()), this, SLOT(setDebugTextureFactor()));
     connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowStats(bool)));
     connect(m_showZoneAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZone(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));

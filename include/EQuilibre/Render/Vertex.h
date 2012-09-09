@@ -32,8 +32,9 @@ public:
     vec3 normal;
     vec3 texCoords;
     uint32_t color;
+    uint32_t diffuse;
     uint32_t bone;
-    uint32_t padding[1]; // align on 16-bytes boundaries
+    // align on 16-bytes boundaries
 };
 
 class RENDER_DLL MaterialGroup

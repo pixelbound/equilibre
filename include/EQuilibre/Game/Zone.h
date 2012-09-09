@@ -152,6 +152,8 @@ public:
 
 private:
     MeshBuffer * upload(RenderContext *renderCtx);
+    void computeLights();
+    void computeLights(WLDStaticActor *part);
 
     Zone *m_zone;
     QVector<WLDStaticActor *> m_zoneParts;
