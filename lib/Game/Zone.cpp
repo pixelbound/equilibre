@@ -546,69 +546,13 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
 #endif
     
     foreach(WLDStaticActor *part, m_zoneParts)
-        computeLights(part);
+        part->importLights(m_zone->lights(), meshBuf);
     
     // Create the GPU buffers and free the memory used for vertices and indices.
     meshBuf->upload(renderCtx);
     meshBuf->clearVertices();
     meshBuf->clearIndices();
     return meshBuf;
-}
-
-static float clamp(float x, float min, float max)
-{
-    return qMin(qMax(x, min), max);
-}
-
-static vec3 lightDiffuseValue(const LightParams &light, const vec3 &position, const vec3 &normal)
-{
-    float lightRadius = light.bounds.radius;
-    vec3 lightDir = light.bounds.pos - position;
-    float lightDist = lightDir.length();
-    lightDir = lightDir.normalized();
-    float lightIntensity = (lightRadius > 0.0f) ? clamp(1.0f - (lightDist / lightRadius), 0.0f, 1.0f) : 0.0f;
-    float lambert = qMax(vec3::dot(normal, lightDir), 0.0f);
-    vec3 lightContrib = light.color * lightIntensity * lambert;
-    return lightContrib;
-}
-
-static uint32_t lightDiffuseValue(const QVector<WLDLightActor *> &nearbyLights, const vec3 &position, const vec3 &normal)
-{
-    vec3 totalDiffuse;
-    foreach(WLDLightActor *light, nearbyLights)
-    {
-        const LightParams &params = light->params();
-        vec3 diffuse = lightDiffuseValue(params, position, normal);
-        totalDiffuse = totalDiffuse + diffuse;
-    }
-    uint8_t r = (uint8_t)qRound(totalDiffuse.x * 255.0f);
-    uint8_t g = (uint8_t)qRound(totalDiffuse.y * 255.0f);
-    uint8_t b = (uint8_t)qRound(totalDiffuse.z * 255.0f);
-    uint8_t a = 255;
-    return r + (g << 8) + (b << 16) + (a << 24);
-}
-
-void ZoneTerrain::computeLights(WLDStaticActor *part)
-{
-    // Determine which lights affect this part of the zone.
-    const QVector<WLDLightActor *> &lights = m_zone->lights();
-    QVector<WLDLightActor *> nearbyLights;
-    AABox actorBounds = part->boundsAA();
-    foreach(WLDLightActor *light, lights)
-    {
-        const LightParams &params = light->params();
-        if(params.bounds.containsAABox(actorBounds) != OUTSIDE)
-            nearbyLights.append(light);
-    }
-    
-    // Compute the diffuse color of nearby lights for each vertex.
-    MeshData *mesh = part->mesh()->data();
-    Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
-    uint32_t vertexCount = mesh->vertexSegment.count;
-    for(uint32_t i = 0; i < vertexCount; i++, v++)
-    {
-        v->diffuse = lightDiffuseValue(nearbyLights, v->position, v->normal);
-    }
 }
 
 void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)

@@ -109,6 +109,9 @@ public:
     void importLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf);
     
 private:
+    void importTerrainLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf);
+    void importObjectLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf);
+    
     ActorFragment *m_frag;
     vec3 m_rotation, m_scale;
     matrix4 m_modelMatrix;

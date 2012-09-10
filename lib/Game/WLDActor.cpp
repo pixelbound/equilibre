@@ -158,6 +158,35 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 
 void WLDStaticActor::importLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf)
 {
+    if(m_frag)
+        importObjectLights(lights, meshBuf);
+    else
+        importTerrainLights(lights, meshBuf);
+}
+
+void WLDStaticActor::importTerrainLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf)
+{
+    // Determine which lights affect this part of the zone.
+    QVector<WLDLightActor *> nearbyLights;
+    foreach(WLDLightActor *light, lights)
+    {
+        const LightParams &params = light->params();
+        if(params.bounds.containsAABox(m_boundsAA) != OUTSIDE)
+            nearbyLights.append(light);
+    }
+    
+    // Compute the diffuse color of nearby lights for each vertex.
+    MeshData *mesh = this->mesh()->data();
+    Vertex *v = meshBuf->vertices.data() + mesh->vertexSegment.offset;
+    uint32_t vertexCount = mesh->vertexSegment.count;
+    for(uint32_t i = 0; i < vertexCount; i++, v++)
+    {
+        v->diffuse = lightDiffuseValue(nearbyLights, v->position, v->normal);
+    }
+}
+
+void WLDStaticActor::importObjectLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf)
+{
     // Determine which lights affect this object.
     QVector<WLDLightActor *> nearbyLights;
     foreach(WLDLightActor *light, lights)
