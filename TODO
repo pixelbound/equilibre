@@ -24,3 +24,6 @@ transparency/mask misses
     IT555 (gequip4)
 Unknown render mode 7, a, 14, b, 9
 fix vertex order in faces (zone-in to Felwithe)
+
+Investigate bug at b14679aa5754620619c84f220ffc500a7b7932d8 with AMD on Linux (r600g) where v_texFactor is sometimes set to something other than 1.0 even though u_lightingMode never changes.
+Investigate bug with AMD on Linux (r600g) where there is corruption when using 2D texture array + mipmaps (sampling between layers)

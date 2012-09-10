@@ -17,7 +17,7 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec3 a_texCoords;
-attribute vec4 a_color;
+attribute vec4 a_emissive;
 attribute vec4 a_diffuse;
 
 uniform mat4 u_modelViewMatrix;
@@ -54,7 +54,7 @@ void main()
     
     if(u_lightingMode == BAKED_LIGHTING)
     {
-        v_color = (u_ambientLight.xyz * a_color.w) + (a_diffuse.xyz * a_color.xyz);
+        v_color = (u_ambientLight.xyz * a_emissive.w) + (a_diffuse.xyz * a_emissive.xyz);
         v_texFactor = 0.75;
     }
     else if(u_lightingMode == DEBUG_DIFFUSE)
@@ -64,12 +64,12 @@ void main()
     }
     else if(u_lightingMode == DEBUG_VERTEX_COLOR)
     {
-        v_color = a_color.xyz;
+        v_color = a_emissive.xyz;
         v_texFactor = 0.0;
     }
     else if(u_lightingMode == DEBUG_TEX_FACTOR)
     {
-        v_color = a_color.www;
+        v_color = a_emissive.www;
         v_texFactor = 0.0;
     }
     else

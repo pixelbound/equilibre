@@ -101,11 +101,9 @@ public:
     const matrix4 & modelMatrix() const;
     WLDMesh * mesh() const;
     ActorFragment * frag() const;
-    const BufferSegment & colorSegment() const;
-    BufferSegment & lightSegment();
+    const BufferSegment & lightSegment() const;
 
     void update();
-    void importColorData(MeshBuffer *meshBuf);
     void importLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf);
     
 private:
@@ -116,7 +114,6 @@ private:
     vec3 m_rotation, m_scale;
     matrix4 m_modelMatrix;
     WLDMesh *m_mesh;
-    BufferSegment m_colorSegment;
     BufferSegment m_lightSegment;
 };
 

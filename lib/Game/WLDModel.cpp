@@ -160,15 +160,16 @@ void WLDMesh::importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc)
     dataLoc.elementSize = sizeof(Vertex);
     
     // Load vertices, texCoords, normals, faces.
-    bool hasColors = m_meshDef->m_colors.count() > 0;
-    uint32_t defaultColorABGR = 0xbfffffff; // A=0.75, B=1, G=1, R=1
+    bool hasEmissive = m_meshDef->m_colors.count() > 0;
+    uint32_t defaultEmissiveABGR = 0xbfffffff; // A=0.75, B=1, G=1, R=1
     for(uint32_t i = 0; i < vertexCount; i++)
     {
         Vertex v;
         v.position = m_meshDef->m_vertices.value(i) + m_meshDef->m_center;
         v.normal = m_meshDef->m_normals.value(i);
         v.texCoords = vec3(m_meshDef->m_texCoords.value(i), 0.0f);
-        v.color = hasColors ? m_meshDef->m_colors.value(i) : defaultColorABGR;
+        v.light.emissive = hasEmissive ? m_meshDef->m_colors.value(i) : defaultEmissiveABGR;
+        v.light.diffuse = 0;
         v.bone = 0;
         vertices.append(v);
     }

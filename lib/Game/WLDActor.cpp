@@ -118,12 +118,7 @@ const matrix4 & WLDStaticActor::modelMatrix() const
     return m_modelMatrix;
 }
 
-const BufferSegment & WLDStaticActor::colorSegment() const
-{
-    return m_colorSegment;
-}
-
-BufferSegment & WLDStaticActor::lightSegment()
+const BufferSegment & WLDStaticActor::lightSegment() const
 {
     return m_lightSegment;
 }
@@ -142,18 +137,6 @@ void WLDStaticActor::update()
             * matrix4::rotate(m_rotation.y, 0.0, 1.0, 0.0)
             * matrix4::rotate(m_rotation.z, 0.0, 0.0, 1.0)
             * matrix4::scale(m_scale.x, m_scale.y, m_scale.z);
-}
-
-void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
-{
-    if(!m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
-        return;
-    const QVector<QRgb> &colors = m_frag->m_lighting->m_def->m_colors;
-    m_colorSegment.offset = meshBuf->colors.count();
-    m_colorSegment.count = colors.count();
-    m_colorSegment.elementSize = sizeof(uint32_t);
-    for(int i = 0; i < m_colorSegment.count; i++)
-        meshBuf->colors.append(colors[i]);
 }
 
 void WLDStaticActor::importLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf)
@@ -181,12 +164,15 @@ void WLDStaticActor::importTerrainLights(const QVector<WLDLightActor *> &lights,
     uint32_t vertexCount = mesh->vertexSegment.count;
     for(uint32_t i = 0; i < vertexCount; i++, v++)
     {
-        v->diffuse = lightDiffuseValue(nearbyLights, v->position, v->normal);
+        v->light.diffuse = lightDiffuseValue(nearbyLights, v->position, v->normal);
     }
 }
 
 void WLDStaticActor::importObjectLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf)
 {
+    if(!m_frag || !m_frag->m_lighting || !m_frag->m_lighting->m_def)
+        return;
+    
     // Determine which lights affect this object.
     QVector<WLDLightActor *> nearbyLights;
     foreach(WLDLightActor *light, lights)
@@ -196,22 +182,25 @@ void WLDStaticActor::importObjectLights(const QVector<WLDLightActor *> &lights, 
         if(params.bounds.containsAABox(m_boundsAA) != OUTSIDE)
             nearbyLights.append(light);
     }
-    
+
     // Set up the actor's segment of the light buffer.
     MeshData *mesh = this->mesh()->data();
     Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
     uint32_t vertexCount = mesh->vertexSegment.count;
+    const QVector<QRgb> &emissiveColors = m_frag->m_lighting->m_def->m_colors;
     m_lightSegment.offset = meshBuf->light.count();
     m_lightSegment.count = vertexCount;
-    m_lightSegment.elementSize = sizeof(uint32_t);
+    m_lightSegment.elementSize = sizeof(VertexLighting);
     
     // Compute the diffuse color of nearby lights for each vertex.
     for(uint32_t i = 0; i < vertexCount; i++, v++)
     {
         vec3 position = m_modelMatrix.map(v->position);
         vec3 normal = m_modelMatrix.map(v->normal).normalized(); // XXX Fix non-uniform scaling.
-        uint32_t diffuse = lightDiffuseValue(nearbyLights, position, normal);
-        meshBuf->light.append(diffuse);
+        VertexLighting light;
+        light.emissive = emissiveColors.value(i);
+        light.diffuse = lightDiffuseValue(nearbyLights, position, normal);
+        meshBuf->light.append(light);
     }
 }
 

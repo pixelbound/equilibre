@@ -699,17 +699,9 @@ void ZoneObjects::upload(RenderContext *renderCtx)
 {
     // Copy objects' lighting colors to a GPU buffer.
     MeshBuffer *meshBuf = m_pack->upload(renderCtx);
-    foreach(WLDStaticActor *actor, m_objects)
-        actor->importColorData(meshBuf);
     foreach(WLDStaticActor *obj, m_objects)
         obj->importLights(m_zone->lights(), meshBuf);
-    meshBuf->colorBufferSize = meshBuf->colors.count() * sizeof(uint32_t);
-    if(meshBuf->colorBufferSize > 0)
-    {
-        meshBuf->colorBuffer = renderCtx->createBuffer(meshBuf->colors.constData(), meshBuf->colorBufferSize);
-        meshBuf->clearColors();
-    }
-    meshBuf->lightBufferSize = meshBuf->light.count() * sizeof(uint32_t);
+    meshBuf->lightBufferSize = meshBuf->light.count() * sizeof(VertexLighting);
     if(meshBuf->lightBufferSize > 0)
     {
         meshBuf->lightBuffer = renderCtx->createBuffer(meshBuf->light.constData(), meshBuf->lightBufferSize);
@@ -764,7 +756,7 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
         renderCtx->pushMatrix();
         renderCtx->multiplyMatrix(staticActor->modelMatrix());
         matrix4 mvMatrix = renderCtx->matrix(RenderContext::ModelView);
-        prog->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), &staticActor->lightSegment(), 1);
+        prog->drawMeshBatch(&mvMatrix, &staticActor->lightSegment(), 1);
         renderCtx->popMatrix();
     }
     if(previousMesh)

@@ -60,11 +60,9 @@ MeshBuffer::MeshBuffer()
 {
     vertexBuffer = 0;
     indexBuffer = 0;
-    colorBuffer = 0;
     lightBuffer = 0;
     vertexBufferSize = 0;
     indexBufferSize = 0;
-    colorBufferSize = 0;
     lightBufferSize = 0;
 }
 
@@ -144,13 +142,11 @@ void MeshBuffer::clear(RenderContext *renderCtx)
     meshes.clear();
     clearVertices();
     clearIndices();
-    clearColors();
     clearLight();
     if(renderCtx)
     {
         renderCtx->freeBuffers(&vertexBuffer, 1);
         renderCtx->freeBuffers(&indexBuffer, 1);
-        renderCtx->freeBuffers(&colorBuffer, 1);
         renderCtx->freeBuffers(&lightBuffer, 1);
     }
 }
@@ -165,12 +161,6 @@ void MeshBuffer::clearIndices()
 {
     indices.clear();
     indices.squeeze();
-}
-
-void MeshBuffer::clearColors()
-{
-    colors.clear();
-    colors.squeeze();
 }
 
 void MeshBuffer::clearLight()

@@ -39,7 +39,7 @@ static const ShaderSymbolInfo Attributes[] =
     {A_POSITION, "a_position"},
     {A_NORMAL, "a_normal"},
     {A_TEX_COORDS, "a_texCoords"},
-    {A_COLOR, "a_color"},
+    {A_EMISSIVE, "a_emissive"},
     {A_DIFFUSE, "a_diffuse"},
     {A_BONE_INDEX, "a_boneIndex"},
     {A_MODEL_VIEW_0, "a_modelViewMatrix"},
@@ -328,8 +328,6 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
     const uint8_t *posPointer = (const uint8_t *)&vd->position;
     const uint8_t *normalPointer = (const uint8_t *)&vd->normal;
     const uint8_t *texCoordsPointer = (const uint8_t *)&vd->texCoords;
-    const uint8_t *colorPointer = (const uint8_t *)&vd->color;
-    const uint8_t *diffusePointer = (const uint8_t *)&vd->diffuse;
     const uint8_t *bonePointer = (const uint8_t *)&vd->bone;
     if(meshBuf->vertexBuffer != 0)
     {
@@ -337,9 +335,7 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
         posPointer = 0;
         normalPointer = posPointer + sizeof(vec3);
         texCoordsPointer = normalPointer + sizeof(vec3);
-        colorPointer = texCoordsPointer + sizeof(vec3);
-        diffusePointer = colorPointer + sizeof(uint32_t);
-        bonePointer = diffusePointer + sizeof(uint32_t);
+        bonePointer = texCoordsPointer + sizeof(vec3);
     }
     glVertexAttribPointer(m_attr[A_POSITION], 3, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), posPointer);
@@ -349,13 +345,6 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
     if(m_attr[A_TEX_COORDS] >= 0)
         glVertexAttribPointer(m_attr[A_TEX_COORDS], 3, GL_FLOAT, GL_FALSE,
             sizeof(Vertex), texCoordsPointer);
-    // XXX Is enabling color and diffuse needed here? It's done in bindColorBuffer.
-    if(m_attr[A_COLOR] >= 0)
-        glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
-            sizeof(Vertex), colorPointer);
-    if(m_attr[A_DIFFUSE] >= 0)
-        glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE,
-            sizeof(Vertex), diffusePointer);
     if(m_attr[A_BONE_INDEX] >= 0)
         glVertexAttribPointer(m_attr[A_BONE_INDEX], 1, GL_INT, GL_FALSE,
             sizeof(Vertex), bonePointer);
@@ -399,11 +388,12 @@ void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materi
 
 void RenderProgram::drawMesh()
 {
-    drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, NULL, 1);
+    drawMeshBatch(&m_renderCtx->matrix(RenderContext::ModelView), NULL, 1);
 }
 
-void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments,
-                                  const BufferSegment *lightSegments, uint32_t instances)
+void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices,
+                                  const BufferSegment *lightSegments,
+                                  uint32_t instances)
 {
     // No material - nothing is drawn.
     if(!m_meshData.pending || !m_meshData.materials)
@@ -439,7 +429,7 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
         }
     }
     
-    bool enabledColor = false, enabledLight = false;
+    bool enabledLight = false;
     if(arrayMat != NULL)
     {
         // If all material groups use the same texture we can render them together.
@@ -449,7 +439,6 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
             setModelViewMatrix(mvMatrices[i]);
             
             // Bind any color attribute if needed.
-            bindColorBuffer(colorSegments, i, enabledColor);
             bindLightBuffer(lightSegments, i, enabledLight);
 
             // Assume groups are sorted by offset and merge as many as possible.
@@ -484,7 +473,6 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
             for(uint32_t j = 0; j < instances; j++)
             {
                 setModelViewMatrix(mvMatrices[j]);
-                bindColorBuffer(colorSegments, i, enabledColor);
                 bindLightBuffer(lightSegments, i, enabledLight);
                 drawMaterialGroup(groups[i]);
             }
@@ -492,68 +480,18 @@ void RenderProgram::drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment
         }
     }
     
-    if(enabledColor)
-        disableVertexAttribute(A_COLOR);
     if(enabledLight)
+    {
+        disableVertexAttribute(A_EMISSIVE);
         disableVertexAttribute(A_DIFFUSE);
-}
-
-void RenderProgram::bindColorBuffer(const BufferSegment *colorSegments,
-                                    int instanceID, bool &enabledColor)
-{
-    // Make sure the attribute is actually used by the shader.
-    if(m_attr[A_COLOR] < 0)
-        return;
-    
-    const MeshBuffer *meshBuf = m_meshData.meshBuf;
-    if(colorSegments)
-    {
-        // Use the actor's per-instance color buffer.
-        BufferSegment colorSegment = colorSegments[instanceID];
-        if(colorSegment.count > 0)
-        {
-            if(!enabledColor)
-            {
-                enableVertexAttribute(A_COLOR);
-                enabledColor = true;
-            }
-            glBindBuffer(GL_ARRAY_BUFFER, meshBuf->colorBuffer);
-            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE,
-                                  0, (GLvoid *)colorSegment.address());
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        }
-        else if(enabledColor)
-        {
-            // No color information for this actor, do not reuse the previous actor's.
-            disableVertexAttribute(A_COLOR);
-            enabledColor = false;
-        }
-    }
-    else
-    {
-        // Use the color inside the mesh's vertex buffer.
-        if(!enabledColor)
-        {
-            const uint8_t *colorPtr = NULL;
-            enableVertexAttribute(A_COLOR);
-            if(meshBuf->vertexBuffer)
-                glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
-            else
-                colorPtr = (const uint8_t *)meshBuf->vertices.constData();
-            colorPtr += offsetof(Vertex, color);
-            glVertexAttribPointer(m_attr[A_COLOR], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), colorPtr);
-            if(meshBuf->vertexBuffer)
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-            enabledColor = true;
-        }
     }
 }
 
 void RenderProgram::bindLightBuffer(const BufferSegment *lightSegments,
                                     int instanceID, bool &enabledLight)
 {
-    // Make sure the attribute is actually used by the shader.
-    if(m_attr[A_DIFFUSE] < 0)
+    // Make sure the attributes qre actually used by the shader.
+    if((m_attr[A_EMISSIVE] < 0) || (m_attr[A_DIFFUSE] < 0))
         return;
     
     const MeshBuffer *meshBuf = m_meshData.meshBuf;
@@ -565,17 +503,21 @@ void RenderProgram::bindLightBuffer(const BufferSegment *lightSegments,
         {
             if(!enabledLight)
             {
+                enableVertexAttribute(A_EMISSIVE);
                 enableVertexAttribute(A_DIFFUSE);
                 enabledLight = true;
             }
+            uint8_t *emissivePtr = (uint8_t *)lightSegment.address();
+            uint8_t *diffusePtr = emissivePtr + sizeof(uint32_t);
             glBindBuffer(GL_ARRAY_BUFFER, meshBuf->lightBuffer);
-            glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE,
-                                  0, (GLvoid *)lightSegment.address());
+            glVertexAttribPointer(m_attr[A_EMISSIVE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexLighting), emissivePtr);
+            glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(VertexLighting), diffusePtr);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
         else if(enabledLight)
         {
             // No light information for this actor, do not reuse the previous actor's.
+            disableVertexAttribute(A_EMISSIVE);
             disableVertexAttribute(A_DIFFUSE);
             enabledLight = false;
         }
@@ -585,13 +527,17 @@ void RenderProgram::bindLightBuffer(const BufferSegment *lightSegments,
         // Use the light inside the mesh's vertex buffer.
         if(!enabledLight)
         {
+            const uint8_t *emissivePtr = NULL;
             const uint8_t *lightPtr = NULL;
+            enableVertexAttribute(A_EMISSIVE);
             enableVertexAttribute(A_DIFFUSE);
             if(meshBuf->vertexBuffer)
                 glBindBuffer(GL_ARRAY_BUFFER, meshBuf->vertexBuffer);
             else
-                lightPtr = (const uint8_t *)meshBuf->vertices.constData();
-            lightPtr += offsetof(Vertex, diffuse);
+                emissivePtr = (const uint8_t *)meshBuf->vertices.constData();
+            emissivePtr += offsetof(Vertex, light);
+            lightPtr = emissivePtr + sizeof(uint32_t);
+            glVertexAttribPointer(m_attr[A_EMISSIVE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), emissivePtr);
             glVertexAttribPointer(m_attr[A_DIFFUSE], 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), lightPtr);
             if(meshBuf->vertexBuffer)
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -637,7 +583,7 @@ void RenderProgram::endDrawMesh()
     disableVertexAttribute(A_POSITION);
     disableVertexAttribute(A_NORMAL);
     disableVertexAttribute(A_TEX_COORDS);
-    disableVertexAttribute(A_COLOR);
+    disableVertexAttribute(A_EMISSIVE);
     disableVertexAttribute(A_DIFFUSE);
     m_meshData.clear();
 }
@@ -666,7 +612,7 @@ void RenderProgram::beginSkinMesh()
         dst->normal = src->normal;
         dst->bone = src->bone;
         dst->texCoords = src->texCoords;
-        dst->color = src->color;
+        dst->light = src->light;
     }
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -713,9 +659,10 @@ static void fromEightCorners(MeshBuffer *meshBuffer, const vec3 *corners)
         v2.position = corners[idx2];
         v3.position = corners[idx3];
         vec3 u = (v2.position - v1.position), v = (v3.position - v1.position);
+        VertexLighting light = {0xff000000, 0x0000000};
         v1.normal = v2.normal = v3.normal = vec3::cross(u, v).normalized();
         v1.texCoords = v2.texCoords = v3.texCoords = vec3(0.0, 0.0, 1.0);
-        v1.color = v2.color = v3.color = 0xff000000;
+        v1.light = v2.light = v3.light = light;
     }
 }
 

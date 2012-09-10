@@ -25,15 +25,21 @@ class MeshBuffer;
 class MaterialMap;
 class RenderContext;
 
+class RENDER_DLL VertexLighting
+{
+public:
+    uint32_t emissive;
+    uint32_t diffuse;
+};
+
 class RENDER_DLL Vertex
 {
 public:
     vec3 position;
     vec3 normal;
     vec3 texCoords;
-    uint32_t color;
-    uint32_t diffuse;
     uint32_t bone;
+    VertexLighting light;
     // align on 16-bytes boundaries
 };
 
@@ -84,22 +90,18 @@ public:
     void clear(RenderContext *renderCtx);
     void clearVertices();
     void clearIndices();
-    void clearColors();
     void clearLight();
     
     QVector<Vertex> vertices;
     QVector<uint32_t> indices;
-    QVector<uint32_t> colors;
-    QVector<uint32_t> light;
+    QVector<VertexLighting> light;
     QVector<MaterialGroup> matGroups;
     QVector<MeshData *> meshes;
     buffer_t vertexBuffer;
     buffer_t indexBuffer;
-    buffer_t colorBuffer;
     buffer_t lightBuffer;
     uint32_t vertexBufferSize;
     uint32_t indexBufferSize;
-    uint32_t colorBufferSize;
     uint32_t lightBufferSize;
 };
 

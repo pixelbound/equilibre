@@ -29,7 +29,7 @@ const int MAX_LIGHTS = 8;
 const int A_POSITION = 0;
 const int A_NORMAL = 1;
 const int A_TEX_COORDS = 2;
-const int A_COLOR = 3;
+const int A_EMISSIVE = 3;
 const int A_DIFFUSE = 4;
 const int A_BONE_INDEX = 5;
 const int A_MODEL_VIEW_0 = 6;
@@ -108,8 +108,9 @@ public:
      * @brief Draw several instances of a mesh whose geometry was passed to
      * @ref beginDrawMesh, each with a different model-view matrix.
      */
-    virtual void drawMeshBatch(const matrix4 *mvMatrices, const BufferSegment *colorSegments,
-                               const BufferSegment *lightSegments, uint32_t instances);
+    virtual void drawMeshBatch(const matrix4 *mvMatrices,
+                               const BufferSegment *lightSegments,
+                               uint32_t instances);
     /**
      * @brief Clean up the resources used by @ref beginDrawMesh and allow it to be
      * called again.
@@ -146,8 +147,6 @@ protected:
     void beginApplyMaterial(MaterialMap *map, Material *m);
     void endApplyMaterial(MaterialMap *map, Material *m);
     void drawMaterialGroup(const MaterialGroup &mg);
-    void bindColorBuffer(const BufferSegment *colorSegments,
-                         int instanceID, bool &enabledColor);
     void bindLightBuffer(const BufferSegment *lightSegments,
                          int instanceID, bool &enabledLight);
     virtual void beginSkinMesh();

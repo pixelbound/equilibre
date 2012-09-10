@@ -17,13 +17,11 @@
 attribute vec3 a_position;
 attribute vec3 a_normal;
 attribute vec3 a_texCoords;
-attribute vec4 a_color;
 attribute float a_boneIndex; // to be compatible with OpenGL < 3.0
 
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
-uniform vec4 u_ambientLight;
 uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform float u_fogDensity;
