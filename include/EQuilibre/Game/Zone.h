@@ -186,7 +186,6 @@ public:
 private:
     void importMeshes();
     void importActors();
-    void computeLights(WLDStaticActor *obj);
     void upload(RenderContext *renderCtx);
     
     Zone *m_zone;

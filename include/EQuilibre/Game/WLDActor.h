@@ -31,6 +31,7 @@ class LightSourceFragment;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
+class WLDLightActor;
 class RenderContext;
 class Octree;
 class OctreeIndex;
@@ -105,6 +106,7 @@ public:
 
     void update();
     void importColorData(MeshBuffer *meshBuf);
+    void importLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf);
     
 private:
     ActorFragment *m_frag;

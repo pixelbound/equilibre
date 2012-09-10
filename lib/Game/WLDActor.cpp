@@ -21,6 +21,39 @@
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 
+static float clamp(float x, float min, float max)
+{
+    return qMin(qMax(x, min), max);
+}
+
+static vec3 lightDiffuseValue(const LightParams &light, const vec3 &position, const vec3 &normal)
+{
+    float lightRadius = light.bounds.radius;
+    vec3 lightDir = light.bounds.pos - position;
+    float lightDist = lightDir.length();
+    lightDir = lightDir.normalized();
+    float lightIntensity = (lightRadius > 0.0f) ? clamp(1.0f - (lightDist / lightRadius), 0.0f, 1.0f) : 0.0f;
+    float lambert = qMax(vec3::dot(normal, lightDir), 0.0f);
+    vec3 lightContrib = light.color * lightIntensity * lambert;
+    return lightContrib;
+}
+
+static uint32_t lightDiffuseValue(const QVector<WLDLightActor *> &nearbyLights, const vec3 &position, const vec3 &normal)
+{
+    vec3 totalDiffuse;
+    foreach(WLDLightActor *light, nearbyLights)
+    {
+        const LightParams &params = light->params();
+        vec3 diffuse = lightDiffuseValue(params, position, normal);
+        totalDiffuse = totalDiffuse + diffuse;
+    }
+    uint8_t r = (uint8_t)qRound(totalDiffuse.x * 255.0f);
+    uint8_t g = (uint8_t)qRound(totalDiffuse.y * 255.0f);
+    uint8_t b = (uint8_t)qRound(totalDiffuse.z * 255.0f);
+    uint8_t a = 255;
+    return r + (g << 8) + (b << 16) + (a << 24);
+}
+
 WLDActor::WLDActor(ActorType type)
 {
     m_type = type;
@@ -121,6 +154,36 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
     m_colorSegment.elementSize = sizeof(uint32_t);
     for(int i = 0; i < m_colorSegment.count; i++)
         meshBuf->colors.append(colors[i]);
+}
+
+void WLDStaticActor::importLights(const QVector<WLDLightActor *> &lights, MeshBuffer *meshBuf)
+{
+    // Determine which lights affect this object.
+    QVector<WLDLightActor *> nearbyLights;
+    foreach(WLDLightActor *light, lights)
+    {
+        const LightParams &params = light->params();
+        // XXX this almost always returns outside for some reason.
+        if(params.bounds.containsAABox(m_boundsAA) != OUTSIDE)
+            nearbyLights.append(light);
+    }
+    
+    // Set up the actor's segment of the light buffer.
+    MeshData *mesh = this->mesh()->data();
+    Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
+    uint32_t vertexCount = mesh->vertexSegment.count;
+    m_lightSegment.offset = meshBuf->light.count();
+    m_lightSegment.count = vertexCount;
+    m_lightSegment.elementSize = sizeof(uint32_t);
+    
+    // Compute the diffuse color of nearby lights for each vertex.
+    for(uint32_t i = 0; i < vertexCount; i++, v++)
+    {
+        vec3 position = m_modelMatrix.map(v->position);
+        vec3 normal = m_modelMatrix.map(v->normal).normalized(); // XXX Fix non-uniform scaling.
+        uint32_t diffuse = lightDiffuseValue(nearbyLights, position, normal);
+        meshBuf->light.append(diffuse);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

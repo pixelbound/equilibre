@@ -758,7 +758,7 @@ void ZoneObjects::upload(RenderContext *renderCtx)
     foreach(WLDStaticActor *actor, m_objects)
         actor->importColorData(meshBuf);
     foreach(WLDStaticActor *obj, m_objects)
-        computeLights(obj);
+        obj->importLights(m_zone->lights(), meshBuf);
     meshBuf->colorBufferSize = meshBuf->colors.count() * sizeof(uint32_t);
     if(meshBuf->colorBufferSize > 0)
     {
@@ -772,40 +772,6 @@ void ZoneObjects::upload(RenderContext *renderCtx)
         meshBuf->clearLight();
     }
     meshBuf->clearVertices();
-}
-
-void ZoneObjects::computeLights(WLDStaticActor *obj)
-{
-    // Determine which lights affect this object.
-    const QVector<WLDLightActor *> &lights = m_zone->lights();
-    QVector<WLDLightActor *> nearbyLights;
-    AABox actorBounds = obj->boundsAA();
-    foreach(WLDLightActor *light, lights)
-    {
-        const LightParams &params = light->params();
-        // XXX this almost always returns outside for some reason.
-        if(params.bounds.containsAABox(actorBounds) != OUTSIDE)
-            nearbyLights.append(light);
-    }
-    
-    // Set up the actor's segment of the light buffer.
-    MeshData *mesh = obj->mesh()->data();
-    MeshBuffer *meshBuf = mesh->buffer;
-    Vertex *v = mesh->buffer->vertices.data() + mesh->vertexSegment.offset;
-    uint32_t vertexCount = mesh->vertexSegment.count;
-    obj->lightSegment().offset = meshBuf->light.count();
-    obj->lightSegment().count = vertexCount;
-    obj->lightSegment().elementSize = sizeof(uint32_t);
-    
-    // Compute the diffuse color of nearby lights for each vertex.
-    const matrix4 &modelMat = obj->modelMatrix();
-    for(uint32_t i = 0; i < vertexCount; i++, v++)
-    {
-        vec3 position = modelMat.map(v->position);
-        vec3 normal = modelMat.map(v->normal).normalized(); // XXX Fix non-uniform scaling.
-        uint32_t diffuse = lightDiffuseValue(nearbyLights, position, normal);
-        meshBuf->light.append(diffuse);
-    }
 }
 
 static bool zoneActorGroupLessThan(const WLDStaticActor *a, const WLDStaticActor *b)
