@@ -141,12 +141,6 @@ bool RenderContext::beginFrame(const vec4 &clearColor)
     d->clearStat->beginTime();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     d->clearStat->endTime();
-    for(int i = 0; i < 3; i++)
-    {
-        RenderProgram *prog = d->programs[i];
-        if(prog)
-            prog->setProjectionMatrix(matrix(Projection));
-    }
     return shaderLoaded;
 }
 

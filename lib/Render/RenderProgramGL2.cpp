@@ -60,6 +60,7 @@ RenderProgram::RenderProgram(RenderContext *renderCtx)
         m_uniform[i] = -1;
     m_drawCalls = 0;
     m_textureBinds = 0;
+    m_projectionSent = false;
     m_blendingEnabled = m_currentMatNeedsBlending = false;
     m_bones = new vec4[MAX_TRANSFORMS * 2];
     m_cube = NULL;
@@ -127,6 +128,7 @@ void RenderProgram::resetFrameStats()
 {
     m_drawCalls = 0;
     m_textureBinds = 0;
+    m_projectionSent = false;
 }
 
 bool RenderProgram::init()
@@ -391,6 +393,11 @@ void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materi
     m_meshData.materials = materials;
     m_meshData.bones = bones;
     m_meshData.boneCount = boneCount;
+    if(!m_projectionSent)
+    {
+        setProjectionMatrix(m_renderCtx->matrix(RenderContext::Projection));
+        m_projectionSent = true;
+    }
     enableVertexAttribute(A_POSITION);
     enableVertexAttribute(A_NORMAL);
     enableVertexAttribute(A_TEX_COORDS);
