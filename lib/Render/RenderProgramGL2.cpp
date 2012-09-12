@@ -27,9 +27,6 @@ static const ShaderSymbolInfo Uniforms[] =
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
     {U_MAT_TEXTURE, "u_material_texture"},
     {U_LIGHTING_MODE, "u_lightingMode"},
-    {U_LIGHT_POS, "u_lightPos"},
-    {U_LIGHT_RADIUS, "u_lightRadius"},
-    {U_LIGHT_COLOR, "u_lightColor"},
     {U_FOG_START, "u_fogStart"},
     {U_FOG_END, "u_fogEnd"},
     {U_FOG_DENSITY, "u_fogDensity"},
@@ -272,27 +269,6 @@ void RenderProgram::setAmbientLight(vec4 lightColor)
 void RenderProgram::setLightingMode(RenderProgram::LightingMode newMode)
 {
     glUniform1i(m_uniform[U_LIGHTING_MODE], newMode);
-}
-
-void RenderProgram::setLightSources(const LightParams *sources, int count)
-{
-    for(int i = 0; i < MAX_LIGHTS; i++)
-    {
-        LightParams lp;
-        if(sources && (i < count))
-        {
-            lp = sources[i];
-        }
-        else
-        {
-            lp.color = vec3(0.0, 0.0, 0.0);
-            lp.bounds.pos = vec3(0.0, 0.0, 0.0);
-            lp.bounds.radius = 0.0;
-        }
-        glUniform3fv(m_uniform[U_LIGHT_POS], 1, (const GLfloat *)&lp.bounds.pos);
-        glUniform1f(m_uniform[U_LIGHT_RADIUS], lp.bounds.radius);
-        glUniform3fv(m_uniform[U_LIGHT_COLOR], 1, (const GLfloat *)&lp.color);
-    }
 }
 
 void RenderProgram::setFogParams(const FogParams &fogParams)

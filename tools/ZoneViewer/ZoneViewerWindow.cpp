@@ -82,6 +82,8 @@ void ZoneViewerWindow::initMenus()
     m_debugVertexColorAction->setCheckable(true);
     m_debugTextureFactorAction->setCheckable(true);
     m_debugDiffuseAction->setCheckable(true);
+    m_bakedLightingAction->setEnabled(false);
+    m_debugDiffuseAction->setEnabled(false);
     QActionGroup *lightingActions = new QActionGroup(this);
     lightingActions->addAction(m_noLightingAction);
     lightingActions->addAction(m_bakedLightingAction);

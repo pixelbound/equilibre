@@ -40,13 +40,10 @@ const int U_AMBIENT_LIGHT = 2;
 const int U_MAT_HAS_TEXTURE = 3;
 const int U_MAT_TEXTURE = 4;
 const int U_LIGHTING_MODE = 5;
-const int U_LIGHT_POS = 7;
-const int U_LIGHT_RADIUS = 7;
-const int U_LIGHT_COLOR = 8;
-const int U_FOG_START = 9;
-const int U_FOG_END = 10;
-const int U_FOG_DENSITY = 11;
-const int U_FOG_COLOR = 12;
+const int U_FOG_START = 6;
+const int U_FOG_END = 7;
+const int U_FOG_DENSITY = 8;
+const int U_FOG_COLOR = 9;
 const int U_MAX = U_FOG_COLOR;
 
 struct RENDER_DLL ShaderSymbolInfo
@@ -136,7 +133,6 @@ public:
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
     void setLightingMode(LightingMode newMode);
-    void setLightSources(const LightParams *sources, int count);
     void setFogParams(const FogParams &fogParams);
 
 protected:

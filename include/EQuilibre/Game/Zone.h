@@ -193,7 +193,6 @@ private:
     WLDData *m_objDefWld;
     QVector<WLDStaticActor *> m_objects;
     QVector<WLDStaticActor *> m_visibleObjects;
-    LightParams m_lightsInRange[8];
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;

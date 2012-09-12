@@ -101,7 +101,6 @@ public:
     WLDMesh * mesh() const;
     ActorFragment * frag() const;
     const BufferSegment & colorSegment() const;
-    QVector<uint16_t> & lightsInRange();
 
     void update();
     void importColorData(MeshBuffer *meshBuf);
@@ -112,7 +111,6 @@ private:
     matrix4 m_modelMatrix;
     WLDMesh *m_mesh;
     BufferSegment m_colorSegment;
-    QVector<uint16_t> m_lightsInRange;
 };
 
 /*!
@@ -172,11 +170,7 @@ public:
     uint16_t lightID() const;
     const LightParams & params() const;
     
-    void checkCoverage(OctreeIndex *index);
-    
 private:
-    static void lightCoverageCallback(WLDActor *actor, void *user);
-    
     LightSourceFragment *m_frag;
     uint16_t m_lightID;
     LightParams m_params;

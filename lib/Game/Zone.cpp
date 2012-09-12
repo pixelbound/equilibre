@@ -128,10 +128,6 @@ bool Zone::load(QString path, QString name)
     if(!importLightSources(m_mainArchive))
         return false;
     
-    // Find which lights affect which actors.
-    foreach(WLDLightActor *light, m_lights)
-        light->checkCoverage(m_actorTree);    
-    
     // Load the zone's characters.
     QString charPath = QString("%1/%2_chr.s3d").arg(path).arg(name);
     QString charFile = QString("%1_chr.wld").arg(name);
@@ -573,7 +569,6 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
-    prog->setLightSources(NULL, 0);
     foreach(WLDActor *actor, m_visibleZoneParts)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -583,7 +578,6 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
-    // XXX lights?
     prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
     prog->drawMesh();
     prog->endDrawMesh();
@@ -761,14 +755,6 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
         renderCtx->pushMatrix();
         renderCtx->multiplyMatrix(staticActor->modelMatrix());
         matrix4 mvMatrix = renderCtx->matrix(RenderContext::ModelView);
-        QVector<uint16_t> &actorLights = staticActor->lightsInRange();
-        for(int i = 0; i < actorLights.count(); i++)
-        {
-            uint16_t lightID = actorLights[i];
-            Q_ASSERT(i < 8);
-            m_lightsInRange[i] = lightSources[lightID]->params();
-        }
-        prog->setLightSources(m_lightsInRange, actorLights.count());
         prog->drawMeshBatch(&mvMatrix, &staticActor->colorSegment(), 1);
         renderCtx->popMatrix();
     }
