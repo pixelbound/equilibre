@@ -141,6 +141,8 @@ bool RenderContext::beginFrame(const vec4 &clearColor)
     d->clearStat->beginTime();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     d->clearStat->endTime();
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
     return shaderLoaded;
 }
 
