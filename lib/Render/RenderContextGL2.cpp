@@ -139,7 +139,7 @@ bool RenderContext::beginFrame(const vec4 &clearColor)
     else
         glClearColor(0.6, 0.2, 0.2, 1.0);
     d->clearStat->beginTime();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     d->clearStat->endTime();
     return shaderLoaded;
 }

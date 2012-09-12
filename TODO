@@ -1,4 +1,5 @@
-pimpl for ShaderProgramGL2
+pimpl for RenderProgram
+    have Game create shader programs?
 lights
     try out deferred lighting
 sort items front to back
