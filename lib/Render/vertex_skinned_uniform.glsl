@@ -69,7 +69,7 @@ void main()
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
 
-    v_color = u_ambientLight.xyz;
+    v_color = vec3(0.0, 0.0, 0.0);
     v_texFactor = 1.0;
     
     // Compute the fog factor.
