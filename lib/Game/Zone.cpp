@@ -642,8 +642,10 @@ void ZoneObjects::clear(RenderContext *renderCtx)
     {
         renderCtx->destroyStat(m_objectsStat);
         renderCtx->destroyStat(m_objectsStatGPU);
+        renderCtx->destroyStat(m_drawnObjectsStat);
         m_objectsStat = NULL;
         m_objectsStatGPU = NULL;
+        m_drawnObjectsStat = NULL;
     }
 }
 
