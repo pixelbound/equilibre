@@ -23,7 +23,6 @@ attribute float a_boneIndex; // to be compatible with OpenGL < 3.0
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
-uniform vec4 u_ambientLight;
 uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform float u_fogDensity;
@@ -71,7 +70,7 @@ void main()
     gl_Position = u_projectionMatrix * viewPos;
     v_texCoords = a_texCoords;
 
-    v_color = u_ambientLight.xyz;
+    v_color = vec3(0.0, 0.0, 0.0);
     v_texFactor = 1.0;
     
     // Compute the fog factor.
