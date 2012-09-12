@@ -147,6 +147,8 @@ bool RenderContext::beginFrame(const vec4 &clearColor)
         if(prog)
             prog->setProjectionMatrix(matrix(Projection));
     }
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT);
     return shaderLoaded;
 }
 
