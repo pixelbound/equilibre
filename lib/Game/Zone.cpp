@@ -47,6 +47,7 @@ Zone::Zone(QObject *parent) : QObject(parent)
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
     m_showZone = true;
     m_showObjects = true;
+    m_showFog = false;
     m_cullObjects = true;
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
@@ -287,6 +288,7 @@ void Zone::draw(RenderContext *renderCtx)
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
+    m_fogParams.density = m_showFog ? 0.003f : 0.0f;
     prog->setFogParams(m_fogParams);
     
     // Draw the zone's static objects.
@@ -368,6 +370,16 @@ bool Zone::showObjects() const
 void Zone::setShowObjects(bool show)
 {
     m_showObjects = show;
+}
+
+bool Zone::showFog() const
+{
+    return m_showFog;
+}
+
+void Zone::setShowFog(bool show)
+{
+    m_showFog = show;
 }
 
 bool Zone::cullObjects() const

@@ -98,6 +98,9 @@ void ZoneViewerWindow::initMenus()
     m_showZoneAction->setChecked(m_scene->zone()->showZone());
     m_showZoneObjectsAction = new QAction("Show Zone Objects", this);
     m_showZoneObjectsAction->setCheckable(true);
+    m_showFogAction = new QAction("Show Fog", this);
+    m_showFogAction->setCheckable(true);
+    m_showFogAction->setChecked(m_scene->zone()->showFog());
     m_showZoneObjectsAction->setChecked(m_scene->zone()->showObjects());
     m_cullZoneObjectsAction = new QAction("Frustum Culling of Zone Objects", this);
     m_cullZoneObjectsAction->setCheckable(true);
@@ -115,6 +118,7 @@ void ZoneViewerWindow::initMenus()
     renderMenu->addAction(m_showZoneAction);
     renderMenu->addAction(m_showZoneObjectsAction);
     renderMenu->addAction(m_cullZoneObjectsAction);
+    renderMenu->addAction(m_showFogAction);
     renderMenu->addAction(m_showSoundTriggersAction);
 
     menuBar()->addMenu(fileMenu);
@@ -134,6 +138,7 @@ void ZoneViewerWindow::initMenus()
     connect(m_showFpsAction, SIGNAL(toggled(bool)), m_viewport, SLOT(setShowStats(bool)));
     connect(m_showZoneAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZone(bool)));
     connect(m_showZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(showZoneObjects(bool)));
+    connect(m_showFogAction, SIGNAL(toggled(bool)), m_scene, SLOT(showFog(bool)));
     connect(m_cullZoneObjectsAction, SIGNAL(toggled(bool)), m_scene, SLOT(setFrustumCulling(bool)));
     connect(m_showSoundTriggersAction, SIGNAL(toggled(bool)), m_scene, SLOT(showSoundTriggers(bool)));
 }
@@ -269,6 +274,11 @@ void ZoneScene::showZone(bool show)
 void ZoneScene::showZoneObjects(bool show)
 {
     m_zone->setShowObjects(show);
+}
+
+void ZoneScene::showFog(bool show)
+{
+    m_zone->setShowFog(show);
 }
 
 void ZoneScene::setFrustumCulling(bool enabled)

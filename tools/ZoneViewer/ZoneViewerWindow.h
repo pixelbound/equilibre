@@ -67,6 +67,7 @@ private:
     QAction *m_showFpsAction;
     QAction *m_showZoneAction;
     QAction *m_showZoneObjectsAction;
+    QAction *m_showFogAction;
     QAction *m_cullZoneObjectsAction;
     QAction *m_showSoundTriggersAction;
 };
@@ -93,6 +94,7 @@ public:
 public slots:
     void showZone(bool show);
     void showZoneObjects(bool show);
+    void showFog(bool show);
     void setFrustumCulling(bool enabled);
     void showSoundTriggers(bool show);
 

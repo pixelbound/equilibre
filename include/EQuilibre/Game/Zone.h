@@ -89,12 +89,14 @@ public:
 
     bool showZone() const;
     bool showObjects() const;
+    bool showFog() const;
     bool cullObjects() const;
     bool showSoundTriggers() const;
     bool frustumIsFrozen() const;
     
     void setShowZone(bool show);
     void setShowObjects(bool show);
+    void setShowFog(bool show);
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
     
@@ -120,6 +122,7 @@ private:
     QVector<SoundTrigger *> m_soundTriggers;
     bool m_showZone;
     bool m_showObjects;
+    bool m_showFog;
     bool m_cullObjects;
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
