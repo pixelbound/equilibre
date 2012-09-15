@@ -31,7 +31,7 @@ QWidget * showCharViewer(RenderContext *renderCtx)
 {
     // create viewport for rendering the scene
     CharacterViewerWindow *v = new CharacterViewerWindow(renderCtx);
-    CharacterScene *scene = v->scene();
+    /*CharacterScene *scene = v->scene();
     Zone *z = scene->zone();
     QDir assetDir(scene->assetPath());
     
@@ -55,7 +55,7 @@ QWidget * showCharViewer(RenderContext *renderCtx)
         charActor->model()->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());
         charActor->setAnimName("P01");
         charActor->setPaletteName("03");
-    }
+    }*/
     return v;
 }
 

@@ -53,7 +53,6 @@ public slots:
 protected:
     virtual void initializeGL();
     virtual void resizeGL(int width, int height);
-    virtual void paintGL();
     virtual void paintEvent(QPaintEvent *e);
     virtual void keyReleaseEvent(QKeyEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *e);
@@ -65,6 +64,7 @@ private slots:
     void updateStats();
 
 private:
+    void paintOverlay();
     void paintStats(QPainter *p);
     void paintFrameLog(QPainter *p);
     void startStats();

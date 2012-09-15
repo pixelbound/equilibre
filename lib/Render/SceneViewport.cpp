@@ -80,16 +80,6 @@ void SceneViewport::resizeGL(int w, int h)
 
 void SceneViewport::paintEvent(QPaintEvent *)
 {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    paintGL();
-    if(m_statsTimer->isActive())
-        paintStats(&painter);
-    paintFrameLog(&painter);
-}
-
-void SceneViewport::paintGL()
-{
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_begin_v3(m_traceDomain, NULL); 
 #endif
@@ -97,6 +87,18 @@ void SceneViewport::paintGL()
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_end_v3(m_traceDomain, NULL); 
 #endif
+#ifndef _WIN32
+    paintOverlay(); // XXX fix QPainter overlay on Windows.
+#endif
+}
+
+void SceneViewport::paintOverlay()
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    if(m_statsTimer->isActive())
+        paintStats(&painter);
+    paintFrameLog(&painter);
 }
 
 void SceneViewport::toggleAnimation()
