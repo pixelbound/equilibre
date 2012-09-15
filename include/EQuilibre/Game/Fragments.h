@@ -33,6 +33,28 @@ class TrackFragment;
 class MeshFragment;
 class MeshLightingFragment;
 
+class WLDFragmentTable
+{
+public:
+    WLDFragmentTable();
+    virtual ~WLDFragmentTable();
+    void incrementFragmentCount(uint32_t kind);
+    void allocate();
+    WLDFragment *current(uint32_t kind) const;
+    void next(uint32_t kind);
+    
+private:
+    WLDFragment *createArray(uint32_t kind);
+    void deleteArray(uint32_t kind);
+    
+    static const int MAX_FRAGMENT_KINDS = 0x40;
+    QList<WLDFragment *> m_fragments;
+    uint32_t m_fragCounts[MAX_FRAGMENT_KINDS];
+    uint32_t m_fragSize[MAX_FRAGMENT_KINDS];
+    WLDFragment *m_frags[MAX_FRAGMENT_KINDS];
+    uint8_t *m_current[MAX_FRAGMENT_KINDS];
+};
+
 /*!
   \brief This type of fragment (0x03) holds the name of a texture bitmap.
   */

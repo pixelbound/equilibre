@@ -19,6 +19,132 @@
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/WLDData.h"
 
+WLDFragmentTable::WLDFragmentTable()
+{
+    for(int i = 0; i < MAX_FRAGMENT_KINDS; i++)
+    {
+        m_fragCounts[i] = m_fragSize[i] = 0;
+        m_frags[i] = NULL;
+        m_current[i] = NULL;
+    }
+}
+
+WLDFragmentTable::~WLDFragmentTable()
+{
+    for(int i = 0; i < MAX_FRAGMENT_KINDS; i++)
+        deleteArray(i);
+}
+
+void WLDFragmentTable::incrementFragmentCount(uint32_t kind)
+{
+    Q_ASSERT(kind < MAX_FRAGMENT_KINDS && "Exceeded maximum number of fragment kinds.");
+    m_fragCounts[kind]++;
+}
+
+void WLDFragmentTable::allocate()
+{
+    for(uint32_t i = 0; i < MAX_FRAGMENT_KINDS; i++)
+    {
+        m_frags[i] = createArray(i);
+        m_current[i] = (uint8_t *)m_frags[i];
+    }
+}
+
+void WLDFragmentTable::next(uint32_t kind)
+{
+    Q_ASSERT(kind < MAX_FRAGMENT_KINDS && "Exceeded maximum number of fragment kinds.");
+    m_current[kind] += m_fragSize[kind];
+}
+
+WLDFragment * WLDFragmentTable::current(uint32_t kind) const
+{
+    Q_ASSERT(kind < MAX_FRAGMENT_KINDS && "Exceeded maximum number of fragment kinds.");
+    return (WLDFragment *)m_current[kind];
+}
+
+#define CREATE_FRAGMENT_CASE(T) case T::ID: fragSize = sizeof(T); return new T[count];
+#define DELETE_FRAGMENT_CASE(T) case T::ID: delete [] (T *)array; break;
+
+WLDFragment * WLDFragmentTable::createArray(uint32_t kind)
+{
+    uint32_t count = m_fragCounts[kind];
+    uint32_t &fragSize = m_fragSize[kind];
+    if(count == 0)
+    {
+        fragSize = 0;
+        return NULL;
+    }
+    switch(kind)
+    {
+    CREATE_FRAGMENT_CASE(BitmapNameFragment);
+    CREATE_FRAGMENT_CASE(SpriteDefFragment);
+    CREATE_FRAGMENT_CASE(SpriteFragment);
+    CREATE_FRAGMENT_CASE(HierSpriteDefFragment);
+    CREATE_FRAGMENT_CASE(HierSpriteFragment);
+    CREATE_FRAGMENT_CASE(TrackDefFragment);
+    CREATE_FRAGMENT_CASE(TrackFragment);
+    CREATE_FRAGMENT_CASE(ActorDefFragment);
+    CREATE_FRAGMENT_CASE(ActorFragment);
+    CREATE_FRAGMENT_CASE(LightDefFragment);
+    CREATE_FRAGMENT_CASE(LightFragment);
+    CREATE_FRAGMENT_CASE(LightSourceFragment);
+    CREATE_FRAGMENT_CASE(RegionLightFragment);
+    CREATE_FRAGMENT_CASE(SpellParticleDefFragment);
+    CREATE_FRAGMENT_CASE(SpellParticleFragment);
+    CREATE_FRAGMENT_CASE(Fragment34);
+    CREATE_FRAGMENT_CASE(MaterialDefFragment);
+    CREATE_FRAGMENT_CASE(MaterialPaletteFragment);
+    CREATE_FRAGMENT_CASE(MeshLightingDefFragment);
+    CREATE_FRAGMENT_CASE(MeshLightingFragment);
+    CREATE_FRAGMENT_CASE(MeshDefFragment);
+    CREATE_FRAGMENT_CASE(MeshFragment);
+    CREATE_FRAGMENT_CASE(RegionTreeFragment);
+    CREATE_FRAGMENT_CASE(RegionFragment);
+    default:
+        fragSize = sizeof(WLDFragment);
+        return new WLDFragment[count];
+    }
+}
+
+void WLDFragmentTable::deleteArray(uint32_t kind)
+{
+    WLDFragment *array = m_frags[kind];
+    if(!array)
+        return;
+    switch(kind)
+    {
+    DELETE_FRAGMENT_CASE(BitmapNameFragment);
+    DELETE_FRAGMENT_CASE(SpriteDefFragment);
+    DELETE_FRAGMENT_CASE(SpriteFragment);
+    DELETE_FRAGMENT_CASE(HierSpriteDefFragment);
+    DELETE_FRAGMENT_CASE(HierSpriteFragment);
+    DELETE_FRAGMENT_CASE(TrackDefFragment);
+    DELETE_FRAGMENT_CASE(TrackFragment);
+    DELETE_FRAGMENT_CASE(ActorDefFragment);
+    DELETE_FRAGMENT_CASE(ActorFragment);
+    DELETE_FRAGMENT_CASE(LightDefFragment);
+    DELETE_FRAGMENT_CASE(LightFragment);
+    DELETE_FRAGMENT_CASE(LightSourceFragment);
+    DELETE_FRAGMENT_CASE(RegionLightFragment);
+    DELETE_FRAGMENT_CASE(SpellParticleDefFragment);
+    DELETE_FRAGMENT_CASE(SpellParticleFragment);
+    DELETE_FRAGMENT_CASE(Fragment34);
+    DELETE_FRAGMENT_CASE(MaterialDefFragment);
+    DELETE_FRAGMENT_CASE(MaterialPaletteFragment);
+    DELETE_FRAGMENT_CASE(MeshLightingDefFragment);
+    DELETE_FRAGMENT_CASE(MeshLightingFragment);
+    DELETE_FRAGMENT_CASE(MeshDefFragment);
+    DELETE_FRAGMENT_CASE(MeshFragment);
+    DELETE_FRAGMENT_CASE(RegionTreeFragment);
+    DELETE_FRAGMENT_CASE(RegionFragment);
+    default:
+        delete [] array;
+        break;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 BitmapNameFragment::BitmapNameFragment() : WLDFragment(ID)
 {
 }

@@ -55,8 +55,6 @@ public:
     virtual ~WLDFragment();
     
     static bool readHeader(WLDReader *sr, WLDFragmentHeader &fh, QString *name);
-    static WLDFragment *createArray(uint32_t kind, uint32_t count, uint32_t &fragSize);
-    static void deleteArray(uint32_t kind, WLDFragment *array);
 
     uint32_t kind() const;
     void setKind(uint32_t newKind);

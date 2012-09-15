@@ -26,6 +26,7 @@
 
 class QIODevice;
 class PFSArchive;
+class WLDFragmentTable;
 
 /*!
   \brief Holds the content of a .wld file (mostly a list of fragments such as
@@ -73,10 +74,8 @@ public:
 private:
     static const int MAX_FRAGMENT_KINDS = 0x40;
     QByteArray m_stringData;
+    WLDFragmentTable *m_fragTable;
     QList<WLDFragment *> m_fragments;
-    uint32_t m_fragCounts[MAX_FRAGMENT_KINDS];
-    uint32_t m_fragSize[MAX_FRAGMENT_KINDS];
-    WLDFragment *m_frags[MAX_FRAGMENT_KINDS];
 };
 
 class GAME_DLL WLDReader : public StreamReader
