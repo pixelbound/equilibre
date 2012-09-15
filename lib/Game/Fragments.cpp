@@ -15,6 +15,7 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <cmath>
+#include <assert.h>
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/WLDData.h"
 
@@ -507,4 +508,116 @@ bool MeshFragment::unpack(WLDReader *s)
     s->unpackReference(&m_def);
     s->unpackField('I', &m_flags);
     return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+RegionTreeFragment::RegionTreeFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool RegionTreeFragment::unpack(WLDReader *s)
+{
+    uint32_t count;
+    s->unpackField('I', &count);
+    m_nodes.resize(count);
+    s->unpackArray("ffffIII", count, m_nodes.data());
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+RegionFragment::RegionFragment(QString name) : WLDFragment(ID, name)
+{
+}
+
+bool RegionFragment::unpack(WLDReader *s)
+{
+    s->unpackFields("IrIIIIIIII", &m_flags, &m_ref, &m_size1, &m_size2, &m_param1,
+                    &m_size3, &m_size4, &m_param2, &m_size5, &m_size6);
+    // Skip Data1 and Data2
+    s->stream()->seek(s->stream()->pos() + 12 * m_size1);
+    s->stream()->seek(s->stream()->pos() + 8 * m_size2);
+    // TODO Data3, Data4
+    // Skip Data5
+    s->stream()->seek(s->stream()->pos() + 4 * 7 * m_size5);
+    
+    // Decode nearby region list.
+    bool byteEntries = (m_flags & 0x80), wordEntries = (m_flags & 0x10);
+    if(byteEntries || wordEntries)
+    {
+        QVector<uint8_t> regionData;
+        assert((byteEntries ^ wordEntries) && "Region lists must have either byte- or word-sized entries.");
+        uint32_t entrySize = byteEntries ? 1 : 2;
+        for(uint32_t i = 0; i < m_size6; i++)
+        {
+            uint16_t entries = 0;
+            s->unpackField('H', &entries);
+            regionData.resize(entries *  entrySize);
+            s->unpackArray(byteEntries ? "B" : "H", entries, regionData.data());
+            decodeRegionList(regionData, m_nearbyRegions);
+        }
+    }
+    return true;
+}
+
+void RegionFragment::decodeRegionList(const QVector<uint8_t> &data, QVector<uint16_t> &regions)
+{
+    uint32_t RID = 0;
+    uint32_t pos = 0;
+    while(pos < data.count())
+    {
+        uint8_t b = data[pos];
+        if(b < 0x3f)
+        {
+            RID += b;
+            pos += 1;
+        }
+        else if(b == 0x3f)
+        {
+            uint8_t lo = data[pos + 1];
+            uint8_t hi = data[pos + 2];
+            uint16_t skip = ((hi << 8) + lo);
+            RID += skip;
+            pos += 3;
+        }
+        else if(b < 0x80)
+        {
+            uint8_t skip = (b & 0x38) >> 3;
+            uint8_t mark = (b & 0x07);
+            RID += skip;
+            for(uint32_t i = 0; i < mark; i++)
+                regions.append(RID + i);
+            RID += mark;
+            pos += 1;
+        }
+        else if(b < 0xc0)
+        {
+            uint8_t mark = (b & 0x38) >> 3;
+            uint8_t skip = (b & 0x07);
+            for(uint32_t i = 0; i < mark; i++)
+                regions.append(RID + i);
+            RID += mark;
+            RID += skip;
+            pos += 1;
+        }
+        else if(b < 0xff)
+        {
+            uint8_t mark = b - 0xc0;
+            for(uint32_t i = 0; i < mark; i++)
+                regions.append(RID + i);
+            RID += mark;
+            pos += 1;
+        }
+        else //if(b == 0xff)
+        {
+            uint8_t lo = data[pos + 1];
+            uint8_t hi = data[pos + 2];
+            uint16_t mark = ((hi << 8) + lo);
+            for(uint32_t i = 0; i < mark; i++)
+                regions.append(RID + i);
+            RID += mark;
+            pos += 3;
+        }
+    }
 }

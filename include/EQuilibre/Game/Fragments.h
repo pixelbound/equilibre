@@ -392,5 +392,46 @@ public:
     uint32_t m_flags;
 };
 
+struct RegionTreeNode
+{
+    vec3 normal;
+    float distance;
+    uint32_t regionID;
+    uint32_t left;
+    uint32_t right;
+};
+
+/*!
+  \brief This type of fragment (0x21) describes a BSP tree of zone regions (fragment 0x22).
+  */
+class RegionTreeFragment : public WLDFragment
+{
+public:
+    RegionTreeFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+
+    const static uint32_t ID = 0x21;
+    QVector<RegionTreeNode> m_nodes;
+};
+
+/*!
+  \brief This type of fragment (0x22) describes a zone region.
+  */
+class RegionFragment : public WLDFragment
+{
+public:
+    RegionFragment(QString name);
+    virtual bool unpack(WLDReader *s);
+    static void decodeRegionList(const QVector<uint8_t> &regionData, QVector<uint16_t> &regions);
+
+    const static uint32_t ID = 0x22;
+    uint32_t m_flags;
+    WLDFragment *m_ref;
+    uint32_t m_size1, m_size2, m_param1;
+    uint32_t m_size3, m_size4, m_param2;
+    uint32_t m_size5, m_size6;
+    QVector<uint16_t> m_nearbyRegions;
+};
+
 #endif
 

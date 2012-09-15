@@ -116,6 +116,10 @@ WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
         return new MeshDefFragment(name);
     case MeshFragment::ID:
         return new MeshFragment(name);
+    case RegionTreeFragment::ID:
+        return new RegionTreeFragment(name);
+    case RegionFragment::ID:
+        return new RegionFragment(name);
     default:
         return new WLDFragment(kind, name);
     }
