@@ -18,10 +18,14 @@
 #include "EQuilibre/Game/WLDData.h"
 #include "EQuilibre/Game/Fragments.h"
 
-WLDFragment::WLDFragment(uint32_t kind, QString name)
+WLDFragment::WLDFragment()
+{
+    m_kind = 0;
+}
+
+WLDFragment::WLDFragment(uint32_t kind)
 {
     m_kind = kind;
-    m_name = name;
 }
 
 WLDFragment::~WLDFragment()
@@ -33,9 +37,19 @@ uint32_t WLDFragment::kind() const
     return m_kind;
 }
 
+void WLDFragment::setKind(uint32_t newKind)
+{
+    m_kind = newKind;
+}
+
 QString WLDFragment::name() const
 {
     return m_name;
+}
+
+void WLDFragment::setName(QString newName)
+{
+    m_name = newName;
 }
 
 WLDFragment *WLDFragment::fromStream(WLDReader *sr)
@@ -53,9 +67,13 @@ WLDFragment *WLDFragment::fromStream(WLDReader *sr)
         fragmentName = QString::null;
 
     // unpack fragment contents
-    WLDFragment *f = createByKind(fh.kind, fragmentName);
+    WLDFragment *f = createByKind(fh.kind);
     if(f)
+    {
+        f->setKind(fh.kind);
+        f->setName(fragmentName);
         f->unpack(sr);
+    }
 
     // skip to next fragment
     sr->stream()->seek(pos + 8 + fh.size);
@@ -68,60 +86,60 @@ bool WLDFragment::unpack(WLDReader *s)
     return true;
 }
 
-WLDFragment *WLDFragment::createByKind(uint32_t kind, QString name)
+WLDFragment *WLDFragment::createByKind(uint32_t kind)
 {
     switch(kind)
     {
     case BitmapNameFragment::ID:
-        return new BitmapNameFragment(name);
+        return new BitmapNameFragment();
     case SpriteDefFragment::ID:
-        return new SpriteDefFragment(name);
+        return new SpriteDefFragment();
     case SpriteFragment::ID:
-        return new SpriteFragment(name);
+        return new SpriteFragment();
     case HierSpriteDefFragment::ID:
-        return new HierSpriteDefFragment(name);
+        return new HierSpriteDefFragment();
     case HierSpriteFragment::ID:
-        return new HierSpriteFragment(name);
+        return new HierSpriteFragment();
     case TrackDefFragment::ID:
-        return new TrackDefFragment(name);
+        return new TrackDefFragment();
     case TrackFragment::ID:
-        return new TrackFragment(name);
+        return new TrackFragment();
     case ActorDefFragment::ID:
-        return new ActorDefFragment(name);
+        return new ActorDefFragment();
     case ActorFragment::ID:
-        return new ActorFragment(name);
+        return new ActorFragment();
     case LightDefFragment::ID:
-        return new LightDefFragment(name);
+        return new LightDefFragment();
     case LightFragment::ID:
-        return new LightFragment(name);
+        return new LightFragment();
     case LightSourceFragment::ID:
-        return new LightSourceFragment(name);
+        return new LightSourceFragment();
     case RegionLightFragment::ID:
-        return new RegionLightFragment(name);
+        return new RegionLightFragment();
     case SpellParticleDefFragment::ID:
-        return new SpellParticleDefFragment(name);
+        return new SpellParticleDefFragment();
     case SpellParticleFragment::ID:
-        return new SpellParticleFragment(name);
+        return new SpellParticleFragment();
     case Fragment34::ID:
-        return new Fragment34(name);
+        return new Fragment34();
     case MaterialDefFragment::ID:
-        return new MaterialDefFragment(name);
+        return new MaterialDefFragment();
     case MaterialPaletteFragment::ID:
-        return new MaterialPaletteFragment(name);
+        return new MaterialPaletteFragment();
     case MeshLightingDefFragment::ID:
-        return new MeshLightingDefFragment(name);
+        return new MeshLightingDefFragment();
     case MeshLightingFragment::ID:
-        return new MeshLightingFragment(name);
+        return new MeshLightingFragment();
     case MeshDefFragment::ID:
-        return new MeshDefFragment(name);
+        return new MeshDefFragment();
     case MeshFragment::ID:
-        return new MeshFragment(name);
+        return new MeshFragment();
     case RegionTreeFragment::ID:
-        return new RegionTreeFragment(name);
+        return new RegionTreeFragment();
     case RegionFragment::ID:
-        return new RegionFragment(name);
+        return new RegionFragment();
     default:
-        return new WLDFragment(kind, name);
+        return new WLDFragment();
     }
 }
 

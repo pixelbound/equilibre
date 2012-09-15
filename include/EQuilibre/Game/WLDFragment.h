@@ -50,12 +50,16 @@ public:
 class GAME_DLL WLDFragment
 {
 public:
-    WLDFragment(uint32_t kind, QString name);
+    WLDFragment();
+    WLDFragment(uint32_t kind);
     virtual ~WLDFragment();
     static WLDFragment *fromStream(WLDReader *s);
 
     uint32_t kind() const;
+    void setKind(uint32_t newKind);
+    
     QString name() const;
+    void setName(QString newName);
 
     virtual bool unpack(WLDReader *s);
 
@@ -69,7 +73,7 @@ public:
     }
 
 private:
-    static WLDFragment *createByKind(uint32_t kind, QString name);
+    static WLDFragment *createByKind(uint32_t kind);
 
     uint32_t m_kind;
     QString m_name;

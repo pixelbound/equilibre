@@ -19,7 +19,7 @@
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/WLDData.h"
 
-BitmapNameFragment::BitmapNameFragment(QString name) : WLDFragment(ID, name)
+BitmapNameFragment::BitmapNameFragment() : WLDFragment(ID)
 {
 }
 
@@ -33,7 +33,7 @@ bool BitmapNameFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpriteDefFragment::SpriteDefFragment(QString name) : WLDFragment(ID, name)
+SpriteDefFragment::SpriteDefFragment() : WLDFragment(ID)
 {
     m_flags = m_param1 = m_param2 = 0;
 }
@@ -62,7 +62,7 @@ bool SpriteDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpriteFragment::SpriteFragment(QString name) : WLDFragment(ID, name)
+SpriteFragment::SpriteFragment() : WLDFragment(ID)
 {
 }
 
@@ -75,7 +75,7 @@ bool SpriteFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-HierSpriteDefFragment::HierSpriteDefFragment(QString name) : WLDFragment(ID, name)
+HierSpriteDefFragment::HierSpriteDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -112,7 +112,7 @@ bool HierSpriteDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-HierSpriteFragment::HierSpriteFragment(QString name) : WLDFragment(ID, name)
+HierSpriteFragment::HierSpriteFragment() : WLDFragment(ID)
 {
 }
 
@@ -124,7 +124,7 @@ bool HierSpriteFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TrackDefFragment::TrackDefFragment(QString name) : WLDFragment(ID, name)
+TrackDefFragment::TrackDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -166,7 +166,7 @@ BoneTransform TrackDefFragment::frame(uint32_t frameIndex) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TrackFragment::TrackFragment(QString name) : WLDFragment(ID, name)
+TrackFragment::TrackFragment() : WLDFragment(ID)
 {
 }
 
@@ -181,7 +181,7 @@ bool TrackFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ActorDefFragment::ActorDefFragment(QString name) : WLDFragment(ID, name)
+ActorDefFragment::ActorDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -218,7 +218,7 @@ bool ActorDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ActorFragment::ActorFragment(QString name) : WLDFragment(ID, name)
+ActorFragment::ActorFragment() : WLDFragment(ID)
 {
 }
 
@@ -241,7 +241,7 @@ bool ActorFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LightDefFragment::LightDefFragment(QString name) : WLDFragment(ID, name)
+LightDefFragment::LightDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -270,7 +270,7 @@ bool LightDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LightFragment::LightFragment(QString name) : WLDFragment(ID, name)
+LightFragment::LightFragment() : WLDFragment(ID)
 {
 }
 
@@ -283,7 +283,7 @@ bool LightFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LightSourceFragment::LightSourceFragment(QString name) : WLDFragment(ID, name)
+LightSourceFragment::LightSourceFragment() : WLDFragment(ID)
 {
 }
 
@@ -296,7 +296,7 @@ bool LightSourceFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RegionLightFragment::RegionLightFragment(QString name) : WLDFragment(ID, name)
+RegionLightFragment::RegionLightFragment() : WLDFragment(ID)
 {
 }
 
@@ -312,7 +312,7 @@ bool RegionLightFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpellParticleDefFragment::SpellParticleDefFragment(QString name) : WLDFragment(ID, name)
+SpellParticleDefFragment::SpellParticleDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -327,7 +327,7 @@ bool SpellParticleDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpellParticleFragment::SpellParticleFragment(QString name) : WLDFragment(ID, name)
+SpellParticleFragment::SpellParticleFragment() : WLDFragment(ID)
 {
 }
 
@@ -341,7 +341,7 @@ bool SpellParticleFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-Fragment34::Fragment34(QString name) : WLDFragment(ID, name)
+Fragment34::Fragment34() : WLDFragment(ID)
 {
 }
 
@@ -355,7 +355,7 @@ bool Fragment34::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MaterialDefFragment::MaterialDefFragment(QString name) : WLDFragment(ID, name)
+MaterialDefFragment::MaterialDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -369,7 +369,7 @@ bool MaterialDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MaterialPaletteFragment::MaterialPaletteFragment(QString name) : WLDFragment(ID, name)
+MaterialPaletteFragment::MaterialPaletteFragment() : WLDFragment(ID)
 {
 }
 
@@ -389,7 +389,7 @@ bool MaterialPaletteFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshLightingDefFragment::MeshLightingDefFragment(QString name) : WLDFragment(ID, name)
+MeshLightingDefFragment::MeshLightingDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -408,7 +408,7 @@ bool MeshLightingDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshLightingFragment::MeshLightingFragment(QString name) : WLDFragment(ID, name)
+MeshLightingFragment::MeshLightingFragment() : WLDFragment(ID)
 {
 }
 
@@ -421,7 +421,7 @@ bool MeshLightingFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshDefFragment::MeshDefFragment(QString name) : WLDFragment(ID, name)
+MeshDefFragment::MeshDefFragment() : WLDFragment(ID)
 {
 }
 
@@ -499,7 +499,7 @@ bool MeshDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshFragment::MeshFragment(QString name) : WLDFragment(ID, name)
+MeshFragment::MeshFragment() : WLDFragment(ID)
 {
 }
 
@@ -512,7 +512,7 @@ bool MeshFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RegionTreeFragment::RegionTreeFragment(QString name) : WLDFragment(ID, name)
+RegionTreeFragment::RegionTreeFragment() : WLDFragment(ID)
 {
 }
 
@@ -527,7 +527,7 @@ bool RegionTreeFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-RegionFragment::RegionFragment(QString name) : WLDFragment(ID, name)
+RegionFragment::RegionFragment() : WLDFragment(ID)
 {
 }
 

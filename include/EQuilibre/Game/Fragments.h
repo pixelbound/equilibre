@@ -39,7 +39,7 @@ class MeshLightingFragment;
 class BitmapNameFragment : public WLDFragment
 {
 public:
-    BitmapNameFragment(QString name);
+    BitmapNameFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x03;
@@ -54,7 +54,7 @@ public:
 class SpriteDefFragment : public WLDFragment
 {
 public:
-    SpriteDefFragment(QString name);
+    SpriteDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x04;
@@ -68,7 +68,7 @@ public:
 class SpriteFragment : public WLDFragment
 {
 public:
-    SpriteFragment(QString name);
+    SpriteFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x05;
@@ -82,7 +82,7 @@ public:
 class HierSpriteDefFragment : public WLDFragment
 {
 public:
-    HierSpriteDefFragment(QString name);
+    HierSpriteDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x10;
@@ -101,7 +101,7 @@ public:
 class HierSpriteFragment : public WLDFragment
 {
 public:
-    HierSpriteFragment(QString name);
+    HierSpriteFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x11;
@@ -116,7 +116,7 @@ public:
 class TrackDefFragment : public WLDFragment
 {
 public:
-    TrackDefFragment(QString name);
+    TrackDefFragment();
     virtual bool unpack(WLDReader *s);
 
     BoneTransform frame(uint32_t frameIndex = 0) const;
@@ -132,7 +132,7 @@ public:
 class TrackFragment : public WLDFragment
 {
 public:
-    TrackFragment(QString name);
+    TrackFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x13;
@@ -146,7 +146,7 @@ public:
 class ActorDefFragment : public WLDFragment
 {
 public:
-    ActorDefFragment(QString name);
+    ActorDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x14;
@@ -162,7 +162,7 @@ public:
 class ActorFragment : public WLDFragment
 {
 public:
-    ActorFragment(QString name);
+    ActorFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x15;
@@ -182,7 +182,7 @@ public:
 class LightDefFragment : public WLDFragment
 {
 public:
-    LightDefFragment(QString name);
+    LightDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x1B;
@@ -198,7 +198,7 @@ public:
 class LightFragment : public WLDFragment
 {
 public:
-    LightFragment(QString name);
+    LightFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x1C;
@@ -212,7 +212,7 @@ public:
 class LightSourceFragment : public WLDFragment
 {
 public:
-    LightSourceFragment(QString name);
+    LightSourceFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x28;
@@ -228,7 +228,7 @@ public:
 class RegionLightFragment : public WLDFragment
 {
 public:
-    RegionLightFragment(QString name);
+    RegionLightFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x2a;
@@ -243,7 +243,7 @@ public:
 class SpellParticleDefFragment : public WLDFragment
 {
 public:
-    SpellParticleDefFragment(QString name);
+    SpellParticleDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x26;
@@ -258,7 +258,7 @@ public:
 class SpellParticleFragment : public WLDFragment
 {
 public:
-    SpellParticleFragment(QString name);
+    SpellParticleFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x27;
@@ -283,7 +283,7 @@ public:
 class Fragment34 : public WLDFragment
 {
 public:
-    Fragment34(QString name);
+    Fragment34();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x34;
@@ -298,7 +298,7 @@ public:
 class MaterialDefFragment : public WLDFragment
 {
 public:
-    MaterialDefFragment(QString name);
+    MaterialDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x30;
@@ -314,7 +314,7 @@ public:
 class MaterialPaletteFragment : public WLDFragment
 {
 public:
-    MaterialPaletteFragment(QString name);
+    MaterialPaletteFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x31;
@@ -328,7 +328,7 @@ public:
 class MeshLightingDefFragment : public WLDFragment
 {
 public:
-    MeshLightingDefFragment(QString name);
+    MeshLightingDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x32;
@@ -342,7 +342,7 @@ public:
 class MeshLightingFragment : public WLDFragment
 {
 public:
-    MeshLightingFragment(QString name);
+    MeshLightingFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x33;
@@ -356,7 +356,7 @@ public:
 class MeshDefFragment : public WLDFragment
 {
 public:
-    MeshDefFragment(QString name);
+    MeshDefFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x36;
@@ -384,7 +384,7 @@ public:
 class MeshFragment : public WLDFragment
 {
 public:
-    MeshFragment(QString name);
+    MeshFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x2D;
@@ -407,7 +407,7 @@ struct RegionTreeNode
 class RegionTreeFragment : public WLDFragment
 {
 public:
-    RegionTreeFragment(QString name);
+    RegionTreeFragment();
     virtual bool unpack(WLDReader *s);
 
     const static uint32_t ID = 0x21;
@@ -420,7 +420,7 @@ public:
 class RegionFragment : public WLDFragment
 {
 public:
-    RegionFragment(QString name);
+    RegionFragment();
     virtual bool unpack(WLDReader *s);
     static void decodeRegionList(const QVector<uint8_t> &regionData, QVector<uint16_t> &regions);
 
