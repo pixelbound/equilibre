@@ -53,7 +53,10 @@ public:
     WLDFragment();
     WLDFragment(uint32_t kind);
     virtual ~WLDFragment();
-    static WLDFragment *fromStream(WLDReader *s);
+    
+    static bool readHeader(WLDReader *sr, WLDFragmentHeader &fh, QString *name);
+    static WLDFragment *createArray(uint32_t kind, uint32_t count, uint32_t &fragSize);
+    static void deleteArray(uint32_t kind, WLDFragment *array);
 
     uint32_t kind() const;
     void setKind(uint32_t newKind);
@@ -73,8 +76,6 @@ public:
     }
 
 private:
-    static WLDFragment *createByKind(uint32_t kind);
-
     uint32_t m_kind;
     QString m_name;
 };

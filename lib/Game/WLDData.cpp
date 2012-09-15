@@ -37,12 +37,18 @@ typedef struct
 WLDData::WLDData(QObject *parent) : QObject(parent)
 {
     m_stringData = 0;
+    for(int i = 0; i < MAX_FRAGMENT_KINDS; i++)
+    {
+        m_fragCounts[i] = m_fragSize[i] = 0;
+        m_frags[i] = NULL;
+    }
 }
 
 WLDData::~WLDData()
 {
-    while(m_fragments.count() > 0)
-        delete m_fragments.takeLast();
+    for(int i = 0; i < MAX_FRAGMENT_KINDS; i++)
+        WLDFragment::deleteArray(i, m_frags[i]);
+    m_fragments.clear();
 }
 
 const QList<WLDFragment *> & WLDData::fragments() const
@@ -89,13 +95,44 @@ WLDData *WLDData::fromStream(QIODevice *s, QObject *parent)
         delete wld;
         return 0;
     }
+    
+    // Count how many fragments of each kind there are.
+    qint64 fragmentListStart = s->pos();
+    WLDFragmentHeader fh;
+    for(uint32_t i = 0; i < h.fragmentCount; i++)
+    {
+        qint64 fragmentStart = s->pos();
+        WLDFragment::readHeader(&reader, fh, NULL);
+        Q_ASSERT(fh.kind < MAX_FRAGMENT_KINDS && "Exceeded maximum number of fragment kinds.");
+        wld->m_fragCounts[fh.kind]++;
+        s->seek(fragmentStart + 8 + fh.size);
+    }
+    s->seek(fragmentListStart);
+    
+    // Allocate an array for each kind of fragment.
+    uint8_t *currentFrag[MAX_FRAGMENT_KINDS];
+    for(uint32_t i = 0; i < MAX_FRAGMENT_KINDS; i++)
+    {
+        wld->m_frags[i] = WLDFragment::createArray(i, wld->m_fragCounts[i],
+                                                    wld->m_fragSize[i]);
+        currentFrag[i] = (uint8_t *)wld->m_frags[i];
+    }
 
     // load fragments
-    for(uint i = 0; i < h.fragmentCount; i++)
+    QString fragmentName;
+    for(uint32_t i = 0; i < h.fragmentCount; i++)
     {
-        WLDFragment *f = WLDFragment::fromStream(&reader);
-        if(!f)
-            break;
+        qint64 fragmentStart = s->pos();
+        WLDFragment::readHeader(&reader, fh, &fragmentName);
+        WLDFragment *f = (WLDFragment *)currentFrag[fh.kind];
+        if(f)
+        {
+            f->setKind(fh.kind);
+            f->setName(fragmentName);
+            f->unpack(&reader);
+            currentFrag[fh.kind] += wld->m_fragSize[fh.kind];
+        }
+        s->seek(fragmentStart + 8 + fh.size);
         wld->m_fragments.append(f);
     }
     return wld;

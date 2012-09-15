@@ -71,8 +71,12 @@ public:
     }
 
 private:
+    static const int MAX_FRAGMENT_KINDS = 0x40;
     QByteArray m_stringData;
     QList<WLDFragment *> m_fragments;
+    uint32_t m_fragCounts[MAX_FRAGMENT_KINDS];
+    uint32_t m_fragSize[MAX_FRAGMENT_KINDS];
+    WLDFragment *m_frags[MAX_FRAGMENT_KINDS];
 };
 
 class GAME_DLL WLDReader : public StreamReader

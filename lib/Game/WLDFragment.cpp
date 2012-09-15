@@ -52,32 +52,13 @@ void WLDFragment::setName(QString newName)
     m_name = newName;
 }
 
-WLDFragment *WLDFragment::fromStream(WLDReader *sr)
+bool WLDFragment::readHeader(WLDReader *sr, WLDFragmentHeader &fh, QString *name)
 {
-    WLDFragmentHeader fh;
-    QString fragmentName;
-    qint64 pos = sr->stream()->pos();
-
-    // read fragment header
     if(!sr->unpackStruct("IIi", &fh))
-        return 0;
-    else if(fh.nameRef < 0)
-        fragmentName = sr->wld()->lookupString(-fh.nameRef);
-    else
-        fragmentName = QString::null;
-
-    // unpack fragment contents
-    WLDFragment *f = createByKind(fh.kind);
-    if(f)
-    {
-        f->setKind(fh.kind);
-        f->setName(fragmentName);
-        f->unpack(sr);
-    }
-
-    // skip to next fragment
-    sr->stream()->seek(pos + 8 + fh.size);
-    return f;
+        return false;
+    if(name)
+        *name = (fh.nameRef < 0) ? sr->wld()->lookupString(-fh.nameRef) : QString::null;
+    return true;
 }
 
 bool WLDFragment::unpack(WLDReader *s)
@@ -86,60 +67,81 @@ bool WLDFragment::unpack(WLDReader *s)
     return true;
 }
 
-WLDFragment *WLDFragment::createByKind(uint32_t kind)
+#define CREATE_FRAGMENT_CASE(T) case T::ID: fragSize = sizeof(T); return new T[count];
+#define DELETE_FRAGMENT_CASE(T) case T::ID: delete [] (T *)array; break;
+
+WLDFragment * WLDFragment::createArray(uint32_t kind, uint32_t count, uint32_t &fragSize)
 {
+    if(count == 0)
+    {
+        fragSize = 0;
+        return NULL;
+    }
     switch(kind)
     {
-    case BitmapNameFragment::ID:
-        return new BitmapNameFragment();
-    case SpriteDefFragment::ID:
-        return new SpriteDefFragment();
-    case SpriteFragment::ID:
-        return new SpriteFragment();
-    case HierSpriteDefFragment::ID:
-        return new HierSpriteDefFragment();
-    case HierSpriteFragment::ID:
-        return new HierSpriteFragment();
-    case TrackDefFragment::ID:
-        return new TrackDefFragment();
-    case TrackFragment::ID:
-        return new TrackFragment();
-    case ActorDefFragment::ID:
-        return new ActorDefFragment();
-    case ActorFragment::ID:
-        return new ActorFragment();
-    case LightDefFragment::ID:
-        return new LightDefFragment();
-    case LightFragment::ID:
-        return new LightFragment();
-    case LightSourceFragment::ID:
-        return new LightSourceFragment();
-    case RegionLightFragment::ID:
-        return new RegionLightFragment();
-    case SpellParticleDefFragment::ID:
-        return new SpellParticleDefFragment();
-    case SpellParticleFragment::ID:
-        return new SpellParticleFragment();
-    case Fragment34::ID:
-        return new Fragment34();
-    case MaterialDefFragment::ID:
-        return new MaterialDefFragment();
-    case MaterialPaletteFragment::ID:
-        return new MaterialPaletteFragment();
-    case MeshLightingDefFragment::ID:
-        return new MeshLightingDefFragment();
-    case MeshLightingFragment::ID:
-        return new MeshLightingFragment();
-    case MeshDefFragment::ID:
-        return new MeshDefFragment();
-    case MeshFragment::ID:
-        return new MeshFragment();
-    case RegionTreeFragment::ID:
-        return new RegionTreeFragment();
-    case RegionFragment::ID:
-        return new RegionFragment();
+    CREATE_FRAGMENT_CASE(BitmapNameFragment);
+    CREATE_FRAGMENT_CASE(SpriteDefFragment);
+    CREATE_FRAGMENT_CASE(SpriteFragment);
+    CREATE_FRAGMENT_CASE(HierSpriteDefFragment);
+    CREATE_FRAGMENT_CASE(HierSpriteFragment);
+    CREATE_FRAGMENT_CASE(TrackDefFragment);
+    CREATE_FRAGMENT_CASE(TrackFragment);
+    CREATE_FRAGMENT_CASE(ActorDefFragment);
+    CREATE_FRAGMENT_CASE(ActorFragment);
+    CREATE_FRAGMENT_CASE(LightDefFragment);
+    CREATE_FRAGMENT_CASE(LightFragment);
+    CREATE_FRAGMENT_CASE(LightSourceFragment);
+    CREATE_FRAGMENT_CASE(RegionLightFragment);
+    CREATE_FRAGMENT_CASE(SpellParticleDefFragment);
+    CREATE_FRAGMENT_CASE(SpellParticleFragment);
+    CREATE_FRAGMENT_CASE(Fragment34);
+    CREATE_FRAGMENT_CASE(MaterialDefFragment);
+    CREATE_FRAGMENT_CASE(MaterialPaletteFragment);
+    CREATE_FRAGMENT_CASE(MeshLightingDefFragment);
+    CREATE_FRAGMENT_CASE(MeshLightingFragment);
+    CREATE_FRAGMENT_CASE(MeshDefFragment);
+    CREATE_FRAGMENT_CASE(MeshFragment);
+    CREATE_FRAGMENT_CASE(RegionTreeFragment);
+    CREATE_FRAGMENT_CASE(RegionFragment);
     default:
-        return new WLDFragment();
+        fragSize = sizeof(WLDFragment);
+        return new WLDFragment[count];
+    }
+}
+
+void WLDFragment::deleteArray(uint32_t kind, WLDFragment *array)
+{
+    if(!array)
+        return;
+    switch(kind)
+    {
+    DELETE_FRAGMENT_CASE(BitmapNameFragment);
+    DELETE_FRAGMENT_CASE(SpriteDefFragment);
+    DELETE_FRAGMENT_CASE(SpriteFragment);
+    DELETE_FRAGMENT_CASE(HierSpriteDefFragment);
+    DELETE_FRAGMENT_CASE(HierSpriteFragment);
+    DELETE_FRAGMENT_CASE(TrackDefFragment);
+    DELETE_FRAGMENT_CASE(TrackFragment);
+    DELETE_FRAGMENT_CASE(ActorDefFragment);
+    DELETE_FRAGMENT_CASE(ActorFragment);
+    DELETE_FRAGMENT_CASE(LightDefFragment);
+    DELETE_FRAGMENT_CASE(LightFragment);
+    DELETE_FRAGMENT_CASE(LightSourceFragment);
+    DELETE_FRAGMENT_CASE(RegionLightFragment);
+    DELETE_FRAGMENT_CASE(SpellParticleDefFragment);
+    DELETE_FRAGMENT_CASE(SpellParticleFragment);
+    DELETE_FRAGMENT_CASE(Fragment34);
+    DELETE_FRAGMENT_CASE(MaterialDefFragment);
+    DELETE_FRAGMENT_CASE(MaterialPaletteFragment);
+    DELETE_FRAGMENT_CASE(MeshLightingDefFragment);
+    DELETE_FRAGMENT_CASE(MeshLightingFragment);
+    DELETE_FRAGMENT_CASE(MeshDefFragment);
+    DELETE_FRAGMENT_CASE(MeshFragment);
+    DELETE_FRAGMENT_CASE(RegionTreeFragment);
+    DELETE_FRAGMENT_CASE(RegionFragment);
+    default:
+        delete [] array;
+        break;
     }
 }
 
