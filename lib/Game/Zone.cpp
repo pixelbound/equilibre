@@ -184,9 +184,10 @@ bool Zone::importLightSources(PFSArchive *archive)
     if(!wld)
         return false;
     uint16_t ID = 0;
-    foreach(LightSourceFragment *lightFrag, wld->fragmentsByType<LightSourceFragment>())
+    WLDFragmentArray<LightSourceFragment> lightFrags = wld->table()->byKind<LightSourceFragment>();
+    for(uint32_t i = 0; i < lightFrags.count(); i++)
     {
-        WLDLightActor *actor = new WLDLightActor(lightFrag, ID++);
+        WLDLightActor *actor = new WLDLightActor(lightFrags[i], ID++);
         m_lights.append(actor);
         m_actorTree->add(actor);
     }
@@ -506,9 +507,10 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     // Load zone regions as model parts, computing the zone's bounding box.
     int partID = 0;
     m_zoneBounds = AABox();
-    foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
+    WLDFragmentArray<MeshDefFragment> meshDefs = wld->table()->byKind<MeshDefFragment>();
+    for(uint32_t i = 0; i < meshDefs.count(); i++)
     {
-        WLDMesh *meshPart = new WLDMesh(meshDef, partID++);
+        WLDMesh *meshPart = new WLDMesh(meshDefs[i], partID++);
         m_zoneBounds.extendTo(meshPart->boundsAA());
         m_zoneParts.append(new WLDStaticActor(NULL, meshPart));
     }
@@ -518,8 +520,9 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     
     // Load zone textures into the material palette.
     WLDMaterialPalette zonePalette(archive);
-    foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
-        zonePalette.addMaterialDef(matDef);
+    WLDFragmentArray<MaterialDefFragment> matDefs = wld->table()->byKind<MaterialDefFragment>();
+    for(uint32_t i = 0; i < matDefs.count(); i++)
+        zonePalette.addMaterialDef(matDefs[i]);
     m_zoneMaterials = zonePalette.loadMaterials();
     
     return true;
@@ -678,8 +681,10 @@ void ZoneObjects::importActors()
 {
     // import actors through Actor fragments
     const QMap<QString, WLDMesh *> &models = m_pack->models();
-    foreach(ActorFragment *actorFrag, m_objDefWld->fragmentsByType<ActorFragment>())
+    WLDFragmentArray<ActorFragment> actorFrags = m_objDefWld->table()->byKind<ActorFragment>();
+    for(uint32_t i = 0; i < actorFrags.count(); i++)
     {
+        ActorFragment *actorFrag = actorFrags[i];
         QString actorName = actorFrag->m_def.name().replace("_ACTORDEF", "");
         WLDMesh *model = models.value(actorName);
         if(model)
@@ -835,8 +840,10 @@ bool ObjectPack::load(QString archivePath, QString wldName)
 
     // Import models through ActorDef fragments.
     WLDMaterialPalette palette(m_archive);
-    foreach(ActorDefFragment *actorDef, m_wld->fragmentsByType<ActorDefFragment>())
+    WLDFragmentArray<ActorDefFragment> actorDefs = m_wld->table()->byKind<ActorDefFragment>();
+    for(uint32_t i = 0; i < actorDefs.count(); i++)
     {
+        ActorDefFragment *actorDef = actorDefs[i];
         WLDFragment *subModel = actorDef->m_models.value(0);
         if(!subModel)
             continue;
@@ -939,8 +946,10 @@ void CharacterPack::importSkeletons(WLDData *wld)
     // Makes it easier to free the resources even if some animations are shared between actors.
     
     // import skeletons which contain the pose animation
-    foreach(HierSpriteDefFragment *skelDef, wld->fragmentsByType<HierSpriteDefFragment>())
+    WLDFragmentArray<HierSpriteDefFragment> skelDefs = wld->table()->byKind<HierSpriteDefFragment>();
+    for(uint32_t i = 0; i < skelDefs.count(); i++)
     {
+        HierSpriteDefFragment *skelDef = skelDefs[i];
         QString actorName = skelDef->name().replace("_HS_DEF", "");
         WLDCharActor *actor = m_models.value(actorName);
         if(!actor)
@@ -949,8 +958,10 @@ void CharacterPack::importSkeletons(WLDData *wld)
     }
 
     // import other animations
-    foreach(TrackFragment *track, wld->fragmentsByType<TrackFragment>())
+    WLDFragmentArray<TrackFragment> tracks = wld->table()->byKind<TrackFragment>();
+    for(uint32_t i = 0; i < tracks.count(); i++)
     {
+        TrackFragment *track = tracks[i];
         QString animName = track->name().left(3);
         QString actorName = track->name().mid(3, 3);
         WLDCharActor *actor = m_models.value(actorName);
@@ -964,8 +975,10 @@ void CharacterPack::importSkeletons(WLDData *wld)
 
 void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
 {
-    foreach(MaterialDefFragment *matDef, wld->fragmentsByType<MaterialDefFragment>())
+    WLDFragmentArray<MaterialDefFragment> matDefs = wld->table()->byKind<MaterialDefFragment>();
+    for(uint32_t i = 0; i < matDefs.count(); i++)
     {
+        MaterialDefFragment *matDef = matDefs[i];
         QString charName, palName, partName;
         if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
         {
@@ -984,8 +997,10 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     }
 
     // look for alternate meshes (e.g. heads)
-    foreach(MeshDefFragment *meshDef, wld->fragmentsByType<MeshDefFragment>())
+    WLDFragmentArray<MeshDefFragment> meshDefs = wld->table()->byKind<MeshDefFragment>();
+    for(uint32_t i = 0; i < meshDefs.count(); i++)
     {
+        MeshDefFragment *meshDef = meshDefs[i];
         QString actorName, meshName, skinName;
         WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
         WLDCharActor *actor = m_models.value(actorName);
@@ -1007,8 +1022,10 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
 
 void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
 {
-    foreach(ActorDefFragment *actorDef, wld->fragmentsByType<ActorDefFragment>())
+    WLDFragmentArray<ActorDefFragment> actorDefs = wld->table()->byKind<ActorDefFragment>();
+    for(uint32_t i = 0; i < actorDefs.count(); i++)
     {
+        ActorDefFragment *actorDef = actorDefs[i];
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDModel *model = new WLDModel(archive);
         WLDCharActor *actor = new WLDCharActor(model);

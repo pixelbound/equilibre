@@ -41,11 +41,11 @@ public:
     static WLDData *fromFile(QString path, QObject *parent = 0);
     static WLDData *fromArchive(PFSArchive *a, QString name, QObject *parent = 0);
 
+    WLDFragmentTable *table() const;
     const QList<WLDFragment *> &fragments() const;
     QString lookupString(int start) const;
     static QByteArray decodeString(QByteArray data);
     WLDFragmentRef lookupReference(int32_t ref) const;
-    QList<WLDFragment *> fragmentsByType(uint32_t type) const;
     WLDFragment * findFragment(uint32_t type, QString name) const;
 
     template<typename T>
@@ -56,19 +56,6 @@ public:
             return static_cast<T *>(f);
         else
             return 0;
-    }
-
-    template<typename T>
-    QList<T *> fragmentsByType() const
-    {
-        QList<T *> byType;
-        foreach(WLDFragment *f, m_fragments)
-        {
-            T * frag = f->cast<T>();
-            if(frag)
-                byType.append(frag);
-        }
-        return byType;
     }
 
 private:

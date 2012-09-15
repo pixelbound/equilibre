@@ -35,6 +35,12 @@ WLDFragmentTable::~WLDFragmentTable()
         deleteArray(i);
 }
 
+uint32_t WLDFragmentTable::count(uint32_t kind) const
+{
+    Q_ASSERT(kind < MAX_FRAGMENT_KINDS && "Exceeded maximum number of fragment kinds.");
+    return m_fragCounts[kind];
+}
+
 void WLDFragmentTable::incrementFragmentCount(uint32_t kind)
 {
     Q_ASSERT(kind < MAX_FRAGMENT_KINDS && "Exceeded maximum number of fragment kinds.");

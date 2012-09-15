@@ -33,6 +33,48 @@ class TrackFragment;
 class MeshFragment;
 class MeshLightingFragment;
 
+/*!
+  \brief A fragment array contains the data for several fragments of the same kind.
+  */
+template<typename T>
+class WLDFragmentArray
+{
+public:
+    WLDFragmentArray()
+    {
+        m_data = NULL;
+        m_count = 0;
+        m_fragSize = 0;
+    }
+    
+    WLDFragmentArray(T *data, uint32_t count, uint32_t fragSize)
+    {
+        m_data = data;
+        m_count = count;
+        m_fragSize = fragSize;
+    }
+    
+    uint32_t count() const
+    {
+        return m_count;
+    }
+    
+    T* operator[] (uint32_t index)
+    {
+        if(!m_data || (index >= m_count) || (m_fragSize == 0))
+            return NULL;
+        return (T *)((uint8_t *)m_data + (m_fragSize * index));
+    }
+
+private:
+    T *m_data;
+    uint32_t m_count;
+    uint32_t m_fragSize;
+};
+
+/*!
+  \brief A fragment table contains arrays of fragments. There is one array per fragment kind.
+  */
 class WLDFragmentTable
 {
 public:
@@ -40,8 +82,18 @@ public:
     virtual ~WLDFragmentTable();
     void incrementFragmentCount(uint32_t kind);
     void allocate();
+    uint32_t count(uint32_t kind) const;
     WLDFragment *current(uint32_t kind) const;
     void next(uint32_t kind);
+    
+    template<typename T>
+    WLDFragmentArray<T> byKind() const
+    {
+        WLDFragmentArray<T> array((T *)m_frags[T::ID],
+                                  m_fragCounts[T::ID],
+                                  m_fragSize[T::ID]);
+        return array;
+    }
     
 private:
     WLDFragment *createArray(uint32_t kind);

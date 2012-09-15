@@ -47,6 +47,11 @@ WLDData::~WLDData()
     delete m_fragTable;
 }
 
+WLDFragmentTable * WLDData::table() const
+{
+    return m_fragTable;
+}
+
 const QList<WLDFragment *> & WLDData::fragments() const
 {
     return m_fragments;
@@ -172,15 +177,6 @@ WLDFragmentRef WLDData::lookupReference(int32_t ref) const
     }
     else
         return WLDFragmentRef();
-}
-
-QList<WLDFragment *> WLDData::fragmentsByType(uint32_t type) const
-{
-    QList<WLDFragment *> byType;
-    foreach(WLDFragment *f, m_fragments)
-        if(f->kind() == type)
-            byType.append(f);
-    return byType;
 }
 
 WLDFragment * WLDData::findFragment(uint32_t type, QString name) const
