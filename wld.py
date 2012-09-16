@@ -389,12 +389,13 @@ class Fragment22(Fragment):
         #TODO Data4
         self.unpackArray("Data5", "I" * 7, self.Size5)
         self.NearbyRegions = []
-        for i in range(0, self.Size6):
-            nearbyRegionSize = self.unpackField(None, "H")
-            regionData = self.data[self.pos: self.pos + nearbyRegionSize]
-            # crashes for Kedge keep (probably because of missing Data3 and Data4)
-            #self.NearbyRegions.append(self.decodeRegionList(regionData))
-            self.pos += nearbyRegionSize
+        byteEntries, wordEntries = self.Flags & 0x80, self.Flags & 0x10
+        if byteEntries:
+            for i in range(0, self.Size6):
+                nearbyRegionSize = self.unpackField(None, "H")
+                self.RegionData = self.data[self.pos: self.pos + nearbyRegionSize]
+                self.NearbyRegions.append(self.decodeRegionList(self.RegionData))
+                self.pos += nearbyRegionSize
     
     def decodeRegionList(self, data):
         RID = 0

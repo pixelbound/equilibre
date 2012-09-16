@@ -15,7 +15,6 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <cmath>
-#include <assert.h>
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/WLDData.h"
 
@@ -654,6 +653,14 @@ bool RegionTreeFragment::unpack(WLDReader *s)
     s->unpackField('I', &count);
     m_nodes.resize(count);
     s->unpackArray("ffffIII", count, m_nodes.data());
+    // Make sure the indices are all in-bounds.
+    uint32_t maxNodeIdx = 0;
+    for(uint32_t i = 0; i < count; i++)
+    {
+        const RegionTreeNode &node = m_nodes[i];
+        maxNodeIdx = qMax(maxNodeIdx, qMax(node.left, node.right));
+    }
+    Q_ASSERT(maxNodeIdx <= count);
     return true;
 }
 
@@ -679,7 +686,8 @@ bool RegionFragment::unpack(WLDReader *s)
     if(byteEntries || wordEntries)
     {
         QVector<uint8_t> regionData;
-        assert((byteEntries ^ wordEntries) && "Region lists must have either byte- or word-sized entries.");
+        Q_ASSERT(byteEntries);
+        Q_ASSERT((byteEntries ^ wordEntries) && "Region lists must have either byte- or word-sized entries.");
         uint32_t entrySize = byteEntries ? 1 : 2;
         for(uint32_t i = 0; i < m_size6; i++)
         {
@@ -695,7 +703,7 @@ bool RegionFragment::unpack(WLDReader *s)
 
 void RegionFragment::decodeRegionList(const QVector<uint8_t> &data, QVector<uint16_t> &regions)
 {
-    uint32_t RID = 0;
+    uint32_t RID = 1;
     uint32_t pos = 0;
     while(pos < data.count())
     {
@@ -707,6 +715,7 @@ void RegionFragment::decodeRegionList(const QVector<uint8_t> &data, QVector<uint
         }
         else if(b == 0x3f)
         {
+            Q_ASSERT((pos + 2) < data.count());
             uint8_t lo = data[pos + 1];
             uint8_t hi = data[pos + 2];
             uint16_t skip = ((hi << 8) + lo);
@@ -743,6 +752,7 @@ void RegionFragment::decodeRegionList(const QVector<uint8_t> &data, QVector<uint
         }
         else //if(b == 0xff)
         {
+            Q_ASSERT((pos + 2) < data.count());
             uint8_t lo = data[pos + 1];
             uint8_t hi = data[pos + 2];
             uint16_t mark = ((hi << 8) + lo);
