@@ -17,7 +17,6 @@
 #ifndef EQUILIBRE_WLD_DATA_H
 #define EQUILIBRE_WLD_DATA_H
 
-#include <QObject>
 #include <QList>
 #include <QByteArray>
 #include "EQuilibre/Render/Platform.h"
@@ -54,14 +53,14 @@ public:
   \brief Holds the content of a .wld file (mostly a list of fragments such as
   textures, meshes, skeletons, etc).
   */
-class GAME_DLL WLDData : public QObject
+class GAME_DLL WLDData
 {
 public:
-    WLDData(QObject *parent = 0);
+    WLDData();
     virtual ~WLDData();
-    static WLDData *fromStream(QIODevice *s, QObject *parent = 0);
-    static WLDData *fromFile(QString path, QObject *parent = 0);
-    static WLDData *fromArchive(PFSArchive *a, QString name, QObject *parent = 0);
+    static WLDData *fromStream(QIODevice *s);
+    static WLDData *fromFile(QString path);
+    static WLDData *fromArchive(PFSArchive *a, QString name);
 
     WLDFragmentTable *table() const;
     const QList<WLDFragment *> &fragments() const;

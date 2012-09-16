@@ -26,6 +26,7 @@
 #include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/RenderContext.h"
 
+class ObjectPack;
 class PFSArchive;
 class Zone;
 class WLDCharActor;
@@ -40,8 +41,8 @@ class GAME_DLL Game
 public:
     Game();
     virtual ~Game();
-
-    Zone * zone() const;
+    
+    void clear(RenderContext *renderCtx);
 
     bool showZone() const;
     bool showObjects() const;
@@ -59,11 +60,14 @@ public:
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
+    Zone * zone() const;
+    QList<ObjectPack *> objectPacks() const;
+    
     Zone * loadZone(QString path, QString name);
-    void clear(RenderContext *renderCtx);
+    ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     
 private:
-    //QList<ObjectPack *> m_objectPacks; // XXX move from Zone.
+    QList<ObjectPack *> m_objectPacks;
     Zone *m_zone;
     bool m_showZone;
     bool m_showObjects;

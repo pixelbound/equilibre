@@ -18,7 +18,6 @@
 #define EQUILIBRE_ZONE_H
 
 #include <vector>
-#include <QObject>
 #include <QList>
 #include <QMap>
 #include "EQuilibre/Render/Platform.h"
@@ -57,7 +56,7 @@ class ObjectPack;
 /*!
   \brief Describes a zone of the world.
   */
-class GAME_DLL Zone : public QObject
+class GAME_DLL Zone
 {
 public:
     Zone(Game *game);
@@ -67,13 +66,11 @@ public:
     ZoneObjects * objects() const;
     const QVector<WLDLightActor *> & lights() const;
     QList<CharacterPack *> characterPacks() const;
-    QList<ObjectPack *> objectPacks() const;
     OctreeIndex * actorIndex() const;
     const FogParams & fogParams() const;
     
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
-    ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     WLDCharActor * findCharacter(QString name) const;
 
     void clear(RenderContext *renderCtx);
@@ -107,7 +104,6 @@ private:
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;
     QList<CharacterPack *> m_charPacks;
-    QList<ObjectPack *> m_objectPacks; // XXX this shouldn't be in Zone, maybe Game.
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;

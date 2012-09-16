@@ -74,11 +74,6 @@ QList<CharacterPack *> Zone::characterPacks() const
     return m_charPacks;
 }
 
-QList<ObjectPack *> Zone::objectPacks() const
-{
-    return m_objectPacks;
-}
-
 OctreeIndex * Zone::actorIndex() const
 {
     return m_actorTree;
@@ -96,8 +91,8 @@ bool Zone::load(QString path, QString name)
     // Load the main archive and WLD file.
     QString zonePath = QString("%1/%2.s3d").arg(path).arg(name);
     QString zoneFile = QString("%1.wld").arg(name);
-    m_mainArchive = new PFSArchive(zonePath, this);
-    m_mainWld = WLDData::fromArchive(m_mainArchive, zoneFile, this);
+    m_mainArchive = new PFSArchive(zonePath);
+    m_mainWld = WLDData::fromArchive(m_mainArchive, zoneFile);
     
     // Load the zone's terrain.
     m_terrain = new ZoneTerrain(this);
@@ -155,24 +150,6 @@ CharacterPack * Zone::loadCharacters(QString archivePath, QString wldName)
     return charPack;
 }
 
-ObjectPack * Zone::loadObjects(QString archivePath, QString wldName)
-{
-    if(wldName.isNull())
-    {
-        QString baseName = QFileInfo(archivePath).baseName();
-        wldName = baseName + ".wld";
-    }
-    
-    ObjectPack *objPack = new ObjectPack();
-    if(!objPack->load(archivePath, wldName))
-    {
-        delete objPack;
-        return NULL;
-    }
-    m_objectPacks.append(objPack);
-    return objPack;
-}
-
 bool Zone::importLightSources(PFSArchive *archive)
 {
     WLDData *wld = WLDData::fromArchive(archive, "lights.wld");
@@ -207,16 +184,10 @@ void Zone::clear(RenderContext *renderCtx)
         pack->clear(renderCtx);
         delete pack;
     }
-    foreach(ObjectPack *pack, m_objectPacks)
-    {
-        pack->clear(renderCtx);
-        delete pack;
-    }
     foreach(WLDLightActor *light, m_lights)
         delete light;
     m_lights.clear();
     m_charPacks.clear();
-    m_objectPacks.clear();
     if(m_objects)
     {
         m_objects->clear(renderCtx);
@@ -678,7 +649,7 @@ void ZoneObjects::clear(RenderContext *renderCtx)
 
 bool ZoneObjects::load(QString path, QString name, PFSArchive *mainArchive)
 {
-    m_objDefWld = WLDData::fromArchive(mainArchive, "objects.wld", m_zone);
+    m_objDefWld = WLDData::fromArchive(mainArchive, "objects.wld");
     if(!m_objDefWld)
         return false;
     

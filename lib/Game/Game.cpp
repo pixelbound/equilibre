@@ -14,6 +14,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+#include <QFileInfo>
 #include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/PFSArchive.h"
@@ -49,6 +50,12 @@ void Game::clear(RenderContext *renderCtx)
         delete m_zone;
         m_zone = NULL;
     }
+    foreach(ObjectPack *pack, m_objectPacks)
+    {
+        pack->clear(renderCtx);
+        delete pack;
+    }
+    m_objectPacks.clear();
 }
 
 bool Game::showZone() const
@@ -125,6 +132,11 @@ Zone * Game::zone() const
     return m_zone;
 }
 
+QList<ObjectPack *> Game::objectPacks() const
+{
+    return m_objectPacks;
+}
+
 Zone * Game::loadZone(QString path, QString name)
 {
     Zone *zone = new Zone(this);
@@ -135,6 +147,24 @@ Zone * Game::loadZone(QString path, QString name)
     }
     m_zone = zone;
     return zone;
+}
+
+ObjectPack * Game::loadObjects(QString archivePath, QString wldName)
+{
+    if(wldName.isNull())
+    {
+        QString baseName = QFileInfo(archivePath).baseName();
+        wldName = baseName + ".wld";
+    }
+    
+    ObjectPack *objPack = new ObjectPack();
+    if(!objPack->load(archivePath, wldName))
+    {
+        delete objPack;
+        return NULL;
+    }
+    m_objectPacks.append(objPack);
+    return objPack;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

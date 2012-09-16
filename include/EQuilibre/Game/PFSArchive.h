@@ -17,7 +17,6 @@
 #ifndef EQUILIBRE_PFS_ARCHIVE_H
 #define EQUILIBRE_PFS_ARCHIVE_H
 
-#include <QObject>
 #include <QByteArray>
 #include <QList>
 #include <QMap>
@@ -37,10 +36,10 @@ public:
 /*!
   \brief Allows extraction of PFS archives (e.g. .pfs, .s3d, .pak files).
   */
-class GAME_DLL PFSArchive : public QObject
+class GAME_DLL PFSArchive
 {
 public:
-    PFSArchive(QString path, QObject *parent = 0);
+    PFSArchive(QString path);
     virtual ~PFSArchive();
     bool isOpen() const;
     void close();

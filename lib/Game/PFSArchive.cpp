@@ -41,7 +41,7 @@ static bool compareEntries(PFSEntry a, PFSEntry b)
     return a.dataOffset < b.dataOffset;
 }
 
-PFSArchive::PFSArchive(QString path, QObject *parent) : QObject(parent)
+PFSArchive::PFSArchive(QString path)
 {
     m_file = 0;
     m_reader = 0;

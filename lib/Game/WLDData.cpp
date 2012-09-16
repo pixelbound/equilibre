@@ -35,7 +35,7 @@ typedef struct
     uint32_t header6;
 } WLDHeader;
 
-WLDData::WLDData(QObject *parent) : QObject(parent)
+WLDData::WLDData()
 {
     m_stringData = 0;
     m_fragTable = NULL;
@@ -57,27 +57,27 @@ const QList<WLDFragment *> & WLDData::fragments() const
     return m_fragments;
 }
 
-WLDData *WLDData::fromFile(QString path, QObject *parent)
+WLDData *WLDData::fromFile(QString path)
 {
     QFile f(path);
     if(f.open(QFile::ReadOnly))
-        return fromStream(&f, parent);
+        return fromStream(&f);
     return 0;
 }
 
-WLDData *WLDData::fromArchive(PFSArchive *a, QString name, QObject *parent)
+WLDData *WLDData::fromArchive(PFSArchive *a, QString name)
 {
     if(!a || !a->isOpen())
         return 0;
     QByteArray data = a->unpackFile(name);
     QBuffer buffer(&data);
     buffer.open(QBuffer::ReadOnly);
-    return fromStream(&buffer, parent);
+    return fromStream(&buffer);
 }
 
-WLDData *WLDData::fromStream(QIODevice *s, QObject *parent)
+WLDData *WLDData::fromStream(QIODevice *s)
 {
-    WLDData *wld = new WLDData(parent);
+    WLDData *wld = new WLDData();
     WLDReader reader(s, wld);
     WLDHeader h;
 
