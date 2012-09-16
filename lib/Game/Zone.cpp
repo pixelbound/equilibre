@@ -132,21 +132,9 @@ bool Zone::load(QString path, QString name)
 
 CharacterPack * Zone::loadCharacters(QString archivePath, QString wldName)
 {
-    if(wldName.isNull())
-    {
-        QString baseName = QFileInfo(archivePath).baseName();
-        if(baseName == "global_chr1")
-            baseName = "global_chr";
-        wldName = baseName + ".wld";
-    }
-    
-    CharacterPack *charPack = new CharacterPack();
-    if(!charPack->load(archivePath, wldName))
-    {
-        delete charPack;
-        return NULL;
-    }
-    m_charPacks.append(charPack);
+    CharacterPack *charPack = m_game->loadCharacters(archivePath, wldName, false);
+    if(charPack)
+        m_charPacks.append(charPack);
     return charPack;
 }
 
@@ -165,16 +153,6 @@ bool Zone::importLightSources(PFSArchive *archive)
     }
     delete wld;
     return true;
-}
-
-WLDCharActor * Zone::findCharacter(QString name) const
-{
-    foreach(CharacterPack *pack, m_charPacks)
-    {
-        if(pack->models().contains(name))
-            return pack->models().value(name);
-    }
-    return NULL;
 }
 
 void Zone::clear(RenderContext *renderCtx)

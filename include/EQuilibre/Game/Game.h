@@ -26,6 +26,7 @@
 #include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/RenderContext.h"
 
+class CharacterPack;
 class ObjectPack;
 class PFSArchive;
 class Zone;
@@ -62,12 +63,16 @@ public:
     
     Zone * zone() const;
     QList<ObjectPack *> objectPacks() const;
+    QList<CharacterPack *> characterPacks() const;
     
     Zone * loadZone(QString path, QString name);
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
+    CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null, bool own = true);
+    WLDCharActor * findCharacter(QString name) const;
     
 private:
     QList<ObjectPack *> m_objectPacks;
+    QList<CharacterPack *> m_charPacks;
     Zone *m_zone;
     bool m_showZone;
     bool m_showObjects;

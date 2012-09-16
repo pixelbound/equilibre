@@ -71,7 +71,6 @@ public:
     
     bool load(QString path, QString name);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
-    WLDCharActor * findCharacter(QString name) const;
 
     void clear(RenderContext *renderCtx);
     void draw(RenderContext *renderCtx);

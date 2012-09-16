@@ -55,7 +55,13 @@ void Game::clear(RenderContext *renderCtx)
         pack->clear(renderCtx);
         delete pack;
     }
+    foreach(CharacterPack *pack, m_charPacks)
+    {
+        pack->clear(renderCtx);
+        delete pack;
+    }
     m_objectPacks.clear();
+    m_charPacks.clear();
 }
 
 bool Game::showZone() const
@@ -137,6 +143,11 @@ QList<ObjectPack *> Game::objectPacks() const
     return m_objectPacks;
 }
 
+QList<CharacterPack *> Game::characterPacks() const
+{
+    return m_charPacks;
+}
+
 Zone * Game::loadZone(QString path, QString name)
 {
     Zone *zone = new Zone(this);
@@ -165,6 +176,37 @@ ObjectPack * Game::loadObjects(QString archivePath, QString wldName)
     }
     m_objectPacks.append(objPack);
     return objPack;
+}
+
+CharacterPack * Game::loadCharacters(QString archivePath, QString wldName, bool own)
+{
+    if(wldName.isNull())
+    {
+        QString baseName = QFileInfo(archivePath).baseName();
+        if(baseName == "global_chr1")
+            baseName = "global_chr";
+        wldName = baseName + ".wld";
+    }
+    
+    CharacterPack *charPack = new CharacterPack();
+    if(!charPack->load(archivePath, wldName))
+    {
+        delete charPack;
+        return NULL;
+    }
+    if(own)
+        m_charPacks.append(charPack);
+    return charPack;
+}
+
+WLDCharActor * Game::findCharacter(QString name) const
+{
+    foreach(CharacterPack *pack, m_charPacks)
+    {
+        if(pack->models().contains(name))
+            return pack->models().value(name);
+    }
+    return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
