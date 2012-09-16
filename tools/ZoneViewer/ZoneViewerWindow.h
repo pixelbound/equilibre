@@ -28,6 +28,7 @@ class ZoneScene;
 class RenderContext;
 class SceneViewport;
 class WLDSkeleton;
+class Game;
 class Zone;
 class RenderProgram;
 
@@ -41,7 +42,6 @@ public:
     ZoneScene * scene() const;
 
     bool loadZone(QString path, QString name);
-    bool loadCharacters(QString archivePath);
 
 private slots:
     void openArchive();
@@ -79,7 +79,7 @@ class ZoneScene : public Scene
 public:
     ZoneScene(RenderContext *renderCtx);
 
-    Zone * zone() const;
+    Game * game() const;
     int lightingMode() const;
     void setLightingMode(int newMode);
 
@@ -102,7 +102,7 @@ private:
     void drawFrame();
     
     double m_started;
-    Zone *m_zone;
+    Game *m_game;
     MouseState m_rotState;
     RenderProgram *m_program;
     int m_lightingMode;

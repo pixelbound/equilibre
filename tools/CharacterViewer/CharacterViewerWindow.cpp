@@ -34,6 +34,7 @@
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDSkeleton.h"
@@ -336,7 +337,7 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
 {
     m_renderCtx = renderCtx;
     m_sigma = 1.0;
-    m_zone = new Zone(this);
+    m_game = new Game();
     m_skinningMode = SoftwareSkinning;
     m_transState.last = vec3();
     m_rotState.last = vec3();
@@ -349,7 +350,12 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
 
 Zone * CharacterScene::zone() const
 {
-    return m_zone;
+    return m_game->zone();
+}
+
+Game * CharacterScene::game() const
+{
+    return m_game;
 }
 
 CharacterScene::SkinningMode CharacterScene::skinningMode() const
@@ -374,21 +380,21 @@ void CharacterScene::setSelectedModelName(QString name)
 
 WLDCharActor * CharacterScene::selectedCharacter() const
 {
-    return m_zone->findCharacter(m_meshName);
+    return zone()->findCharacter(m_meshName);
 }
 
 void CharacterScene::init()
 {
     m_started = currentTime();
-    foreach(CharacterPack *charPack, m_zone->characterPacks())
+    foreach(CharacterPack *charPack, zone()->characterPacks())
         charPack->upload(m_renderCtx);
-    foreach(ObjectPack *objPack, m_zone->objectPacks())
+    foreach(ObjectPack *objPack, zone()->objectPacks())
         objPack->upload(m_renderCtx);
 }
 
 CharacterPack * CharacterScene::loadCharacters(QString archivePath)
 {
-    CharacterPack *charPack = m_zone->loadCharacters(archivePath);
+    CharacterPack *charPack = zone()->loadCharacters(archivePath);
     if(charPack)
     {
         charPack->upload(m_renderCtx);

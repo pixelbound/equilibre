@@ -26,6 +26,7 @@
 #include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/RenderContext.h"
 
+class Game;
 class PFSArchive;
 class WLDData;
 class WLDModel;
@@ -59,7 +60,7 @@ class ObjectPack;
 class GAME_DLL Zone : public QObject
 {
 public:
-    Zone(QObject *parent = 0);
+    Zone(Game *game);
     virtual ~Zone();
 
     ZoneTerrain * terrain() const;
@@ -90,19 +91,6 @@ public:
     void setPlayerOrient(float rot);
     void setCameraOrient(const vec3 &rot);
     void step(float x, float y, float z);
-
-    bool showZone() const;
-    bool showObjects() const;
-    bool showFog() const;
-    bool cullObjects() const;
-    bool showSoundTriggers() const;
-    bool frustumIsFrozen() const;
-    
-    void setShowZone(bool show);
-    void setShowObjects(bool show);
-    void setShowFog(bool show);
-    void setCullObjects(bool enabled);
-    void setShowSoundTriggers(bool show);
     
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
@@ -114,6 +102,7 @@ private:
     bool importLightSources(PFSArchive *archive);
     static void frustumCullingCallback(WLDActor *actor, void *user);
 
+    Game *m_game;
     QString m_name;
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;
@@ -124,12 +113,6 @@ private:
     OctreeIndex *m_actorTree;
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
-    bool m_showZone;
-    bool m_showObjects;
-    bool m_showFog;
-    bool m_cullObjects;
-    bool m_showSoundTriggers;
-    bool m_frustumIsFrozen;
     Frustum m_frozenFrustum;
     // player and camera settings XXX replace by a WLDActor player
     vec3 m_playerPos;
@@ -210,57 +193,6 @@ private:
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
-};
-
-/*!
-  \brief Holds the resources needed to render static objects.
-  */
-class GAME_DLL ObjectPack
-{
-public:
-    ObjectPack();
-    virtual ~ObjectPack();
-    
-    const QMap<QString, WLDMesh *> & models() const;
-    MeshBuffer * buffer() const;
-    MaterialMap * materials() const;
-    
-    bool load(QString archivePath, QString wldName);
-    MeshBuffer * upload(RenderContext *renderCtx);
-    void clear(RenderContext *renderCtx);
-    
-private:
-    PFSArchive *m_archive;
-    WLDData *m_wld;
-    QMap<QString, WLDMesh *> m_models;
-    MeshBuffer *m_meshBuf;
-    MaterialMap *m_materials;
-};
-
-/*!
-  \brief Holds the resources needed to render characters.
-  */
-class GAME_DLL CharacterPack
-{
-public:
-    CharacterPack();
-    virtual ~CharacterPack();
-    
-    const QMap<QString, WLDCharActor *> models() const;
-    
-    bool load(QString archivePath, QString wldName);
-    void upload(RenderContext *renderCtx);
-    void clear(RenderContext *renderCtx);
-    
-private:
-    void importSkeletons(WLDData *wld);
-    void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
-    void importCharacters(PFSArchive *archive, WLDData *wld);
-    void upload(RenderContext *renderCtx, WLDCharActor *actor);
-    
-    PFSArchive *m_archive;
-    WLDData *m_wld;
-    QMap<QString, WLDCharActor *> m_models;
 };
 
 #endif

@@ -30,6 +30,8 @@ class WLDSkeleton;
 class WLDCharActor;
 class CharacterScene;
 class CharacterPack;
+class Game;
+class Zone;
 
 class CharacterViewerWindow : public QMainWindow
 {
@@ -96,7 +98,8 @@ public:
 
     void init();
 
-    Zone * zone() const;
+    Zone * zone() const; // XXX remove.
+    Game * game() const;
     SkinningMode skinningMode() const;
     void setSkinningMode(SkinningMode newMode);
     
@@ -125,7 +128,7 @@ private:
     vec3 m_delta;
     vec3 m_theta;
     float m_sigma;
-    Zone *m_zone;
+    Game *m_game;
     SkinningMode m_skinningMode;
     // viewer settings
     MouseState m_transState;

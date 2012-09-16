@@ -18,13 +18,9 @@
 #define EQUILIBRE_SCENE_H
 
 #include <QObject>
-#include <QMap>
 #include "EQuilibre/Render/Platform.h"
-#include "EQuilibre/Render/Vertex.h"
+#include "EQuilibre/Render/LinearMath.h"
 
-class WLDModel;
-class WLDActor;
-class Zone;
 class RenderContext;
 class QSettings;
 class QKeyEvent;

@@ -1,5 +1,6 @@
 set(LIB_SOURCES
     Fragments.cpp
+    Game.cpp
     PFSArchive.cpp
     SoundTrigger.cpp
     StreamReader.cpp
@@ -13,6 +14,7 @@ set(LIB_SOURCES
 set(LIB_HEADERS
     ../../include/EQuilibre/Game/WLDData.h
     ../../include/EQuilibre/Game/Fragments.h
+    ../../include/EQuilibre/Game/Game.h
     ../../include/EQuilibre/Game/WLDModel.h
     ../../include/EQuilibre/Game/SoundTrigger.h
     ../../include/EQuilibre/Game/StreamReader.h

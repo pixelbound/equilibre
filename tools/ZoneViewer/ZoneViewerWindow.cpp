@@ -31,6 +31,7 @@
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDSkeleton.h"
@@ -95,16 +96,16 @@ void ZoneViewerWindow::initMenus()
     m_showFpsAction->setCheckable(true);
     m_showZoneAction = new QAction("Show Zone", this);
     m_showZoneAction->setCheckable(true);
-    m_showZoneAction->setChecked(m_scene->zone()->showZone());
+    m_showZoneAction->setChecked(m_scene->game()->showZone());
     m_showZoneObjectsAction = new QAction("Show Zone Objects", this);
     m_showZoneObjectsAction->setCheckable(true);
     m_showFogAction = new QAction("Show Fog", this);
     m_showFogAction->setCheckable(true);
-    m_showFogAction->setChecked(m_scene->zone()->showFog());
-    m_showZoneObjectsAction->setChecked(m_scene->zone()->showObjects());
+    m_showFogAction->setChecked(m_scene->game()->showFog());
+    m_showZoneObjectsAction->setChecked(m_scene->game()->showObjects());
     m_cullZoneObjectsAction = new QAction("Frustum Culling of Zone Objects", this);
     m_cullZoneObjectsAction->setCheckable(true);
-    m_cullZoneObjectsAction->setChecked(m_scene->zone()->cullObjects());
+    m_cullZoneObjectsAction->setChecked(m_scene->game()->cullObjects());
     m_showSoundTriggersAction = new QAction("Show Sound Triggers", this);
     m_showSoundTriggersAction->setCheckable(true);
 
@@ -175,14 +176,8 @@ void ZoneViewerWindow::selectAssetDir()
 bool ZoneViewerWindow::loadZone(QString path, QString name)
 {
     m_viewport->makeCurrent();
-    m_scene->zone()->clear(m_renderCtx);
-    return m_scene->zone()->load(path, name);
-}
-
-bool ZoneViewerWindow::loadCharacters(QString archivePath)
-{
-    m_viewport->makeCurrent();
-    return m_scene->zone()->loadCharacters(archivePath);
+    m_scene->game()->clear(m_renderCtx);
+    return (m_scene->game()->loadZone(path, name) != NULL);
 }
 
 void ZoneViewerWindow::updateMenus()
@@ -244,16 +239,16 @@ void ZoneViewerWindow::setDebugDiffuse()
 
 ZoneScene::ZoneScene(RenderContext *renderCtx) : Scene(renderCtx)
 {
-    m_zone = new Zone(this);
+    m_game = new Game();
     m_program = renderCtx->programByID(RenderContext::BasicShader);
     m_lightingMode = (int)RenderProgram::NoLighting;
     m_rotState.last = vec3();
     m_rotState.active = false;
 }
 
-Zone * ZoneScene::zone() const
+Game * ZoneScene::game() const
 {
-    return m_zone;
+    return m_game;
 }
 
 int ZoneScene::lightingMode() const
@@ -268,27 +263,27 @@ void ZoneScene::setLightingMode(int newMode)
 
 void ZoneScene::showZone(bool show)
 {
-    m_zone->setShowZone(show);
+    m_game->setShowZone(show);
 }
 
 void ZoneScene::showZoneObjects(bool show)
 {
-    m_zone->setShowObjects(show);
+    m_game->setShowObjects(show);
 }
 
 void ZoneScene::showFog(bool show)
 {
-    m_zone->setShowFog(show);
+    m_game->setShowFog(show);
 }
 
 void ZoneScene::setFrustumCulling(bool enabled)
 {
-    m_zone->setCullObjects(enabled);
+    m_game->setCullObjects(enabled);
 }
 
 void ZoneScene::showSoundTriggers(bool show)
 {
-    m_zone->setShowSoundTriggers(show);
+    m_game->setShowSoundTriggers(show);
 }
 
 void ZoneScene::init()
@@ -299,7 +294,9 @@ void ZoneScene::init()
 
 void ZoneScene::draw()
 {
-    if(m_renderCtx->beginFrame(m_zone->fogParams().color))
+    Zone *zone = m_game->zone();
+    vec4 clearColor = zone ? zone->fogParams().color : vec4(0.4, 0.4, 0.6, 0.1);
+    if(m_renderCtx->beginFrame(clearColor))
     {
         clearLog();
         drawFrame();
@@ -309,25 +306,30 @@ void ZoneScene::draw()
 
 void ZoneScene::drawFrame()
 {
-    vec3 camPos = m_zone->playerPos() + m_zone->cameraPos();
+    Zone *zone = m_game->zone();
+    if(!zone)
+        return;
+    
+    vec3 camPos = zone->playerPos() + zone->cameraPos();
     log(QString("%1 %2 %3")
         .arg(camPos.x, 0, 'f', 2)
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
     m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
-    m_zone->draw(m_renderCtx);
+    zone->draw(m_renderCtx);
     
-    if(m_zone->terrain())
+    ZoneTerrain *terrain = zone->terrain();
+    if(terrain)
     {
-        uint32_t currentRegion = m_zone->terrain()->currentRegion();
+        uint32_t currentRegion = terrain->currentRegion();
         if(currentRegion)
             log(QString("Current region: %1").arg(currentRegion));
     }
     
-    if(m_zone->showSoundTriggers())
+    if(m_game->showSoundTriggers())
     {
         QVector<SoundTrigger *> triggers;
-        m_zone->currentSoundTriggers(triggers);
+        zone->currentSoundTriggers(triggers);
         foreach(SoundTrigger *trigger, triggers)
         {
             SoundEntry e = trigger->entry();
@@ -338,46 +340,66 @@ void ZoneScene::drawFrame()
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)
 {
-    float dist = 10.0;
+    const float dist = 10.0;
+    bool doStep = false;
+    vec3 stepDist;
     int key = e->key();
     if(key == Qt::Key_Q)
-        m_zone->step(0.0, dist, 0.0);
+    {
+        stepDist = vec3(0.0, dist, 0.0);
+        doStep = true;
+    }
     else if(key == Qt::Key_D)
-        m_zone->step(0.0, -dist, 0.0);
+    {
+        stepDist = vec3(0.0, -dist, 0.0);
+        doStep = true;
+    }
     else if(key == Qt::Key_Z)
-        m_zone->step(dist, 0.0, 0.0);
+    {
+        stepDist = vec3(dist, 0.0, 0.0);
+        doStep = true;
+    }
     else if(key == Qt::Key_S)
-        m_zone->step(-dist, 0.0, 0.0);
+    {
+        stepDist = vec3(-dist, 0.0, 0.0);
+        doStep = true;
+    }
     else if(key == Qt::Key_Space)
     {
-        if(m_zone->frustumIsFrozen())
-            m_zone->unFreezeFrustum();
+        if(m_game->frustumIsFrozen())
+            m_game->unFreezeFrustum();
         else
-            m_zone->freezeFrustum(m_renderCtx);
+            m_game->freezeFrustum(m_renderCtx);
     }
+    
+    Zone *zone = m_game->zone();
+    if(doStep && zone)
+        zone->step(stepDist.x, stepDist.y, stepDist.z);
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)
 {
-    if(m_rotState.active)
+    Zone *zone = m_game->zone();
+    if(m_rotState.active && zone)
     {
         int dx = m_rotState.x0 - e->x();
         int dy = m_rotState.y0 - e->y();
-        vec3 camOrient = m_zone->cameraOrient();
+        vec3 camOrient = zone->cameraOrient();
         camOrient.x = (m_rotState.last.x - (dy * 1.0));
-        m_zone->setCameraOrient(camOrient);
-        m_zone->setPlayerOrient(m_rotState.last.z - (dx * 1.0));
+        zone->setCameraOrient(camOrient);
+        zone->setPlayerOrient(m_rotState.last.z - (dx * 1.0));
     }
 }
 
 void ZoneScene::mousePressEvent(QMouseEvent *e)
 {
-    if(e->button() & Qt::RightButton)
+    Zone *zone = m_game->zone();
+    if((e->button() & Qt::RightButton) && zone)
     {
         m_rotState.active = true;
         m_rotState.x0 = e->x();
         m_rotState.y0 = e->y();
-        m_rotState.last = vec3(0.0, 0.0, m_zone->playerOrient()) + m_zone->cameraOrient();
+        m_rotState.last = vec3(0.0, 0.0, zone->playerOrient()) + zone->cameraOrient();
     }
 }
 
