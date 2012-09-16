@@ -146,12 +146,12 @@ public:
     virtual ~ZoneTerrain();
     
     const AABox & bounds() const;
-    QVector<WLDStaticActor *> & visibleZoneParts();
 
     bool load(PFSArchive *archive, WLDData *wld);
     void addTo(OctreeIndex *tree);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void clear(RenderContext *renderCtx);
+    void addVisible(WLDStaticActor *actor);
     void resetVisible();
 
 private:
@@ -161,7 +161,7 @@ private:
     uint32_t m_regionCount;
     Zone *m_zone;
     std::vector<WLDStaticActor *> m_regionActors;
-    QVector<WLDStaticActor *> m_visibleZoneParts;
+    std::vector<WLDStaticActor *> m_visibleRegions;
     MeshBuffer *m_zoneBuffer;
     MaterialMap *m_zoneMaterials;
     AABox m_zoneBounds;

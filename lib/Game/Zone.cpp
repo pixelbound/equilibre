@@ -267,7 +267,7 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
         if(staticActor->frag())
             z->objects()->visibleObjects().append(staticActor);
         else
-            z->terrain()->visibleZoneParts().append(staticActor);
+            z->terrain()->addVisible(staticActor);
     }
 }
 
@@ -469,11 +469,6 @@ const AABox & ZoneTerrain::bounds() const
     return m_zoneBounds;
 }
 
-QVector<WLDStaticActor *> & ZoneTerrain::visibleZoneParts()
-{
-    return m_visibleZoneParts;
-}
-
 void ZoneTerrain::clear(RenderContext *renderCtx)
 {
     for(uint32_t i = 0; i < m_regionCount; i++)
@@ -519,6 +514,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
         return false;
     m_regionCount = regionDefs.count();
     m_regionActors.resize(m_regionCount, NULL);
+    m_visibleRegions.reserve(m_regionCount);
     
     // Load zone regions as model parts, computing the zone's bounding box.
     m_zoneBounds = AABox();
@@ -562,9 +558,14 @@ void ZoneTerrain::addTo(OctreeIndex *tree)
     }
 }
 
+void ZoneTerrain::addVisible(WLDStaticActor *actor)
+{
+    m_visibleRegions.push_back(actor);
+}
+
 void ZoneTerrain::resetVisible()
 {
-    m_visibleZoneParts.clear();
+    m_visibleRegions.clear();
 }
 
 MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
@@ -616,9 +617,10 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
-    foreach(WLDActor *actor, m_visibleZoneParts)
+    uint32_t visibleRegions = m_visibleRegions.size();
+    for(uint32_t i = 0; i < visibleRegions; i++)
     {
-        WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
+        WLDStaticActor *staticActor = m_visibleRegions[i];
         if(staticActor)
             m_zoneBuffer->addMaterialGroups(staticActor->mesh()->data());
     }
