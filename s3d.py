@@ -130,7 +130,7 @@ if __name__ == "__main__":
                 print("%s: %s" % (path, fileName))
     
     def extractFiles(path, destPath):
-        os.makedirs(destPath, exist_ok=True)
+        os.makedirs(destPath)
         with S3DArchive(path) as a:
             for fileName in a.files:
                 filePath = os.path.join(destPath, fileName)
