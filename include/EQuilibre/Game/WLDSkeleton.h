@@ -22,7 +22,7 @@
 #include <QVector>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Geometry.h"
-#include "WLDFragment.h"
+#include "EQuilibre/Game/WLDData.h"
 
 class HierSpriteDefFragment;
 class TrackDefFragment;

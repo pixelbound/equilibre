@@ -24,7 +24,7 @@
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
-#include "EQuilibre/Game/WLDFragment.h"
+#include "EQuilibre/Game/WLDData.h"
 #include "EQuilibre/Game/WLDSkeleton.h"
 
 typedef QPair<uint16_t, uint16_t> vec2us;

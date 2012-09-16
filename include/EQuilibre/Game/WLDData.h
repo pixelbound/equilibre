@@ -21,12 +21,34 @@
 #include <QList>
 #include <QByteArray>
 #include "EQuilibre/Render/Platform.h"
-#include "EQuilibre/Game/WLDFragment.h"
 #include "EQuilibre/Game/StreamReader.h"
 
 class QIODevice;
 class PFSArchive;
+class WLDFragment;
+class WLDFragmentRef;
 class WLDFragmentTable;
+class WLDReader;
+
+/*!
+  \brief Describes the header of fragment contained in a .wld file.
+  */
+typedef struct
+{
+    uint32_t size;
+    uint32_t kind;
+    int32_t nameRef;
+} WLDFragmentHeader;
+
+/*!
+  \brief Data type found in WLD files that serve an unknown purpose.
+  */
+class WLDPair
+{
+public:
+    uint32_t first;
+    float second;
+};
 
 /*!
   \brief Holds the content of a .wld file (mostly a list of fragments such as
@@ -63,6 +85,58 @@ private:
     QByteArray m_stringData;
     WLDFragmentTable *m_fragTable;
     QList<WLDFragment *> m_fragments;
+};
+
+/*!
+  \brief Holds the content of a WLD fragment (e.g. texture, mesh, skeleton, etc).
+  */
+class GAME_DLL WLDFragment
+{
+public:
+    WLDFragment();
+    WLDFragment(uint32_t kind);
+    virtual ~WLDFragment();
+    
+    static bool readHeader(WLDReader *sr, WLDFragmentHeader &fh, QString *name);
+
+    uint32_t kind() const;
+    void setKind(uint32_t newKind);
+    
+    QString name() const;
+    void setName(QString newName);
+
+    virtual bool unpack(WLDReader *s);
+
+    template<typename T>
+    T * cast()
+    {
+        if(m_kind == T::ID)
+            return static_cast<T *>(this);
+        else
+            return 0;
+    }
+
+private:
+    uint32_t m_kind;
+    QString m_name;
+};
+
+/*!
+  \brief Refers to another fragment, either directly or through a name.
+  */
+class GAME_DLL WLDFragmentRef
+{
+public:
+    WLDFragmentRef();
+    WLDFragmentRef(WLDFragment *f);
+    WLDFragmentRef(QString name);
+
+    WLDFragment *fragment() const;
+    QString name() const;
+
+private:
+    WLDFragment *m_fragment;
+    QString m_name;
 };
 
 class GAME_DLL WLDReader : public StreamReader
