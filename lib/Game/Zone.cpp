@@ -284,6 +284,8 @@ void Zone::draw(RenderContext *renderCtx)
     // Build a list of visible actors.
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
+    m_terrain->findCurrentRegion(realFrustum.eye());
+    m_terrain->showNearbyRegions(realFrustum);
     
     // Setup the render program.
     RenderProgram *prog = renderCtx->programByID(RenderContext::BasicShader);
@@ -452,7 +454,9 @@ ZoneTerrain::ZoneTerrain(Zone *zone)
 {
     m_zone = zone;
     m_regionCount = 0;
+    m_currentRegion = 0;
     m_zoneWld = NULL;
+    m_regionTree = NULL;
     m_zoneBuffer = NULL;
     m_zoneMaterials = NULL;
     m_zoneStat = NULL;
@@ -469,9 +473,14 @@ const AABox & ZoneTerrain::bounds() const
     return m_zoneBounds;
 }
 
+uint32_t ZoneTerrain::currentRegion() const
+{
+    return m_currentRegion;
+}
+
 void ZoneTerrain::clear(RenderContext *renderCtx)
 {
-    for(uint32_t i = 0; i < m_regionCount; i++)
+    for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *part = m_regionActors[i];
         if(part)
@@ -481,6 +490,10 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
         }
     }
     m_regionActors.clear();
+    m_visibleRegions.clear();
+    m_regionCount = 0;
+    m_currentRegion = 0;
+    m_regionTree = NULL;
     
     if(m_zoneBuffer)
     {
@@ -499,7 +512,6 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
         m_zoneStat = NULL;
         m_zoneStatGPU = NULL;
     }
-    m_regionCount = 0;
     m_zoneWld = NULL;
 }
 
@@ -509,11 +521,15 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
         return false;
     m_zoneWld = wld;
     
+    WLDFragmentArray<RegionTreeFragment> regionTrees = wld->table()->byKind<RegionTreeFragment>();
+    if(regionTrees.count() != 1)
+        return false;
+    m_regionTree = regionTrees[0];
     WLDFragmentArray<RegionFragment> regionDefs = wld->table()->byKind<RegionFragment>();
     if(regionDefs.count() == 0)
         return false;
     m_regionCount = regionDefs.count();
-    m_regionActors.resize(m_regionCount, NULL);
+    m_regionActors.resize(m_regionCount + 1, NULL);
     m_visibleRegions.reserve(m_regionCount);
     
     // Load zone regions as model parts, computing the zone's bounding box.
@@ -527,7 +543,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
         if((name.length() < 2) || !name.startsWith("R") || (typePos < 0))
             continue;
         bool ok = false;
-        int regionID = name.mid(1, typePos - 1).toInt(&ok) - 1;
+        uint32_t regionID = (uint32_t)name.mid(1, typePos - 1).toInt(&ok);
         if(!ok || (regionID >= m_regionCount))
             continue;
         WLDMesh *meshPart = new WLDMesh(meshDef, regionID);
@@ -550,7 +566,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
 
 void ZoneTerrain::addTo(OctreeIndex *tree)
 {
-    for(uint32_t i = 0; i < m_regionCount; i++)
+    for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)
@@ -558,9 +574,50 @@ void ZoneTerrain::addTo(OctreeIndex *tree)
     }
 }
 
+void ZoneTerrain::showNearbyRegions(const Frustum &frustum)
+{
+    if(m_currentRegion == 0)
+        return;
+    WLDFragmentArray<RegionFragment> regions = m_zoneWld->table()->byKind<RegionFragment>();
+    RegionFragment *region = regions[m_currentRegion - 1];
+    uint32_t count = region->m_nearbyRegions.count();
+    for(uint32_t i = 0; i < count; i++)
+    {
+        uint32_t regionID = region->m_nearbyRegions[i];
+        Q_ASSERT(regionID <= m_regionCount);
+        WLDStaticActor *actor = m_regionActors[regionID];
+        if(actor)
+        {
+            if(frustum.containsAABox(actor->boundsAA()) != OUTSIDE)
+                m_visibleRegions.push_back(actor);
+        }
+    }
+}
+
+uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos)
+{
+    return (m_currentRegion = findCurrentRegion(cameraPos, m_regionTree->m_nodes.constData(), 1));
+}
+
+uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos, const RegionTreeNode *nodes, uint32_t nodeIdx)
+{
+    const RegionTreeNode &node = nodes[nodeIdx-1];
+    if(node.regionID == 0)
+    {
+        float distance = vec3::dot(node.normal, cameraPos) + node.distance;
+        uint32_t newNodeIdx = (distance >= 0.0f) ? node.left : node.right;
+        return (newNodeIdx > 0) ? findCurrentRegion(cameraPos, nodes, newNodeIdx) : 0;
+    }
+    else
+    {
+        // Leaf node.
+        return node.regionID;
+    }
+}
+
 void ZoneTerrain::addVisible(WLDStaticActor *actor)
 {
-    m_visibleRegions.push_back(actor);
+    //m_visibleRegions.push_back(actor);
 }
 
 void ZoneTerrain::resetVisible()
@@ -579,7 +636,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
-    for(uint32_t i = 0; i < m_regionCount; i++)
+    for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)

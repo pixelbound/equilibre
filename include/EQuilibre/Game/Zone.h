@@ -41,6 +41,9 @@ class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialMap;
 class ActorDefFragment;
+class RegionTreeFragment;
+class RegionFragment;
+struct RegionTreeNode;
 class SoundTrigger;
 class RenderContext;
 class FrameStat;
@@ -146,6 +149,7 @@ public:
     virtual ~ZoneTerrain();
     
     const AABox & bounds() const;
+    uint32_t currentRegion() const;
 
     bool load(PFSArchive *archive, WLDData *wld);
     void addTo(OctreeIndex *tree);
@@ -153,15 +157,20 @@ public:
     void clear(RenderContext *renderCtx);
     void addVisible(WLDStaticActor *actor);
     void resetVisible();
+    void showNearbyRegions(const Frustum &frustum);
+    uint32_t findCurrentRegion(const vec3 &cameraPos);
 
 private:
+    uint32_t findCurrentRegion(const vec3 &cameraPos, const RegionTreeNode *nodes, uint32_t nodeIdx);
     MeshBuffer * upload(RenderContext *renderCtx);
 
     WLDData *m_zoneWld;
     uint32_t m_regionCount;
+    uint32_t m_currentRegion;
     Zone *m_zone;
     std::vector<WLDStaticActor *> m_regionActors;
     std::vector<WLDStaticActor *> m_visibleRegions;
+    RegionTreeFragment *m_regionTree;
     MeshBuffer *m_zoneBuffer;
     MaterialMap *m_zoneMaterials;
     AABox m_zoneBounds;

@@ -310,12 +310,19 @@ void ZoneScene::draw()
 void ZoneScene::drawFrame()
 {
     vec3 camPos = m_zone->playerPos() + m_zone->cameraPos();
-    log(QString("%1 %2 %3\n")
+    log(QString("%1 %2 %3")
         .arg(camPos.x, 0, 'f', 2)
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
     m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
     m_zone->draw(m_renderCtx);
+    
+    if(m_zone->terrain())
+    {
+        uint32_t currentRegion = m_zone->terrain()->currentRegion();
+        if(currentRegion)
+            log(QString("Current region: %1").arg(currentRegion));
+    }
     
     if(m_zone->showSoundTriggers())
     {
