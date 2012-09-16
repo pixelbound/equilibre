@@ -17,6 +17,7 @@
 #ifndef EQUILIBRE_ZONE_H
 #define EQUILIBRE_ZONE_H
 
+#include <vector>
 #include <QObject>
 #include <QList>
 #include <QMap>
@@ -156,8 +157,10 @@ public:
 private:
     MeshBuffer * upload(RenderContext *renderCtx);
 
+    WLDData *m_zoneWld;
+    uint32_t m_regionCount;
     Zone *m_zone;
-    QVector<WLDStaticActor *> m_zoneParts;
+    std::vector<WLDStaticActor *> m_regionActors;
     QVector<WLDStaticActor *> m_visibleZoneParts;
     MeshBuffer *m_zoneBuffer;
     MaterialMap *m_zoneMaterials;

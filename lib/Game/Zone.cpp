@@ -232,11 +232,12 @@ void Zone::clear(RenderContext *renderCtx)
         m_terrain->clear(renderCtx);
         delete m_terrain;
     }
+    m_objects = NULL;
+    m_terrain = NULL;
     delete m_actorTree;
     delete m_mainWld;
     delete m_mainArchive;
-    m_objects = NULL;
-    m_terrain = NULL;
+    m_actorTree = NULL;
     m_mainWld = 0;
     m_mainArchive = 0;
     m_playerPos = vec3(0.0, 0.0, 0.0);
@@ -450,6 +451,8 @@ void Zone::step(float distForward, float distSideways, float distUpDown)
 ZoneTerrain::ZoneTerrain(Zone *zone)
 {
     m_zone = zone;
+    m_regionCount = 0;
+    m_zoneWld = NULL;
     m_zoneBuffer = NULL;
     m_zoneMaterials = NULL;
     m_zoneStat = NULL;
@@ -473,12 +476,16 @@ QVector<WLDStaticActor *> & ZoneTerrain::visibleZoneParts()
 
 void ZoneTerrain::clear(RenderContext *renderCtx)
 {
-    foreach(WLDStaticActor *part, m_zoneParts)
+    for(uint32_t i = 0; i < m_regionCount; i++)
     {
-        delete part->mesh();
-        delete part;
+        WLDStaticActor *part = m_regionActors[i];
+        if(part)
+        {
+            delete part->mesh();
+            delete part;
+        }
     }
-    m_zoneParts.clear();
+    m_regionActors.clear();
     
     if(m_zoneBuffer)
     {
@@ -497,22 +504,39 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
         m_zoneStat = NULL;
         m_zoneStatGPU = NULL;
     }
+    m_regionCount = 0;
+    m_zoneWld = NULL;
 }
 
 bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
 {
     if(!archive || !wld)
         return false;
+    m_zoneWld = wld;
+    
+    WLDFragmentArray<RegionFragment> regionDefs = wld->table()->byKind<RegionFragment>();
+    if(regionDefs.count() == 0)
+        return false;
+    m_regionCount = regionDefs.count();
+    m_regionActors.resize(m_regionCount, NULL);
     
     // Load zone regions as model parts, computing the zone's bounding box.
-    int partID = 0;
     m_zoneBounds = AABox();
     WLDFragmentArray<MeshDefFragment> meshDefs = wld->table()->byKind<MeshDefFragment>();
     for(uint32_t i = 0; i < meshDefs.count(); i++)
     {
-        WLDMesh *meshPart = new WLDMesh(meshDefs[i], partID++);
+        MeshDefFragment *meshDef = meshDefs[i];
+        QString name = meshDef->name();
+        int typePos = name.indexOf("_DMSPRITEDEF");
+        if((name.length() < 2) || !name.startsWith("R") || (typePos < 0))
+            continue;
+        bool ok = false;
+        int regionID = name.mid(1, typePos - 1).toInt(&ok) - 1;
+        if(!ok || (regionID >= m_regionCount))
+            continue;
+        WLDMesh *meshPart = new WLDMesh(meshDef, regionID);
         m_zoneBounds.extendTo(meshPart->boundsAA());
-        m_zoneParts.append(new WLDStaticActor(NULL, meshPart));
+        m_regionActors[regionID] = new WLDStaticActor(NULL, meshPart);
     }
     vec3 padding(1.0, 1.0, 1.0);
     m_zoneBounds.low = m_zoneBounds.low - padding;
@@ -530,8 +554,12 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
 
 void ZoneTerrain::addTo(OctreeIndex *tree)
 {
-    foreach(WLDStaticActor *actor, m_zoneParts)
-        tree->add(actor);   
+    for(uint32_t i = 0; i < m_regionCount; i++)
+    {
+        WLDStaticActor *actor = m_regionActors[i];
+        if(actor)
+            tree->add(actor); 
+    }
 }
 
 void ZoneTerrain::resetVisible()
@@ -550,10 +578,14 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
-    foreach(WLDStaticActor *part, m_zoneParts)
+    for(uint32_t i = 0; i < m_regionCount; i++)
     {
-        MeshData *meshData = part->mesh()->importFrom(meshBuf);
-        meshData->updateTexCoords(m_zoneMaterials);
+        WLDStaticActor *actor = m_regionActors[i];
+        if(actor)
+        {
+            MeshData *meshData = actor->mesh()->importFrom(meshBuf);
+            meshData->updateTexCoords(m_zoneMaterials);
+        }
     }
 #else
     meshBuf = WLDMesh::combine(m_zoneParts);
