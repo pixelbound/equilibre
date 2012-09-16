@@ -122,7 +122,6 @@ bool Zone::load(QString path, QString name)
     }
     
     m_actorTree = new OctreeIndex(m_objects->bounds(), 8);
-    m_terrain->addTo(m_actorTree);
     m_objects->addTo(m_actorTree);
     
     // Load the zone's light sources.
@@ -262,13 +261,8 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
 {
     Zone *z = (Zone *)user;
     WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
-    if(staticActor)
-    {
-        if(staticActor->frag())
-            z->objects()->visibleObjects().append(staticActor);
-        else
-            z->terrain()->addVisible(staticActor);
-    }
+    if(staticActor && staticActor->frag())
+        z->objects()->visibleObjects().append(staticActor);
 }
 
 void Zone::draw(RenderContext *renderCtx)
@@ -284,8 +278,10 @@ void Zone::draw(RenderContext *renderCtx)
     // Build a list of visible actors.
     Frustum &realFrustum(m_frustumIsFrozen ? m_frozenFrustum : frustum);
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_cullObjects);
-    m_terrain->findCurrentRegion(realFrustum.eye());
-    m_terrain->showNearbyRegions(realFrustum);
+    if(m_terrain->findCurrentRegion(realFrustum.eye()))
+        m_terrain->showNearbyRegions(realFrustum);
+    else
+        m_terrain->showAllRegions(realFrustum);
     
     // Setup the render program.
     RenderProgram *prog = renderCtx->programByID(RenderContext::BasicShader);
@@ -564,13 +560,16 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     return true;
 }
 
-void ZoneTerrain::addTo(OctreeIndex *tree)
+void ZoneTerrain::showAllRegions(const Frustum &frustum)
 {
-    for(uint32_t i = 1; i <= m_regionCount; i++)
+    for(uint32_t i = 0; i < m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)
-            tree->add(actor); 
+        {
+            if(frustum.containsAABox(actor->boundsAA()) != OUTSIDE)
+                m_visibleRegions.push_back(actor);
+        }
     }
 }
 
@@ -601,23 +600,19 @@ uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos)
 
 uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos, const RegionTreeNode *nodes, uint32_t nodeIdx)
 {
+    if(nodeIdx == 0)
+        return 0;
     const RegionTreeNode &node = nodes[nodeIdx-1];
     if(node.regionID == 0)
     {
         float distance = vec3::dot(node.normal, cameraPos) + node.distance;
-        uint32_t newNodeIdx = (distance >= 0.0f) ? node.left : node.right;
-        return (newNodeIdx > 0) ? findCurrentRegion(cameraPos, nodes, newNodeIdx) : 0;
+        return findCurrentRegion(cameraPos, nodes, (distance >= 0.0f) ? node.left : node.right);
     }
     else
     {
         // Leaf node.
         return node.regionID;
     }
-}
-
-void ZoneTerrain::addVisible(WLDStaticActor *actor)
-{
-    //m_visibleRegions.push_back(actor);
 }
 
 void ZoneTerrain::resetVisible()

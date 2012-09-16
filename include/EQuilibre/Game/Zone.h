@@ -152,11 +152,10 @@ public:
     uint32_t currentRegion() const;
 
     bool load(PFSArchive *archive, WLDData *wld);
-    void addTo(OctreeIndex *tree);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void clear(RenderContext *renderCtx);
-    void addVisible(WLDStaticActor *actor);
     void resetVisible();
+    void showAllRegions(const Frustum &frustum);
     void showNearbyRegions(const Frustum &frustum);
     uint32_t findCurrentRegion(const vec3 &cameraPos);
 
