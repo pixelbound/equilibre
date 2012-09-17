@@ -130,7 +130,6 @@ def importWldMesh(archive, frag, importTextures=True):
                 for polyID in range(pos, pos + count):
                     td = texture.data[polyID]
                     td.image = texImage.image
-                    td.use_image = True
                     #mesh.polygons[polyID].material_index = texID
                     mesh.faces[polyID].material_index = texID
                     poly = frag.polygons[polyID]
