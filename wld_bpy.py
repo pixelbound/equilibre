@@ -131,11 +131,16 @@ def importWldMesh(archive, frag, importTextures=True):
                     td = texture.data[polyID]
                     td.image = texImage.image
                     td.use_image = True
+                    #mesh.polygons[polyID].material_index = texID
                     mesh.faces[polyID].material_index = texID
                     poly = frag.polygons[polyID]
                     polyTexCoords = [frag.texCoords[poly[i]] for i in range(1, 4)]
                     td.uv1, td.uv2, td.uv3 = normalizeTexCoords(polyTexCoords)
             pos += count
+        # Blender 2.63+ (really slow and doesn't seem to work).
+        #uv_layer = mesh.uv_layers[0]
+        #for i in range(0, len(frag.texCoords)):
+        #    uv_layer.data[i].uv = frag.texCoords[i]
     # update mesh to allow proper display
     mesh.validate()
     mesh.update()
