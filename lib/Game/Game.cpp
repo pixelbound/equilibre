@@ -29,6 +29,7 @@
 Game::Game()
 {
     m_zone = NULL;
+    m_sky = NULL;
     m_showZone = true;
     m_showObjects = true;
     m_showFog = false;
@@ -44,11 +45,12 @@ Game::~Game()
 
 void Game::clear(RenderContext *renderCtx)
 {
-    if(m_zone)
+    clearZone(renderCtx);
+    if(m_sky)
     {
-        m_zone->clear(renderCtx);
-        delete m_zone;
-        m_zone = NULL;
+        m_sky->clear(renderCtx);
+        delete m_sky;
+        m_sky = NULL;
     }
     foreach(ObjectPack *pack, m_objectPacks)
     {
@@ -62,6 +64,16 @@ void Game::clear(RenderContext *renderCtx)
     }
     m_objectPacks.clear();
     m_charPacks.clear();
+}
+
+void Game::clearZone(RenderContext *renderCtx)
+{
+    if(m_zone)
+    {
+        m_zone->clear(renderCtx);
+        delete m_zone;
+        m_zone = NULL;
+    }
 }
 
 bool Game::showZone() const
@@ -138,6 +150,11 @@ Zone * Game::zone() const
     return m_zone;
 }
 
+ZoneSky * Game::sky() const
+{
+    return m_sky;
+}
+
 QList<ObjectPack *> Game::objectPacks() const
 {
     return m_objectPacks;
@@ -160,6 +177,18 @@ Zone * Game::loadZone(QString path, QString name)
     }
     m_zone = zone;
     return zone;
+}
+
+bool Game::loadSky(QString path)
+{
+    ZoneSky *sky = new ZoneSky();
+    if(!sky->load(path))
+    {
+        delete sky;
+        return false;
+    }
+    m_sky = sky;
+    return true;
 }
 
 ObjectPack * Game::loadObjects(QString archivePath, QString wldName)

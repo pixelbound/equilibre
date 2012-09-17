@@ -30,6 +30,7 @@ class CharacterPack;
 class ObjectPack;
 class PFSArchive;
 class Zone;
+class ZoneSky;
 class WLDCharActor;
 class WLDMesh;
 class WLDData;
@@ -43,6 +44,7 @@ public:
     Game();
     virtual ~Game();
     
+    void clearZone(RenderContext *renderCtx);
     void clear(RenderContext *renderCtx);
 
     bool showZone() const;
@@ -62,10 +64,12 @@ public:
     void unFreezeFrustum();
     
     Zone * zone() const;
+    ZoneSky * sky() const;
     QList<ObjectPack *> objectPacks() const;
     QList<CharacterPack *> characterPacks() const;
     
     Zone * loadZone(QString path, QString name);
+    bool loadSky(QString path);
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null, bool own = true);
     WLDCharActor * findCharacter(QString name) const;
@@ -74,6 +78,7 @@ private:
     QList<ObjectPack *> m_objectPacks;
     QList<CharacterPack *> m_charPacks;
     Zone *m_zone;
+    ZoneSky *m_sky;
     bool m_showZone;
     bool m_showObjects;
     bool m_showFog;

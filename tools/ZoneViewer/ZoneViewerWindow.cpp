@@ -176,7 +176,7 @@ void ZoneViewerWindow::selectAssetDir()
 bool ZoneViewerWindow::loadZone(QString path, QString name)
 {
     m_viewport->makeCurrent();
-    m_scene->game()->clear(m_renderCtx);
+    m_scene->game()->clearZone(m_renderCtx);
     return (m_scene->game()->loadZone(path, name) != NULL);
 }
 
@@ -289,7 +289,7 @@ void ZoneScene::showSoundTriggers(bool show)
 void ZoneScene::init()
 {
     m_started = currentTime();
-    m_renderCtx->viewFrustum().setFarPlane(1000.0);
+    m_renderCtx->viewFrustum().setFarPlane(2000.0);
 }
 
 void ZoneScene::draw()

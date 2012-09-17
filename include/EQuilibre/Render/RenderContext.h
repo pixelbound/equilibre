@@ -101,6 +101,8 @@ public:
     void setupViewport(int width, int heigth);
     bool beginFrame(const vec4 &clearColor);
     void endFrame();
+    
+    void setDepthWrite(bool write);
 
     // material operations
 

@@ -198,6 +198,11 @@ void RenderContext::setupViewport(int w, int h)
     setMatrixMode(ModelView);
 }
 
+void RenderContext::setDepthWrite(bool write)
+{
+    glDepthMask(write);
+}
+
 void RenderContext::loadIdentity()
 {
     int i = (int)d->matrixMode;
@@ -221,6 +226,11 @@ void RenderContext::popMatrix()
     int i = (int)d->matrixMode;
     d->matrix[i] = d->matrixStack[i].back();
     d->matrixStack[i].pop_back();
+}
+
+void RenderContext::translate(const vec3 &v)
+{
+    multiplyMatrix(matrix4::translate(v.x, v.y, v.z));
 }
 
 void RenderContext::translate(float dx, float dy, float dz)

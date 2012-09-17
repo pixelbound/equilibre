@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include "EQuilibre/Render/Scene.h"
 #include "EQuilibre/Render/RenderContext.h"
+#include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Zone.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDModel.h"
@@ -31,7 +32,9 @@ QWidget * showZoneViewer(RenderContext *renderCtx)
 {
     //ZoneViewerWindow *v = new ZoneViewerWindow(renderCtx);
     //v->scene()->zone()->load(v->scene()->assetPath(), "gfaydark");
-    return new ZoneViewerWindow(renderCtx);
+    ZoneViewerWindow *v = new ZoneViewerWindow(renderCtx);
+    v->scene()->game()->loadSky(v->scene()->assetPath());
+    return v;
 }
 
 int main(int argc, char **argv)

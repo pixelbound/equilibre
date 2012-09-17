@@ -70,6 +70,7 @@ public:
     const FogParams & fogParams() const;
     
     bool load(QString path, QString name);
+    bool loadSky(PFSArchive *archive, WLDData *wld);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
 
     void clear(RenderContext *renderCtx);
@@ -188,6 +189,27 @@ private:
     FrameStat *m_objectsStat;
     FrameStat *m_objectsStatGPU;
     FrameStat *m_drawnObjectsStat;
+};
+
+/*!
+  \brief Holds the resources needed to render a zone's sky dome.
+  */
+class GAME_DLL ZoneSky
+{
+public:
+    ZoneSky();
+    virtual ~ZoneSky();
+    void clear(RenderContext *renderCtx);
+    bool upload(RenderContext *renderCtx);
+    bool load(QString path);
+    void draw(RenderContext *renderCtx, RenderProgram *prog, vec3 camPos, vec3 camRot);
+    
+private:
+    PFSArchive *m_skyArchive;
+    WLDData *m_skyWld;
+    MaterialMap *m_skyMaterials;
+    std::vector<WLDMesh *> m_skyLayers;
+    MeshBuffer *m_skyBuffer;
 };
 
 #endif

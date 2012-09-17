@@ -214,7 +214,7 @@ void Zone::draw(RenderContext *renderCtx)
 {
     if(!m_actorTree)
         return;
-   
+    
     Frustum &frustum = renderCtx->viewFrustum();
     setPlayerViewFrustum(frustum);
     renderCtx->pushMatrix();
@@ -235,6 +235,14 @@ void Zone::draw(RenderContext *renderCtx)
     prog->setAmbientLight(ambientLight);
     m_fogParams.density = m_game->showFog() ? 0.003f : 0.0f;
     prog->setFogParams(m_fogParams);
+    
+    // Draw the sky first.
+    ZoneSky *sky = m_game->sky();
+    if(sky)
+    {
+        vec3 camRot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
+        sky->draw(renderCtx, prog, frustum.eye(), camRot);
+    }
     
     // Draw the zone's static objects.
     if(m_game->showObjects() && m_objects)
@@ -750,4 +758,125 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
     m_drawnObjectsStat->setCurrent(m_visibleObjects.count());
     m_objectsStatGPU->endTime();
     m_objectsStat->endTime();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ZoneSky::ZoneSky()
+{
+    m_skyArchive = NULL;
+    m_skyWld = NULL;
+    m_skyMaterials = NULL;
+    m_skyBuffer = NULL;
+}
+
+ZoneSky::~ZoneSky()
+{
+    clear(NULL);
+}
+
+void ZoneSky::clear(RenderContext *renderCtx)
+{
+    foreach(WLDMesh *layer, m_skyLayers)
+        delete layer;
+    m_skyLayers.clear();
+    if(m_skyBuffer)
+    {
+        m_skyBuffer->clear(renderCtx);
+        delete m_skyBuffer;
+        m_skyBuffer = NULL;
+    }
+    delete m_skyArchive;
+    delete m_skyWld;
+    delete m_skyMaterials;
+    m_skyArchive = NULL;
+    m_skyWld = NULL;
+    m_skyMaterials = NULL;
+}
+
+bool ZoneSky::load(QString path)
+{
+    QString archivePath = QString("%1/sky.s3d").arg(path);
+    m_skyArchive = new PFSArchive(archivePath);
+    m_skyWld = WLDData::fromArchive(m_skyArchive, "sky.wld");
+    if(!m_skyWld)
+    {
+        delete m_skyArchive;
+        m_skyArchive = NULL;
+        return false;
+    }
+    
+    WLDFragmentArray<MeshDefFragment> meshDefs = m_skyWld->table()->byKind<MeshDefFragment>();
+    for(uint32_t i = 0; i < meshDefs.count(); i++)
+    {
+        MeshDefFragment *meshDef = meshDefs[i];
+        QString name = meshDef->name();
+        int typePos = name.indexOf("_DMSPRITEDEF");
+        if((name.length() < 6) || !name.startsWith("LAYER") || (typePos < 0))
+            continue;
+        bool ok = false;
+        uint32_t layerID = (uint32_t)name.mid(5, typePos - 5).toInt(&ok);
+        if(!ok)
+            continue;
+        m_skyLayers.push_back(new WLDMesh(meshDef, layerID));
+    }
+    
+    // Load zone textures into the material palette.
+    WLDMaterialPalette skyPalette(m_skyArchive);
+    WLDFragmentArray<MaterialDefFragment> matDefs = m_skyWld->table()->byKind<MaterialDefFragment>();
+    for(uint32_t i = 0; i < matDefs.count(); i++)
+        skyPalette.addMaterialDef(matDefs[i]);
+    m_skyMaterials = skyPalette.loadMaterials();
+    return true;
+}
+
+bool ZoneSky::upload(RenderContext *renderCtx)
+{
+    if(m_skyBuffer)
+        return true;
+    
+    // Upload the materials as a texture array, assigning z coordinates to materials.
+    m_skyMaterials->uploadArray(renderCtx);
+    
+    // Import vertices and indices for each mesh.
+    m_skyBuffer = new MeshBuffer();
+    for(uint32_t i = 0; i < m_skyLayers.size(); i++)
+    {
+        WLDMesh *mesh = m_skyLayers[i];
+        MeshData *meshData = mesh->importFrom(m_skyBuffer);
+        meshData->updateTexCoords(m_skyMaterials);
+    }
+    
+    // Create the GPU buffers and free the memory used for vertices and indices.
+    m_skyBuffer->upload(renderCtx);
+    m_skyBuffer->clearVertices();
+    m_skyBuffer->clearIndices();
+    return true;
+}
+
+void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, vec3 camPos, vec3 camRot)
+{
+    if(!upload(renderCtx) || (m_skyLayers.size() == 0))
+        return;
+    
+    renderCtx->pushMatrix();
+    renderCtx->translate(camPos);
+    renderCtx->rotate(camRot.x, 1.0f, 0.0f, 0.0f);
+    renderCtx->rotate(camRot.y, 0.0f, 1.0f, 0.0f);
+    renderCtx->rotate(camRot.z, 0.0f, 0.0f, 1.0f);
+    
+    renderCtx->setDepthWrite(false);
+    
+    // Import material groups from the visible layer.
+    m_skyBuffer->matGroups.clear();
+    WLDMesh *mesh = m_skyLayers[0];
+    m_skyBuffer->addMaterialGroups(mesh->data());
+    
+    // Draw the visible layer.
+    prog->beginDrawMesh(m_skyBuffer, m_skyMaterials);
+    prog->drawMesh();
+    prog->endDrawMesh();
+    
+    renderCtx->setDepthWrite(true);
+    renderCtx->popMatrix();
 }
