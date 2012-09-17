@@ -42,7 +42,6 @@ public:
 
     CharacterScene *scene() const;
 
-    bool loadZone(QString path, QString name);
     bool loadCharacters(QString archivePath);
 
 private slots:
@@ -98,7 +97,6 @@ public:
 
     void init();
 
-    Zone * zone() const; // XXX remove.
     Game * game() const;
     SkinningMode skinningMode() const;
     void setSkinningMode(SkinningMode newMode);

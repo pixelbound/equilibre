@@ -156,17 +156,6 @@ void CharacterViewerWindow::openArchive()
     m_viewport->setAnimation(true);
 }
 
-bool CharacterViewerWindow::loadZone(QString path, QString name)
-{
-    m_viewport->makeCurrent();
-    if(m_scene->zone()->load(path, name))
-    {
-        updateLists();
-        return true;
-    }
-    return false;
-}
-
 bool CharacterViewerWindow::loadCharacters(QString archivePath)
 {
     m_viewport->makeCurrent();
@@ -215,7 +204,7 @@ void CharacterViewerWindow::copyAnimations()
     QDialog d;
     d.setWindowTitle("Select a character to copy animations from");
     QComboBox *charList = new QComboBox();
-    foreach(CharacterPack *pack, m_scene->zone()->characterPacks())
+    foreach(CharacterPack *pack, m_scene->game()->characterPacks())
     {
         const QMap<QString, WLDCharActor *> &actors = pack->models();
         foreach(QString charName, actors.keys())
@@ -241,7 +230,7 @@ void CharacterViewerWindow::copyAnimations()
 
 void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar)
 {
-    WLDCharActor *actor = m_scene->zone()->findCharacter(fromChar);
+    WLDCharActor *actor = m_scene->game()->findCharacter(fromChar);
     if(actor)
     {
         WLDSkeleton *fromSkel = actor->model()->skeleton();
@@ -258,7 +247,7 @@ void CharacterViewerWindow::updateLists()
     m_actorText->clear();
     m_paletteText->clear();
     m_animationText->clear();
-    foreach(CharacterPack *pack, m_scene->zone()->characterPacks())
+    foreach(CharacterPack *pack, m_scene->game()->characterPacks())
     {
         const QMap<QString, WLDCharActor *> &actors = pack->models();
         foreach(QString name, actors.keys())
@@ -309,7 +298,7 @@ void CharacterViewerWindow::updateMenus()
 void CharacterViewerWindow::clear()
 {
     m_viewport->makeCurrent();
-    m_scene->zone()->clear(m_renderCtx);
+    m_scene->game()->clear(m_renderCtx);
     updateLists();
 }
 
@@ -348,11 +337,6 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_sigma = 0.5;
 }
 
-Zone * CharacterScene::zone() const
-{
-    return m_game->zone();
-}
-
 Game * CharacterScene::game() const
 {
     return m_game;
@@ -380,21 +364,21 @@ void CharacterScene::setSelectedModelName(QString name)
 
 WLDCharActor * CharacterScene::selectedCharacter() const
 {
-    return zone()->findCharacter(m_meshName);
+    return m_game->findCharacter(m_meshName);
 }
 
 void CharacterScene::init()
 {
     m_started = currentTime();
-    foreach(CharacterPack *charPack, zone()->characterPacks())
+    foreach(CharacterPack *charPack, m_game->characterPacks())
         charPack->upload(m_renderCtx);
-    foreach(ObjectPack *objPack, zone()->objectPacks())
+    foreach(ObjectPack *objPack, m_game->objectPacks())
         objPack->upload(m_renderCtx);
 }
 
 CharacterPack * CharacterScene::loadCharacters(QString archivePath)
 {
-    CharacterPack *charPack = zone()->loadCharacters(archivePath);
+    CharacterPack *charPack = m_game->loadCharacters(archivePath);
     if(charPack)
     {
         charPack->upload(m_renderCtx);

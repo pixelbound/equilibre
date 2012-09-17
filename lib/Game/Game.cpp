@@ -150,6 +150,8 @@ QList<CharacterPack *> Game::characterPacks() const
 
 Zone * Game::loadZone(QString path, QString name)
 {
+    if(m_zone)
+        return NULL;
     Zone *zone = new Zone(this);
     if(!zone->load(path, name))
     {
