@@ -64,7 +64,7 @@ private slots:
     void updateStats();
 
 private:
-    void paintOverlay();
+    void paintOverlay(QPainter &painter);
     void paintStats(QPainter *p);
     void paintFrameLog(QPainter *p);
     void startStats();
