@@ -215,6 +215,19 @@ void Zone::draw(RenderContext *renderCtx)
     if(!m_actorTree)
         return;
     
+    // Setup the render program.
+    RenderProgram *prog = renderCtx->programByID(RenderContext::BasicShader);
+    vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
+    renderCtx->setCurrentProgram(prog);
+    prog->setAmbientLight(ambientLight);
+    m_fogParams.density = m_game->showFog() ? 0.003f : 0.0f;
+    prog->setFogParams(m_fogParams);
+    
+    // Draw the sky first.
+    ZoneSky *sky = m_game->sky();
+    if(sky)
+        sky->draw(renderCtx, prog, this);
+    
     Frustum &frustum = renderCtx->viewFrustum();
     setPlayerViewFrustum(frustum);
     renderCtx->pushMatrix();
@@ -228,21 +241,9 @@ void Zone::draw(RenderContext *renderCtx)
     else
         m_terrain->showAllRegions(realFrustum);
     
-    // Setup the render program.
-    RenderProgram *prog = renderCtx->programByID(RenderContext::BasicShader);
-    vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
-    renderCtx->setCurrentProgram(prog);
-    prog->setAmbientLight(ambientLight);
-    m_fogParams.density = m_game->showFog() ? 0.003f : 0.0f;
-    prog->setFogParams(m_fogParams);
     
-    // Draw the sky first.
-    ZoneSky *sky = m_game->sky();
-    if(sky)
-    {
-        vec3 camRot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
-        sky->draw(renderCtx, prog, frustum.eye(), camRot);
-    }
+    
+    
     
     // Draw the zone's static objects.
     if(m_game->showObjects() && m_objects)
@@ -854,16 +855,15 @@ bool ZoneSky::upload(RenderContext *renderCtx)
     return true;
 }
 
-void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, vec3 camPos, vec3 camRot)
+void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
 {
     if(!upload(renderCtx) || (m_skyLayers.size() == 0))
         return;
     
-    renderCtx->pushMatrix();
-    renderCtx->translate(camPos);
-    renderCtx->rotate(camRot.x, 1.0f, 0.0f, 0.0f);
-    renderCtx->rotate(camRot.y, 0.0f, 1.0f, 0.0f);
-    renderCtx->rotate(camRot.z, 0.0f, 0.0f, 1.0f);
+    matrix4 viewMat = matrix4::lookAt(vec3(0.0, 0.0, 0.0),
+                                      vec3(0.0, 1.0, 0.0),
+                                      vec3(0.0, 0.0, 1.0))
+                    * matrix4::rotate(zone->playerOrient(), 0.0f, 0.0f, 1.0f);
     
     renderCtx->setDepthWrite(false);
     
@@ -874,9 +874,8 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, vec3 camPos, v
     
     // Draw the visible layer.
     prog->beginDrawMesh(m_skyBuffer, m_skyMaterials);
-    prog->drawMesh();
+    prog->drawMeshBatch(&viewMat, NULL, 1);
     prog->endDrawMesh();
     
     renderCtx->setDepthWrite(true);
-    renderCtx->popMatrix();
 }

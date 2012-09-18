@@ -93,6 +93,7 @@ public:
     void scale(float sx, float sy, float sz);
 
     matrix4 currentMatrix() const;
+    matrix4 & matrix(RenderContext::MatrixMode mode);
     const matrix4 & matrix(RenderContext::MatrixMode mode) const;
 
     // general state operations

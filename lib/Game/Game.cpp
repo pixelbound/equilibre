@@ -176,6 +176,7 @@ Zone * Game::loadZone(QString path, QString name)
         return NULL;
     }
     m_zone = zone;
+    m_zone->step(0.0, 0.0, 0.1);
     return zone;
 }
 

@@ -267,6 +267,11 @@ matrix4 RenderContext::currentMatrix() const
     return d->matrix[(int)d->matrixMode];
 }
 
+matrix4 & RenderContext::matrix(RenderContext::MatrixMode mode)
+{
+    return d->matrix[(int)mode];
+}
+
 const matrix4 & RenderContext::matrix(RenderContext::MatrixMode mode) const
 {
     return d->matrix[(int)mode];

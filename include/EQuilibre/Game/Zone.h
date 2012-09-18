@@ -202,7 +202,7 @@ public:
     void clear(RenderContext *renderCtx);
     bool upload(RenderContext *renderCtx);
     bool load(QString path);
-    void draw(RenderContext *renderCtx, RenderProgram *prog, vec3 camPos, vec3 camRot);
+    void draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone);
     
 private:
     PFSArchive *m_skyArchive;
