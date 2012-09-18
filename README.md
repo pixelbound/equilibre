@@ -16,12 +16,13 @@ One of the goals of this project is to create a multi-platform client and tools 
 
 Dependencies
 ------------
-CMake 2.8+
-Qt 4.6+
-ZLIB
-GLEW 
-fluidsynth (Linux only)
-OpenGL 2.0 drivers with several 3.0+ extensions
+
+* CMake 2.8+
+* Qt 4.6+
+* ZLIB
+* GLEW 
+* fluidsynth (Linux only)
+* OpenGL 2.0 drivers with several 3.0+ extensions
 
 Building on Windows
 -------------------
