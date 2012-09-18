@@ -36,7 +36,7 @@ Other dependencies to install:
 
 Generating the Visual Studio solutions takes a little while but only needs to be done once.  First, start cmake-gui which can be found in the Start menu. Click on the Browse Source button and select the EQuilibre folder. Then, click on Browse build, make a build folder in the EQuilibre folder and select it. Finally, click on the Configure button.
 
-A window will pop up asking which generator to use. Visual Studio 9 or 10 should be selected here, then click Finish. This may take a minute or take and will end up in an error pop-up.
+A window will pop up asking which generator to use. Visual Studio 9 or 10 should be selected here, then click Finish. This may take a minute and will end up in an error pop-up.
 
 Click on the Grouped check box to reduce the number of list entries. Then click on Ungrouped Entries and click on the value to the right of QT_MAKE_EXECUTABLE. Use the '...' button to the right and locate the qmake.exe file (mine is installed at: C:\QtSDK\Desktop\Qt\4.8.1\msvc2010\bin). Once this is done, click Configure again.
 
