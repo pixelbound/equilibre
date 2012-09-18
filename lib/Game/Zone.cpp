@@ -781,6 +781,11 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+SkyDef::SkyDef()
+{
+    mainLayer = secondLayer = NULL;
+}
+
 ZoneSky::ZoneSky()
 {
     m_skyArchive = NULL;
@@ -796,9 +801,12 @@ ZoneSky::~ZoneSky()
 
 void ZoneSky::clear(RenderContext *renderCtx)
 {
-    foreach(WLDMesh *layer, m_skyLayers)
-        delete layer;
-    m_skyLayers.clear();
+    foreach(SkyDef def, m_skyDefs)
+    {
+        delete def.mainLayer;
+        delete def.secondLayer;
+    }
+    m_skyDefs.clear();
     if(m_skyBuffer)
     {
         m_skyBuffer->clear(renderCtx);
@@ -825,19 +833,24 @@ bool ZoneSky::load(QString path)
         return false;
     }
     
+    QRegExp nameExp("^LAYER(\\d)(\\d)_DMSPRITEDEF$");
     WLDFragmentArray<MeshDefFragment> meshDefs = m_skyWld->table()->byKind<MeshDefFragment>();
     for(uint32_t i = 0; i < meshDefs.count(); i++)
     {
         MeshDefFragment *meshDef = meshDefs[i];
         QString name = meshDef->name();
-        int typePos = name.indexOf("_DMSPRITEDEF");
-        if((name.length() < 6) || !name.startsWith("LAYER") || (typePos < 0))
+        if(!nameExp.exactMatch(name))
             continue;
-        bool ok = false;
-        uint32_t layerID = (uint32_t)name.mid(5, typePos - 5).toInt(&ok);
-        if(!ok)
-            continue;
-        m_skyLayers.push_back(new WLDMesh(meshDef, layerID));
+        uint32_t skyID = nameExp.cap(1).toInt();
+        uint32_t skySubID = nameExp.cap(2).toInt();
+        uint32_t layerID = (skyID * 10) + skySubID;
+        if(m_skyDefs.size() < skyID)
+            m_skyDefs.resize(skyID);
+        SkyDef &def = m_skyDefs[skyID - 1];
+        if(skySubID == 1)
+            def.mainLayer = new WLDMesh(meshDef, layerID);
+        else
+            def.secondLayer = new WLDMesh(meshDef, layerID);
     }
     
     // Load zone textures into the material palette.
@@ -859,11 +872,14 @@ bool ZoneSky::upload(RenderContext *renderCtx)
     
     // Import vertices and indices for each mesh.
     m_skyBuffer = new MeshBuffer();
-    for(uint32_t i = 0; i < m_skyLayers.size(); i++)
+    for(uint32_t i = 0; i < m_skyDefs.size(); i++)
     {
-        WLDMesh *mesh = m_skyLayers[i];
-        MeshData *meshData = mesh->importFrom(m_skyBuffer);
-        meshData->updateTexCoords(m_skyMaterials);
+        WLDMesh *mainMesh = m_skyDefs[i].mainLayer;
+        WLDMesh *secondMesh = m_skyDefs[i].secondLayer;
+        MeshData *mainMeshData = mainMesh->importFrom(m_skyBuffer);
+        MeshData *secondMeshData = secondMesh->importFrom(m_skyBuffer);
+        mainMeshData->updateTexCoords(m_skyMaterials);
+        secondMeshData->updateTexCoords(m_skyMaterials);
     }
     
     // Create the GPU buffers and free the memory used for vertices and indices.
@@ -875,7 +891,8 @@ bool ZoneSky::upload(RenderContext *renderCtx)
 
 void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
 {
-    if(!upload(renderCtx) || (m_skyLayers.size() == 0))
+    uint32_t skyID = zone->info().skyID;
+    if(!skyID || (skyID > m_skyDefs.size()) || !upload(renderCtx))
         return;
     
     matrix4 viewMat = matrix4::lookAt(vec3(0.0, 0.0, 0.0),
@@ -887,8 +904,11 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
     
     // Import material groups from the visible layer.
     m_skyBuffer->matGroups.clear();
-    WLDMesh *mesh = m_skyLayers[0];
-    m_skyBuffer->addMaterialGroups(mesh->data());
+    const SkyDef &def = m_skyDefs[skyID - 1];
+    if(def.secondLayer)
+        m_skyBuffer->addMaterialGroups(def.secondLayer->data());
+    if(def.mainLayer)
+        m_skyBuffer->addMaterialGroups(def.mainLayer->data());
     
     // Draw the visible layer.
     prog->beginDrawMesh(m_skyBuffer, m_skyMaterials);

@@ -211,6 +211,15 @@ private:
     FrameStat *m_drawnObjectsStat;
 };
 
+class GAME_DLL SkyDef
+{
+public:
+    SkyDef();
+
+    WLDMesh *mainLayer;
+    WLDMesh *secondLayer;
+};
+
 /*!
   \brief Holds the resources needed to render a zone's sky dome.
   */
@@ -228,7 +237,7 @@ private:
     PFSArchive *m_skyArchive;
     WLDData *m_skyWld;
     MaterialMap *m_skyMaterials;
-    std::vector<WLDMesh *> m_skyLayers;
+    std::vector<SkyDef> m_skyDefs;
     MeshBuffer *m_skyBuffer;
 };
 

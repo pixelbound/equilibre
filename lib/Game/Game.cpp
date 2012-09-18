@@ -231,6 +231,7 @@ bool Game::loadZoneInfo(QString filePath)
         zi.flags = fields.value(idx++).toInt();
         m_zoneInfo.insert(zi.name, zi);
     }
+    m_showFog = true;
     return true;
 }
 
