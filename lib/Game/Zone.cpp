@@ -861,7 +861,7 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
         return;
     
     matrix4 viewMat = matrix4::lookAt(vec3(0.0, 0.0, 0.0),
-                                      vec3(0.0, 1.0, 0.0),
+                                      vec3(0.0, 1.0, 0.05),
                                       vec3(0.0, 0.0, 1.0))
                     * matrix4::rotate(zone->playerOrient(), 0.0f, 0.0f, 1.0f);
     
