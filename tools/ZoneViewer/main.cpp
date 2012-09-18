@@ -30,10 +30,13 @@
 
 QWidget * showZoneViewer(RenderContext *renderCtx)
 {
-    //ZoneViewerWindow *v = new ZoneViewerWindow(renderCtx);
-    //v->scene()->zone()->load(v->scene()->assetPath(), "gfaydark");
     ZoneViewerWindow *v = new ZoneViewerWindow(renderCtx);
-    v->scene()->game()->loadSky(v->scene()->assetPath());
+    QDir assetDir(v->scene()->assetPath());
+    QString zoneInfoFile ="zonevars.txt";
+    Game *game = v->scene()->game();
+    game->loadSky(assetDir.path());
+    if(assetDir.exists(zoneInfoFile))
+        game->loadZoneInfo(assetDir.filePath(zoneInfoFile));
     return v;
 }
 

@@ -5,7 +5,6 @@ lights
 sort items front to back
 Draw opaque materials and then masked materials
 remove z-fighting of sea textures
-Load sky box
 one frame latency for querying GL timers and remove glFinish
     is it still an issue with vsync disabled?
 No unbind / do unbind at the end of the frame (use VAOs?)

@@ -295,7 +295,7 @@ void ZoneScene::init()
 void ZoneScene::draw()
 {
     Zone *zone = m_game->zone();
-    vec4 clearColor = zone ? zone->fogParams().color : vec4(0.4, 0.4, 0.6, 0.1);
+    vec4 clearColor = zone ? zone->info().fogColor : vec4(0.4, 0.4, 0.6, 0.1);
     if(m_renderCtx->beginFrame(clearColor))
     {
         clearLog();

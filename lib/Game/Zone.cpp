@@ -33,11 +33,6 @@
 Zone::Zone(Game *game)
 {
     m_game = game;
-    // XXX read fog params from a file.
-    m_fogParams.start = 10.0;
-    m_fogParams.end = 300.0;
-    m_fogParams.density = 0.003;
-    m_fogParams.color = vec4(230.0/255.0*0.5, 255.0/255.0*0.5, 200.0/255.0*0.5, 1.0);
     m_mainArchive = 0;
     m_mainWld = 0;
     m_terrain = NULL;
@@ -79,14 +74,19 @@ OctreeIndex * Zone::actorIndex() const
     return m_actorTree;
 }
 
-const FogParams & Zone::fogParams() const
+const ZoneInfo & Zone::info() const
 {
-    return m_fogParams;
+    return m_info;
+}
+
+void Zone::setInfo(const ZoneInfo &info)
+{
+    m_info = info;
 }
 
 bool Zone::load(QString path, QString name)
 {
-    m_name = name;
+    m_info.name = name;
 
     // Load the main archive and WLD file.
     QString zonePath = QString("%1/%2.s3d").arg(path).arg(name);
@@ -220,8 +220,13 @@ void Zone::draw(RenderContext *renderCtx)
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
-    m_fogParams.density = m_game->showFog() ? 0.003f : 0.0f;
-    prog->setFogParams(m_fogParams);
+    
+    FogParams fogParams;
+    fogParams.color = m_info.fogColor;
+    fogParams.start = m_info.fogMinClip;
+    fogParams.end = m_info.fogMaxClip;
+    fogParams.density = m_game->fogDensity();
+    prog->setFogParams(fogParams);
     
     // Draw the sky first.
     ZoneSky *sky = m_game->sky();
@@ -240,11 +245,7 @@ void Zone::draw(RenderContext *renderCtx)
         m_terrain->showNearbyRegions(realFrustum);
     else
         m_terrain->showAllRegions(realFrustum);
-    
-    
-    
-    
-    
+
     // Draw the zone's static objects.
     if(m_game->showObjects() && m_objects)
         m_objects->draw(renderCtx, prog);
@@ -279,6 +280,11 @@ void Zone::draw(RenderContext *renderCtx)
 const vec3 & Zone::playerPos() const
 {
     return m_playerPos;
+}
+
+void Zone::setPlayerPos(const vec3 &newPos)
+{
+    m_playerPos = newPos;
 }
 
 float Zone::playerOrient() const
@@ -332,6 +338,18 @@ void Zone::step(float distForward, float distSideways, float distUpDown)
         m.setIdentity();
     m = m * matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
     m_playerPos = m_playerPos + m.map(vec3(-distSideways, distForward, distUpDown));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+ZoneInfo::ZoneInfo()
+{
+    skyID = 0;
+    fogColor = vec4(0.4, 0.4, 0.6, 0.1);
+    fogMinClip = minClip = 10.0f;
+    fogMaxClip = maxClip = 300.0f;
+    underworldZ = -1000.0f;
+    flags = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -25,6 +25,7 @@
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/RenderContext.h"
+#include "EQuilibre/Game/Zone.h"
 
 class CharacterPack;
 class ObjectPack;
@@ -60,6 +61,8 @@ public:
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
     
+    float fogDensity() const;
+    
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
@@ -69,6 +72,7 @@ public:
     QList<CharacterPack *> characterPacks() const;
     
     Zone * loadZone(QString path, QString name);
+    bool loadZoneInfo(QString file);
     bool loadSky(QString path);
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null, bool own = true);
@@ -77,6 +81,7 @@ public:
 private:
     QList<ObjectPack *> m_objectPacks;
     QList<CharacterPack *> m_charPacks;
+    QMap<QString, ZoneInfo> m_zoneInfo;
     Zone *m_zone;
     ZoneSky *m_sky;
     bool m_showZone;

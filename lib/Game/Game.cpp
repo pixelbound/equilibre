@@ -14,6 +14,8 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+#include <QFile>
+#include <QTextStream>
 #include <QFileInfo>
 #include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Fragments.h"
@@ -155,6 +157,11 @@ ZoneSky * Game::sky() const
     return m_sky;
 }
 
+float Game::fogDensity() const
+{
+    return m_showFog ? 0.003f : 0.0f;
+}
+
 QList<ObjectPack *> Game::objectPacks() const
 {
     return m_objectPacks;
@@ -176,8 +183,55 @@ Zone * Game::loadZone(QString path, QString name)
         return NULL;
     }
     m_zone = zone;
-    m_zone->step(0.0, 0.0, 0.1);
+    if(m_zoneInfo.contains(name))
+    {
+        const ZoneInfo &info = m_zoneInfo[name];
+        m_zone->setInfo(info);
+        m_zone->setPlayerPos(info.safePos);
+    }
+    else
+    {
+        m_zone->setPlayerPos(vec3(0.0, 0.0, 0.1));
+    }
     return zone;
+}
+
+bool Game::loadZoneInfo(QString filePath)
+{
+    QFile file(filePath);
+    if(!file.open(QFile::ReadOnly))
+        return false;
+    QTextStream s(&file);
+    while(!s.atEnd())
+    {
+        QString line = s.readLine();
+        if(line.isEmpty() || line.startsWith("//"))
+            continue;
+        QStringList fields = line.split(",");
+        if(fields.count() < 14)
+            continue;
+        
+        ZoneInfo zi;
+        float fogFactor = 0.6f / 255.0f;
+        int idx = 0;
+        zi.name = fields.value(idx++);
+        zi.skyID = fields.value(idx++).toInt();
+        zi.fogColor.x = (fields.value(idx++).toInt() * fogFactor);
+        zi.fogColor.y = (fields.value(idx++).toInt() * fogFactor);
+        zi.fogColor.z = (fields.value(idx++).toInt() * fogFactor);
+        zi.fogColor.w = 1.0f;
+        zi.fogMinClip = fields.value(idx++).toFloat();
+        zi.fogMaxClip = fields.value(idx++).toFloat();
+        zi.minClip = fields.value(idx++).toFloat();
+        zi.maxClip = fields.value(idx++).toFloat();
+        zi.safePos.y = fields.value(idx++).toFloat();
+        zi.safePos.z = fields.value(idx++).toFloat();
+        zi.safePos.z = fields.value(idx++).toFloat();
+        zi.underworldZ = fields.value(idx++).toFloat();
+        zi.flags = fields.value(idx++).toInt();
+        m_zoneInfo.insert(zi.name, zi);
+    }
+    return true;
 }
 
 bool Game::loadSky(QString path)

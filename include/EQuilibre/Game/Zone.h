@@ -54,6 +54,25 @@ class CharacterPack;
 class ObjectPack;
 
 /*!
+  \brief Contains some rendering information about a zone.
+  */
+class GAME_DLL ZoneInfo
+{
+public:
+    ZoneInfo();
+    QString name;
+    int skyID;
+    vec4 fogColor;
+    float fogMinClip;
+    float fogMaxClip;
+    float minClip;
+    float maxClip;
+    vec3 safePos;
+    float underworldZ;
+    int flags;
+};
+
+/*!
   \brief Describes a zone of the world.
   */
 class GAME_DLL Zone
@@ -67,7 +86,8 @@ public:
     const QVector<WLDLightActor *> & lights() const;
     QList<CharacterPack *> characterPacks() const;
     OctreeIndex * actorIndex() const;
-    const FogParams & fogParams() const;
+    const ZoneInfo & info() const;
+    void setInfo(const ZoneInfo &info);
     
     bool load(QString path, QString name);
     bool loadSky(PFSArchive *archive, WLDData *wld);
@@ -78,6 +98,7 @@ public:
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;
+    void setPlayerPos(const vec3 &newPos);
     // z angle that describes where the player is facing
     float playerOrient() const;
     // xyz angles that describe how the camera is oriented rel. to the player
@@ -100,7 +121,7 @@ private:
     static void frustumCullingCallback(WLDActor *actor, void *user);
 
     Game *m_game;
-    QString m_name;
+    ZoneInfo m_info;
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;
     QList<CharacterPack *> m_charPacks;
@@ -115,7 +136,6 @@ private:
     float m_playerOrient;
     vec3 m_cameraOrient;
     vec3 m_cameraPos;
-    FogParams m_fogParams;
 };
 
 /*!
