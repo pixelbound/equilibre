@@ -1,4 +1,4 @@
-fix sky dome x/y rotation
+fix golem textures (gfdaydark_chr.s3d)
 pimpl for RenderProgram
     have Game create shader programs?
 lights

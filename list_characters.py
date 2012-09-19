@@ -22,21 +22,43 @@ from s3d import S3DArchive
 from wld import WLDData
 
 class WLDActor(object):
-    def __init__(self, name):
+    DefaultSkin = "00"
+    def __init__(self, name, palette):
         self.name = name
-        self.skin = WLDModelSkin("00")
-        self.skins = {self.skin.palName : self.skin}
+        self.skins = {}
+        self.pieces = []
+        self.palette = palette
     
     def newSkin(self, palName):
         skin = WLDModelSkin(palName)
         self.skins[palName] = skin
+        if palName != WLDActor.DefaultSkin:
+            defaultSkin = self.skins["00"]
+            for part in defaultSkin.parts:
+                skin.parts.append(part)
         return skin
+
+class WLDModelPiece(object):
+    def __init__(self, pieceID, pieceName):
+        self.ID = pieceID
+        self.name = pieceName
+        self.skins = []
 
 class WLDModelSkin(object):
     def __init__(self, palName):
         self.palName = palName
         self.parts = []
         self.materials = {}
+    
+    def replacePart(self, meshDef, actorName, partName):
+        for i in range(0, len(self.parts)):
+            part = self.parts[i]
+            oldActorName, oldPartName, oldPalName = explodeMeshName(part.name)
+            if partName == oldPartName:
+                self.parts[i] = meshDef
+                return
+        # No base part found, just append it.
+        self.parts.append(meshDef)
 
 matNameExp = re.compile("^\w{5}\d{4}_MDF$");
 meshNameExp = re.compile("^(\w{3})(.*)(\d{2})_DMSPRITEDEF$");
@@ -76,12 +98,9 @@ def listCharacters(s3dPath, wldName):
 def dumpCharacters(wld, actors):
     for actorName in sorted(actors):
         actor = actors[actorName]
-        mesh = actor.skin.parts[0]
-        matDefs = mesh.Fragment1.Textures
-        slots = [mesh.polygonsByTex[i][1] for i in range(0, mesh.PolygonTexCount)]
-        print("%s (%d slots, %d skins)" % (actorName, len(slots), len(actor.skins)))
-        for slotID in sorted(slots):
-            matName = matDefs[slotID].name
+        print("%s (%d pieces, %d skins)" % (actorName, len(actor.pieces), len(actor.skins)))
+        for piece in actor.pieces:
+            matName = actor.palette.Textures[piece.ID].name
             actorName, pieceName, palName = explodeMaterialName(matName)
             palNames = []
             for skinName in sorted(actor.skins):
@@ -89,23 +108,43 @@ def dumpCharacters(wld, actors):
                 matNameForSkin = combineMaterialName(actorName, skinName, pieceName)
                 if matNameForSkin in skin.materials:
                     palNames.append(skinName)
-            print("+-- %02d -> %s [%s]" % (slotID, pieceName, ", ".join(palNames)))
+            print("+-- Piece %02d -> %s [%s]" % (piece.ID, pieceName, ", ".join(palNames)))
+        for skinName in sorted(actor.skins):
+            skin = actor.skins[skinName]
+            meshNames = sorted(mesh.name.replace("_DMSPRITEDEF", "") for mesh in skin.parts)
+            print("+-- Skin %s -> [%s]" % (skinName, ", ".join(meshNames)))
+
+def findMainMesh(actorDef, actorName):
+    if not actorDef.models:
+        raise Exception("Actor '%s' has no mesh." % actorName)
+    mainMeshName = "%s_DMSPRITEDEF" % actorName
+    for meshRef in actorDef.listModels():
+        mesh = meshRef.Mesh
+        if mesh and (mesh.name == mainMeshName) and hasattr(mesh, "Fragment1"):
+            palette = mesh.Fragment1
+            if not palette:
+                raise Exception("Mesh '%s' has no palette." % firstMesh.name)
+            return mesh, palette
+    return None, None
 
 def importCharacters(wld, actors):
     for actorDef in wld.fragmentsByType(0x14):
         actorName = actorDef.name.replace("_ACTORDEF", "")
-        actor = WLDActor(actorName)
+        mainMesh, mainPalette = findMainMesh(actorDef, actorName)
+        if not mainMesh:
+            print("Warning: could not find main mesh for actor '%s'." % actorName)
+            continue
+        actor = WLDActor(actorName, mainPalette)
         actors[actorName] = actor
-        skin = actor.skin
+        for i, matDef in enumerate(mainPalette.Textures):
+            actorName, pieceName, palName = explodeMaterialName(matDef.name)
+            if not actorName:
+                print("Warning: could not split material name '%s'" % matDef.name)
+                continue
+            actor.pieces.append(WLDModelPiece(i, pieceName))
+        skin = actor.newSkin(WLDActor.DefaultSkin)
         for model in actorDef.listModels():
-            mesh = model.Mesh
-            if skin.parts:
-                continue # XXX deal with heads
-            skin.parts.append(mesh)
-            if hasattr(mesh, "Fragment1"):
-                palette = mesh.Fragment1
-                for matDef in palette.Textures:
-                    skin.materials[matDef.name] = matDef
+            skin.parts.append(model.Mesh)
 
 def importCharacterPalettes(wld, actors):
     # look for alternate materials
@@ -126,14 +165,11 @@ def importCharacterPalettes(wld, actors):
         if not actorName in actors:
             continue
         actor = actors[actorName]
-        mesh = meshDef
-        matDefs = mesh.Fragment1.Textures
-        slots = [mesh.polygonsByTex[i][1] for i in range(0, mesh.PolygonTexCount)]
-        print("%s %s (%d slots)" % (actorName+partName, palName, len(slots)))
-        for slotID in sorted(slots):
-            matName = matDefs[slotID].name
-            actorName, pieceName, palName = explodeMaterialName(matName)
-            print("+-- %02d -> %s" % (slotID, pieceName))
+        try:
+            skin = actor.skins[palName]
+        except KeyError:
+            skin = actor.newSkin(palName)
+        skin.replacePart(meshDef, actorName, partName)
             
 if __name__ == "__main__":
     if len(sys.argv) < 2:
