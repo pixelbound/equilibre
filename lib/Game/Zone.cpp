@@ -894,10 +894,13 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
     if(!skyID || (skyID > m_skyDefs.size()) || !upload(renderCtx))
         return;
     
-    matrix4 viewMat = matrix4::lookAt(vec3(0.0, 0.0, 0.0),
-                                      vec3(0.0, 1.0, 0.05),
-                                      vec3(0.0, 0.0, 1.0))
-                    * matrix4::rotate(zone->playerOrient(), 0.0f, 0.0f, 1.0f);
+    // Restrict the movement of the camera so that we don't see the edges of the sky dome.
+    vec3 camRot = vec3(0.0, 0.0, zone->playerOrient()) + zone->cameraOrient();
+    matrix4 viewMat2 = matrix4::rotate(camRot.x * 0.25, 1.0, 0.0, 0.0) *
+                       matrix4::rotate(camRot.y, 0.0, 1.0, 0.0) *
+                       matrix4::rotate(camRot.z * 0.25, 0.0, 0.0, 1.0);
+    vec3 focus = viewMat2.map(vec3(0.0, 1.0, 0.0));
+    matrix4 viewMat = matrix4::lookAt(vec3(0.0, 0.0, 0.0), focus, vec3(0.0, 0.0, 1.0));
     
     renderCtx->setDepthWrite(false);
     
