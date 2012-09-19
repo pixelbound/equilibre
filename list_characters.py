@@ -50,6 +50,9 @@ def explodeMaterialName(defName):
     else:
         return None, None, None
 
+def combineMaterialName(actorName, palName, pieceName):
+    return actorName + pieceName[0:2] + palName + pieceName[2:4] + "_MDF"
+
 def listCharacters(s3dPath, wldName):
     with S3DArchive(s3dPath) as a:
         wld = WLDData.fromArchive(a, wldName)
@@ -61,13 +64,19 @@ def listCharacters(s3dPath, wldName):
 def dumpCharacters(wld, actors):
     for actorName in sorted(actors):
         actor = actors[actorName]
-        print("%s (%d skins)" % (actorName, len(actor.skins)))
-        for palName in sorted(actor.skins):
-            skin = actor.skins[palName]
-            print("+-- %s (%d materials)" % (palName, len(skin.materials)))
-            for matName in sorted(skin.materials):
-                mat = skin.materials[matName]
-                print("|   +-- %s" % matName)
+        mesh = actor.skin.parts[0]
+        matDefs = mesh.Fragment1.Textures
+        print("%s (%d slots, %d skins)" % (actorName, mesh.PolygonTexCount, len(actor.skins)))
+        for i in range(0, mesh.PolygonTexCount):
+            matName = matDefs[i].name
+            actorName, palName, pieceName = explodeMaterialName(matName)
+            palNames = []
+            for skinName in sorted(actor.skins):
+                skin = actor.skins[skinName]
+                matNameForSkin = combineMaterialName(actorName, skinName, pieceName)
+                if matNameForSkin in skin.materials:
+                    palNames.append(skinName)
+            print("+-- %02d -> %s [%s]" % (i, pieceName, ", ".join(palNames)))
 
 def importCharacters(wld, actors):
     for actorDef in wld.fragmentsByType(0x14):
@@ -77,6 +86,8 @@ def importCharacters(wld, actors):
         skin = actor.skin
         for model in actorDef.listModels():
             mesh = model.Mesh
+            if skin.parts:
+                continue # XXX deal with heads
             skin.parts.append(mesh)
             if hasattr(mesh, "Fragment1"):
                 palette = mesh.Fragment1
