@@ -36,8 +36,8 @@ public:
     
     Frustum frustum;
     RenderContext::MatrixMode matrixMode;
-    matrix4 matrix[3];
-    std::vector<matrix4> matrixStack[3];
+    matrix4 matrix[2];
+    std::vector<matrix4> matrixStack[2];
     RenderProgram *programs[3];
     uint32_t currentProgram;
     QVector<FrameStat *> stats;
@@ -80,7 +80,6 @@ RenderContext::RenderContext()
     d = new RenderContextPrivate();
     d->matrix[(int)RenderContext::ModelView].setIdentity();
     d->matrix[(int)RenderContext::Projection].setIdentity();
-    d->matrix[(int)RenderContext::Texture].setIdentity();
     d->programs[(int)BasicShader] = new RenderProgram(this);
     d->programs[(int)SkinningUniformShader] = new UniformSkinningProgram(this);
     d->programs[(int)SkinningTextureShader] = new TextureSkinningProgram(this);

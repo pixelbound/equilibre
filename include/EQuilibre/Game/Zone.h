@@ -94,7 +94,7 @@ public:
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
 
     void clear(RenderContext *renderCtx);
-    void draw(RenderContext *renderCtx);
+    void draw(RenderContext *renderCtx, RenderProgram *prog);
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;

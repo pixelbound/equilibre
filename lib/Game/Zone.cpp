@@ -210,13 +210,12 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
         z->objects()->visibleObjects().append(staticActor);
 }
 
-void Zone::draw(RenderContext *renderCtx)
+void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_actorTree)
         return;
     
     // Setup the render program.
-    RenderProgram *prog = renderCtx->programByID(RenderContext::BasicShader);
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);

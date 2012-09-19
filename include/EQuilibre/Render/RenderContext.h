@@ -73,8 +73,7 @@ public:
     enum MatrixMode
     {
         ModelView,
-        Projection,
-        Texture
+        Projection
     };
 
     void setMatrixMode(MatrixMode newMode);

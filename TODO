@@ -1,12 +1,11 @@
+fix sky dome x/y rotation
 pimpl for RenderProgram
     have Game create shader programs?
 lights
     try out deferred lighting
 sort items front to back
 Draw opaque materials and then masked materials
-remove z-fighting of sea textures
 one frame latency for querying GL timers and remove glFinish
-    is it still an issue with vsync disabled?
 No unbind / do unbind at the end of the frame (use VAOs?)
 physics/collisions
 play XMI music and WAV sounds
@@ -23,4 +22,3 @@ fix 213462fe17828c1468cb39d6653da8816aea667f (Implementing a zone viewer 03/0720
 transparency/mask misses
     IT555 (gequip4)
 Unknown render mode 7, a, 14, b, 9
-fix vertex order in faces (zone-in to Felwithe)
