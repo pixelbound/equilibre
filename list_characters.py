@@ -39,6 +39,7 @@ class WLDModelSkin(object):
         self.materials = {}
 
 matNameExp = re.compile("^\w{5}\d{4}_MDF$");
+meshNameExp = re.compile("^(\w{3})(.*)(\d{2})_DMSPRITEDEF$");
 def explodeMaterialName(defName):
     # e.g. defName == 'ORCCH0201_MDF'
     # 'ORC' : character
@@ -46,7 +47,18 @@ def explodeMaterialName(defName):
     # '02' : palette ID
     # '01' : piece (part 2)
     if matNameExp.match(defName):
-        return defName[0:3], defName[5:7], defName[3:5] + defName[7:9]
+        return defName[0:3], defName[3:5] + defName[7:9], defName[5:7]
+    else:
+        return None, None, None
+
+def explodeMeshName(defName):
+    # e.g. defName == 'ELEHE00_DMSPRITEDEF'
+    # 'ELE' : character
+    # 'HE' : mesh
+    # '00' : skin ID
+    m = meshNameExp.match(defName)
+    if m:
+        return m.group(1), m.group(2), m.group(3)
     else:
         return None, None, None
 
@@ -66,17 +78,18 @@ def dumpCharacters(wld, actors):
         actor = actors[actorName]
         mesh = actor.skin.parts[0]
         matDefs = mesh.Fragment1.Textures
-        print("%s (%d slots, %d skins)" % (actorName, mesh.PolygonTexCount, len(actor.skins)))
-        for i in range(0, mesh.PolygonTexCount):
-            matName = matDefs[i].name
-            actorName, palName, pieceName = explodeMaterialName(matName)
+        slots = [mesh.polygonsByTex[i][1] for i in range(0, mesh.PolygonTexCount)]
+        print("%s (%d slots, %d skins)" % (actorName, len(slots), len(actor.skins)))
+        for slotID in sorted(slots):
+            matName = matDefs[slotID].name
+            actorName, pieceName, palName = explodeMaterialName(matName)
             palNames = []
             for skinName in sorted(actor.skins):
                 skin = actor.skins[skinName]
                 matNameForSkin = combineMaterialName(actorName, skinName, pieceName)
                 if matNameForSkin in skin.materials:
                     palNames.append(skinName)
-            print("+-- %02d -> %s [%s]" % (i, pieceName, ", ".join(palNames)))
+            print("+-- %02d -> %s [%s]" % (slotID, pieceName, ", ".join(palNames)))
 
 def importCharacters(wld, actors):
     for actorDef in wld.fragmentsByType(0x14):
@@ -95,8 +108,9 @@ def importCharacters(wld, actors):
                     skin.materials[matDef.name] = matDef
 
 def importCharacterPalettes(wld, actors):
+    # look for alternate materials
     for matDef in wld.fragmentsByType(0x30):
-        actorName, palName, pieceName = explodeMaterialName(matDef.name)
+        actorName, pieceName, palName = explodeMaterialName(matDef.name)
         if not actorName in actors:
             continue
         actor = actors[actorName]
@@ -105,6 +119,21 @@ def importCharacterPalettes(wld, actors):
         except KeyError:
             skin = actor.newSkin(palName)
         skin.materials[matDef.name] = matDef
+
+    # look for alternate meshes (e.g. heads)
+    for meshDef in wld.fragmentsByType(0x36):
+        actorName, partName, palName = explodeMeshName(meshDef.name)
+        if not actorName in actors:
+            continue
+        actor = actors[actorName]
+        mesh = meshDef
+        matDefs = mesh.Fragment1.Textures
+        slots = [mesh.polygonsByTex[i][1] for i in range(0, mesh.PolygonTexCount)]
+        print("%s %s (%d slots)" % (actorName+partName, palName, len(slots)))
+        for slotID in sorted(slots):
+            matName = matDefs[slotID].name
+            actorName, pieceName, palName = explodeMaterialName(matName)
+            print("+-- %02d -> %s" % (slotID, pieceName))
             
 if __name__ == "__main__":
     if len(sys.argv) < 2:
