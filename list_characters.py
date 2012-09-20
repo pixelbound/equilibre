@@ -37,12 +37,17 @@ class WLDActor(object):
             for part in defaultSkin.parts:
                 skin.parts.append(part)
         return skin
+    
+    def pieceByName(self, pieceName):
+        for piece in self.pieces:
+            if piece.name == pieceName:
+                return piece
 
 class WLDModelPiece(object):
     def __init__(self, pieceID, pieceName):
         self.ID = pieceID
         self.name = pieceName
-        self.skins = []
+        self.skins = set()
 
 class WLDModelSkin(object):
     def __init__(self, palName):
@@ -102,13 +107,7 @@ def dumpCharacters(wld, actors):
         for piece in actor.pieces:
             matName = actor.palette.Textures[piece.ID].name
             actorName, pieceName, palName = explodeMaterialName(matName)
-            palNames = []
-            if actorName:
-                for skinName in sorted(actor.skins):
-                    skin = actor.skins[skinName]
-                    matNameForSkin = combineMaterialName(actorName, skinName, pieceName)
-                    if matNameForSkin in skin.materials:
-                        palNames.append(skinName)
+            palNames = sorted(piece.skins)
             print("+-- Piece %02d -> %s [%s]" % (piece.ID, piece.name, ", ".join(palNames)))
         for skinName in sorted(actor.skins):
             skin = actor.skins[skinName]
@@ -145,13 +144,16 @@ def importCharacters(wld, actors):
             actor.pieces.append(WLDModelPiece(i, pieceName))
         skin = actor.newSkin(WLDActor.DefaultSkin)
         for model in actorDef.listModels():
-            skin.parts.append(model.Mesh)
+            meshDef = model.Mesh
+            skin.parts.append(meshDef)
+            for i in range(0, meshDef.PolygonTexCount):
+                pieceID = meshDef.polygonsByTex[i][1]
+                piece = actor.pieces[pieceID]
+                piece.skins.add(WLDActor.DefaultSkin)
 
 def importCharacterPalettes(wld, actors):
     # look for alternate materials
     for matDef in wld.fragmentsByType(0x30):
-        # XXX This is not always possible for all materials.
-        # Should instead enumerate materials through meshes.
         actorName, pieceName, palName = explodeMaterialName(matDef.name)
         if not actorName in actors:
             continue
@@ -160,7 +162,9 @@ def importCharacterPalettes(wld, actors):
             skin = actor.skins[palName]
         except KeyError:
             skin = actor.newSkin(palName)
-        skin.materials[matDef.name] = matDef
+        piece = actor.pieceByName(pieceName)
+        if piece:
+            piece.skins.add(palName)
 
     # look for alternate meshes (e.g. heads)
     for meshDef in wld.fragmentsByType(0x36):
@@ -173,6 +177,10 @@ def importCharacterPalettes(wld, actors):
         except KeyError:
             skin = actor.newSkin(palName)
         skin.replacePart(meshDef, actorName, partName)
+        for i in range(0, meshDef.PolygonTexCount):
+            pieceID = meshDef.polygonsByTex[i][1]
+            piece = actor.pieces[pieceID]
+            piece.skins.add(palName)
             
 if __name__ == "__main__":
     if len(sys.argv) < 2:
