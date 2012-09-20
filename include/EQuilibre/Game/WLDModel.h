@@ -61,10 +61,13 @@ public:
 
     WLDMaterialPalette * palette() const;
 
+    MaterialMap *materials() const;
+    void setMaterials(MaterialMap *newMaterials);
+
     WLDModelSkin *skin() const;
     const QMap<QString, WLDModelSkin *> & skins() const;
 
-    WLDModelSkin * newSkin(QString name, PFSArchive *archive);
+    WLDModelSkin * newSkin(QString name);
 
 private:
     friend class WLDModelSkin;
@@ -74,6 +77,7 @@ private:
     QMap<QString, WLDModelSkin *> m_skins;
     QList<WLDMesh *> m_meshes;
     WLDMaterialPalette *m_palette;
+    MaterialMap *m_materials;
 };
 
 /*!
@@ -123,6 +127,8 @@ class GAME_DLL WLDMaterialSlot
 public:
     WLDMaterialSlot(MaterialDefFragment *matDef);
 
+    void addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef);
+
     // Name of the slot. PC models use standardized slot names.
     QString slotName;
     // Default material for the slot (e.g. referred to by the MaterialPaletteFragment).
@@ -148,6 +154,8 @@ public:
     std::vector<WLDMaterialSlot *> & materialSlots();
 
     void createSlots(MaterialPaletteFragment *palDef);
+
+    WLDMaterialSlot * slotByName(const QString &name) const;
     
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
@@ -183,17 +191,12 @@ private:
 class GAME_DLL WLDModelSkin
 {
 public:
-    WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive);
+    WLDModelSkin(QString name, WLDModel *model);
     virtual ~WLDModelSkin();
 
     QString name() const;
     
     const AABox & boundsAA() const;
-
-    WLDMaterialPalette *palette() const;
-    
-    MaterialMap *materials() const;
-    void setMaterials(MaterialMap *newMaterials);
     
     const QList<WLDMesh *> & parts() const;
 
@@ -210,8 +213,6 @@ private:
     
     QString m_name;
     WLDModel *m_model;
-    WLDMaterialPalette *m_palette;
-    MaterialMap *m_materials;
     QList<WLDMesh *> m_parts;
     AABox m_boundsAA;
 };

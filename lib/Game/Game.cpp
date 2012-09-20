@@ -499,11 +499,11 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             WLDModel *model = actor->model();
             WLDModelSkin *skin = model->skins().value(palName);
             if(!skin)
-            {
-                skin = model->newSkin(palName, archive);
-                skin->palette()->copyFrom(model->skin()->palette());
-            }
-            skin->palette()->addMaterialDef(matDef);
+                skin = model->newSkin(palName);
+            int palID = palName.toInt();
+            WLDMaterialSlot *matSlot = model->palette()->slotByName(partName);
+            if(matSlot)
+                matSlot->addSkinMaterial(palID, matDef);
         }
     }
 
@@ -607,6 +607,11 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
     if(model->buffer())
         return;
 
+    // Import materials.
+    MaterialMap *materials = model->palette()->loadMaterials();
+    materials->upload(renderCtx);
+    model->setMaterials(materials);
+
     // Import mesh geometry.
     MeshBuffer *meshBuf = new MeshBuffer();
     model->setBuffer(meshBuf);
@@ -614,15 +619,6 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
     {
         foreach(WLDMesh *mesh, skin->parts())
             mesh->importFrom(meshBuf);
-
-        // Upload materials (textures).
-        MaterialMap *materials = skin->materials();
-        if(!materials)
-        {
-            materials = skin->palette()->loadMaterials();
-            skin->setMaterials(materials);
-        }
-        materials->upload(renderCtx);
     }
 
     // Create the GPU buffers.

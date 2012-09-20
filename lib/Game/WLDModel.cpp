@@ -29,12 +29,14 @@ WLDModel::WLDModel(PFSArchive *archive)
     m_buffer = 0;
     m_skel = 0;
     m_skin = 0;
-    m_skin = newSkin("00", archive);
+    m_skin = newSkin("00");
     m_palette = new WLDMaterialPalette(archive);
+    m_materials = NULL;
 }
 
 WLDModel::~WLDModel()
 {
+    delete m_materials;
     delete m_palette;
     foreach(WLDModelSkin *skin, m_skins)
         delete skin;
@@ -72,14 +74,24 @@ WLDMaterialPalette * WLDModel::palette() const
     return m_palette;
 }
 
+MaterialMap * WLDModel::materials() const
+{
+    return m_materials;
+}
+
+void WLDModel::setMaterials(MaterialMap *newMaterials)
+{
+    m_materials = newMaterials;
+}
+
 const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
 {
     return m_skins;
 }
 
-WLDModelSkin * WLDModel::newSkin(QString name, PFSArchive *archive)
+WLDModelSkin * WLDModel::newSkin(QString name)
 {
-    WLDModelSkin *skin = new WLDModelSkin(name, this, archive);
+    WLDModelSkin *skin = new WLDModelSkin(name, this);
     m_skins.insert(name, skin);
     return skin;
 }
@@ -307,6 +319,17 @@ void WLDMaterialPalette::createSlots(MaterialPaletteFragment *palDef)
     }
 }
 
+WLDMaterialSlot * WLDMaterialPalette::slotByName(const QString &name) const
+{
+    for(uint32_t i = 0; i < m_materialSlots.size(); i++)
+    {
+        WLDMaterialSlot *slot = m_materialSlots[i];
+        if(slot->slotName == name)
+            return slot;
+    }
+    return NULL;
+}
+
 void WLDMaterialPalette::addPaletteDef(MaterialPaletteFragment *def)
 {
     if(!def)
@@ -510,13 +533,24 @@ WLDMaterialSlot::WLDMaterialSlot(MaterialDefFragment *matDef)
     baseMat.matDef = matDef;
 }
 
+void WLDMaterialSlot::addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef)
+{
+    // Skin zero is the base skin.
+    Q_ASSERT(skinID > 0);
+    if(skinID > skinMats.size())
+        skinMats.resize(skinID);
+    WLDMaterial &skinMat = skinMats[skinID - 1];
+    Q_ASSERT((skinMat.mat == NULL) && (skinMat.matDef == NULL));
+    skinMat.mat = NULL;
+    skinMat.matDef = matDef;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive)
+WLDModelSkin::WLDModelSkin(QString name, WLDModel *model)
 {
     m_name = name;
     m_model = model;
-    m_materials = NULL;
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
     {
@@ -541,21 +575,6 @@ QString WLDModelSkin::name() const
 const AABox & WLDModelSkin::boundsAA() const
 {
     return m_boundsAA;
-}
-
-WLDMaterialPalette * WLDModelSkin::palette() const
-{
-    return m_palette;
-}
-
-MaterialMap * WLDModelSkin::materials() const
-{
-    return m_materials;
-}
-
-void WLDModelSkin::setMaterials(MaterialMap *newMaterials)
-{
-    m_materials = newMaterials;
 }
 
 const QList<WLDMesh *> & WLDModelSkin::parts() const
@@ -635,7 +654,7 @@ void WLDModelSkin::draw(RenderProgram *prog, const BoneTransform *bones, uint32_
         meshBuf->addMaterialGroups(mesh->data());
 
     // Draw all the material groups in one draw call.
-    prog->beginDrawMesh(meshBuf, m_materials, bones, boneCount);
+    prog->beginDrawMesh(meshBuf, m_model->materials(), bones, boneCount);
     prog->drawMesh();
     prog->endDrawMesh();
 }
