@@ -103,12 +103,13 @@ def dumpCharacters(wld, actors):
             matName = actor.palette.Textures[piece.ID].name
             actorName, pieceName, palName = explodeMaterialName(matName)
             palNames = []
-            for skinName in sorted(actor.skins):
-                skin = actor.skins[skinName]
-                matNameForSkin = combineMaterialName(actorName, skinName, pieceName)
-                if matNameForSkin in skin.materials:
-                    palNames.append(skinName)
-            print("+-- Piece %02d -> %s [%s]" % (piece.ID, pieceName, ", ".join(palNames)))
+            if actorName:
+                for skinName in sorted(actor.skins):
+                    skin = actor.skins[skinName]
+                    matNameForSkin = combineMaterialName(actorName, skinName, pieceName)
+                    if matNameForSkin in skin.materials:
+                        palNames.append(skinName)
+            print("+-- Piece %02d -> %s [%s]" % (piece.ID, piece.name, ", ".join(palNames)))
         for skinName in sorted(actor.skins):
             skin = actor.skins[skinName]
             meshNames = sorted(mesh.name.replace("_DMSPRITEDEF", "") for mesh in skin.parts)
@@ -137,10 +138,10 @@ def importCharacters(wld, actors):
         actor = WLDActor(actorName, mainPalette)
         actors[actorName] = actor
         for i, matDef in enumerate(mainPalette.Textures):
-            actorName, pieceName, palName = explodeMaterialName(matDef.name)
-            if not actorName:
-                print("Warning: could not split material name '%s'" % matDef.name)
-                continue
+            actorName2, pieceName, palName = explodeMaterialName(matDef.name)
+            if not actorName2:
+                print("Warning: could not split material name '%s' of actor %s, piece %d" % (matDef.name, actorName, i))
+                pieceName = matDef.name.replace("_MDF","")
             actor.pieces.append(WLDModelPiece(i, pieceName))
         skin = actor.newSkin(WLDActor.DefaultSkin)
         for model in actorDef.listModels():
@@ -149,6 +150,8 @@ def importCharacters(wld, actors):
 def importCharacterPalettes(wld, actors):
     # look for alternate materials
     for matDef in wld.fragmentsByType(0x30):
+        # XXX This is not always possible for all materials.
+        # Should instead enumerate materials through meshes.
         actorName, pieceName, palName = explodeMaterialName(matDef.name)
         if not actorName in actors:
             continue
