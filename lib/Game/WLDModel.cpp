@@ -30,10 +30,12 @@ WLDModel::WLDModel(PFSArchive *archive)
     m_skel = 0;
     m_skin = 0;
     m_skin = newSkin("00", archive);
+    m_palette = new WLDMaterialPalette(archive);
 }
 
 WLDModel::~WLDModel()
 {
+    delete m_palette;
     foreach(WLDModelSkin *skin, m_skins)
         delete skin;
     foreach(WLDMesh *mesh, m_meshes)
@@ -63,6 +65,11 @@ WLDModelSkin * WLDModel::skin() const
 void WLDModel::setSkeleton(WLDSkeleton *skeleton)
 {
     m_skel = skeleton;
+}
+
+WLDMaterialPalette * WLDModel::palette() const
+{
+    return m_palette;
 }
 
 const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
@@ -280,6 +287,26 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
     m_archive = archive;
 }
 
+WLDMaterialPalette::~WLDMaterialPalette()
+{
+    while(m_materialSlots.size())
+        delete *m_materialSlots.begin();
+}
+
+std::vector<WLDMaterialSlot *> & WLDMaterialPalette::materialSlots()
+{
+    return m_materialSlots;
+}
+
+void WLDMaterialPalette::createSlots(MaterialPaletteFragment *palDef)
+{
+    for(uint32_t i = 0; i < palDef->m_materials.size(); i++)
+    {
+        MaterialDefFragment *matDef = palDef->m_materials[i];
+        m_materialSlots.push_back(new WLDMaterialSlot(matDef));
+    }
+}
+
 void WLDMaterialPalette::addPaletteDef(MaterialPaletteFragment *def)
 {
     if(!def)
@@ -463,13 +490,32 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     return mat;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+WLDMaterial::WLDMaterial()
+{
+    mat = NULL;
+    matDef = NULL;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+WLDMaterialSlot::WLDMaterialSlot(MaterialDefFragment *matDef)
+{
+    QString matName = matDef->name();
+    QString charName, palName;
+    if(!WLDMaterialPalette::explodeName(matName, charName, palName, slotName))
+        slotName = matName.replace("_MDF", "");
+    offset = 0;
+    baseMat.matDef = matDef;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive)
 {
     m_name = name;
     m_model = model;
-    m_palette = new WLDMaterialPalette(archive);
     m_materials = NULL;
     WLDModelSkin *defaultSkin = model->skin();
     if(defaultSkin)
@@ -477,7 +523,7 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive)
         foreach(WLDMesh *part, defaultSkin->parts())
         {
             m_parts.append(part);
-            m_palette->addPaletteDef(part->def()->m_palette);
+            //m_palette->addPaletteDef(part->def()->m_palette);
         }
         updateBounds();
     }
@@ -485,7 +531,6 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model, PFSArchive *archive)
 
 WLDModelSkin::~WLDModelSkin()
 {
-    delete m_palette;
 }
 
 QString WLDModelSkin::name() const

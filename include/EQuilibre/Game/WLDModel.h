@@ -40,6 +40,7 @@ class WLDModelSkin;
 class WLDSkeleton;
 class BoneTransform;
 class WLDAnimation;
+class WLDMaterialPalette;
 
 /*!
   \brief Describes a model (such as an object or a character) that can be rendered.
@@ -58,6 +59,8 @@ public:
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
 
+    WLDMaterialPalette * palette() const;
+
     WLDModelSkin *skin() const;
     const QMap<QString, WLDModelSkin *> & skins() const;
 
@@ -70,6 +73,7 @@ private:
     WLDModelSkin *m_skin;
     QMap<QString, WLDModelSkin *> m_skins;
     QList<WLDMesh *> m_meshes;
+    WLDMaterialPalette *m_palette;
 };
 
 /*!
@@ -102,14 +106,48 @@ private:
     AABox m_boundsAA;
 };
 
+class GAME_DLL WLDMaterial
+{
+public:
+    WLDMaterial();
+
+    MaterialDefFragment *matDef;
+    Material *mat;
+};
+
+/*!
+  \brief Defines a set of possible materials that can be used interchangeably.
+  */
+class GAME_DLL WLDMaterialSlot
+{
+public:
+    WLDMaterialSlot(MaterialDefFragment *matDef);
+
+    // Name of the slot. PC models use standardized slot names.
+    QString slotName;
+    // Default material for the slot (e.g. referred to by the MaterialPaletteFragment).
+    WLDMaterial baseMat;
+    // Alternative materials for the slot, one for each alternative skin.
+    // The material at index zero is for skin one and so on.
+    std::vector<WLDMaterial> skinMats;
+    // Index of the first texture in this slot's texture list.
+    // The textures are stored sequentially with increasing skin ID.
+    uint32_t offset;
+};
+
 /*!
   \brief Defines a set of materials (e.g. textures) that can be used for a model.
-  One model can have multiple palettes but can only use one at the same time.
+  The palette contains all materials that can be used with the model.
   */
 class GAME_DLL WLDMaterialPalette
 {
 public:
     WLDMaterialPalette(PFSArchive *archive);
+    virtual ~WLDMaterialPalette();
+
+    std::vector<WLDMaterialSlot *> & materialSlots();
+
+    void createSlots(MaterialPaletteFragment *palDef);
     
     void addPaletteDef(MaterialPaletteFragment *def);
     QString addMaterialDef(MaterialDefFragment *def);
@@ -134,6 +172,7 @@ private:
     Material * loadMaterial(MaterialDefFragment *frag);
 
     QMap<QString, MaterialDefFragment *> m_materialDefs;
+    std::vector<WLDMaterialSlot *> m_materialSlots;
     PFSArchive *m_archive;
 };
 

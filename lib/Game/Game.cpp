@@ -531,6 +531,25 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     }
 }
 
+static bool findMainMesh(ActorDefFragment *actorDef, const QString &actorName,
+                         MeshDefFragment *&meshDefOut, MaterialPaletteFragment *&palDefOut)
+{
+    if(!actorDef->m_models.size())
+        return false;
+
+    QString mainMeshName = actorName + "_DMSPRITEDEF";
+    foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
+    {
+        if(meshDef->name() == mainMeshName)
+        {
+            meshDefOut = meshDef;
+            palDefOut = meshDef->m_palette;
+            return true;
+        }
+    }
+    return false;
+}
+
 void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
 {
     WLDFragmentArray<ActorDefFragment> actorDefs = wld->table()->byKind<ActorDefFragment>();
@@ -538,13 +557,24 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     {
         ActorDefFragment *actorDef = actorDefs[i];
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
+        MeshDefFragment *mainMesh = NULL;
+        MaterialPaletteFragment *mainPalette = NULL;
+        if(!findMainMesh(actorDef, actorName, mainMesh, mainPalette))
+        {
+            qDebug("Warning: could not find main mesh for actor '%s'.", actorName.toLatin1().constData());
+            continue;
+        }
+
+        // Create a material slot for each material in the actor's palette.
         WLDModel *model = new WLDModel(archive);
+        model->palette()->createSlots(mainPalette);
+
         WLDCharActor *actor = new WLDCharActor(model);
         WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
         {
             skin->addPart(meshDef);
-            skin->palette()->addPaletteDef(meshDef->m_palette);
+            Q_ASSERT(mainPalette == meshDef->m_palette);
         }
         foreach(WLDFragment *frag, actorDef->m_models)
         {
