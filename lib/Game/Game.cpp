@@ -361,7 +361,7 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         MeshFragment *mesh = subModel->cast<MeshFragment>();
         if(!mesh)
         {
-            if(subModel->kind() == HierSpriteFragment::ID)
+            if(subModel->kind() == HierSpriteFragment::KIND)
                 qDebug("Hierarchical model in zone objects (%s)",
                        actorDef->name().toLatin1().constData());
             continue;
@@ -580,8 +580,8 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
         {
             switch(frag->kind())
             {
-            case HierSpriteFragment::ID:
-            case MeshFragment::ID:
+            case HierSpriteFragment::KIND:
+            case MeshFragment::KIND:
                 break;
             default:
                 qDebug("Unknown model fragment kind (0x%02x) %s",

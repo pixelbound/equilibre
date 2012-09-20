@@ -269,26 +269,31 @@ bool WLDReader::readEncodedString(uint32_t size, QString *dest)
 
 WLDFragment::WLDFragment()
 {
-    m_kind = 0;
-}
-
-WLDFragment::WLDFragment(uint32_t kind)
-{
-    m_kind = kind;
+    m_kind = m_info = 0;
 }
 
 WLDFragment::~WLDFragment()
 {
 }
 
-uint32_t WLDFragment::kind() const
+uint16_t WLDFragment::kind() const
 {
     return m_kind;
 }
 
-void WLDFragment::setKind(uint32_t newKind)
+void WLDFragment::setKind(uint16_t newKind)
 {
     m_kind = newKind;
+}
+
+bool WLDFragment::handled() const
+{
+    return m_info & 1;
+}
+
+void WLDFragment::setHandled(bool newHandled)
+{
+    m_info = (m_info & ~1) | (newHandled & 1);
 }
 
 QString WLDFragment::name() const

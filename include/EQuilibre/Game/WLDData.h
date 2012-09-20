@@ -93,13 +93,15 @@ class GAME_DLL WLDFragment
 {
 public:
     WLDFragment();
-    WLDFragment(uint32_t kind);
     virtual ~WLDFragment();
     
     static bool readHeader(WLDReader *sr, WLDFragmentHeader &fh, QString *name);
 
-    uint32_t kind() const;
-    void setKind(uint32_t newKind);
+    uint16_t kind() const;
+    void setKind(uint16_t newKind);
+    
+    bool handled() const;
+    void setHandled(bool newHandled);
     
     QString name() const;
     void setName(QString newName);
@@ -109,14 +111,15 @@ public:
     template<typename T>
     T * cast()
     {
-        if(m_kind == T::ID)
+        if(m_kind == T::KIND)
             return static_cast<T *>(this);
         else
             return 0;
     }
 
 private:
-    uint32_t m_kind;
+    uint16_t m_kind;
+    uint16_t m_info;
     QString m_name;
 };
 

@@ -48,6 +48,7 @@ void WLDFragmentTable::incrementFragmentCount(uint32_t kind)
 
 void WLDFragmentTable::allocate()
 {
+    // XXX change all fragment classes to be zero-initializable and fill the arrays with zeros.
     for(uint32_t i = 0; i < MAX_FRAGMENT_KINDS; i++)
     {
         m_frags[i] = createArray(i);
@@ -67,8 +68,8 @@ WLDFragment * WLDFragmentTable::current(uint32_t kind) const
     return (WLDFragment *)m_current[kind];
 }
 
-#define CREATE_FRAGMENT_CASE(T) case T::ID: fragSize = sizeof(T); return new T[count];
-#define DELETE_FRAGMENT_CASE(T) case T::ID: delete [] (T *)array; break;
+#define CREATE_FRAGMENT_CASE(T) case T::KIND: fragSize = sizeof(T); return new T[count];
+#define DELETE_FRAGMENT_CASE(T) case T::KIND: delete [] (T *)array; break;
 
 WLDFragment * WLDFragmentTable::createArray(uint32_t kind)
 {
@@ -150,10 +151,6 @@ void WLDFragmentTable::deleteArray(uint32_t kind)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-BitmapNameFragment::BitmapNameFragment() : WLDFragment(ID)
-{
-}
-
 bool BitmapNameFragment::unpack(WLDReader *s)
 {
     uint16_t size;
@@ -163,11 +160,6 @@ bool BitmapNameFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-SpriteDefFragment::SpriteDefFragment() : WLDFragment(ID)
-{
-    m_flags = m_param1 = m_param2 = 0;
-}
 
 bool SpriteDefFragment::unpack(WLDReader *s)
 {
@@ -193,10 +185,6 @@ bool SpriteDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpriteFragment::SpriteFragment() : WLDFragment(ID)
-{
-}
-
 bool SpriteFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
@@ -205,10 +193,6 @@ bool SpriteFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-HierSpriteDefFragment::HierSpriteDefFragment() : WLDFragment(ID)
-{
-}
 
 bool HierSpriteDefFragment::unpack(WLDReader *s)
 {
@@ -243,10 +227,6 @@ bool HierSpriteDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-HierSpriteFragment::HierSpriteFragment() : WLDFragment(ID)
-{
-}
-
 bool HierSpriteFragment::unpack(WLDReader *s)
 {
     s->unpackFields("rI", &m_def, &m_flags);
@@ -254,10 +234,6 @@ bool HierSpriteFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-TrackDefFragment::TrackDefFragment() : WLDFragment(ID)
-{
-}
 
 bool TrackDefFragment::unpack(WLDReader *s)
 {
@@ -297,10 +273,6 @@ BoneTransform TrackDefFragment::frame(uint32_t frameIndex) const
 
 ////////////////////////////////////////////////////////////////////////////////
 
-TrackFragment::TrackFragment() : WLDFragment(ID)
-{
-}
-
 bool TrackFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
@@ -311,10 +283,6 @@ bool TrackFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-ActorDefFragment::ActorDefFragment() : WLDFragment(ID)
-{
-}
 
 bool ActorDefFragment::unpack(WLDReader *s)
 {
@@ -349,10 +317,6 @@ bool ActorDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-ActorFragment::ActorFragment() : WLDFragment(ID)
-{
-}
-
 bool ActorFragment::unpack(WLDReader *s)
 {
     float scaleX, scaleY, rotX, rotY, rotZ;
@@ -371,10 +335,6 @@ bool ActorFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-LightDefFragment::LightDefFragment() : WLDFragment(ID)
-{
-}
 
 bool LightDefFragment::unpack(WLDReader *s)
 {
@@ -401,10 +361,6 @@ bool LightDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LightFragment::LightFragment() : WLDFragment(ID)
-{
-}
-
 bool LightFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
@@ -414,10 +370,6 @@ bool LightFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-LightSourceFragment::LightSourceFragment() : WLDFragment(ID)
-{
-}
-
 bool LightSourceFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_ref);
@@ -426,10 +378,6 @@ bool LightSourceFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-RegionLightFragment::RegionLightFragment() : WLDFragment(ID)
-{
-}
 
 bool RegionLightFragment::unpack(WLDReader *s)
 {
@@ -443,10 +391,6 @@ bool RegionLightFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpellParticleDefFragment::SpellParticleDefFragment() : WLDFragment(ID)
-{
-}
-
 bool SpellParticleDefFragment::unpack(WLDReader *s)
 {
     s->unpackField('I', &m_flags);
@@ -458,10 +402,6 @@ bool SpellParticleDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-SpellParticleFragment::SpellParticleFragment() : WLDFragment(ID)
-{
-}
-
 bool SpellParticleFragment::unpack(WLDReader *s)
 {
     //<0x26 fragment> flags
@@ -471,10 +411,6 @@ bool SpellParticleFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-Fragment34::Fragment34() : WLDFragment(ID)
-{
-}
 
 bool Fragment34::unpack(WLDReader *s)
 {
@@ -486,10 +422,6 @@ bool Fragment34::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MaterialDefFragment::MaterialDefFragment() : WLDFragment(ID)
-{
-}
-
 bool MaterialDefFragment::unpack(WLDReader *s)
 {
     s->unpackFields("IIIff", &m_flags, &m_param1, &m_param2, &m_brightness, &m_scaledAmbient);
@@ -499,10 +431,6 @@ bool MaterialDefFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-MaterialPaletteFragment::MaterialPaletteFragment() : WLDFragment(ID)
-{
-}
 
 bool MaterialPaletteFragment::unpack(WLDReader *s)
 {
@@ -520,10 +448,6 @@ bool MaterialPaletteFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshLightingDefFragment::MeshLightingDefFragment() : WLDFragment(ID)
-{
-}
-
 bool MeshLightingDefFragment::unpack(WLDReader *s)
 {
     uint8_t r, g, b, a;
@@ -539,10 +463,6 @@ bool MeshLightingDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshLightingFragment::MeshLightingFragment() : WLDFragment(ID)
-{
-}
-
 bool MeshLightingFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
@@ -551,10 +471,6 @@ bool MeshLightingFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-MeshDefFragment::MeshDefFragment() : WLDFragment(ID)
-{
-}
 
 bool MeshDefFragment::unpack(WLDReader *s)
 {
@@ -630,10 +546,6 @@ bool MeshDefFragment::unpack(WLDReader *s)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MeshFragment::MeshFragment() : WLDFragment(ID)
-{
-}
-
 bool MeshFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
@@ -642,10 +554,6 @@ bool MeshFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-RegionTreeFragment::RegionTreeFragment() : WLDFragment(ID)
-{
-}
 
 bool RegionTreeFragment::unpack(WLDReader *s)
 {
@@ -665,10 +573,6 @@ bool RegionTreeFragment::unpack(WLDReader *s)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-RegionFragment::RegionFragment() : WLDFragment(ID)
-{
-}
 
 bool RegionFragment::unpack(WLDReader *s)
 {
