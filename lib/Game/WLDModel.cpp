@@ -422,17 +422,15 @@ uint32_t WLDMaterialPalette::materialHash(QString matName)
     return hash;
 }
 
-MaterialMap * WLDMaterialPalette::loadMaterials()
+void WLDMaterialPalette::exportTo(MaterialMap *map)
 {
-    MaterialMap *materials = new MaterialMap();
     foreach(MaterialDefFragment *frag, m_materialDefs)
     {
         QString canName = materialName(frag);
         uint32_t canID = materialHash(canName);
         Material *mat = loadMaterial(frag);
-        materials->setMaterial(canID, mat);
+        map->setMaterial(canID, mat);
     }
-    return materials;
 }
 
 Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)

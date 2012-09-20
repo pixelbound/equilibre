@@ -162,13 +162,11 @@ public:
     void setDef(MaterialPaletteFragment *newDef);
     
     std::vector<WLDMaterialSlot *> & materialSlots();
-
-    void createSlots(bool addMatDefs = true);
-    void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
-
     WLDMaterialSlot * slotByName(const QString &name) const;
     
-    MaterialMap * loadMaterials();
+    void createSlots(bool addMatDefs = true);
+    void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
+    void exportTo(MaterialMap *map);
 
     /*!
       \brief Return the canonical name of a material. This strips out the skin ID.

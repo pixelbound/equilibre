@@ -350,7 +350,6 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         return false;
 
     // Import models through ActorDef fragments.
-    WLDMaterialPalette palette(m_archive);
     WLDFragmentArray<ActorDefFragment> actorDefs = m_wld->table()->byKind<ActorDefFragment>();
     for(uint32_t i = 0; i < actorDefs.count(); i++)
     {
@@ -371,7 +370,11 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         model->importPalette(m_archive);
         m_models.insert(actorName, model);
     }
-    m_materials = palette.loadMaterials();
+    
+    // Import materials into a single material map.
+    m_materials = new MaterialMap();
+    foreach(WLDMesh *model, m_models.values())
+        model->palette()->exportTo(m_materials);
     return true;
 }
 
@@ -617,7 +620,8 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
         return;
 
     // Import materials.
-    MaterialMap *materials = model->palette()->loadMaterials();
+    MaterialMap *materials = new MaterialMap();
+    model->palette()->exportTo(materials);
     materials->upload(renderCtx);
     model->setMaterials(materials);
 
