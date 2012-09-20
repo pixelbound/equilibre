@@ -126,12 +126,14 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
     m_partID = partID;
     m_meshDef = meshDef;
     m_data = NULL;
+    m_palette = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
 }
 
 WLDMesh::~WLDMesh()
 {
+    delete m_palette;
 }
 
 MeshData * WLDMesh::data() const
@@ -149,6 +151,11 @@ MeshDefFragment * WLDMesh::def() const
     return m_meshDef;
 }
 
+WLDMaterialPalette * WLDMesh::palette() const
+{
+    return m_palette;
+}
+
 uint32_t WLDMesh::partID() const
 {
     return m_partID;
@@ -157,6 +164,13 @@ uint32_t WLDMesh::partID() const
 const AABox & WLDMesh::boundsAA() const
 {
     return m_boundsAA;
+}
+
+void WLDMesh::importPalette(PFSArchive *archive)
+{
+    m_palette = new WLDMaterialPalette(archive);
+    m_palette->setDef(m_meshDef->m_palette);
+    m_palette->createSlots();
 }
 
 MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf)
@@ -322,14 +336,17 @@ std::vector<WLDMaterialSlot *> & WLDMaterialPalette::materialSlots()
     return m_materialSlots;
 }
 
-void WLDMaterialPalette::createSlots()
+void WLDMaterialPalette::createSlots(bool addMatDefs)
 {
     if(!m_def)
         return;
     for(uint32_t i = 0; i < m_def->m_materials.size(); i++)
     {
         MaterialDefFragment *matDef = m_def->m_materials[i];
-        m_materialSlots.push_back(new WLDMaterialSlot(matDef->name()));
+        WLDMaterialSlot *slot = new WLDMaterialSlot(matDef->name());
+        if(addMatDefs)
+            slot->addSkinMaterial(0, matDef);
+        m_materialSlots.push_back(slot);
     }
 }
 
@@ -352,32 +369,6 @@ void WLDMaterialPalette::addMeshMaterials(MeshDefFragment *meshDef, uint32_t ski
         uint32_t slotID = texMap[i].second;
         WLDMaterialSlot *slot = m_materialSlots[slotID];
         slot->addSkinMaterial(skinID, m_def->m_materials[slotID]);
-    }
-}
-
-void WLDMaterialPalette::addPaletteDef(MaterialPaletteFragment *def)
-{
-    if(!def)
-        return;
-    foreach(MaterialDefFragment *matDef, def->m_materials)
-        addMaterialDef(matDef);
-}
-
-QString WLDMaterialPalette::addMaterialDef(MaterialDefFragment *def)
-{
-    if(!def)
-        return QString::null;
-    QString name = materialName(def);
-    m_materialDefs.insert(name, def);
-    return name;
-}
-
-void WLDMaterialPalette::copyFrom(WLDMaterialPalette *pal)
-{
-    for(QMap<QString, MaterialDefFragment *>::iterator i = pal->m_materialDefs.begin(),
-            e = pal->m_materialDefs.end(); i != e; ++i)
-    {
-        m_materialDefs.insert(i.key(), i.value());
     }
 }
 

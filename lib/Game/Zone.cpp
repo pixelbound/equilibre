@@ -459,9 +459,10 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     
     // Load zone textures into the material palette.
     WLDMaterialPalette zonePalette(archive);
-    WLDFragmentArray<MaterialDefFragment> matDefs = wld->table()->byKind<MaterialDefFragment>();
-    for(uint32_t i = 0; i < matDefs.count(); i++)
-        zonePalette.addMaterialDef(matDefs[i]);
+    WLDFragmentArray<MaterialPaletteFragment> matPals = wld->table()->byKind<MaterialPaletteFragment>();
+    Q_ASSERT(matPals.count() == 1);
+    zonePalette.setDef(matPals[0]);
+    zonePalette.createSlots();
     m_zoneMaterials = zonePalette.loadMaterials();
     
     return true;
@@ -852,11 +853,13 @@ bool ZoneSky::load(QString path)
             def.secondLayer = new WLDMesh(meshDef, layerID);
     }
     
-    // Load zone textures into the material palette.
+    // Load sky textures into the material palette.
     WLDMaterialPalette skyPalette(m_skyArchive);
-    WLDFragmentArray<MaterialDefFragment> matDefs = m_skyWld->table()->byKind<MaterialDefFragment>();
-    for(uint32_t i = 0; i < matDefs.count(); i++)
-        skyPalette.addMaterialDef(matDefs[i]);
+    // XXX fix this.
+    /*WLDFragmentArray<MaterialPaletteFragment> matPals = m_skyWld->table()->byKind<MaterialPaletteFragment>();
+    Q_ASSERT(matPals.count() == 1);
+    skyPalette.setDef(matPals[0]);
+    skyPalette.createSlots();*/
     m_skyMaterials = skyPalette.loadMaterials();
     return true;
 }

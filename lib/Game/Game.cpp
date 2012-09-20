@@ -368,7 +368,7 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         }
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDMesh *model = new WLDMesh(mesh->m_def, 0);
-        palette.addPaletteDef(mesh->m_def->m_palette);
+        model->importPalette(m_archive);
         m_models.insert(actorName, model);
     }
     m_materials = palette.loadMaterials();
@@ -546,7 +546,7 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
         WLDModel *model = new WLDModel(archive);
         WLDMaterialPalette *pal = model->palette();
         pal->setDef(mainPalette);
-        pal->createSlots();
+        pal->createSlots(false);
 
         WLDCharActor *actor = new WLDCharActor(model);
         WLDModelSkin *skin = model->skin();

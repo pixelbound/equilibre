@@ -92,9 +92,11 @@ public:
     MeshData * data() const;
     void setData(MeshData *data);
     MeshDefFragment *def() const;
+    WLDMaterialPalette * palette() const;
     uint32_t partID() const;
     const AABox & boundsAA() const;
 
+    void importPalette(PFSArchive *archive);
     MeshData * importFrom(MeshBuffer *meshBuf);
     static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
 
@@ -107,6 +109,7 @@ private:
     uint32_t m_partID;
     MeshData *m_data;
     MeshDefFragment *m_meshDef;
+    WLDMaterialPalette *m_palette;
     AABox m_boundsAA;
 };
 
@@ -155,25 +158,20 @@ public:
     WLDMaterialPalette(PFSArchive *archive);
     virtual ~WLDMaterialPalette();
 
-    MaterialPaletteFragment *def () const;
+    MaterialPaletteFragment *def() const;
     void setDef(MaterialPaletteFragment *newDef);
     
     std::vector<WLDMaterialSlot *> & materialSlots();
 
-    void createSlots();
+    void createSlots(bool addMatDefs = true);
     void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
 
     WLDMaterialSlot * slotByName(const QString &name) const;
     
-    void addPaletteDef(MaterialPaletteFragment *def);
-    QString addMaterialDef(MaterialDefFragment *def);
-    
-    void copyFrom(WLDMaterialPalette *pal);
-    
     MaterialMap * loadMaterials();
 
     /*!
-      \brief Return the canonical name of a material. This strips out the palette ID.
+      \brief Return the canonical name of a material. This strips out the skin ID.
       */
     static QString materialName(QString defName);
     static QString materialName(MaterialDefFragment *def);
@@ -194,8 +192,8 @@ private:
 };
 
 /*!
-  \brief Describes one way an actor can be rendered. A skin can include a texture
-  palette and alternative meshes (e.g. for a character's head).
+  \brief Describes one way an actor can be rendered. A skin can use alternative
+  materials and meshes (e.g. for a character's head).
   */
 class GAME_DLL WLDModelSkin
 {
