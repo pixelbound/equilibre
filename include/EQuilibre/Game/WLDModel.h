@@ -114,9 +114,13 @@ class GAME_DLL WLDMaterial
 {
 public:
     WLDMaterial();
+    
+    MaterialDefFragment *def();
+    void setDef(MaterialDefFragment *matDef);
 
-    MaterialDefFragment *matDef;
-    Material *mat;
+private:
+    MaterialDefFragment *m_def;
+    Material *m_mat;
 };
 
 /*!
@@ -125,7 +129,7 @@ public:
 class GAME_DLL WLDMaterialSlot
 {
 public:
-    WLDMaterialSlot(MaterialDefFragment *matDef);
+    WLDMaterialSlot(QString matName);
 
     void addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef);
 
@@ -151,9 +155,13 @@ public:
     WLDMaterialPalette(PFSArchive *archive);
     virtual ~WLDMaterialPalette();
 
+    MaterialPaletteFragment *def () const;
+    void setDef(MaterialPaletteFragment *newDef);
+    
     std::vector<WLDMaterialSlot *> & materialSlots();
 
-    void createSlots(MaterialPaletteFragment *palDef);
+    void createSlots();
+    void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
 
     WLDMaterialSlot * slotByName(const QString &name) const;
     
@@ -179,6 +187,7 @@ public:
 private:
     Material * loadMaterial(MaterialDefFragment *frag);
 
+    MaterialPaletteFragment *m_def;
     QMap<QString, MaterialDefFragment *> m_materialDefs;
     std::vector<WLDMaterialSlot *> m_materialSlots;
     PFSArchive *m_archive;

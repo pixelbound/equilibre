@@ -490,43 +490,20 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     for(uint32_t i = 0; i < matDefs.count(); i++)
     {
         MaterialDefFragment *matDef = matDefs[i];
-        QString charName, palName, partName;
-        if(WLDMaterialPalette::explodeName(matDef, charName, palName, partName))
+        QString charName, skinName, partName;
+        if(WLDMaterialPalette::explodeName(matDef, charName, skinName, partName))
         {
             WLDCharActor *actor = m_models.value(charName);
             if(!actor)
                 continue;
             WLDModel *model = actor->model();
-            WLDModelSkin *skin = model->skins().value(palName);
+            WLDModelSkin *skin = model->skins().value(skinName);
             if(!skin)
-                skin = model->newSkin(palName);
-            int palID = palName.toInt();
+                skin = model->newSkin(skinName);
+            int skinID = skinName.toInt();
             WLDMaterialSlot *matSlot = model->palette()->slotByName(partName);
             if(matSlot)
-                matSlot->addSkinMaterial(palID, matDef);
-        }
-    }
-
-    // look for alternate meshes (e.g. heads)
-    WLDFragmentArray<MeshDefFragment> meshDefs = wld->table()->byKind<MeshDefFragment>();
-    for(uint32_t i = 0; i < meshDefs.count(); i++)
-    {
-        MeshDefFragment *meshDef = meshDefs[i];
-        QString actorName, meshName, skinName;
-        WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
-        WLDCharActor *actor = m_models.value(actorName);
-        if(!actor || meshName.isEmpty())
-            continue;
-        WLDModel *model = actor->model();
-        WLDModelSkin *skin = model->skins().value(skinName);
-        if(!skin)
-            continue;
-        foreach(WLDMesh *part, model->skin()->parts())
-        {
-            QString actorName2, meshName2, skinName2;
-            WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
-            if((meshName2 == meshName) && (skinName2 != skinName))
-                skin->replacePart(part, meshDef);
+                matSlot->addSkinMaterial(skinID, matDef);
         }
     }
 }
@@ -567,14 +544,17 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
 
         // Create a material slot for each material in the actor's palette.
         WLDModel *model = new WLDModel(archive);
-        model->palette()->createSlots(mainPalette);
+        WLDMaterialPalette *pal = model->palette();
+        pal->setDef(mainPalette);
+        pal->createSlots();
 
         WLDCharActor *actor = new WLDCharActor(model);
         WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
         {
-            skin->addPart(meshDef);
             Q_ASSERT(mainPalette == meshDef->m_palette);
+            skin->addPart(meshDef);
+            pal->addMeshMaterials(meshDef, 0);
         }
         foreach(WLDFragment *frag, actorDef->m_models)
         {
@@ -591,6 +571,35 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
         }
 
         m_models.insert(actorName, actor);
+    }
+    
+    // look for alternate meshes (e.g. heads)
+    WLDFragmentArray<MeshDefFragment> meshDefs = wld->table()->byKind<MeshDefFragment>();
+    for(uint32_t i = 0; i < meshDefs.count(); i++)
+    {
+        MeshDefFragment *meshDef = meshDefs[i];
+        QString actorName, meshName, skinName;
+        WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
+        bool skinIsInt = false;
+        uint32_t skinID = skinName.toUInt(&skinIsInt);
+        WLDCharActor *actor = m_models.value(actorName);
+        if(!actor || meshName.isEmpty() || !skinIsInt)
+            continue;
+        WLDModel *model = actor->model();
+        WLDModelSkin *skin = model->skins().value(skinName);
+        if(!skin)
+            skin = model->newSkin(skinName);
+        WLDMaterialPalette *pal = model->palette();
+        foreach(WLDMesh *part, model->skin()->parts())
+        {
+            QString actorName2, meshName2, skinName2;
+            WLDModelSkin::explodeMeshName(part->def()->name(), actorName2, meshName2, skinName2);
+            if((meshName2 == meshName) && (skinName2 != skinName))
+            {
+                skin->replacePart(part, meshDef);
+                pal->addMeshMaterials(meshDef, skinID);
+            }
+        }
     }
 }
 
