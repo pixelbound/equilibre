@@ -301,8 +301,9 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
 
 WLDMaterialPalette::~WLDMaterialPalette()
 {
-    while(m_materialSlots.size())
-        delete *m_materialSlots.begin();
+    std::vector<WLDMaterialSlot *>::iterator i, e = m_materialSlots.end();
+    for(i = m_materialSlots.begin(); i != e; i++)
+        delete *i;
 }
 
 std::vector<WLDMaterialSlot *> & WLDMaterialPalette::materialSlots()
@@ -536,12 +537,12 @@ WLDMaterialSlot::WLDMaterialSlot(MaterialDefFragment *matDef)
 void WLDMaterialSlot::addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef)
 {
     // Skin zero is the base skin.
-    Q_ASSERT(skinID > 0);
-    if(skinID > skinMats.size())
+    if(skinID == 0)
+        return;
+    else if(skinID > skinMats.size())
         skinMats.resize(skinID);
     WLDMaterial &skinMat = skinMats[skinID - 1];
-    Q_ASSERT((skinMat.mat == NULL) && (skinMat.matDef == NULL));
-    skinMat.mat = NULL;
+    Q_ASSERT((skinMat.matDef == NULL) || (skinMat.matDef == matDef));
     skinMat.matDef = matDef;
 }
 
