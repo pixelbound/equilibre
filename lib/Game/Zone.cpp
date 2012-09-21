@@ -362,6 +362,7 @@ ZoneTerrain::ZoneTerrain(Zone *zone)
     m_regionTree = NULL;
     m_zoneBuffer = NULL;
     m_zoneMaterials = NULL;
+    m_palette = NULL;
     m_zoneStat = NULL;
     m_zoneStatGPU = NULL;
 }
@@ -408,6 +409,9 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
     delete m_zoneMaterials;
     m_zoneMaterials = NULL;
     
+    delete m_palette;
+    m_palette = NULL;
+    
     if(renderCtx)
     {
         renderCtx->destroyStat(m_zoneStat);
@@ -451,6 +455,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
             continue;
         WLDMesh *meshPart = new WLDMesh(meshDef, regionID);
         m_zoneBounds.extendTo(meshPart->boundsAA());
+        // XXX stop using WLDStaticActor for zone regions?
         m_regionActors[regionID] = new WLDStaticActor(NULL, meshPart);
     }
     vec3 padding(1.0, 1.0, 1.0);
@@ -458,13 +463,13 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_zoneBounds.high = m_zoneBounds.high + padding;
     
     // Load zone textures into the material palette.
-    WLDMaterialPalette zonePalette(archive);
     WLDFragmentArray<MaterialPaletteFragment> matPals = wld->table()->byKind<MaterialPaletteFragment>();
     Q_ASSERT(matPals.count() == 1);
-    zonePalette.setDef(matPals[0]);
-    zonePalette.createSlots();
+    m_palette = new WLDMaterialPalette(archive);
+    m_palette->setDef(matPals[0]);
+    m_palette->createSlots();
     m_zoneMaterials = new MaterialMap();
-    zonePalette.exportTo(m_zoneMaterials);
+    m_palette->exportTo(m_zoneMaterials);
     
     return true;
 }
@@ -545,7 +550,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)
         {
-            MeshData *meshData = actor->mesh()->importFrom(meshBuf);
+            MeshData *meshData = actor->mesh()->importFrom(meshBuf, m_palette);
             meshData->updateTexCoords(m_zoneMaterials);
         }
     }
@@ -876,15 +881,15 @@ bool ZoneSky::upload(RenderContext *renderCtx)
     
     // Import vertices and indices for each mesh.
     m_skyBuffer = new MeshBuffer();
-    for(uint32_t i = 0; i < m_skyDefs.size(); i++)
+    /*for(uint32_t i = 0; i < m_skyDefs.size(); i++)
     {
         WLDMesh *mainMesh = m_skyDefs[i].mainLayer;
         WLDMesh *secondMesh = m_skyDefs[i].secondLayer;
-        MeshData *mainMeshData = mainMesh->importFrom(m_skyBuffer);
-        MeshData *secondMeshData = secondMesh->importFrom(m_skyBuffer);
+        MeshData *mainMeshData = mainMesh->importFrom(m_skyBuffer, NULL); // XXX
+        MeshData *secondMeshData = secondMesh->importFrom(m_skyBuffer, NULL); // XXX
         mainMeshData->updateTexCoords(m_skyMaterials);
         secondMeshData->updateTexCoords(m_skyMaterials);
-    }
+    }*/
     
     // Create the GPU buffers and free the memory used for vertices and indices.
     m_skyBuffer->upload(renderCtx);
@@ -911,11 +916,11 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
     
     // Import material groups from the visible layer.
     m_skyBuffer->matGroups.clear();
-    const SkyDef &def = m_skyDefs[skyID - 1];
+    /*const SkyDef &def = m_skyDefs[skyID - 1];
     if(def.secondLayer)
         m_skyBuffer->addMaterialGroups(def.secondLayer->data());
     if(def.mainLayer)
-        m_skyBuffer->addMaterialGroups(def.mainLayer->data());
+        m_skyBuffer->addMaterialGroups(def.mainLayer->data());*/
     
     // Draw the visible layer.
     prog->beginDrawMesh(m_skyBuffer, m_skyMaterials);

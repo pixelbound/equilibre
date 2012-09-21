@@ -97,14 +97,14 @@ public:
     const AABox & boundsAA() const;
 
     void importPalette(PFSArchive *archive);
-    MeshData * importFrom(MeshBuffer *meshBuf);
+    MeshData * importFrom(MeshBuffer *meshBuf, WLDMaterialPalette *palette);
     static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
 
 private:
     void importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc);
     void importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
-    MeshData * importMaterialGroups(MeshBuffer *buffer);
+    MeshData * importMaterialGroups(MeshBuffer *buffer, WLDMaterialPalette *palette);
     
     uint32_t m_partID;
     MeshData *m_data;
@@ -120,6 +120,9 @@ public:
     
     MaterialDefFragment *def();
     void setDef(MaterialDefFragment *matDef);
+    
+    Material *material() const;
+    void setMaterial(Material *material);
 
 private:
     MaterialDefFragment *m_def;
@@ -146,6 +149,7 @@ public:
     // Index of the first texture in this slot's texture list.
     // The textures are stored sequentially with increasing skin ID.
     uint32_t offset;
+    bool visible;
 };
 
 /*!
@@ -182,9 +186,9 @@ public:
 
 private:
     Material * loadMaterial(MaterialDefFragment *frag);
+    void exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos);
 
     MaterialPaletteFragment *m_def;
-    QMap<QString, MaterialDefFragment *> m_materialDefs;
     std::vector<WLDMaterialSlot *> m_materialSlots;
     PFSArchive *m_archive;
 };

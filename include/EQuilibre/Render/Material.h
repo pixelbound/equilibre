@@ -65,7 +65,7 @@ class RENDER_DLL MaterialMap
 public:
     MaterialMap();
     ~MaterialMap();
-    const QMap<uint32_t, Material *> &materials() const;
+    const QVector<Material *> &materials() const;
     Material * material(uint32_t matID) const;
     void setMaterial(uint32_t matID, Material *mat);
     
@@ -77,7 +77,7 @@ public:
     void textureArrayInfo(int &maxWidth, int &maxHeight, size_t &totalMem, size_t &usedMem) const;
     
 private:
-    QMap<uint32_t, Material *> m_materials;
+    QVector<Material *> m_materials;
     texture_t m_arrayTexture;
     bool m_uploaded;
 };

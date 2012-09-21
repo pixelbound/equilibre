@@ -173,9 +173,9 @@ void WLDMesh::importPalette(PFSArchive *archive)
     m_palette->createSlots();
 }
 
-MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf)
+MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf, WLDMaterialPalette *palette)
 {
-    MeshData *meshData = importMaterialGroups(meshBuf);
+    MeshData *meshData = importMaterialGroups(meshBuf, palette);
     importVertexData(meshBuf, meshData->vertexSegment);
     importIndexData(meshBuf, meshData->indexSegment, meshData->vertexSegment,
                     0, (uint32_t)m_meshDef->m_indices.count());
@@ -226,26 +226,25 @@ void WLDMesh::importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
         indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
-MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer)
+MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer, WLDMaterialPalette *palette)
 {
     // load material groups
-    MaterialPaletteFragment *palDef = m_meshDef->m_palette;
+    std::vector<WLDMaterialSlot *> &matSlots = palette->materialSlots();
     uint32_t meshOffset = 0;
     m_data = buffer->createMesh(m_meshDef->m_polygonsByTex.count());
     for(int i = 0; i < m_meshDef->m_polygonsByTex.count(); i++)
     {
         vec2us g = m_meshDef->m_polygonsByTex[i];
-        MaterialDefFragment *matDef = palDef->m_materials[g.second];
+        WLDMaterialSlot *slot = matSlots[g.second];
         uint32_t vertexCount = g.first * 3;
         MaterialGroup &mg(m_data->matGroups[i]);
         mg.id = m_partID;
         mg.offset = meshOffset;
         mg.count = vertexCount;
-        // invisible groups have no material
-        QString matName;
-        if(matDef->m_param1 != 0)
-            matName = WLDMaterialPalette::materialName(palDef->m_materials[g.second]);
-        mg.matID = WLDMaterialPalette::materialHash(matName);
+        if(!slot->visible)
+            mg.matID = (uint32_t)-1;    // Invisible groups have no material.
+        else
+            mg.matID = g.second;        // XXX + palette offset
         meshOffset += vertexCount;
     }
     return m_data;
@@ -262,7 +261,7 @@ MeshBuffer * WLDMesh::combine(const QVector<WLDMesh *> &meshes)
     MeshBuffer *meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, meshes)
     {
-        MeshData *meshData = mesh->importMaterialGroups(meshBuf);
+        MeshData *meshData = mesh->importMaterialGroups(meshBuf, NULL); // XXX
         meshBuf->addMaterialGroups(meshData);
         mesh->importVertexData(meshBuf, meshData->vertexSegment);
     }
@@ -346,6 +345,7 @@ void WLDMaterialPalette::createSlots(bool addMatDefs)
         WLDMaterialSlot *slot = new WLDMaterialSlot(matDef->name());
         if(addMatDefs)
             slot->addSkinMaterial(0, matDef);
+        slot->visible = (matDef->m_param1 != 0);
         m_materialSlots.push_back(slot);
     }
 }
@@ -422,14 +422,27 @@ uint32_t WLDMaterialPalette::materialHash(QString matName)
     return hash;
 }
 
+void WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos)
+{
+    // XXX remove WLDMaterial and use MaterialDefFragment in WLDMaterialSlot?
+    Material *mat = loadMaterial(wldMat.def());
+    if(mat)
+    {
+        wldMat.setMaterial(mat);
+        map->setMaterial(pos, mat);
+    }
+    pos++;
+}
+
 void WLDMaterialPalette::exportTo(MaterialMap *map)
 {
-    foreach(MaterialDefFragment *frag, m_materialDefs)
+    uint32_t pos = map->materials().size();
+    for(uint32_t i = 0; i < m_materialSlots.size(); i++)
     {
-        QString canName = materialName(frag);
-        uint32_t canID = materialHash(canName);
-        Material *mat = loadMaterial(frag);
-        map->setMaterial(canID, mat);
+        WLDMaterialSlot *slot = m_materialSlots[i];
+        exportMaterial(slot->baseMat, map, pos);
+        for(uint32_t j = 0; j < slot->skinMats.size(); j++)
+            exportMaterial(slot->skinMats[j], map, pos);
     }
 }
 
@@ -549,6 +562,16 @@ void WLDMaterial::setDef(MaterialDefFragment *matDef)
     matDef->setHandled(true);
 }
 
+Material * WLDMaterial::material() const
+{
+    return m_mat;
+}
+
+void WLDMaterial::setMaterial(Material *material)
+{
+    m_mat = material;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 WLDMaterialSlot::WLDMaterialSlot(QString matName)
@@ -557,6 +580,7 @@ WLDMaterialSlot::WLDMaterialSlot(QString matName)
     if(!WLDMaterialPalette::explodeName(matName, charName, palName, slotName))
         slotName = matName.replace("_MDF", "");
     offset = 0;
+    visible = false;
 }
 
 void WLDMaterialSlot::addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef)

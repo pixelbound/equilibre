@@ -170,6 +170,7 @@ private:
     std::vector<WLDStaticActor *> m_visibleRegions;
     RegionTreeFragment *m_regionTree;
     MeshBuffer *m_zoneBuffer;
+    WLDMaterialPalette *m_palette;
     MaterialMap *m_zoneMaterials;
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;

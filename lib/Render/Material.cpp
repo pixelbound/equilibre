@@ -131,18 +131,20 @@ MaterialMap::~MaterialMap()
         delete mat;
 }
 
-const QMap<uint32_t, Material *> & MaterialMap::materials() const
+const QVector<Material *> & MaterialMap::materials() const
 {
     return m_materials;
 }
 
 Material * MaterialMap::material(uint32_t matID) const
 {
-    return m_materials.value(matID);
+    return (matID < m_materials.size()) ? m_materials.value(matID) : NULL;
 }
 
 void MaterialMap::setMaterial(uint32_t matID, Material *mat)
 {
+    if(matID >= m_materials.size())
+        m_materials.resize(matID + 1);
     m_materials[matID] = mat;
 }
 
