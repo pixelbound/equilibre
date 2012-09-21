@@ -550,7 +550,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)
         {
-            MeshData *meshData = actor->mesh()->importFrom(meshBuf, m_palette);
+            MeshData *meshData = actor->mesh()->importFrom(meshBuf);
             meshData->updateTexCoords(m_zoneMaterials);
         }
     }

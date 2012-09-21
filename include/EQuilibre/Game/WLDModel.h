@@ -97,14 +97,14 @@ public:
     const AABox & boundsAA() const;
 
     void importPalette(PFSArchive *archive);
-    MeshData * importFrom(MeshBuffer *meshBuf, WLDMaterialPalette *palette);
+    MeshData * importFrom(MeshBuffer *meshBuf, uint32_t paletteOffset = 0);
     static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
 
 private:
     void importVertexData(MeshBuffer *buffer, BufferSegment &dataLoc);
     void importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
                          const BufferSegment &dataLoc, uint32_t offset, uint32_t count);
-    MeshData * importMaterialGroups(MeshBuffer *buffer, WLDMaterialPalette *palette);
+    MeshData * importMaterialGroups(MeshBuffer *buffer, uint32_t paletteOffset);
     
     uint32_t m_partID;
     MeshData *m_data;
@@ -117,6 +117,10 @@ class GAME_DLL WLDMaterial
 {
 public:
     WLDMaterial();
+
+    // Index of the material in the material map.
+    uint32_t index() const;
+    void setIndex(uint32_t index);
     
     MaterialDefFragment *def();
     void setDef(MaterialDefFragment *matDef);
@@ -124,9 +128,12 @@ public:
     Material *material() const;
     void setMaterial(Material *material);
 
+    const static uint32_t INVALID_INDEX = (uint32_t)-1;
+
 private:
     MaterialDefFragment *m_def;
     Material *m_mat;
+    uint32_t m_index;
 };
 
 /*!
@@ -164,6 +171,9 @@ public:
 
     MaterialPaletteFragment *def() const;
     void setDef(MaterialPaletteFragment *newDef);
+
+    uint32_t mapOffset() const;
+    void setMapOffset(uint32_t offset);
     
     std::vector<WLDMaterialSlot *> & materialSlots();
     WLDMaterialSlot * slotByName(const QString &name) const;
@@ -186,10 +196,11 @@ public:
 
 private:
     Material * loadMaterial(MaterialDefFragment *frag);
-    void exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos);
+    bool exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos);
 
     MaterialPaletteFragment *m_def;
     std::vector<WLDMaterialSlot *> m_materialSlots;
+    uint32_t m_mapOffset;
     PFSArchive *m_archive;
 };
 

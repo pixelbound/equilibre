@@ -386,7 +386,8 @@ MeshBuffer * ObjectPack::upload(RenderContext *renderCtx)
     m_meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, m_models.values())
     {
-        MeshData *meshData = mesh->importFrom(m_meshBuf, mesh->palette());
+        uint32_t paletteOffset = mesh->palette()->mapOffset();
+        MeshData *meshData = mesh->importFrom(m_meshBuf, paletteOffset);
         meshData->updateTexCoords(m_materials);
     }
     
@@ -632,7 +633,7 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
     foreach(WLDModelSkin *skin, model->skins())
     {
         foreach(WLDMesh *mesh, skin->parts())
-            mesh->importFrom(meshBuf, model->palette());
+            mesh->importFrom(meshBuf);
     }
 
     // Create the GPU buffers.

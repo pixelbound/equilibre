@@ -173,9 +173,9 @@ void WLDMesh::importPalette(PFSArchive *archive)
     m_palette->createSlots();
 }
 
-MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf, WLDMaterialPalette *palette)
+MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf, uint32_t paletteOffset)
 {
-    MeshData *meshData = importMaterialGroups(meshBuf, palette);
+    MeshData *meshData = importMaterialGroups(meshBuf, paletteOffset);
     importVertexData(meshBuf, meshData->vertexSegment);
     importIndexData(meshBuf, meshData->indexSegment, meshData->vertexSegment,
                     0, (uint32_t)m_meshDef->m_indices.count());
@@ -226,25 +226,20 @@ void WLDMesh::importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
         indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
-MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer, WLDMaterialPalette *palette)
+MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer, uint32_t paletteOffset)
 {
-    // load material groups
-    std::vector<WLDMaterialSlot *> &matSlots = palette->materialSlots();
+    // Load material groups.
     uint32_t meshOffset = 0;
     m_data = buffer->createMesh(m_meshDef->m_polygonsByTex.count());
     for(int i = 0; i < m_meshDef->m_polygonsByTex.count(); i++)
     {
         vec2us g = m_meshDef->m_polygonsByTex[i];
-        WLDMaterialSlot *slot = matSlots[g.second];
         uint32_t vertexCount = g.first * 3;
         MaterialGroup &mg(m_data->matGroups[i]);
         mg.id = m_partID;
         mg.offset = meshOffset;
         mg.count = vertexCount;
-        if(!slot->visible)
-            mg.matID = (uint32_t)-1;    // Invisible groups have no material.
-        else
-            mg.matID = g.second;        // XXX + palette offset
+        mg.matID = paletteOffset + g.second;
         meshOffset += vertexCount;
     }
     return m_data;
@@ -261,7 +256,7 @@ MeshBuffer * WLDMesh::combine(const QVector<WLDMesh *> &meshes)
     MeshBuffer *meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, meshes)
     {
-        MeshData *meshData = mesh->importMaterialGroups(meshBuf, NULL); // XXX
+        MeshData *meshData = mesh->importMaterialGroups(meshBuf, 0);
         meshBuf->addMaterialGroups(meshData);
         mesh->importVertexData(meshBuf, meshData->vertexSegment);
     }
@@ -311,6 +306,7 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
 {
     m_archive = archive;
     m_def = NULL;
+    m_mapOffset = 0;
 }
 
 WLDMaterialPalette::~WLDMaterialPalette()
@@ -328,6 +324,16 @@ MaterialPaletteFragment * WLDMaterialPalette::def() const
 void WLDMaterialPalette::setDef(MaterialPaletteFragment *newDef)
 {
     m_def = newDef;
+}
+
+uint32_t WLDMaterialPalette::mapOffset() const
+{
+    return m_mapOffset;
+}
+
+void WLDMaterialPalette::setMapOffset(uint32_t offset)
+{
+    m_mapOffset = offset;
 }
 
 std::vector<WLDMaterialSlot *> & WLDMaterialPalette::materialSlots()
@@ -422,27 +428,48 @@ uint32_t WLDMaterialPalette::materialHash(QString matName)
     return hash;
 }
 
-void WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos)
+bool WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos)
 {
-    // XXX remove WLDMaterial and use MaterialDefFragment in WLDMaterialSlot?
-    Material *mat = loadMaterial(wldMat.def());
-    if(mat)
-    {
-        wldMat.setMaterial(mat);
-        map->setMaterial(pos, mat);
-    }
+    // Don't export invisible materials.
+    MaterialDefFragment *matDef = wldMat.def();
+    Material *mat = NULL;
+    if(matDef && (matDef->m_param1 != 0))
+        mat = loadMaterial(matDef);
+    wldMat.setMaterial(mat ? mat : NULL);
+    wldMat.setIndex(mat ? pos : WLDMaterial::INVALID_INDEX);
+    map->setMaterial(pos, mat);
     pos++;
+    return (mat != NULL);
 }
 
 void WLDMaterialPalette::exportTo(MaterialMap *map)
 {
+    // Materials are exported to the map in skin-major order. This mean we
+    // export every slot of the base skin, then every slot of the first
+    // alternative skin and so on.
+
+    // Keep track of the index of the first material of this palette into the map.
     uint32_t pos = map->materials().size();
-    for(uint32_t i = 0; i < m_materialSlots.size(); i++)
+    m_mapOffset = pos;
+
+    // Export the base skin's materials.
+    uint32_t maxSkinID = 0;
+    for(uint32_t j = 0; j < m_materialSlots.size(); j++)
     {
-        WLDMaterialSlot *slot = m_materialSlots[i];
+        WLDMaterialSlot *slot = m_materialSlots[j];
         exportMaterial(slot->baseMat, map, pos);
-        for(uint32_t j = 0; j < slot->skinMats.size(); j++)
-            exportMaterial(slot->skinMats[j], map, pos);
+        maxSkinID = qMax(maxSkinID, slot->skinMats.size());
+    }
+
+    // Export other skins' materials.
+    for(uint32_t i = 0; i < maxSkinID; i++)
+    {
+        for(uint32_t j = 0; j < m_materialSlots.size(); j++)
+        {
+            WLDMaterialSlot *slot = m_materialSlots[j];
+            if(i < slot->skinMats.size())
+                exportMaterial(slot->skinMats[i], map, pos);
+        }
     }
 }
 
@@ -546,6 +573,17 @@ WLDMaterial::WLDMaterial()
 {
     m_mat = NULL;
     m_def = NULL;
+    m_index = INVALID_INDEX;
+}
+
+uint32_t WLDMaterial::index() const
+{
+    return m_index;
+}
+
+void WLDMaterial::setIndex(uint32_t index)
+{
+    m_index = index;
 }
 
 MaterialDefFragment * WLDMaterial::def()
