@@ -219,6 +219,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
+    prog->setMaterialMap(NULL, 0);
     
     FogParams fogParams;
     fogParams.color = m_info.fogColor;

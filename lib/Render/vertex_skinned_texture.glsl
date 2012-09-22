@@ -23,6 +23,9 @@ attribute float a_boneIndex; // to be compatible with OpenGL < 3.0
 uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
+uniform int u_mapMaterials;
+uniform int u_materialMap[64];
+
 uniform float u_fogStart;
 uniform float u_fogEnd;
 uniform float u_fogDensity;
@@ -68,7 +71,9 @@ void main()
 {
     vec4 viewPos = u_modelViewMatrix * skin(a_position);
     gl_Position = u_projectionMatrix * viewPos;
-    v_texCoords = a_texCoords;
+    float baseTex = a_texCoords.z;
+    float mappedTex = float(u_materialMap[int(baseTex)]);
+    v_texCoords = vec3(a_texCoords.xy, (u_mapMaterials > 0) ? mappedTex : baseTex);
 
     v_color = vec3(0.0, 0.0, 0.0);
     v_texFactor = 1.0;

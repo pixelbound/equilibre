@@ -24,6 +24,7 @@
 #include "EQuilibre/Render/RenderContext.h"
 
 const int MAX_TRANSFORMS = 256;
+const int MAX_MATERIALS = 64;
 const int MAX_LIGHTS = 8;
 
 const int A_POSITION = 0;
@@ -39,11 +40,13 @@ const int U_PROJECTION_MATRIX = 1;
 const int U_AMBIENT_LIGHT = 2;
 const int U_MAT_HAS_TEXTURE = 3;
 const int U_MAT_TEXTURE = 4;
-const int U_LIGHTING_MODE = 5;
-const int U_FOG_START = 6;
-const int U_FOG_END = 7;
-const int U_FOG_DENSITY = 8;
-const int U_FOG_COLOR = 9;
+const int U_MAT_MAP_ENABLED = 5;
+const int U_MAT_MAP = 6;
+const int U_LIGHTING_MODE = 7;
+const int U_FOG_START = 8;
+const int U_FOG_END = 9;
+const int U_FOG_DENSITY = 10;
+const int U_FOG_COLOR = 11;
 const int U_MAX = U_FOG_COLOR;
 
 struct RENDER_DLL ShaderSymbolInfo
@@ -129,6 +132,7 @@ public:
 
     void setModelViewMatrix(const matrix4 &modelView);
     void setProjectionMatrix(const matrix4 &projection);
+    void setMaterialMap(const int16_t *materials, int count);
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
     void setLightingMode(LightingMode newMode);

@@ -26,6 +26,8 @@ static const ShaderSymbolInfo Uniforms[] =
     {U_AMBIENT_LIGHT, "u_ambientLight"},
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
     {U_MAT_TEXTURE, "u_material_texture"},
+    {U_MAT_MAP_ENABLED, "u_mapMaterials"},
+    {U_MAT_MAP, "u_materialMap"},
     {U_LIGHTING_MODE, "u_lightingMode"},
     {U_FOG_START, "u_fogStart"},
     {U_FOG_END, "u_fogEnd"},
@@ -240,6 +242,22 @@ void RenderProgram::setProjectionMatrix(const matrix4 &projection)
 {
     glUniformMatrix4fv(m_uniform[U_PROJECTION_MATRIX],
         1, GL_FALSE, (const GLfloat *)projection.columns());
+}
+
+void RenderProgram::setMaterialMap(const int16_t *materials, int count)
+{
+    if(materials && (count > 0))
+    {
+        int32_t finalMats[MAX_MATERIALS];
+        for(int i = 0; i < MAX_MATERIALS; i++)
+            finalMats[i] = (i < count) ? materials[i] : i;
+        glUniform1iv(m_uniform[U_MAT_MAP], MAX_MATERIALS, finalMats);
+        glUniform1i(m_uniform[U_MAT_MAP_ENABLED], 1);
+    }
+    else
+    {
+        glUniform1i(m_uniform[U_MAT_MAP_ENABLED], 0);
+    }
 }
 
 void RenderProgram::setBoneTransforms(const BoneTransform *transforms, int count)

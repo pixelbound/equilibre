@@ -458,7 +458,7 @@ void WLDMaterialPalette::exportTo(MaterialMap *map)
     {
         WLDMaterialSlot *slot = m_materialSlots[j];
         exportMaterial(slot->baseMat, map, pos);
-        maxSkinID = qMax(maxSkinID, slot->skinMats.size());
+        maxSkinID = qMax(maxSkinID, (uint32_t)slot->skinMats.size());
     }
 
     // Export other skins' materials.

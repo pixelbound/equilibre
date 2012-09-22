@@ -160,7 +160,7 @@ public:
 };
 
 /*!
-  \brief Defines a set of materials (e.g. textures) that can be used for a model.
+  \brief Defines a set of materials (e.g.\ textures) that can be used for a model.
   The palette contains all materials that can be used with the model.
   */
 class GAME_DLL WLDMaterialPalette
@@ -206,7 +206,7 @@ private:
 
 /*!
   \brief Describes one way an actor can be rendered. A skin can use alternative
-  materials and meshes (e.g. for a character's head).
+  materials and meshes (e.g.\ for a character's head).
   */
 class GAME_DLL WLDModelSkin
 {

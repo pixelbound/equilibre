@@ -87,7 +87,7 @@ private:
 };
 
 /*!
-  \brief Holds the content of a WLD fragment (e.g. texture, mesh, skeleton, etc).
+  \brief Holds the content of a WLD fragment (e.g.\ texture, mesh, skeleton, etc).
   */
 class GAME_DLL WLDFragment
 {
