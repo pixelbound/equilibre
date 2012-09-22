@@ -40,7 +40,7 @@ class ActorEquip
 public:
     int TrackID;
     WLDMesh *Mesh;
-    MaterialMap *Materials;
+    MaterialArray *Materials;
 };
 
 /*!
@@ -144,7 +144,7 @@ public:
         Shield
     };
 
-    bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialMap *materials);
+    bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialArray *materials);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
 
 private:

@@ -29,7 +29,7 @@ class MaterialDefFragment;
 class MaterialPaletteFragment;
 class ActorDefFragment;
 class Material;
-class MaterialMap;
+class MaterialArray;
 class PFSArchive;
 class RenderContext;
 class RenderProgram;
@@ -61,8 +61,8 @@ public:
 
     WLDMaterialPalette * palette() const;
 
-    MaterialMap *materials() const;
-    void setMaterials(MaterialMap *newMaterials);
+    MaterialArray *materials() const;
+    void setMaterials(MaterialArray *newMaterials);
 
     WLDModelSkin *skin() const;
     const QMap<QString, WLDModelSkin *> & skins() const;
@@ -77,7 +77,7 @@ private:
     QMap<QString, WLDModelSkin *> m_skins;
     QList<WLDMesh *> m_meshes;
     WLDMaterialPalette *m_palette;
-    MaterialMap *m_materials;
+    MaterialArray *m_materials;
 };
 
 /*!
@@ -118,7 +118,7 @@ class GAME_DLL WLDMaterial
 public:
     WLDMaterial();
 
-    // Index of the material in the material map.
+    // Index of the material in the material array.
     uint32_t index() const;
     void setIndex(uint32_t index);
     
@@ -172,15 +172,15 @@ public:
     MaterialPaletteFragment *def() const;
     void setDef(MaterialPaletteFragment *newDef);
 
-    uint32_t mapOffset() const;
-    void setMapOffset(uint32_t offset);
+    uint32_t arrayOffset() const;
+    void setArrayOffset(uint32_t offset);
     
     std::vector<WLDMaterialSlot *> & materialSlots();
     WLDMaterialSlot * slotByName(const QString &name) const;
     
     void createSlots(bool addMatDefs = true);
     void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
-    void exportTo(MaterialMap *map);
+    void exportTo(MaterialArray *array);
 
     /*!
       \brief Return the canonical name of a material. This strips out the skin ID.
@@ -196,11 +196,11 @@ public:
 
 private:
     Material * loadMaterial(MaterialDefFragment *frag);
-    bool exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos);
+    bool exportMaterial(WLDMaterial &wldMat, MaterialArray *array, uint32_t &pos);
 
     MaterialPaletteFragment *m_def;
     std::vector<WLDMaterialSlot *> m_materialSlots;
-    uint32_t m_mapOffset;
+    uint32_t m_arrayOffset;
     PFSArchive *m_archive;
 };
 

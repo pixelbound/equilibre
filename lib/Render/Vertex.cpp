@@ -49,9 +49,9 @@ MeshData::~MeshData()
     delete [] matGroups;
 }
 
-void MeshData::updateTexCoords(MaterialMap *map)
+void MeshData::updateTexCoords(MaterialArray *array)
 {
-    buffer->updateTexCoords(map, matGroups, groupCount, indexSegment.offset);
+    buffer->updateTexCoords(array, matGroups, groupCount, indexSegment.offset);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,25 +88,25 @@ void MeshBuffer::addMaterialGroups(MeshData *mesh)
     }
 }
 
-void MeshBuffer::updateTexCoords(MaterialMap *map)
+void MeshBuffer::updateTexCoords(MaterialArray *array)
 {
-    updateTexCoords(map, matGroups.constData(), matGroups.count(), 0);
+    updateTexCoords(array, matGroups.constData(), matGroups.count(), 0);
 }
 
-void MeshBuffer::updateTexCoords(MaterialMap *map, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex)
+void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex)
 {
     Vertex *vertices = this->vertices.data();
     const uint32_t *indices = this->indices.constData() + startIndex;
     
-    // Get texture array info from the material map.
+    // Get texture array info from the material array.
     int maxWidth, maxHeight;
     size_t totalMem, usedMem;
-    map->textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
+    array->textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
     
     for(uint32_t i = 0; i < groupCount; i++)
     {
         const MaterialGroup &mg(matGroups[i]);
-        Material *mat = map->material(mg.matID);
+        Material *mat = array->material(mg.matID);
         if(!mat)
             continue;
         float matScalingX = (float)mat->image().width() / (float)maxWidth;

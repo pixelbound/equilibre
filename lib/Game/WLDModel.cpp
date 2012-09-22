@@ -74,12 +74,12 @@ WLDMaterialPalette * WLDModel::palette() const
     return m_palette;
 }
 
-MaterialMap * WLDModel::materials() const
+MaterialArray * WLDModel::materials() const
 {
     return m_materials;
 }
 
-void WLDModel::setMaterials(MaterialMap *newMaterials)
+void WLDModel::setMaterials(MaterialArray *newMaterials)
 {
     m_materials = newMaterials;
 }
@@ -306,7 +306,7 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
 {
     m_archive = archive;
     m_def = NULL;
-    m_mapOffset = 0;
+    m_arrayOffset = 0;
 }
 
 WLDMaterialPalette::~WLDMaterialPalette()
@@ -326,14 +326,14 @@ void WLDMaterialPalette::setDef(MaterialPaletteFragment *newDef)
     m_def = newDef;
 }
 
-uint32_t WLDMaterialPalette::mapOffset() const
+uint32_t WLDMaterialPalette::arrayOffset() const
 {
-    return m_mapOffset;
+    return m_arrayOffset;
 }
 
-void WLDMaterialPalette::setMapOffset(uint32_t offset)
+void WLDMaterialPalette::setArrayOffset(uint32_t offset)
 {
-    m_mapOffset = offset;
+    m_arrayOffset = offset;
 }
 
 std::vector<WLDMaterialSlot *> & WLDMaterialPalette::materialSlots()
@@ -428,7 +428,7 @@ uint32_t WLDMaterialPalette::materialHash(QString matName)
     return hash;
 }
 
-bool WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialMap *map, uint32_t &pos)
+bool WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialArray *array, uint32_t &pos)
 {
     // Don't export invisible materials.
     MaterialDefFragment *matDef = wldMat.def();
@@ -437,27 +437,27 @@ bool WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialMap *map, u
         mat = loadMaterial(matDef);
     wldMat.setMaterial(mat ? mat : NULL);
     wldMat.setIndex(mat ? pos : WLDMaterial::INVALID_INDEX);
-    map->setMaterial(pos, mat);
+    array->setMaterial(pos, mat);
     pos++;
     return (mat != NULL);
 }
 
-void WLDMaterialPalette::exportTo(MaterialMap *map)
+void WLDMaterialPalette::exportTo(MaterialArray *array)
 {
-    // Materials are exported to the map in skin-major order. This mean we
+    // Materials are exported to the array in skin-major order. This mean we
     // export every slot of the base skin, then every slot of the first
     // alternative skin and so on.
 
-    // Keep track of the index of the first material of this palette into the map.
-    uint32_t pos = map->materials().size();
-    m_mapOffset = pos;
+    // Keep track of the index of the first material of this palette into the array.
+    uint32_t pos = array->materials().size();
+    m_arrayOffset = pos;
 
     // Export the base skin's materials.
     uint32_t maxSkinID = 0;
     for(uint32_t j = 0; j < m_materialSlots.size(); j++)
     {
         WLDMaterialSlot *slot = m_materialSlots[j];
-        exportMaterial(slot->baseMat, map, pos);
+        exportMaterial(slot->baseMat, array, pos);
         maxSkinID = qMax(maxSkinID, (uint32_t)slot->skinMats.size());
     }
 
@@ -468,7 +468,7 @@ void WLDMaterialPalette::exportTo(MaterialMap *map)
         {
             WLDMaterialSlot *slot = m_materialSlots[j];
             if(i < slot->skinMats.size())
-                exportMaterial(slot->skinMats[i], map, pos);
+                exportMaterial(slot->skinMats[i], array, pos);
         }
     }
 }

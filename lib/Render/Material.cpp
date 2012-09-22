@@ -119,46 +119,46 @@ bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-MaterialMap::MaterialMap()
+MaterialArray::MaterialArray()
 {
     m_uploaded = false;
     m_arrayTexture = 0;
 }
 
-MaterialMap::~MaterialMap()
+MaterialArray::~MaterialArray()
 {
     foreach(Material *mat, m_materials)
         delete mat;
 }
 
-const QVector<Material *> & MaterialMap::materials() const
+const QVector<Material *> & MaterialArray::materials() const
 {
     return m_materials;
 }
 
-Material * MaterialMap::material(uint32_t matID) const
+Material * MaterialArray::material(uint32_t matID) const
 {
     return (matID < m_materials.size()) ? m_materials.value(matID) : NULL;
 }
 
-void MaterialMap::setMaterial(uint32_t matID, Material *mat)
+void MaterialArray::setMaterial(uint32_t matID, Material *mat)
 {
     if(matID >= m_materials.size())
         m_materials.resize(matID + 1);
     m_materials[matID] = mat;
 }
 
-texture_t MaterialMap::arrayTexture() const
+texture_t MaterialArray::arrayTexture() const
 {
     return m_arrayTexture;
 }
 
-bool MaterialMap::uploaded() const
+bool MaterialArray::uploaded() const
 {
     return m_uploaded;
 }
 
-void MaterialMap::textureArrayInfo(int &maxWidth, int &maxHeight,
+void MaterialArray::textureArrayInfo(int &maxWidth, int &maxHeight,
                                    size_t &totalMem, size_t &usedMem) const
 {
     const size_t pixelSize = 4;
@@ -179,7 +179,7 @@ void MaterialMap::textureArrayInfo(int &maxWidth, int &maxHeight,
     totalMem = maxWidth * maxHeight * pixelSize * count;
 }
 
-void MaterialMap::upload(RenderContext *renderCtx)
+void MaterialArray::upload(RenderContext *renderCtx)
 {
     if(m_uploaded)
         return;
@@ -201,7 +201,7 @@ void MaterialMap::upload(RenderContext *renderCtx)
     m_uploaded = true;
 }
 
-void MaterialMap::uploadArray(RenderContext *renderCtx)
+void MaterialArray::uploadArray(RenderContext *renderCtx)
 {
     if(m_uploaded)
         return;

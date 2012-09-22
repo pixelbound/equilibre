@@ -39,7 +39,7 @@ class ActorIndexNode;
 class OctreeIndex;
 class WLDSkeleton;
 class WLDMaterialPalette;
-class MaterialMap;
+class MaterialArray;
 class ActorDefFragment;
 class RegionTreeFragment;
 class RegionFragment;
@@ -171,7 +171,7 @@ private:
     RegionTreeFragment *m_regionTree;
     MeshBuffer *m_zoneBuffer;
     WLDMaterialPalette *m_palette;
-    MaterialMap *m_zoneMaterials;
+    MaterialArray *m_zoneMaterials;
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
@@ -237,7 +237,7 @@ public:
 private:
     PFSArchive *m_skyArchive;
     WLDData *m_skyWld;
-    MaterialMap *m_skyMaterials;
+    MaterialArray *m_skyMaterials;
     std::vector<SkyDef> m_skyDefs;
     MeshBuffer *m_skyBuffer;
 };

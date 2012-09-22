@@ -22,7 +22,7 @@
 #include "EQuilibre/Render/LinearMath.h"
 
 class MeshBuffer;
-class MaterialMap;
+class MaterialArray;
 class RenderContext;
 
 class RENDER_DLL Vertex
@@ -61,7 +61,7 @@ class RENDER_DLL MeshData
 public:
     MeshData(MeshBuffer *buffer, uint32_t groups);
     ~MeshData();
-    void updateTexCoords(MaterialMap *map);
+    void updateTexCoords(MaterialArray *array);
     
     MeshBuffer *buffer;
     BufferSegment vertexSegment;
@@ -77,8 +77,8 @@ public:
     ~MeshBuffer();
     MeshData *createMesh(uint32_t groups);
     void addMaterialGroups(MeshData *mesh);
-    void updateTexCoords(MaterialMap *map);
-    void updateTexCoords(MaterialMap *map, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex);
+    void updateTexCoords(MaterialArray *array);
+    void updateTexCoords(MaterialArray *array, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex);
     void upload(RenderContext *renderCtx);
     void clear(RenderContext *renderCtx);
     void clearVertices();

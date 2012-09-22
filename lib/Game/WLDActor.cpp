@@ -190,7 +190,7 @@ void WLDCharActor::setPaletteName(QString palName)
     m_palName = palName;
 }
 
-bool WLDCharActor::addEquip(WLDCharActor::EquipSlot slot, WLDMesh *mesh, MaterialMap *materials)
+bool WLDCharActor::addEquip(WLDCharActor::EquipSlot slot, WLDMesh *mesh, MaterialArray *materials)
 {
     QString name = slotName(slot);
     if(name.isEmpty() || !m_model->skeleton())

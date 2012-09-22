@@ -320,7 +320,7 @@ MeshBuffer * ObjectPack::buffer() const
     return m_meshBuf;
 }
 
-MaterialMap * ObjectPack::materials() const
+MaterialArray * ObjectPack::materials() const
 {
     return m_materials;
 }
@@ -371,8 +371,8 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         m_models.insert(actorName, model);
     }
     
-    // Import materials into a single material map.
-    m_materials = new MaterialMap();
+    // Import materials into a single material array.
+    m_materials = new MaterialArray();
     foreach(WLDMesh *model, m_models.values())
         model->palette()->exportTo(m_materials);
     return true;
@@ -386,7 +386,7 @@ MeshBuffer * ObjectPack::upload(RenderContext *renderCtx)
     m_meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, m_models.values())
     {
-        uint32_t paletteOffset = mesh->palette()->mapOffset();
+        uint32_t paletteOffset = mesh->palette()->arrayOffset();
         MeshData *meshData = mesh->importFrom(m_meshBuf, paletteOffset);
         meshData->updateTexCoords(m_materials);
     }
@@ -621,7 +621,7 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
         return;
 
     // Import materials.
-    MaterialMap *materials = new MaterialMap();
+    MaterialArray *materials = new MaterialArray();
     model->palette()->exportTo(materials);
     materials->upload(renderCtx);
     model->setMaterials(materials);

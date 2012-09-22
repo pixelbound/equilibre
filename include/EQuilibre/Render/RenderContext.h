@@ -30,7 +30,7 @@ class BoneTransform;
 class Frustum;
 class AABox;
 class Material;
-class MaterialMap;
+class MaterialArray;
 class FrameStat;
 class MeshBuffer;
 class RenderContextPrivate;

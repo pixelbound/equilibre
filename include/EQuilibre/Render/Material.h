@@ -18,7 +18,6 @@
 #define EQUILIBRE_MATERIAL_H
 
 #include <QImage>
-#include <QMap>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 
@@ -60,11 +59,11 @@ private:
     bool m_opaque;
 };
 
-class RENDER_DLL MaterialMap
+class RENDER_DLL MaterialArray
 {
 public:
-    MaterialMap();
-    ~MaterialMap();
+    MaterialArray();
+    ~MaterialArray();
     const QVector<Material *> &materials() const;
     Material * material(uint32_t matID) const;
     void setMaterial(uint32_t matID, Material *mat);

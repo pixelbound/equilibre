@@ -297,7 +297,7 @@ void RenderProgram::setFogParams(const FogParams &fogParams)
     glUniform4fv(m_uniform[U_FOG_COLOR], 1, (const GLfloat *)&fogParams.color);
 }
 
-void RenderProgram::beginApplyMaterial(MaterialMap *map, Material *m)
+void RenderProgram::beginApplyMaterial(MaterialArray *array, Material *m)
 {
     //XXX GL_MAX_TEXTURE_IMAGE_UNITS
     //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
@@ -317,7 +317,7 @@ void RenderProgram::beginApplyMaterial(MaterialMap *map, Material *m)
     m_currentMatNeedsBlending = !m->isOpaque();
 }
 
-void RenderProgram::endApplyMaterial(MaterialMap *map, Material *m)
+void RenderProgram::endApplyMaterial(MaterialArray *array, Material *m)
 {
     //GLuint target = (map->arrayTexture() != 0) ? GL_TEXTURE_2D_ARRAY : GL_TEXTURE_2D;
     GLuint target = GL_TEXTURE_2D_ARRAY;
@@ -376,7 +376,7 @@ void RenderProgram::uploadVertexAttributes(const MeshBuffer *meshBuf)
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialMap *materials,
+void RenderProgram::beginDrawMesh(const MeshBuffer *meshBuf, MaterialArray *materials,
                                      const BoneTransform *bones, uint32_t boneCount)
 {
     if(m_meshData.pending || !meshBuf)
@@ -695,7 +695,7 @@ void RenderProgram::createCube()
     Material *mat = new Material();
     mat->setOpaque(false);
 
-    m_cubeMats = new MaterialMap();
+    m_cubeMats = new MaterialArray();
     m_cubeMats->setMaterial(mg.matID, mat);
 }
 

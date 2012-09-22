@@ -469,7 +469,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_palette = new WLDMaterialPalette(archive);
     m_palette->setDef(matPals[0]);
     m_palette->createSlots();
-    m_zoneMaterials = new MaterialMap();
+    m_zoneMaterials = new MaterialArray();
     m_palette->exportTo(m_zoneMaterials);
     
     return true;
@@ -867,7 +867,7 @@ bool ZoneSky::load(QString path)
     Q_ASSERT(matPals.count() == 1);
     skyPalette.setDef(matPals[0]);
     skyPalette.createSlots();*/
-    m_skyMaterials = new MaterialMap();
+    m_skyMaterials = new MaterialArray();
     skyPalette.exportTo(m_skyMaterials);
     return true;
 }

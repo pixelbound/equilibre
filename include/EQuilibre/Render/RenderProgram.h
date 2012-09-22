@@ -57,7 +57,7 @@ struct RENDER_DLL ShaderSymbolInfo
 
 class BoneTransform;
 class Material;
-class MaterialMap;
+class MaterialArray;
 
 class RENDER_DLL MeshDataGL2
 {
@@ -67,7 +67,7 @@ public:
     const MeshBuffer *meshBuf;
     const BoneTransform *bones;
     uint32_t boneCount;
-    MaterialMap *materials;
+    MaterialArray *materials;
     const uint32_t *indices;
     bool haveIndices;
     bool pending;
@@ -98,7 +98,7 @@ public:
      * @param bones Array of bone transformations or NULL if the mesh is not skinned.
      * @param boneCount Number of bone transformations.
      */
-    virtual void beginDrawMesh(const MeshBuffer *geom, MaterialMap *materials,
+    virtual void beginDrawMesh(const MeshBuffer *geom, MaterialArray *materials,
                                const BoneTransform *bones = 0, uint32_t boneCount = 0);
     /**
      * @brief Draw a mesh whose geometry was passed to @ref beginDrawMesh.
@@ -144,8 +144,8 @@ protected:
     void enableVertexAttribute(int attr, int index = 0);
     void disableVertexAttribute(int attr, int index = 0);
     void uploadVertexAttributes(const MeshBuffer *meshBuf);
-    void beginApplyMaterial(MaterialMap *map, Material *m);
-    void endApplyMaterial(MaterialMap *map, Material *m);
+    void beginApplyMaterial(MaterialArray *array, Material *m);
+    void endApplyMaterial(MaterialArray *array, Material *m);
     void drawMaterialGroup(const MaterialGroup &mg);
     void bindColorBuffer(const BufferSegment *colorSegments, int instanceID, bool &enabledColor);
     virtual void beginSkinMesh();
@@ -167,7 +167,7 @@ protected:
     bool m_blendingEnabled;
     bool m_currentMatNeedsBlending;
     MeshBuffer *m_cube;
-    MaterialMap *m_cubeMats;
+    MaterialArray *m_cubeMats;
 };
 
 class UniformSkinningProgram : public RenderProgram

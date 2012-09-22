@@ -103,7 +103,7 @@ public:
     
     const QMap<QString, WLDMesh *> & models() const;
     MeshBuffer * buffer() const;
-    MaterialMap * materials() const;
+    MaterialArray * materials() const;
     
     bool load(QString archivePath, QString wldName);
     MeshBuffer * upload(RenderContext *renderCtx);
@@ -114,7 +114,7 @@ private:
     WLDData *m_wld;
     QMap<QString, WLDMesh *> m_models;
     MeshBuffer *m_meshBuf;
-    MaterialMap *m_materials;
+    MaterialArray *m_materials;
 };
 
 /*!
