@@ -24,6 +24,8 @@
 #include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Material.h"
 
+using namespace std;
+
 WLDModel::WLDModel(PFSArchive *archive)
 {
     m_buffer = 0;
@@ -447,6 +449,47 @@ bool WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialArray *arra
     return (mat != NULL);
 }
 
+static uint32_t findSkinIndex(WLDMaterialSlot *slot, uint32_t skinID)
+{
+    // See if the slot has a material with the specified skin ID.
+    const WLDMaterial *mat = slot->material(skinID);
+    if(mat && mat->isValid())
+        return mat->index();
+    
+    // Otherwise find the first valid material in the slot.
+    skinID = 0;
+    mat = slot->material(skinID);
+    while(mat)
+    {
+        if(mat && mat->isValid())
+            return mat->index();
+        mat = slot->material(skinID++);
+    }
+    return -1;
+}
+
+void WLDMaterialPalette::makeSkinMap(uint32_t skinID, vector<uint32_t> &slotIndices) const
+{
+    size_t endSkinID = qMin(m_materialSlots.size(), slotIndices.size());
+    for(size_t i = 0; i < endSkinID; i++)
+    {
+        WLDMaterialSlot *slot = m_materialSlots[i];
+        slotIndices[i] = findSkinIndex(slot, skinID);
+    }
+}
+
+void WLDMaterialPalette::makeSkinMap(const vector<uint32_t> &skinIDs, vector<uint32_t> &slotIndices) const
+{
+    size_t endSkinID = qMin(m_materialSlots.size(), skinIDs.size());
+    Q_ASSERT(slotIndices.size() >= skinIDs.size());
+    for(size_t i = 0; i < endSkinID; i++)
+    {
+        uint32_t skinID = skinIDs[i];
+        WLDMaterialSlot *slot = m_materialSlots[i];
+        slotIndices[i] = findSkinIndex(slot, skinID);
+    }
+}
+
 void WLDMaterialPalette::exportTo(MaterialArray *array)
 {
     // Materials are exported to the array in skin-major order. This mean we
@@ -581,6 +624,11 @@ WLDMaterial::WLDMaterial()
     m_index = INVALID_INDEX;
 }
 
+bool WLDMaterial::isValid() const
+{
+    return m_def && (m_index != INVALID_INDEX);
+}
+
 uint32_t WLDMaterial::index() const
 {
     return m_index;
@@ -624,6 +672,16 @@ WLDMaterialSlot::WLDMaterialSlot(QString matName)
         slotName = matName.replace("_MDF", "");
     offset = 0;
     visible = false;
+}
+
+const WLDMaterial * WLDMaterialSlot::material(uint32_t skinID) const
+{
+    if(skinID == 0)
+        return &baseMat;
+    else if(skinID <= skinMats.size())
+        return &skinMats[skinID - 1];
+    else
+        return NULL;
 }
 
 void WLDMaterialSlot::addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef)

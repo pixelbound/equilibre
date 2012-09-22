@@ -119,6 +119,8 @@ class GAME_DLL WLDMaterial
 public:
     WLDMaterial();
 
+    bool isValid() const;
+    
     // Index of the material in the material array.
     uint32_t index() const;
     void setIndex(uint32_t index);
@@ -145,6 +147,7 @@ class GAME_DLL WLDMaterialSlot
 public:
     WLDMaterialSlot(QString matName);
 
+    const WLDMaterial *material(uint32_t skinID) const;
     void addSkinMaterial(uint32_t skinID, MaterialDefFragment *matDef);
 
     // Name of the slot. PC models use standardized slot names.
@@ -182,6 +185,8 @@ public:
     void createSlots(bool addMatDefs = true);
     void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
     void exportTo(MaterialArray *array);
+    void makeSkinMap(uint32_t skinID, std::vector<uint32_t> &slotIndices) const;
+    void makeSkinMap(const std::vector<uint32_t> &skinIDs, std::vector<uint32_t> &slotIndices) const;
 
     /*!
       \brief Return the canonical name of a material. This strips out the skin ID.
