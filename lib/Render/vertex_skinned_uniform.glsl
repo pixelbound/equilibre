@@ -71,10 +71,10 @@ void main()
 {
     vec4 viewPos = u_modelViewMatrix * skin(a_position);
     gl_Position = u_projectionMatrix * viewPos;
-    float baseTex = a_texCoords.z;
-    float mappedTex = float(u_materialMap[int(baseTex)]);
+    float baseTex = a_texCoords.z - 1.0;
+    float mappedTex = float(u_materialMap[int(baseTex)]) - 1.0;
     v_texCoords = vec3(a_texCoords.xy, (u_mapMaterials > 0) ? mappedTex : baseTex);
-
+    
     v_color = vec3(0.0, 0.0, 0.0);
     v_texFactor = 1.0;
     

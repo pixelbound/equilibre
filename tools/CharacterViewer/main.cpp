@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include "EQuilibre/Render/Scene.h"
 #include "EQuilibre/Render/RenderContext.h"
+#include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Zone.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDModel.h"
@@ -32,13 +33,13 @@ QWidget * showCharViewer(RenderContext *renderCtx)
     // create viewport for rendering the scene
     CharacterViewerWindow *v = new CharacterViewerWindow(renderCtx);
     /*CharacterScene *scene = v->scene();
-    Zone *z = scene->zone();
+    Game *game = scene->game();
     QDir assetDir(scene->assetPath());
     
-    CharacterPack *charPack = z->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
+    CharacterPack *charPack = game->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
     if(!charPack)
         return v;
-    ObjectPack *itemPack = z->loadObjects(assetDir.absoluteFilePath("gequip.s3d"));
+    ObjectPack *itemPack = game->loadObjects(assetDir.absoluteFilePath("gequip.s3d"));
     if(!itemPack)
         return v;
     
@@ -52,9 +53,10 @@ QWidget * showCharViewer(RenderContext *renderCtx)
         charActor->addEquip(WLDCharActor::Left, weaponActor2, itemPack->materials());
     if(charActor && skelActor)
     {
-        charActor->model()->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());
+        WLDModel *charModel = charActor->model();
+        charModel->skeleton()->copyAnimationsFrom(skelActor->model()->skeleton());
         charActor->setAnimName("P01");
-        charActor->setPaletteName("03");
+        //charActor->setPaletteName("03");
     }*/
     return v;
 }

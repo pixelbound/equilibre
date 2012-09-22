@@ -34,6 +34,7 @@
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 #include "EQuilibre/Render/Scene.h"
+#include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDActor.h"
@@ -439,11 +440,22 @@ void CharacterScene::drawFrame()
     m_renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
     
-    WLDCharActor *charModel = selectedCharacter();
-    if(charModel)
+    WLDCharActor *actor = selectedCharacter();
+    if(actor)
     {
-        charModel->setAnimTime(currentTime());
-        charModel->draw(m_renderCtx, prog);
+        MaterialArray *materials = actor->model()->materials();
+        std::vector<uint32_t> &materialMap = actor->materialMap();
+        int skinID = actor->paletteName().toInt();
+        actor->model()->palette()->makeSkinMap(skinID, materialMap);
+        for(size_t i = 0; i < materialMap.size(); i++)
+        {
+            uint32_t matID = materialMap[i];
+            Material *mat = materials->material(matID);
+            // XXX have a dummy checkboard texture at index zero
+            materialMap[i] = mat ? mat->subTexture() : 0;
+        }
+        actor->setAnimTime(currentTime());
+        actor->draw(m_renderCtx, prog);
     }
 }
 

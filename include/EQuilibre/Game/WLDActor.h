@@ -125,6 +125,8 @@ public:
     const static ActorType Kind = Character;
     
     WLDModel * model() const;
+    std::vector<uint32_t> & materialMap();
+    const std::vector<uint32_t> & materialMap() const;
     
     QString animName() const;
     void setAnimName(QString name);
@@ -132,6 +134,7 @@ public:
     double animTime() const;
     void setAnimTime(double newTime);
 
+    // XXX use integer
     QString paletteName() const;
     void setPaletteName(QString palName);
 
@@ -155,6 +158,7 @@ private:
     QString m_animName;
     double m_animTime;
     QString m_palName;
+    std::vector<uint32_t> m_materialMap;
     QMap<EquipSlot, ActorEquip> m_equip;
 };
 

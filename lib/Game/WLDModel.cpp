@@ -233,7 +233,7 @@ void WLDMesh::importIndexData(MeshBuffer *buffer, BufferSegment &indexLoc,
         indices.push_back(m_meshDef->m_indices[i + offset] + dataLoc.offset);
 }
 
-MeshData *  WLDMesh::importMaterialGroups(MeshBuffer *buffer, uint32_t paletteOffset)
+MeshData * WLDMesh::importMaterialGroups(MeshBuffer *buffer, uint32_t paletteOffset)
 {
     // Load material groups.
     uint32_t meshOffset = 0;

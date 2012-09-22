@@ -623,14 +623,17 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
     // Import materials.
     MaterialArray *materials = new MaterialArray();
     model->palette()->exportTo(materials);
-    materials->upload(renderCtx);
+    materials->uploadArray(renderCtx);
     model->setMaterials(materials);
 
     // Import mesh geometry.
     MeshBuffer *meshBuf = new MeshBuffer();
     model->setBuffer(meshBuf);
     foreach(WLDMesh *mesh, model->meshes())
+    {
         mesh->importFrom(meshBuf);
+        mesh->data()->updateTexCoords(materials, true);
+    }
 
     // Create the GPU buffers.
     meshBuf->upload(renderCtx);

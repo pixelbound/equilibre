@@ -31,7 +31,7 @@ void main()
     if(u_has_texture != 0)
     {
         // Mix the base color and texture color into the intermediate color.
-        vec3 actualTexCoords = vec3(v_texCoords.xy, v_texCoords.z - 1.0);
+        vec3 actualTexCoords = vec3(v_texCoords.xy, v_texCoords.z);
         vec4 texColor = texture2DArray(u_material_texture, actualTexCoords, 0.0);
         
         // Discard fully transparent pixels (masked texture).

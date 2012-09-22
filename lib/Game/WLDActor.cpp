@@ -129,6 +129,13 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
+    if(model)
+    {
+        WLDMaterialPalette *pal = model->palette();
+        m_materialMap.resize(pal->materialSlots().size());
+        for(size_t i = 0; i < m_materialMap.size(); i++)
+            m_materialMap[i] = i;
+    }
 }
 
 WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Kind)
@@ -158,6 +165,16 @@ WLDCharActor::~WLDCharActor()
 WLDModel * WLDCharActor::model() const
 {
     return m_model;
+}
+
+std::vector<uint32_t> & WLDCharActor::materialMap()
+{
+    return m_materialMap;
+}
+
+const std::vector<uint32_t> & WLDCharActor::materialMap() const
+{
+    return m_materialMap;
 }
 
 QString WLDCharActor::animName() const
@@ -250,7 +267,9 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->scale(m_scale.x, m_scale.y, m_scale.z);
     
     // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)
+    prog->setMaterialMap(m_materialMap.data(), m_materialMap.size());
     skin->draw(prog, bones.constData(), (uint32_t)bones.count());
+    prog->setMaterialMap(NULL, 0);
     foreach(ActorEquip eq, m_equip)
     {
         renderCtx->pushMatrix();
