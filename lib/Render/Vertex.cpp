@@ -49,9 +49,9 @@ MeshData::~MeshData()
     delete [] matGroups;
 }
 
-void MeshData::updateTexCoords(MaterialArray *array)
+void MeshData::updateTexCoords(MaterialArray *array, bool useMap)
 {
-    buffer->updateTexCoords(array, matGroups, groupCount, indexSegment.offset);
+    buffer->updateTexCoords(array, matGroups, groupCount, indexSegment.offset, useMap);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,12 +88,8 @@ void MeshBuffer::addMaterialGroups(MeshData *mesh)
     }
 }
 
-void MeshBuffer::updateTexCoords(MaterialArray *array)
-{
-    updateTexCoords(array, matGroups.constData(), matGroups.count(), 0);
-}
-
-void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matGroups, uint32_t groupCount, uint32_t startIndex)
+void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matGroups,
+                                 uint32_t groupCount, uint32_t startIndex, bool useMap)
 {
     Vertex *vertices = this->vertices.data();
     const uint32_t *indices = this->indices.constData() + startIndex;
@@ -111,7 +107,7 @@ void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matG
             continue;
         float matScalingX = (float)mat->image().width() / (float)maxWidth;
         float matScalingY = (float)mat->image().height() / (float)maxHeight;
-        float z = mat->subTexture();
+        float z = useMap ? (i + 1) : mat->subTexture();
         const uint32_t *mgIndices = indices + mg.offset;
         for(uint32_t i = 0; i < mg.count; i++)
         {

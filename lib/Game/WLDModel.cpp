@@ -96,6 +96,11 @@ WLDModelSkin * WLDModel::newSkin(QString name)
     return skin;
 }
 
+const QList<WLDMesh *> & WLDModel::meshes() const
+{
+    return m_meshes;
+}
+
 QList<MeshDefFragment *> WLDModel::listMeshes(ActorDefFragment *def)
 {
     QList<MeshDefFragment *> meshes;

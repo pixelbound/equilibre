@@ -244,7 +244,7 @@ void RenderProgram::setProjectionMatrix(const matrix4 &projection)
         1, GL_FALSE, (const GLfloat *)projection.columns());
 }
 
-void RenderProgram::setMaterialMap(const int16_t *materials, int count)
+void RenderProgram::setMaterialMap(const uint32_t *materials, int count)
 {
     if(materials && (count > 0))
     {

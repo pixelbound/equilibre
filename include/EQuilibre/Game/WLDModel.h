@@ -52,6 +52,7 @@ public:
     virtual ~WLDModel();
 
     static QList<MeshDefFragment *> listMeshes(ActorDefFragment *def);
+    const QList<WLDMesh *> & meshes() const;
 
     MeshBuffer * buffer() const;
     void setBuffer(MeshBuffer *newBuffer);

@@ -629,12 +629,8 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
     // Import mesh geometry.
     MeshBuffer *meshBuf = new MeshBuffer();
     model->setBuffer(meshBuf);
-    // XXX import model->meshes() instead?
-    foreach(WLDModelSkin *skin, model->skins())
-    {
-        foreach(WLDMesh *mesh, skin->parts())
-            mesh->importFrom(meshBuf);
-    }
+    foreach(WLDMesh *mesh, model->meshes())
+        mesh->importFrom(meshBuf);
 
     // Create the GPU buffers.
     meshBuf->upload(renderCtx);

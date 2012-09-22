@@ -132,7 +132,7 @@ public:
 
     void setModelViewMatrix(const matrix4 &modelView);
     void setProjectionMatrix(const matrix4 &projection);
-    void setMaterialMap(const int16_t *materials, int count);
+    void setMaterialMap(const uint32_t *materials, int count);
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
     void setLightingMode(LightingMode newMode);
