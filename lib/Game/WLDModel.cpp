@@ -358,7 +358,7 @@ void WLDMaterialPalette::createSlots(bool addMatDefs)
         WLDMaterialSlot *slot = new WLDMaterialSlot(matDef->name());
         if(addMatDefs)
             slot->addSkinMaterial(0, matDef);
-        slot->visible = (matDef->m_param1 != 0);
+        slot->visible = (matDef->m_renderMode != 0);
         m_materialSlots.push_back(slot);
     }
 }
@@ -440,7 +440,7 @@ bool WLDMaterialPalette::exportMaterial(WLDMaterial &wldMat, MaterialArray *arra
     // Don't export invisible materials.
     MaterialDefFragment *matDef = wldMat.def();
     Material *mat = NULL;
-    if(matDef && (matDef->m_param1 != 0))
+    if(matDef && (matDef->m_renderMode != 0))
         mat = loadMaterial(matDef);
     wldMat.setMaterial(mat ? mat : NULL);
     wldMat.setIndex(mat ? pos : WLDMaterial::INVALID_INDEX);
@@ -550,7 +550,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     }
 
     // masked bitmap?
-    uint32_t renderMode = (frag->m_param1 & 0xff);
+    uint32_t renderMode = (frag->m_renderMode & 0xff);
     //qDebug("'%s' has param1 %02x", bmp->m_fileName.toLatin1().constData(), frag->m_param1 & 0xff);
     if(renderMode == 0x01)
     {

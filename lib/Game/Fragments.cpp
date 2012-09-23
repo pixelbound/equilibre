@@ -203,9 +203,9 @@ bool HierSpriteDefFragment::unpack(WLDReader *s)
     else
         m_param1[0] = m_param1[1] = m_param1[2] = 0;
     if((m_flags & 0x2) == 0x2)
-        s->unpackField('I', &m_param2);
+        s->unpackField('f', &m_boundingRadius);
     else
-        m_param2 = 0.0;
+        m_boundingRadius = 0.0;
     for(uint32_t i = 0; i < nodeCount; i++)
     {
         SkeletonNode node;
@@ -219,8 +219,8 @@ bool HierSpriteDefFragment::unpack(WLDReader *s)
         s->unpackField('I', &meshCount);
         m_meshes.resize(meshCount);
         s->unpackArray("r", meshCount, m_meshes.data());
-        m_data3.resize(meshCount);
-        s->unpackArray("I", meshCount, m_data3.data());
+        m_linkSkinUpdatesWithTreeNode.resize(meshCount);
+        s->unpackArray("I", meshCount, m_linkSkinUpdatesWithTreeNode.data());
     }
     return true;
 }
@@ -277,8 +277,10 @@ bool TrackFragment::unpack(WLDReader *s)
 {
     s->unpackReference(&m_def);
     s->unpackField('I', &m_flags);
-    if((m_flags & 0x1) == 0x1)
-        s->unpackField('I', &m_param1);
+    if((m_flags & HasSleep) == HasSleep)
+        s->unpackField('I', &m_sleepMs);
+    else
+        m_sleepMs = 0;
     return true;
 }
 
@@ -424,7 +426,7 @@ bool Fragment34::unpack(WLDReader *s)
 
 bool MaterialDefFragment::unpack(WLDReader *s)
 {
-    s->unpackFields("IIIff", &m_flags, &m_param1, &m_param2, &m_brightness, &m_scaledAmbient);
+    s->unpackFields("IIIff", &m_flags, &m_renderMode, &m_rgbPen, &m_brightness, &m_scaledAmbient);
     s->unpackReference(&m_sprite);
     s->unpackField('f', &m_param3);
     return true;

@@ -159,10 +159,10 @@ public:
     uint32_t m_flags;
     WLDFragment *m_fragment;
     uint32_t m_param1[3];
-    float m_param2;
+    float m_boundingRadius;
     QVector<SkeletonNode> m_tree;
     QVector<MeshFragment *> m_meshes;
-    QVector<uint32_t> m_data3;
+    QVector<uint32_t> m_linkSkinUpdatesWithTreeNode;
 };
 
 /*!
@@ -203,8 +203,14 @@ public:
     virtual bool unpack(WLDReader *s);
 
     const static uint16_t KIND = 0x13;
+    enum TrackFragmentFlags
+    {
+        HasSleep = 1,
+        Interpolate = 4
+    };
+    
     TrackDefFragment *m_def;
-    uint32_t m_flags, m_param1;
+    uint32_t m_flags, m_sleepMs;
 };
 
 /*!
@@ -359,7 +365,7 @@ public:
     virtual bool unpack(WLDReader *s);
 
     const static uint16_t KIND = 0x30;
-    uint32_t m_flags, m_param1, m_param2;
+    uint32_t m_flags, m_renderMode, m_rgbPen;
     float m_brightness, m_scaledAmbient;
     SpriteFragment *m_sprite;
     float m_param3;
