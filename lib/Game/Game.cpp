@@ -494,6 +494,8 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
     for(uint32_t i = 0; i < matDefs.count(); i++)
     {
         MaterialDefFragment *matDef = matDefs[i];
+        if(matDef->handled())
+            continue;
         QString charName, skinName, partName;
         if(WLDMaterialPalette::explodeName(matDef, charName, skinName, partName))
         {
@@ -582,6 +584,8 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     for(uint32_t i = 0; i < meshDefs.count(); i++)
     {
         MeshDefFragment *meshDef = meshDefs[i];
+        if(meshDef->handled())
+            continue;
         QString actorName, meshName, skinName;
         WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
         bool skinIsInt = false;

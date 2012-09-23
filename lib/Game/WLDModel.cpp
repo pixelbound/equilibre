@@ -648,7 +648,9 @@ void WLDMaterial::setDef(MaterialDefFragment *matDef)
 {
     if(matDef->handled())
         return;
-    Q_ASSERT((m_def == NULL) || (m_def == matDef));
+    if((m_def != NULL) && (m_def != matDef))
+        qDebug("warning: duplicated material definitions '%s' (fragments %d and %d)",
+               m_def->name().toLatin1().constData(), m_def->ID(), matDef->ID());
     m_def = matDef;
     matDef->setHandled(true);
 }
@@ -741,6 +743,7 @@ void WLDModelSkin::addPart(MeshDefFragment *frag)
     WLDMesh *meshPart = new WLDMesh(frag, partID);
     m_parts.append(meshPart);
     m_model->m_meshes.append(meshPart);
+    frag->setHandled(true);
     updateBounds();
 }
 

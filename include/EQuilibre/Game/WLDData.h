@@ -100,6 +100,9 @@ public:
     uint16_t kind() const;
     void setKind(uint16_t newKind);
     
+    uint32_t ID() const;
+    void setID(uint32_t newID);
+    
     bool handled() const;
     void setHandled(bool newHandled);
     
@@ -120,6 +123,7 @@ public:
 private:
     uint16_t m_kind;
     uint16_t m_info;
+    uint32_t m_id;
     QString m_name;
 };
 

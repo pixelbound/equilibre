@@ -121,6 +121,7 @@ WLDData *WLDData::fromStream(QIODevice *s)
         if(f)
         {
             f->setKind(fh.kind);
+            f->setID(i);
             f->setName(fragmentName);
             f->unpack(&reader);
             wld->m_fragTable->next(fh.kind);
@@ -269,7 +270,7 @@ bool WLDReader::readEncodedString(uint32_t size, QString *dest)
 
 WLDFragment::WLDFragment()
 {
-    m_kind = m_info = 0;
+    m_kind = m_info = m_id = 0;
 }
 
 WLDFragment::~WLDFragment()
@@ -284,6 +285,16 @@ uint16_t WLDFragment::kind() const
 void WLDFragment::setKind(uint16_t newKind)
 {
     m_kind = newKind;
+}
+
+uint32_t WLDFragment::ID() const
+{
+    return m_id;
+}
+
+void WLDFragment::setID(uint32_t newID)
+{
+    m_id = newID;
 }
 
 bool WLDFragment::handled() const
