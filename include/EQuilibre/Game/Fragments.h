@@ -365,6 +365,13 @@ public:
     virtual bool unpack(WLDReader *s);
 
     const static uint16_t KIND = 0x30;
+    
+    enum RenderMode
+    {
+        TEXTURE5AMBIENTGOURAUD1 = 0x553,
+        USER_DEFINED = 0x80000000
+    };
+    
     uint32_t m_flags, m_renderMode, m_rgbPen;
     float m_brightness, m_scaledAmbient;
     SpriteFragment *m_sprite;

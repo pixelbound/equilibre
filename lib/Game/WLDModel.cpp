@@ -548,65 +548,65 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
             dds = true;
         }
     }
-
-    // masked bitmap?
-    uint32_t renderMode = (frag->m_renderMode & 0xff);
-    //qDebug("'%s' has param1 %02x", bmp->m_fileName.toLatin1().constData(), frag->m_param1 & 0xff);
-    if(renderMode == 0x01)
+    
+    if(frag->m_renderMode & MaterialDefFragment::USER_DEFINED)
     {
-        // normal rendering
-    }
-    else if(renderMode == 0x13)
-    {
-        // masked texture
-        if(img.colorCount() > 0)
+        uint32_t renderMode = (frag->m_renderMode & ~MaterialDefFragment::USER_DEFINED);
+        if(renderMode == 0x01)
         {
-            // replace the mask color by a transparent color in the table
-            QVector<QRgb> colors = img.colorTable();
-            uint8_t maskColor = 0;
-            colors[maskColor] = qRgba(0, 0, 0, 0);
-            img.setColorTable(colors);
+            // normal rendering
         }
-        opaque = false;
-    }
-    else if(renderMode == 0x17)
-    {
-        // semi-transparent (e.g. the sleeper, wasp, bixie)
-        // depends on how dark/light the color is
-        if(img.colorCount() > 0)
+        else if(renderMode == 0x13)
         {
-            QVector<QRgb> colors = img.colorTable();
-            for(int i = 0; i < colors.count(); i++)
+            // masked texture
+            if(img.colorCount() > 0)
             {
-                QRgb c = colors[i];
-                int alpha = (qRed(c) + qGreen(c) + qBlue(c)) / 3;
-                colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                // replace the mask color by a transparent color in the table
+                QVector<QRgb> colors = img.colorTable();
+                uint8_t maskColor = 0;
+                colors[maskColor] = qRgba(0, 0, 0, 0);
+                img.setColorTable(colors);
             }
-            img.setColorTable(colors);
+            opaque = false;
         }
-        opaque = false;
-    }
-    else if(renderMode == 0x05)
-    {
-        // semi-transparent (water elemental, air elemental, ghost wolf)
-        if(img.colorCount() > 0)
+        else if(renderMode == 0x17)
         {
-            QVector<QRgb> colors = img.colorTable();
-            int alpha = 127; // arbitrary value XXX find the real value
-            for(int i = 0; i < colors.count(); i++)
+            // semi-transparent (e.g. the sleeper, wasp, bixie)
+            // depends on how dark/light the color is
+            if(img.colorCount() > 0)
             {
-                QRgb c = colors[i];
-                colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                QVector<QRgb> colors = img.colorTable();
+                for(int i = 0; i < colors.count(); i++)
+                {
+                    QRgb c = colors[i];
+                    int alpha = (qRed(c) + qGreen(c) + qBlue(c)) / 3;
+                    colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                }
+                img.setColorTable(colors);
             }
-            img.setColorTable(colors);
+            opaque = false;
         }
-        opaque = false;
+        else if(renderMode == 0x05)
+        {
+            // semi-transparent (water elemental, air elemental, ghost wolf)
+            if(img.colorCount() > 0)
+            {
+                QVector<QRgb> colors = img.colorTable();
+                int alpha = 127; // arbitrary value XXX find the real value
+                for(int i = 0; i < colors.count(); i++)
+                {
+                    QRgb c = colors[i];
+                    colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                }
+                img.setColorTable(colors);
+            }
+            opaque = false;
+        }
+        else
+        {
+            qDebug("Unknown render mode %x", renderMode);
+        }
     }
-    else
-    {
-        qDebug("Unknown render mode %x", renderMode);
-    }
-    // 0x53 == ?
 
     Material *mat = new Material();
     mat->setOpaque(opaque);
