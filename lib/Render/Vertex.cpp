@@ -107,7 +107,7 @@ void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matG
             continue;
         float matScalingX = (float)mat->image().width() / (float)maxWidth;
         float matScalingY = (float)mat->image().height() / (float)maxHeight;
-        float z = useMap ? (i + 1) : mat->subTexture();
+        float z = useMap ? (mg.matID + 1) : mat->subTexture();
         const uint32_t *mgIndices = indices + mg.offset;
         for(uint32_t i = 0; i < mg.count; i++)
         {

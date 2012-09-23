@@ -47,7 +47,8 @@ void main()
     gl_Position = u_projectionMatrix * viewPos;
     float baseTex = a_texCoords.z - 1.0;
     float mappedTex = float(u_materialMap[int(baseTex)]) - 1.0;
-    v_texCoords = vec3(a_texCoords.xy, (u_mapMaterials > 0) ? mappedTex : baseTex);
+    float finalTex = (u_mapMaterials > 0) ? mappedTex : baseTex;
+    v_texCoords = vec3(a_texCoords.xy, finalTex);
     
     if(u_lightingMode == DEBUG_VERTEX_COLOR)
     {
