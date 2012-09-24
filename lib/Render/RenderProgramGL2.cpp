@@ -244,14 +244,26 @@ void RenderProgram::setProjectionMatrix(const matrix4 &projection)
         1, GL_FALSE, (const GLfloat *)projection.columns());
 }
 
-void RenderProgram::setMaterialMap(const uint32_t *materials, int count)
+void RenderProgram::setMaterialMap(const uint32_t *mappings, int count, MaterialArray *materials)
 {
-    if(materials && (count > 0))
+    if(mappings && (count > 0))
     {
-        int32_t finalMats[MAX_MATERIALS];
+        int32_t textureMap[MAX_MATERIALS];
         for(int i = 0; i < MAX_MATERIALS; i++)
-            finalMats[i] = (i < count) ? materials[i] : i;
-        glUniform1iv(m_uniform[U_MAT_MAP], MAX_MATERIALS, finalMats);
+        {
+            if(i < count)
+            {
+                uint32_t matID = mappings[i];
+                Material *mat = materials ? materials->material(matID) : NULL;
+                textureMap[i] = mat ? mat->subTexture() : matID;
+            }
+            else
+            {
+                textureMap[i] = i + 1;
+            }
+        }
+        // XXX rename U_TEX_MAP, U_TEX_MAP_ENABLED
+        glUniform1iv(m_uniform[U_MAT_MAP], MAX_MATERIALS, textureMap);
         glUniform1i(m_uniform[U_MAT_MAP_ENABLED], 1);
     }
     else

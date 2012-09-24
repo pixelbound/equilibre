@@ -267,9 +267,7 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->scale(m_scale.x, m_scale.y, m_scale.z);
     
     // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)
-    prog->setMaterialMap(m_materialMap.data(), m_materialMap.size());
-    skin->draw(prog, bones.constData(), (uint32_t)bones.count());
-    prog->setMaterialMap(NULL, 0);
+    skin->draw(prog, bones, m_materialMap);
     foreach(ActorEquip eq, m_equip)
     {
         renderCtx->pushMatrix();

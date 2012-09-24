@@ -158,7 +158,7 @@ private:
     QString m_animName;
     double m_animTime;
     QString m_palName;
-    std::vector<uint32_t> m_materialMap;
+    std::vector<uint32_t> m_materialMap; // Slot ID -> Material ID in MaterialArray
     QMap<EquipSlot, ActorEquip> m_equip;
 };
 

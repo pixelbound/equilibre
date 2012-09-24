@@ -232,7 +232,8 @@ public:
     static bool explodeMeshName(QString defName, QString &actorName,
                                 QString &meshName, QString &skinName);
 
-    void draw(RenderProgram *prog, const BoneTransform *bones = 0, uint32_t boneCount = 0);
+    void draw(RenderProgram *prog, const QVector<BoneTransform> &bones,
+              const std::vector<uint32_t> &materialMap);
 
 private:
     void updateBounds();

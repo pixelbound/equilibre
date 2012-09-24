@@ -556,9 +556,17 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
         {
             // normal rendering
         }
+        else if(renderMode == 0xb)
+        {
+            // this is used for ghost materials (USERDEFINED 12)
+        }
+        else if(renderMode == 0x12)
+        {
+            // this is used by SCAHE0004_MDF (USERDEFINED 19)
+        }
         else if(renderMode == 0x13)
         {
-            // masked texture
+            // masked texture (USERDEFINED 20)
             if(img.colorCount() > 0)
             {
                 // replace the mask color by a transparent color in the table
@@ -568,6 +576,10 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
                 img.setColorTable(colors);
             }
             opaque = false;
+        }
+        else if(renderMode == 0x14)
+        {
+            // USERDEFINED 21
         }
         else if(renderMode == 0x17)
         {
@@ -796,7 +808,8 @@ void WLDModelSkin::updateBounds()
     }
 }
 
-void WLDModelSkin::draw(RenderProgram *prog, const BoneTransform *bones, uint32_t boneCount)
+void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones,
+                        const vector<uint32_t> &materialMap)
 {
     MeshBuffer *meshBuf = m_model->buffer();
     if(!meshBuf)
@@ -806,9 +819,23 @@ void WLDModelSkin::draw(RenderProgram *prog, const BoneTransform *bones, uint32_
     meshBuf->matGroups.clear();
     foreach(WLDMesh *mesh, m_parts)
         meshBuf->addMaterialGroups(mesh->data());
+    
+    // Map the slot indices to material indices if requested.
+    if(materialMap.size() > 0)
+    {
+        for(size_t i = 0; i < meshBuf->matGroups.size(); i++)
+        {
+            MaterialGroup &mg(meshBuf->matGroups[i]);
+            mg.matID = materialMap[mg.matID];
+        }
+        prog->setMaterialMap(materialMap.data(), materialMap.size(), m_model->materials());
+    }
 
     // Draw all the material groups in one draw call.
-    prog->beginDrawMesh(meshBuf, m_model->materials(), bones, boneCount);
+    prog->beginDrawMesh(meshBuf, m_model->materials(), bones.constData(), bones.size());
     prog->drawMesh();
     prog->endDrawMesh();
+    
+    if(materialMap.size() > 0)
+        prog->setMaterialMap(NULL, 0, NULL);
 }

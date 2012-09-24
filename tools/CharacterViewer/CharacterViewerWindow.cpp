@@ -443,17 +443,9 @@ void CharacterScene::drawFrame()
     WLDCharActor *actor = selectedCharacter();
     if(actor)
     {
-        MaterialArray *materials = actor->model()->materials();
         std::vector<uint32_t> &materialMap = actor->materialMap();
         int skinID = actor->paletteName().toInt();
         actor->model()->palette()->makeSkinMap(skinID, materialMap);
-        for(size_t i = 0; i < materialMap.size(); i++)
-        {
-            uint32_t matID = materialMap[i];
-            Material *mat = materials->material(matID);
-            // XXX have a dummy checkboard texture at index zero
-            materialMap[i] = mat ? mat->subTexture() : 0;
-        }
         actor->setAnimTime(currentTime());
         actor->draw(m_renderCtx, prog);
     }
