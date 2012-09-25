@@ -17,51 +17,34 @@
 import struct
 import re
 import os
+import sys
 from s3d import S3DArchive, readStruct
 from wld import WLDData
 
-data_path = os.path.join(os.getcwd(), "Data")
-dir_path = data_path
+def list_palettes(dir_path):
+    files = [f for f in os.listdir(dir_path) if f.endswith(".s3d")]
+    files.sort()
 
-#wld = WLDData.fromFile(os.path.join(data_path, "gfaydark_chr.d/gfaydark_chr.wld")
-#wld = WLDData.fromFile(os.path.join(data_path, "gfaydark_obj.d/gfaydark_obj.wld")
-#wld = WLDData.fromFile(os.path.join(data_path, "gfaydark.d/gfaydark.wld")
-#wld = WLDData.fromFile(os.path.join(data_path, "gfaydark_chr.d/gfaydark_chr.wld")
-#wld = WLDData.fromFile(os.path.join(data_path, "gfaydark.d/objects.wld")
-#wld = WLDData.fromFile(os.path.join(data_path, "gfaydark_chr.d/gfaydark_chr.wld")
-#wld = WLDData.fromFile(os.path.join(data_path, "sleeper2_chr.s3d.d/sleeper2_chr.wld")
-#with S3DArchive(os.path.join(data_path, "gequip.s3d") as a:
-#   wld = WLDData.fromArchive(a, "gequip.wld")
-zoneObjects = [f for f in os.listdir(dir_path) if f.endswith("_obj.s3d")]
-zoneObjects.sort()
+    print("s3d,wld,palettes,maxMatsPerPalette,totalMats")
+    for file in files:
+        path = os.path.join(dir_path, file)
+        with S3DArchive(path) as a:
+            for entry in a.files:
+                if not entry.endswith(".wld"):
+                    continue
+                try:
+                    wld = WLDData.fromArchive(a, entry)
+                except Exception as e:
+                    continue
+                palettes = list(wld.fragmentsByType(0x31))
+                if palettes:
+                    max_mats = max(len(pal.Textures) for pal in palettes)
+                    total_mats = sum(len(pal.Textures) for pal in palettes)
+                    print("%s,%s,%d,%d,%d" % (file, entry, len(palettes), max_mats, total_mats))
 
-count, total = 0, len(zoneObjects)
-for obj in zoneObjects:
-    obj = obj.replace("_obj","")
-    wldName = obj.replace(".s3d", ".wld")
-    #wldName = "objects.wld"
-    path = os.path.join(dirPath, obj)
-    if not os.path.exists(path):
-        continue
-    with S3DArchive(path) as a:
-        wld = WLDData.fromArchive(a, wldName)
-        if wld is None:
-            continue
-        meshes = list(wld.fragmentsByType(0x36))
-        if len(meshes) > 0xffff:
-            print("assertion failed: %s (len(meshes) == %d)" % (
-                obj, len(meshes)))
-            count += 1
-        #for actorDef in actorDefs:
-        #    models = actorDef.listModels()
-        #    if len(models) > 0:
-        #        print("assertion failed: %s/%s@%d (len(hierModels) == %d)" % (
-        #            obj, actorDef.name, actorDef.ID, len(models)))
-        #        count += 1
-        #        break
-print("Count: %d / %d (%f %%)" % (count, total, count / total * 100.0))
-#counts = {}
-#frags = {}
-#for k in set(f.type for f in wld.fragments.values()):
-#    counts["0x%x" % k] = sum(1 for f in wld.fragments.values() if f.type == k)
-#    frags[k] = list(wld.fragmentsByType(k))
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        dir_path = sys.argv[1]
+    else:
+        dir_path = os.path.join(os.getcwd(), "Data")
+    list_palettes(dir_path)
