@@ -26,8 +26,8 @@ static const ShaderSymbolInfo Uniforms[] =
     {U_AMBIENT_LIGHT, "u_ambientLight"},
     {U_MAT_HAS_TEXTURE, "u_has_texture"},
     {U_MAT_TEXTURE, "u_material_texture"},
-    {U_MAT_MAP_ENABLED, "u_mapMaterials"},
-    {U_MAT_MAP, "u_materialMap"},
+    {U_MAT_SLOT_MAP_ENABLED, "u_mapMaterialSlots"},
+    {U_MAT_SLOT_MAP, "u_materialSlotMap"},
     {U_LIGHTING_MODE, "u_lightingMode"},
     {U_FOG_START, "u_fogStart"},
     {U_FOG_END, "u_fogEnd"},
@@ -250,8 +250,8 @@ void RenderProgram::setMaterialMap(const uint32_t *mappings, int count, Material
     int maxTexHeight = materials ? materials->maxHeight() : 0;
     if(mappings && (count > 0))
     {
-        vec3 textureMap[MAX_MATERIALS];
-        for(int i = 0; i < MAX_MATERIALS; i++)
+        vec3 textureMap[MAX_MATERIAL_SLOTS];
+        for(int i = 0; i < MAX_MATERIAL_SLOTS; i++)
         {
             int texID = i + 1;
             float matScalingX = 1.0, matScalingY = 1.0;
@@ -272,13 +272,12 @@ void RenderProgram::setMaterialMap(const uint32_t *mappings, int count, Material
             }
             textureMap[i] = vec3(matScalingX, matScalingY, (float)texID);
         }
-        // XXX rename U_TEX_MAP, U_TEX_MAP_ENABLED
-        glUniform3fv(m_uniform[U_MAT_MAP], MAX_MATERIALS, (const GLfloat *)textureMap);
-        glUniform1i(m_uniform[U_MAT_MAP_ENABLED], 1);
+        glUniform3fv(m_uniform[U_MAT_SLOT_MAP], MAX_MATERIAL_SLOTS, (const GLfloat *)textureMap);
+        glUniform1i(m_uniform[U_MAT_SLOT_MAP_ENABLED], 1);
     }
     else
     {
-        glUniform1i(m_uniform[U_MAT_MAP_ENABLED], 0);
+        glUniform1i(m_uniform[U_MAT_SLOT_MAP_ENABLED], 0);
     }
 }
 

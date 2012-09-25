@@ -24,7 +24,7 @@
 #include "EQuilibre/Render/RenderContext.h"
 
 const int MAX_TRANSFORMS = 256;
-const int MAX_MATERIALS = 64;
+const int MAX_MATERIAL_SLOTS = 64;
 const int MAX_LIGHTS = 8;
 
 const int A_POSITION = 0;
@@ -40,8 +40,8 @@ const int U_PROJECTION_MATRIX = 1;
 const int U_AMBIENT_LIGHT = 2;
 const int U_MAT_HAS_TEXTURE = 3;
 const int U_MAT_TEXTURE = 4;
-const int U_MAT_MAP_ENABLED = 5;
-const int U_MAT_MAP = 6;
+const int U_MAT_SLOT_MAP_ENABLED = 5;
+const int U_MAT_SLOT_MAP = 6;
 const int U_LIGHTING_MODE = 7;
 const int U_FOG_START = 8;
 const int U_FOG_END = 9;
