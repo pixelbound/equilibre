@@ -1,8 +1,8 @@
-fix golem textures (gfdaydark_chr.s3d)
+upload texture arrays with one call per mipmap level
 pimpl for RenderProgram
     have Game create shader programs?
 lights
-    try out deferred lighting
+    fix them
 sort items front to back
 Draw opaque materials and then masked materials
 one frame latency for querying GL timers and remove glFinish

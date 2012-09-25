@@ -246,24 +246,34 @@ void RenderProgram::setProjectionMatrix(const matrix4 &projection)
 
 void RenderProgram::setMaterialMap(const uint32_t *mappings, int count, MaterialArray *materials)
 {
+    int maxTexWidth = materials ? materials->maxWidth() : 0;
+    int maxTexHeight = materials ? materials->maxHeight() : 0;
     if(mappings && (count > 0))
     {
-        int32_t textureMap[MAX_MATERIALS];
+        vec3 textureMap[MAX_MATERIALS];
         for(int i = 0; i < MAX_MATERIALS; i++)
         {
+            int texID = i + 1;
+            float matScalingX = 1.0, matScalingY = 1.0;
             if(i < count)
             {
                 uint32_t matID = mappings[i];
                 Material *mat = materials ? materials->material(matID) : NULL;
-                textureMap[i] = mat ? mat->subTexture() : matID;
+                if(mat)
+                {
+                    matScalingX = (float)mat->image().width() / (float)maxTexWidth;
+                    matScalingY = (float)mat->image().height() / (float)maxTexHeight;
+                    texID = mat->subTexture();
+                }
+                else
+                {
+                    texID = matID;
+                }
             }
-            else
-            {
-                textureMap[i] = i + 1;
-            }
+            textureMap[i] = vec3(matScalingX, matScalingY, (float)texID);
         }
         // XXX rename U_TEX_MAP, U_TEX_MAP_ENABLED
-        glUniform1iv(m_uniform[U_MAT_MAP], MAX_MATERIALS, textureMap);
+        glUniform3fv(m_uniform[U_MAT_MAP], MAX_MATERIALS, (const GLfloat *)textureMap);
         glUniform1i(m_uniform[U_MAT_MAP_ENABLED], 1);
     }
     else

@@ -24,7 +24,7 @@ uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
 uniform int u_mapMaterials;
-uniform int u_materialMap[64];
+uniform vec3 u_materialMap[64];
 
 uniform float u_fogStart;
 uniform float u_fogEnd;
@@ -71,9 +71,16 @@ void main()
 {
     vec4 viewPos = u_modelViewMatrix * skin(a_position);
     gl_Position = u_projectionMatrix * viewPos;
+    
+    // Transform texture coordinates if using the material map.
     float baseTex = a_texCoords.z - 1.0;
-    float mappedTex = float(u_materialMap[int(baseTex)]) - 1.0;
-    v_texCoords = vec3(a_texCoords.xy, (u_mapMaterials > 0) ? mappedTex : baseTex);
+    vec2 baseTexCoords = a_texCoords.xy;
+    vec3 matInfo = u_materialMap[int(baseTex)];
+    vec2 mappedTexCoords = baseTexCoords * matInfo.xy;
+    float mappedTex = matInfo.z - 1.0;
+    float finalTex = (u_mapMaterials > 0) ? mappedTex : baseTex;
+    vec2 finalTexCoords = (u_mapMaterials > 0) ? mappedTexCoords : baseTexCoords;
+    v_texCoords = vec3(finalTexCoords, finalTex);
     
     v_color = vec3(0.0, 0.0, 0.0);
     v_texFactor = 1.0;

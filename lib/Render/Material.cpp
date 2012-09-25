@@ -123,6 +123,7 @@ MaterialArray::MaterialArray()
 {
     m_uploaded = false;
     m_arrayTexture = 0;
+    m_maxWidth = m_maxHeight = 0;
 }
 
 MaterialArray::~MaterialArray()
@@ -156,6 +157,16 @@ texture_t MaterialArray::arrayTexture() const
 bool MaterialArray::uploaded() const
 {
     return m_uploaded;
+}
+
+int MaterialArray::maxWidth() const
+{
+    return m_maxWidth;
+}
+
+int MaterialArray::maxHeight() const
+{
+    return m_maxHeight;
 }
 
 void MaterialArray::textureArrayInfo(int &maxWidth, int &maxHeight,
@@ -199,6 +210,9 @@ void MaterialArray::upload(RenderContext *renderCtx)
         }
     }
     m_uploaded = true;
+    
+    size_t totalMem, usedMem;
+    textureArrayInfo(m_maxWidth, m_maxHeight, totalMem, usedMem);
 }
 
 void MaterialArray::uploadArray(RenderContext *renderCtx)
@@ -229,4 +243,7 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
         mat->setSubTexture(i + 1);
     }
     m_uploaded = true;
+    
+    size_t totalMem, usedMem;
+    textureArrayInfo(m_maxWidth, m_maxHeight, totalMem, usedMem);
 }

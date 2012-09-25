@@ -70,6 +70,8 @@ public:
     
     texture_t arrayTexture() const;
     bool uploaded() const;
+    int maxWidth() const;
+    int maxHeight() const;
     
     void upload(RenderContext *renderCtx);
     void uploadArray(RenderContext *renderCtx);
@@ -79,6 +81,7 @@ private:
     QVector<Material *> m_materials;
     texture_t m_arrayTexture;
     bool m_uploaded;
+    int m_maxWidth, m_maxHeight;
 };
 
 #endif

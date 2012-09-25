@@ -23,7 +23,7 @@ uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
 uniform int u_mapMaterials;
-uniform int u_materialMap[64];
+uniform vec3 u_materialMap[64];
 
 const int NO_LIGHTING = 0;
 const int BAKED_LIGHTING = 1;
@@ -45,10 +45,16 @@ void main()
 {
     vec4 viewPos = u_modelViewMatrix * vec4(a_position, 1.0);
     gl_Position = u_projectionMatrix * viewPos;
+    
+    // Transform texture coordinates if using the material map.
     float baseTex = a_texCoords.z - 1.0;
-    float mappedTex = float(u_materialMap[int(baseTex)]) - 1.0;
+    vec2 baseTexCoords = a_texCoords.xy;
+    vec3 matInfo = u_materialMap[int(baseTex)];
+    vec2 mappedTexCoords = baseTexCoords * matInfo.xy;
+    float mappedTex = matInfo.z - 1.0;
     float finalTex = (u_mapMaterials > 0) ? mappedTex : baseTex;
-    v_texCoords = vec3(a_texCoords.xy, finalTex);
+    vec2 finalTexCoords = (u_mapMaterials > 0) ? mappedTexCoords : baseTexCoords;
+    v_texCoords = vec3(finalTexCoords, finalTex);
     
     if(u_lightingMode == DEBUG_VERTEX_COLOR)
     {

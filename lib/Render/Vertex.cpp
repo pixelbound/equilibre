@@ -94,11 +94,7 @@ void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matG
     Vertex *vertices = this->vertices.data();
     const uint32_t *indices = this->indices.constData() + startIndex;
     
-    // Get texture array info from the material array.
-    int maxWidth, maxHeight;
-    size_t totalMem, usedMem;
-    array->textureArrayInfo(maxWidth, maxHeight, totalMem, usedMem);
-    
+    int maxWidth = array->maxWidth(), maxHeight = array->maxHeight();
     for(uint32_t i = 0; i < groupCount; i++)
     {
         const MaterialGroup &mg(matGroups[i]);
