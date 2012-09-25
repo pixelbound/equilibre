@@ -854,21 +854,24 @@ bool ZoneSky::load(QString path)
         if(m_skyDefs.size() < skyID)
             m_skyDefs.resize(skyID);
         SkyDef &def = m_skyDefs[skyID - 1];
+        WLDMesh *mesh = new WLDMesh(meshDef, layerID);
+        mesh->importPalette(m_skyArchive);
         if(skySubID == 1)
-            def.mainLayer = new WLDMesh(meshDef, layerID);
+            def.mainLayer = mesh;
         else
-            def.secondLayer = new WLDMesh(meshDef, layerID);
+            def.secondLayer = mesh;
     }
     
-    // Load sky textures into the material palette.
-    WLDMaterialPalette skyPalette(m_skyArchive);
-    // XXX fix this.
-    /*WLDFragmentArray<MaterialPaletteFragment> matPals = m_skyWld->table()->byKind<MaterialPaletteFragment>();
-    Q_ASSERT(matPals.count() == 1);
-    skyPalette.setDef(matPals[0]);
-    skyPalette.createSlots();*/
+    // Import materials into a single material array.
     m_skyMaterials = new MaterialArray();
-    skyPalette.exportTo(m_skyMaterials);
+    for(size_t i = 0; i < m_skyDefs.size(); i++)
+    {
+        SkyDef &def = m_skyDefs[i];
+        if(def.mainLayer)
+            def.mainLayer->palette()->exportTo(m_skyMaterials);
+        if(def.secondLayer)
+            def.secondLayer->palette()->exportTo(m_skyMaterials);
+    }
     return true;
 }
 
@@ -882,15 +885,24 @@ bool ZoneSky::upload(RenderContext *renderCtx)
     
     // Import vertices and indices for each mesh.
     m_skyBuffer = new MeshBuffer();
-    /*for(uint32_t i = 0; i < m_skyDefs.size(); i++)
+    for(uint32_t i = 0; i < m_skyDefs.size(); i++)
     {
         WLDMesh *mainMesh = m_skyDefs[i].mainLayer;
+        if(mainMesh)
+        {
+            uint32_t mainPaletteOffset = mainMesh->palette()->arrayOffset();
+            MeshData *mainMeshData = mainMesh->importFrom(m_skyBuffer, mainPaletteOffset);
+            mainMeshData->updateTexCoords(m_skyMaterials);
+        }
+        
         WLDMesh *secondMesh = m_skyDefs[i].secondLayer;
-        MeshData *mainMeshData = mainMesh->importFrom(m_skyBuffer, NULL); // XXX
-        MeshData *secondMeshData = secondMesh->importFrom(m_skyBuffer, NULL); // XXX
-        mainMeshData->updateTexCoords(m_skyMaterials);
-        secondMeshData->updateTexCoords(m_skyMaterials);
-    }*/
+        if(secondMesh)
+        {
+            uint32_t secondPaletteOffset = secondMesh->palette()->arrayOffset();
+            MeshData *secondMeshData = secondMesh->importFrom(m_skyBuffer, secondPaletteOffset);
+            secondMeshData->updateTexCoords(m_skyMaterials);
+        }
+    }
     
     // Create the GPU buffers and free the memory used for vertices and indices.
     m_skyBuffer->upload(renderCtx);
@@ -917,11 +929,11 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
     
     // Import material groups from the visible layer.
     m_skyBuffer->matGroups.clear();
-    /*const SkyDef &def = m_skyDefs[skyID - 1];
+    const SkyDef &def = m_skyDefs[skyID - 1];
     if(def.secondLayer)
         m_skyBuffer->addMaterialGroups(def.secondLayer->data());
     if(def.mainLayer)
-        m_skyBuffer->addMaterialGroups(def.mainLayer->data());*/
+        m_skyBuffer->addMaterialGroups(def.mainLayer->data());
     
     // Draw the visible layer.
     prog->beginDrawMesh(m_skyBuffer, m_skyMaterials);
