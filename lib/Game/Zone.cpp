@@ -14,6 +14,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+#include <math.h>
 #include <QFileInfo>
 #include <QImage>
 #include "EQuilibre/Game/Zone.h"
@@ -210,6 +211,12 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
         z->objects()->visibleObjects().append(staticActor);
 }
 
+void Zone::update(double currentTime)
+{
+    if(m_terrain)
+        m_terrain->update(currentTime);
+}
+
 void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_actorTree)
@@ -219,7 +226,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     vec4 ambientLight(0.4, 0.4, 0.4, 1.0);
     renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
-    prog->setMaterialMap(NULL, 0, NULL);
+    prog->setMaterialMap(NULL);
     
     FogParams fogParams;
     fogParams.color = m_info.fogColor;
@@ -413,6 +420,8 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
     delete m_palette;
     m_palette = NULL;
     
+    m_matOffsets.clear();
+    
     if(renderCtx)
     {
         renderCtx->destroyStat(m_zoneStat);
@@ -471,7 +480,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_palette->createSlots();
     m_zoneMaterials = new MaterialArray();
     m_palette->exportTo(m_zoneMaterials);
-    
+    m_matOffsets.resize(m_zoneMaterials->materials().count(), 0);
     return true;
 }
 
@@ -552,7 +561,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
         if(actor)
         {
             MeshData *meshData = actor->mesh()->importFrom(meshBuf);
-            meshData->updateTexCoords(m_zoneMaterials);
+            meshData->updateTexCoords(m_zoneMaterials, true);
         }
     }
 #else
@@ -565,6 +574,30 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     meshBuf->clearVertices();
     meshBuf->clearIndices();
     return meshBuf;
+}
+
+void ZoneTerrain::update(double currentTime)
+{
+    if(m_zoneMaterials)
+    {
+        for(size_t i = 0; i < m_matOffsets.size(); i++)
+        {
+            Material *mat = m_zoneMaterials->material(i);
+            uint32_t offset = 0;
+            if(mat && (mat->duration() > 0))
+            {
+                // Animated texture.
+                uint32_t frames = mat->subTextureCount();
+                if(frames)
+                {
+                    double totalSec = (1.0 / mat->duration()) * frames * 50.0;
+                    double animTime = fmod(currentTime, totalSec) / totalSec;
+                    offset = qMin((uint32_t)floor(animTime * frames), frames - 1);
+                }
+            }
+            m_matOffsets[i] = offset;
+        }
+    }
 }
 
 void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
@@ -594,9 +627,11 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
+    prog->setMaterialMap(m_zoneMaterials, m_matOffsets.size(), NULL, m_matOffsets.data());
     prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
     prog->drawMesh();
     prog->endDrawMesh();
+    prog->setMaterialMap(NULL);
     
     m_zoneStatGPU->endTime();
     m_zoneStat->endTime();

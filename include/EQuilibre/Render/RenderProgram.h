@@ -24,7 +24,7 @@
 #include "EQuilibre/Render/RenderContext.h"
 
 const int MAX_TRANSFORMS = 256;
-const int MAX_MATERIAL_SLOTS = 64;
+const int MAX_MATERIAL_SLOTS = 256;
 const int MAX_LIGHTS = 8;
 
 const int A_POSITION = 0;
@@ -132,7 +132,8 @@ public:
 
     void setModelViewMatrix(const matrix4 &modelView);
     void setProjectionMatrix(const matrix4 &projection);
-    void setMaterialMap(const uint32_t *mappings, int count, MaterialArray *materials);
+    void setMaterialMap(MaterialArray *materials, int count = 0,
+                        const uint32_t *mappings = NULL, const uint32_t *offsets = NULL);
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
     void setLightingMode(LightingMode newMode);

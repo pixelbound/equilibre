@@ -316,6 +316,7 @@ void ZoneScene::drawFrame()
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
     m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
+    zone->update(currentTime());
     zone->draw(m_renderCtx, m_program);
     
     ZoneTerrain *terrain = zone->terrain();

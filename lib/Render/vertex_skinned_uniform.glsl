@@ -24,7 +24,7 @@ uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
 uniform int u_mapMaterialSlots;
-uniform vec3 u_materialSlotMap[64];
+uniform vec3 u_materialSlotMap[256];
 
 uniform float u_fogStart;
 uniform float u_fogEnd;

@@ -23,7 +23,7 @@ uniform mat4 u_modelViewMatrix;
 uniform mat4 u_projectionMatrix;
 
 uniform int u_mapMaterialSlots;
-uniform vec3 u_materialSlotMap[64];
+uniform vec3 u_materialSlotMap[256];
 
 const int NO_LIGHTING = 0;
 const int BAKED_LIGHTING = 1;

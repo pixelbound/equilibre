@@ -28,6 +28,7 @@ Material::Material()
     m_texture = 0;
     m_subTexture = 0;
     m_subTextureCount = 0;
+    m_duration = 0;
     m_opaque = true;
 }
 
@@ -99,6 +100,16 @@ uint32_t Material::subTextureCount() const
 void Material::setSubTextureCount(uint32_t count)
 {
     m_subTextureCount = count;
+}
+
+uint32_t Material::duration() const
+{
+    return m_duration;
+}
+
+void Material::setDuration(uint32_t durationMs)
+{
+    m_duration = durationMs;
 }
 
 bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)

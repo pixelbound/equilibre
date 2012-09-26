@@ -529,10 +529,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     if(!sprite)
         return 0;
     SpriteDefFragment *spriteDef = sprite->m_def;
-    if(!spriteDef)
-        return 0;
-    BitmapNameFragment *bmp = spriteDef->m_bitmaps.value(0);
-    if(spriteDef->m_bitmaps.size() == 0)
+    if(!spriteDef || !spriteDef->m_bitmaps.size())
         return 0;
 
     bool opaque = true;
@@ -647,6 +644,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     mat->setOpaque(opaque);
     mat->setImages(images);
     mat->setOrigin(dds ? Material::LowerLeft : Material::UpperLeft);
+    mat->setDuration(spriteDef->m_duration);
     return mat;
 }
 
@@ -851,7 +849,7 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
             MaterialGroup &mg(meshBuf->matGroups[i]);
             mg.matID = materialMap[mg.matID];
         }
-        prog->setMaterialMap(materialMap.data(), materialMap.size(), m_model->materials());
+        prog->setMaterialMap(m_model->materials(), materialMap.size(), materialMap.data());
     }
 
     // Draw all the material groups in one draw call.
@@ -860,5 +858,5 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
     prog->endDrawMesh();
     
     if(materialMap.size() > 0)
-        prog->setMaterialMap(NULL, 0, NULL);
+        prog->setMaterialMap(NULL);
 }

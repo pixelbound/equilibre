@@ -54,6 +54,9 @@ public:
     
     uint32_t subTextureCount() const;
     void setSubTextureCount(uint32_t count);
+    
+    uint32_t duration() const;
+    void setDuration(uint32_t durationMs);
 
     static bool loadTextureDDS(const char *data, size_t size, QImage &img);
 
@@ -63,6 +66,7 @@ private:
     texture_t m_texture;
     uint m_subTexture;
     uint32_t m_subTextureCount;
+    uint32_t m_duration;
     bool m_opaque;
 };
 

@@ -170,9 +170,9 @@ bool SpriteDefFragment::unpack(WLDReader *s)
     else
         m_param1 = 0;
     if(m_flags & 0x8)
-        s->unpackField('I', &m_param2);
+        s->unpackField('I', &m_duration);
     else
-        m_param2 = 0;
+        m_duration = 0;
     for(uint32_t i = 0; i < fileCount; i++)
     {
         BitmapNameFragment *frag = 0;
