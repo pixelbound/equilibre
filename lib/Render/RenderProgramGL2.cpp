@@ -261,8 +261,8 @@ void RenderProgram::setMaterialMap(const uint32_t *mappings, int count, Material
                 Material *mat = materials ? materials->material(matID) : NULL;
                 if(mat)
                 {
-                    matScalingX = (float)mat->image().width() / (float)maxTexWidth;
-                    matScalingY = (float)mat->image().height() / (float)maxTexHeight;
+                    matScalingX = (float)mat->width() / (float)maxTexWidth;
+                    matScalingY = (float)mat->height() / (float)maxTexHeight;
                     texID = mat->subTexture();
                 }
                 else

@@ -103,8 +103,8 @@ void MeshBuffer::updateTexCoords(MaterialArray *array, const MaterialGroup *matG
         if(!useMap && mat)
         { 
             // XXX put the scaling info in the uniform array.
-            matScalingX = (float)mat->image().width() / (float)maxWidth;
-            matScalingY = (float)mat->image().height() / (float)maxHeight;
+            matScalingX = (float)mat->width() / (float)maxWidth;
+            matScalingY = (float)mat->height() / (float)maxHeight;
             z = mat->subTexture();
         }
         

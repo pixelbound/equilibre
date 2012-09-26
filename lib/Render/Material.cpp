@@ -27,6 +27,7 @@ Material::Material()
     m_origin = LowerLeft;
     m_texture = 0;
     m_subTexture = 0;
+    m_subTextureCount = 0;
     m_opaque = true;
 }
 
@@ -40,14 +41,24 @@ void Material::setOpaque(bool opaque)
     m_opaque = opaque;
 }
 
-const QImage & Material::image() const
+int Material::width() const
 {
-    return m_img;
+    return m_images.size() ? m_images.at(0).width() : 0;
 }
 
-void Material::setImage(const QImage &newImage)
+int Material::height() const
 {
-    m_img = newImage;
+    return m_images.size() ? m_images.at(0).height() : 0;
+}
+
+const QVector<QImage> & Material::images() const
+{
+    return m_images;
+}
+
+void Material::setImages(const QVector<QImage> &newImages)
+{
+    m_images = newImages;
 }
 
 Material::OriginType Material::origin() const
@@ -78,6 +89,16 @@ uint Material::subTexture() const
 void Material::setSubTexture(uint newID)
 {
     m_subTexture = newID;
+}
+
+uint32_t Material::subTextureCount() const
+{
+    return m_subTextureCount;
+}
+
+void Material::setSubTextureCount(uint32_t count)
+{
+    m_subTextureCount = count;
 }
 
 bool Material::loadTextureDDS(const char *data, size_t size, QImage &img)
@@ -179,13 +200,16 @@ void MaterialArray::textureArrayInfo(int &maxWidth, int &maxHeight,
     {
         if(!mat)
             continue;
-        int width = mat->image().width();
-        int height = mat->image().height();
-        maxWidth = qMax(maxWidth, width);
-        maxHeight = qMax(maxHeight, height);
-        usedMem += (width * height * pixelSize);
-        //qDebug("Texture %d x %d", width, height);
-        count++;
+        foreach(QImage img, mat->images())
+        {
+            int width = img.width();
+            int height = img.height();
+            maxWidth = qMax(maxWidth, width);
+            maxHeight = qMax(maxHeight, height);
+            usedMem += (width * height * pixelSize);
+            //qDebug("Texture %d x %d", width, height);
+            count++;
+        }
     }
     totalMem = maxWidth * maxHeight * pixelSize * count;
 }
@@ -198,15 +222,17 @@ void MaterialArray::upload(RenderContext *renderCtx)
     {
         if(!mat)
             continue;
-        const QImage &img = mat->image();
-        if(!img.isNull() && (mat->texture() == 0))
+        foreach(QImage img, mat->images())
         {
-            texture_t tex = 0;
-            if(mat->origin() != Material::LowerLeft)
-                tex = renderCtx->loadTexture(QGLWidget::convertToGLFormat(img));
-            else
-                tex = renderCtx->loadTexture(img);
-            mat->setTexture(tex);
+            if(!img.isNull() && (mat->texture() == 0))
+            {
+                texture_t tex = 0;
+                if(mat->origin() != Material::LowerLeft)
+                    tex = renderCtx->loadTexture(QGLWidget::convertToGLFormat(img));
+                else
+                    tex = renderCtx->loadTexture(img);
+                mat->setTexture(tex);
+            }
         }
     }
     m_uploaded = true;
@@ -225,22 +251,29 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
     {
         if(!mat)
             continue;
-        if(!mat->image().isNull() && (mat->texture() == 0))
+        uint32_t subTextures = 0;
+        foreach(QImage img, mat->images())
         {
-            QImage img = mat->image();
-            if(mat->origin() != Material::LowerLeft)
-              img = QGLWidget::convertToGLFormat(img);
-            uploadMats.append(mat);
-            images.append(img);
+            if(!img.isNull() && (mat->texture() == 0))
+            {
+                if(mat->origin() != Material::LowerLeft)
+                    img = QGLWidget::convertToGLFormat(img);
+                images.append(img);
+                subTextures++;
+            }
         }
+        mat->setSubTextureCount(subTextures);
+        uploadMats.append(mat);
     }
     
     m_arrayTexture = renderCtx->loadTextures(images.constData(), images.count());
+    uint32_t subTex = 1;
     for(uint i = 0; i < uploadMats.count(); i++)
     {
         Material *mat = uploadMats[i];
         mat->setTexture(m_arrayTexture);
-        mat->setSubTexture(i + 1);
+        mat->setSubTexture(subTex);
+        subTex += mat->subTextureCount();
     }
     m_uploaded = true;
     

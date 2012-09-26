@@ -37,8 +37,11 @@ public:
     bool isOpaque() const;
     void setOpaque(bool opaque);
     
-    const QImage & image() const;
-    void setImage(const QImage &newImage);
+    int width() const;
+    int height() const;
+    
+    const QVector<QImage> & images() const;
+    void setImages(const QVector<QImage> &newImages);
     
     OriginType origin() const;
     void setOrigin(OriginType newOrigin);
@@ -48,14 +51,18 @@ public:
     
     uint subTexture() const;
     void setSubTexture(uint newID);
+    
+    uint32_t subTextureCount() const;
+    void setSubTextureCount(uint32_t count);
 
     static bool loadTextureDDS(const char *data, size_t size, QImage &img);
 
 private:
-    QImage m_img;
+    QVector<QImage> m_images;
     OriginType m_origin;
     texture_t m_texture;
     uint m_subTexture;
+    uint32_t m_subTextureCount;
     bool m_opaque;
 };
 
