@@ -538,23 +538,31 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
     if(!sprite)
         return 0;
     SpriteDefFragment *spriteDef = sprite->m_def;
-    if(!spriteDef)
-        return 0;
-    BitmapNameFragment *bmp = spriteDef->m_bitmaps.value(0);
-    if(!bmp)
+    if(!spriteDef || !spriteDef->m_bitmaps.size())
         return 0;
 
     bool opaque = true;
     bool dds = false;
-    QImage img;
+    QVector<QImage> images;
     if(m_archive)
     {
-        // XXX case-insensitive lookup
-        QByteArray data = m_archive->unpackFile(bmp->m_fileName.toLower());
-        if(!img.loadFromData(data))
+        foreach(BitmapNameFragment *bmp, spriteDef->m_bitmaps)
         {
-            Material::loadTextureDDS(data.constData(), data.length(), img);
-            dds = true;
+            // XXX case-insensitive lookup
+            QByteArray data = m_archive->unpackFile(bmp->m_fileName.toLower());
+            QImage img;
+            if(!img.loadFromData(data))
+            {
+                if(Material::loadTextureDDS(data.constData(), data.length(), img))
+                {
+                    dds = true;
+                    images.append(img);
+                }
+            }
+            else
+            {
+                images.append(img);
+            }
         }
     }
     
@@ -576,13 +584,17 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
         else if(renderMode == 0x13)
         {
             // masked texture (USERDEFINED 20)
-            if(img.colorCount() > 0)
+            for(size_t i = 0; i < images.size(); i++)
             {
-                // replace the mask color by a transparent color in the table
-                QVector<QRgb> colors = img.colorTable();
-                uint8_t maskColor = 0;
-                colors[maskColor] = qRgba(0, 0, 0, 0);
-                img.setColorTable(colors);
+                QImage &img = images[i];
+                if(img.colorCount() > 0)
+                {
+                    // replace the mask color by a transparent color in the table
+                    QVector<QRgb> colors = img.colorTable();
+                    uint8_t maskColor = 0;
+                    colors[maskColor] = qRgba(0, 0, 0, 0);
+                    img.setColorTable(colors);
+                }
             }
             opaque = false;
         }
@@ -594,32 +606,40 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
         {
             // semi-transparent (e.g. the sleeper, wasp, bixie)
             // depends on how dark/light the color is
-            if(img.colorCount() > 0)
+            for(size_t i = 0; i < images.size(); i++)
             {
-                QVector<QRgb> colors = img.colorTable();
-                for(int i = 0; i < colors.count(); i++)
+                QImage &img = images[i];
+                if(img.colorCount() > 0)
                 {
-                    QRgb c = colors[i];
-                    int alpha = (qRed(c) + qGreen(c) + qBlue(c)) / 3;
-                    colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                    QVector<QRgb> colors = img.colorTable();
+                    for(int i = 0; i < colors.count(); i++)
+                    {
+                        QRgb c = colors[i];
+                        int alpha = (qRed(c) + qGreen(c) + qBlue(c)) / 3;
+                        colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                    }
+                    img.setColorTable(colors);
                 }
-                img.setColorTable(colors);
             }
             opaque = false;
         }
         else if(renderMode == 0x05)
         {
             // semi-transparent (water elemental, air elemental, ghost wolf)
-            if(img.colorCount() > 0)
+            for(size_t i = 0; i < images.size(); i++)
             {
-                QVector<QRgb> colors = img.colorTable();
-                int alpha = 127; // arbitrary value XXX find the real value
-                for(int i = 0; i < colors.count(); i++)
+                QImage &img = images[i];
+                if(img.colorCount() > 0)
                 {
-                    QRgb c = colors[i];
-                    colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                    QVector<QRgb> colors = img.colorTable();
+                    int alpha = 127; // arbitrary value XXX find the real value
+                    for(int i = 0; i < colors.count(); i++)
+                    {
+                        QRgb c = colors[i];
+                        colors[i] = qRgba(qRed(c), qGreen(c), qBlue(c), alpha);
+                    }
+                    img.setColorTable(colors);
                 }
-                img.setColorTable(colors);
             }
             opaque = false;
         }
@@ -631,8 +651,9 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
 
     Material *mat = new Material();
     mat->setOpaque(opaque);
-    mat->setImage(img);
+    mat->setImages(images);
     mat->setOrigin(dds ? Material::LowerLeft : Material::UpperLeft);
+    mat->setDuration(spriteDef->m_duration);
     return mat;
 }
 
@@ -842,7 +863,7 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
             MaterialGroup &mg(meshBuf->matGroups[i]);
             mg.matID = materialMap[mg.matID];
         }
-        prog->setMaterialMap(materialMap.data(), materialMap.size(), materials);
+        prog->setMaterialMap(materials, materialMap.size(), materialMap.data());
     }
 
     // Draw all the material groups in one draw call.
@@ -851,5 +872,5 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
     prog->endDrawMesh();
     
     if(materialMap.size() > 0)
-        prog->setMaterialMap(NULL, 0, NULL);
+        prog->setMaterialMap(NULL);
 }

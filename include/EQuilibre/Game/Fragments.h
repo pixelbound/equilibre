@@ -130,7 +130,7 @@ public:
     virtual bool unpack(WLDReader *s);
 
     const static uint16_t KIND = 0x04;
-    uint32_t m_flags, m_param1, m_param2;
+    uint32_t m_flags, m_param1, m_duration;
     QVector<BitmapNameFragment *> m_bitmaps;
 };
 

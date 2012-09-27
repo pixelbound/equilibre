@@ -244,30 +244,33 @@ void RenderProgram::setProjectionMatrix(const matrix4 &projection)
         1, GL_FALSE, (const GLfloat *)projection.columns());
 }
 
-void RenderProgram::setMaterialMap(const uint32_t *mappings, int count, MaterialArray *materials)
+void RenderProgram::setMaterialMap(MaterialArray *materials, int count,
+                                   const uint32_t *mappings, const uint32_t *offsets)
 {
-    int maxTexWidth = materials ? materials->maxWidth() : 0;
-    int maxTexHeight = materials ? materials->maxHeight() : 0;
-    if(mappings && (count > 0))
+    Q_ASSERT(count <= MAX_MATERIAL_SLOTS);
+    if((mappings || offsets) && (count > 0))
     {
         vec3 textureMap[MAX_MATERIAL_SLOTS];
+        int maxTexWidth = materials ? materials->maxWidth() : 0;
+        int maxTexHeight = materials ? materials->maxHeight() : 0;
         for(int i = 0; i < MAX_MATERIAL_SLOTS; i++)
         {
             int texID = i + 1;
             float matScalingX = 1.0, matScalingY = 1.0;
             if(i < count)
             {
-                uint32_t matID = mappings[i];
+                uint32_t matID = mappings ? mappings[i] : i;
+                uint32_t texOffset = offsets ? offsets[i] : 0;
                 Material *mat = materials ? materials->material(matID) : NULL;
                 if(mat)
                 {
-                    matScalingX = (float)mat->image().width() / (float)maxTexWidth;
-                    matScalingY = (float)mat->image().height() / (float)maxTexHeight;
-                    texID = mat->subTexture();
+                    matScalingX = (float)mat->width() / (float)maxTexWidth;
+                    matScalingY = (float)mat->height() / (float)maxTexHeight;
+                    texID = mat->subTexture() + texOffset;
                 }
                 else
                 {
-                    texID = matID;
+                    texID = matID + texOffset;
                 }
             }
             textureMap[i] = vec3(matScalingX, matScalingY, (float)texID);

@@ -95,6 +95,7 @@ public:
 
     void clear(RenderContext *renderCtx);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
+    void update(double currentTime);
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;
@@ -151,6 +152,7 @@ public:
     uint32_t currentRegion() const;
 
     bool load(PFSArchive *archive, WLDData *wld);
+    void update(double currentTime);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void clear(RenderContext *renderCtx);
     void resetVisible();
@@ -172,6 +174,7 @@ private:
     MeshBuffer *m_zoneBuffer;
     WLDMaterialPalette *m_palette;
     MaterialArray *m_zoneMaterials;
+    std::vector<uint32_t> m_matOffsets;
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
