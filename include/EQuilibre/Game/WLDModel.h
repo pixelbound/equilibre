@@ -48,22 +48,19 @@ class WLDMaterialPalette;
 class GAME_DLL WLDModel
 {
 public:
-    WLDModel(PFSArchive *archive);
+    WLDModel(WLDMesh *mainMesh);
     virtual ~WLDModel();
 
     static QList<MeshDefFragment *> listMeshes(ActorDefFragment *def);
     const QList<WLDMesh *> & meshes() const;
+
+    WLDMesh *mainMesh() const;
 
     MeshBuffer * buffer() const;
     void setBuffer(MeshBuffer *newBuffer);
 
     WLDSkeleton *skeleton() const;
     void setSkeleton(WLDSkeleton *skeleton);
-
-    WLDMaterialPalette * palette() const;
-
-    MaterialArray *materials() const;
-    void setMaterials(MaterialArray *newMaterials);
 
     WLDModelSkin *skin() const;
     const QMap<QString, WLDModelSkin *> & skins() const;
@@ -76,9 +73,8 @@ private:
     WLDSkeleton *m_skel;
     WLDModelSkin *m_skin;
     QMap<QString, WLDModelSkin *> m_skins;
+    WLDMesh *m_mainMesh;
     QList<WLDMesh *> m_meshes;
-    WLDMaterialPalette *m_palette;
-    MaterialArray *m_materials;
 };
 
 /*!
@@ -93,11 +89,13 @@ public:
     MeshData * data() const;
     void setData(MeshData *data);
     MeshDefFragment *def() const;
+    MaterialArray * materials() const;
     WLDMaterialPalette * palette() const;
     uint32_t partID() const;
     const AABox & boundsAA() const;
 
-    void importPalette(PFSArchive *archive);
+    WLDMaterialPalette * importPalette(PFSArchive *archive);
+    MaterialArray * materialsFromPalette();
     MeshData * importFrom(MeshBuffer *meshBuf, uint32_t paletteOffset = 0);
     static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
 
@@ -111,6 +109,7 @@ private:
     MeshData *m_data;
     MeshDefFragment *m_meshDef;
     WLDMaterialPalette *m_palette;
+    MaterialArray *m_materials;
     AABox m_boundsAA;
 };
 
@@ -226,7 +225,7 @@ public:
     
     const QList<WLDMesh *> & parts() const;
 
-    void addPart(MeshDefFragment *frag);
+    WLDMesh * addPart(MeshDefFragment *frag);
     void replacePart(WLDMesh *basePart, MeshDefFragment *frag);
 
     static bool explodeMeshName(QString defName, QString &actorName,

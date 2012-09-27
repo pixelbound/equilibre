@@ -131,7 +131,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_palName = "00";
     if(model)
     {
-        WLDMaterialPalette *pal = model->palette();
+        WLDMaterialPalette *pal = model->mainMesh()->palette();
         m_materialMap.resize(pal->materialSlots().size());
         for(size_t i = 0; i < m_materialMap.size(); i++)
             m_materialMap[i] = i;

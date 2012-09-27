@@ -503,11 +503,12 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
             if(!actor)
                 continue;
             WLDModel *model = actor->model();
+            WLDMaterialPalette *palette = model->mainMesh()->palette();
             WLDModelSkin *skin = model->skins().value(skinName);
             if(!skin)
                 skin = model->newSkin(skinName);
             int skinID = skinName.toInt();
-            WLDMaterialSlot *matSlot = model->palette()->slotByName(partName);
+            WLDMaterialSlot *matSlot = palette->slotByName(partName);
             if(matSlot)
                 matSlot->addSkinMaterial(skinID, matDef);
         }
@@ -540,26 +541,26 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
     {
         ActorDefFragment *actorDef = actorDefs[i];
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
-        MeshDefFragment *mainMesh = NULL;
+        MeshDefFragment *mainMeshDef = NULL;
         MaterialPaletteFragment *mainPalette = NULL;
-        if(!findMainMesh(actorDef, actorName, mainMesh, mainPalette))
+        if(!findMainMesh(actorDef, actorName, mainMeshDef, mainPalette))
         {
             qDebug("Warning: could not find main mesh for actor '%s'.", actorName.toLatin1().constData());
             continue;
         }
 
-        // Create a material slot for each material in the actor's palette.
-        WLDModel *model = new WLDModel(archive);
-        WLDMaterialPalette *pal = model->palette();
-        pal->setDef(mainPalette);
-        pal->createSlots(false);
-
+        // Create the main mesh.
+        WLDMesh *mainMesh = new WLDMesh(mainMeshDef, 0);
+        WLDMaterialPalette *pal = mainMesh->importPalette(archive);
+        WLDModel *model = new WLDModel(mainMesh);
+        WLDModelSkin *defaultSkin = model->skin();
         WLDCharActor *actor = new WLDCharActor(model);
-        WLDModelSkin *skin = model->skin();
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
         {
+            if(meshDef == mainMeshDef)
+                continue;
             Q_ASSERT(mainPalette == meshDef->m_palette);
-            skin->addPart(meshDef);
+            defaultSkin->addPart(meshDef);
             pal->addMeshMaterials(meshDef, 0);
         }
         foreach(WLDFragment *frag, actorDef->m_models)
@@ -597,7 +598,7 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
         WLDModelSkin *skin = model->skins().value(skinName);
         if(!skin)
             skin = model->newSkin(skinName);
-        WLDMaterialPalette *pal = model->palette();
+        WLDMaterialPalette *pal = model->mainMesh()->palette();
         foreach(WLDMesh *part, model->skin()->parts())
         {
             QString actorName2, meshName2, skinName2;
@@ -625,10 +626,8 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
         return;
 
     // Import materials.
-    MaterialArray *materials = new MaterialArray();
-    model->palette()->exportTo(materials);
+    MaterialArray *materials = model->mainMesh()->materialsFromPalette();
     materials->uploadArray(renderCtx);
-    model->setMaterials(materials);
 
     // Import mesh geometry.
     MeshBuffer *meshBuf = new MeshBuffer();

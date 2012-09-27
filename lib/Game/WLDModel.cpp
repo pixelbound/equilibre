@@ -26,24 +26,28 @@
 
 using namespace std;
 
-WLDModel::WLDModel(PFSArchive *archive)
+WLDModel::WLDModel(WLDMesh *mainMesh)
 {
+    Q_ASSERT(mainMesh != NULL);
     m_buffer = 0;
+    m_mainMesh = mainMesh;
+    m_meshes.append(mainMesh);
     m_skel = 0;
     m_skin = 0;
     m_skin = newSkin("00");
-    m_palette = new WLDMaterialPalette(archive);
-    m_materials = NULL;
 }
 
 WLDModel::~WLDModel()
 {
-    delete m_materials;
-    delete m_palette;
     foreach(WLDModelSkin *skin, m_skins)
         delete skin;
     foreach(WLDMesh *mesh, m_meshes)
         delete mesh;
+}
+
+WLDMesh * WLDModel::mainMesh() const
+{
+    return m_mainMesh;
 }
 
 MeshBuffer * WLDModel::buffer() const
@@ -69,21 +73,6 @@ WLDModelSkin * WLDModel::skin() const
 void WLDModel::setSkeleton(WLDSkeleton *skeleton)
 {
     m_skel = skeleton;
-}
-
-WLDMaterialPalette * WLDModel::palette() const
-{
-    return m_palette;
-}
-
-MaterialArray * WLDModel::materials() const
-{
-    return m_materials;
-}
-
-void WLDModel::setMaterials(MaterialArray *newMaterials)
-{
-    m_materials = newMaterials;
 }
 
 const QMap<QString, WLDModelSkin *> & WLDModel::skins() const
@@ -130,16 +119,20 @@ QList<MeshDefFragment *> WLDModel::listMeshes(ActorDefFragment *def)
 
 WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
 {
+    Q_ASSERT(meshDef != NULL);
     m_partID = partID;
     m_meshDef = meshDef;
     m_data = NULL;
+    m_materials = NULL;
     m_palette = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
+    meshDef->setHandled(true);
 }
 
 WLDMesh::~WLDMesh()
 {
+    delete m_materials;
     delete m_palette;
 }
 
@@ -158,6 +151,11 @@ MeshDefFragment * WLDMesh::def() const
     return m_meshDef;
 }
 
+MaterialArray * WLDMesh::materials() const
+{
+    return m_materials;
+}
+
 WLDMaterialPalette * WLDMesh::palette() const
 {
     return m_palette;
@@ -173,11 +171,22 @@ const AABox & WLDMesh::boundsAA() const
     return m_boundsAA;
 }
 
-void WLDMesh::importPalette(PFSArchive *archive)
+WLDMaterialPalette * WLDMesh::importPalette(PFSArchive *archive)
 {
     m_palette = new WLDMaterialPalette(archive);
     m_palette->setDef(m_meshDef->m_palette);
     m_palette->createSlots();
+    return m_palette;
+}
+
+MaterialArray * WLDMesh::materialsFromPalette()
+{
+    if(!m_materials)
+    {
+        m_materials = new MaterialArray();
+        m_palette->exportTo(m_materials);
+    }
+    return m_materials;
 }
 
 MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf, uint32_t paletteOffset)
@@ -724,8 +733,12 @@ WLDModelSkin::WLDModelSkin(QString name, WLDModel *model)
     {
         foreach(WLDMesh *part, defaultSkin->parts())
             m_parts.append(part);
-        updateBounds();
     }
+    else
+    {
+        m_parts.append(model->mainMesh());
+    }
+    updateBounds();
 }
 
 WLDModelSkin::~WLDModelSkin()
@@ -747,16 +760,16 @@ const QList<WLDMesh *> & WLDModelSkin::parts() const
     return m_parts;
 }
 
-void WLDModelSkin::addPart(MeshDefFragment *frag)
+WLDMesh * WLDModelSkin::addPart(MeshDefFragment *frag)
 {
     if(!frag)
-        return;
+        return NULL;
     uint32_t partID = m_parts.count();
     WLDMesh *meshPart = new WLDMesh(frag, partID);
     m_parts.append(meshPart);
     m_model->m_meshes.append(meshPart);
-    frag->setHandled(true);
     updateBounds();
+    return meshPart;
 }
 
 void WLDModelSkin::replacePart(WLDMesh *basePart, MeshDefFragment *frag)
@@ -821,6 +834,7 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
         meshBuf->addMaterialGroups(mesh->data());
     
     // Map the slot indices to material indices if requested.
+    MaterialArray *materials = m_model->mainMesh()->materials();
     if(materialMap.size() > 0)
     {
         for(size_t i = 0; i < meshBuf->matGroups.size(); i++)
@@ -828,11 +842,11 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
             MaterialGroup &mg(meshBuf->matGroups[i]);
             mg.matID = materialMap[mg.matID];
         }
-        prog->setMaterialMap(materialMap.data(), materialMap.size(), m_model->materials());
+        prog->setMaterialMap(materialMap.data(), materialMap.size(), materials);
     }
 
     // Draw all the material groups in one draw call.
-    prog->beginDrawMesh(meshBuf, m_model->materials(), bones.constData(), bones.size());
+    prog->beginDrawMesh(meshBuf, materials, bones.constData(), bones.size());
     prog->drawMesh();
     prog->endDrawMesh();
     
