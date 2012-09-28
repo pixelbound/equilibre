@@ -415,12 +415,12 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
     }
     
     delete m_zoneMaterials;
+    delete m_materialMap;
     m_zoneMaterials = NULL;
+    m_materialMap = NULL;
     
     delete m_palette;
     m_palette = NULL;
-    
-    m_matOffsets.clear();
     
     if(renderCtx)
     {
@@ -480,7 +480,8 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_palette->createSlots();
     m_zoneMaterials = new MaterialArray();
     m_palette->exportTo(m_zoneMaterials);
-    m_matOffsets.resize(m_zoneMaterials->materials().count(), 0);
+    m_materialMap = new MaterialMap();
+    m_materialMap->resize(m_zoneMaterials->materials().count());
     return true;
 }
 
@@ -578,9 +579,10 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
 
 void ZoneTerrain::update(double currentTime)
 {
-    if(m_zoneMaterials)
+    if(m_zoneMaterials && m_materialMap)
     {
-        for(size_t i = 0; i < m_matOffsets.size(); i++)
+        uint32_t count = m_materialMap->count();
+        for(size_t i = 0; i <count; i++)
         {
             Material *mat = m_zoneMaterials->material(i);
             uint32_t offset = 0;
@@ -595,7 +597,7 @@ void ZoneTerrain::update(double currentTime)
                     offset = qMin((uint32_t)floor(animTime * frames), frames - 1);
                 }
             }
-            m_matOffsets[i] = offset;
+            m_materialMap->setOffsetAt(i, offset);
         }
     }
 }
@@ -627,7 +629,7 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
-    prog->setMaterialMap(m_zoneMaterials, m_matOffsets.size(), NULL, m_matOffsets.data());
+    prog->setMaterialMap(m_zoneMaterials, m_materialMap);
     prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
     prog->drawMesh();
     prog->endDrawMesh();

@@ -244,11 +244,11 @@ void RenderProgram::setProjectionMatrix(const matrix4 &projection)
         1, GL_FALSE, (const GLfloat *)projection.columns());
 }
 
-void RenderProgram::setMaterialMap(MaterialArray *materials, int count,
-                                   const uint32_t *mappings, const uint32_t *offsets)
+void RenderProgram::setMaterialMap(MaterialArray *materials, MaterialMap *materialMap)
 {
+    uint32_t count = materialMap ? materialMap->count() : 0;
     Q_ASSERT(count <= MAX_MATERIAL_SLOTS);
-    if((mappings || offsets) && (count > 0))
+    if(count > 0)
     {
         vec3 textureMap[MAX_MATERIAL_SLOTS];
         int maxTexWidth = materials ? materials->maxWidth() : 0;
@@ -259,8 +259,8 @@ void RenderProgram::setMaterialMap(MaterialArray *materials, int count,
             float matScalingX = 1.0, matScalingY = 1.0;
             if(i < count)
             {
-                uint32_t matID = mappings ? mappings[i] : i;
-                uint32_t texOffset = offsets ? offsets[i] : 0;
+                uint32_t matID = materialMap->mappingAt(i);
+                uint32_t texOffset = materialMap->offsetAt(i);
                 Material *mat = materials ? materials->material(matID) : NULL;
                 if(mat)
                 {

@@ -40,6 +40,7 @@ class OctreeIndex;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialArray;
+class MaterialMap;
 class ActorDefFragment;
 class RegionTreeFragment;
 class RegionFragment;
@@ -174,7 +175,7 @@ private:
     MeshBuffer *m_zoneBuffer;
     WLDMaterialPalette *m_palette;
     MaterialArray *m_zoneMaterials;
-    std::vector<uint32_t> m_matOffsets;
+    MaterialMap *m_materialMap;
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;

@@ -30,6 +30,7 @@ class MaterialPaletteFragment;
 class ActorDefFragment;
 class Material;
 class MaterialArray;
+class MaterialMap;
 class PFSArchive;
 class RenderContext;
 class RenderProgram;
@@ -184,7 +185,7 @@ public:
     void createSlots(bool addMatDefs = true);
     void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
     void exportTo(MaterialArray *array);
-    void makeSkinMap(uint32_t skinID, std::vector<uint32_t> &slotIndices) const;
+    void makeSkinMap(uint32_t skinID, MaterialMap *materialMap) const;
     void makeSkinMap(const std::vector<uint32_t> &skinIDs, std::vector<uint32_t> &slotIndices) const;
 
     /*!
@@ -232,7 +233,7 @@ public:
                                 QString &meshName, QString &skinName);
 
     void draw(RenderProgram *prog, const QVector<BoneTransform> &bones,
-              const std::vector<uint32_t> &materialMap);
+              MaterialMap *materialMap);
 
 private:
     void updateBounds();

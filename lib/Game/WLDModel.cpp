@@ -477,13 +477,13 @@ static uint32_t findSkinIndex(WLDMaterialSlot *slot, uint32_t skinID)
     return -1;
 }
 
-void WLDMaterialPalette::makeSkinMap(uint32_t skinID, vector<uint32_t> &slotIndices) const
+void WLDMaterialPalette::makeSkinMap(uint32_t skinID, MaterialMap *materialMap) const
 {
-    size_t endSkinID = qMin(m_materialSlots.size(), slotIndices.size());
+    size_t endSkinID = qMin(m_materialSlots.size(), materialMap->count());
     for(size_t i = 0; i < endSkinID; i++)
     {
         WLDMaterialSlot *slot = m_materialSlots[i];
-        slotIndices[i] = findSkinIndex(slot, skinID);
+        materialMap->setMappingAt(i, findSkinIndex(slot, skinID));
     }
 }
 
@@ -843,7 +843,7 @@ void WLDModelSkin::updateBounds()
 }
 
 void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones,
-                        const vector<uint32_t> &materialMap)
+                        MaterialMap *materialMap)
 {
     MeshBuffer *meshBuf = m_model->buffer();
     if(!meshBuf)
@@ -856,14 +856,15 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
     
     // Map the slot indices to material indices if requested.
     MaterialArray *materials = m_model->mainMesh()->materials();
-    if(materialMap.size() > 0)
+    if(materialMap)
     {
+        const uint32_t *mappings = materialMap->mappings();
         for(size_t i = 0; i < meshBuf->matGroups.size(); i++)
         {
             MaterialGroup &mg(meshBuf->matGroups[i]);
-            mg.matID = materialMap[mg.matID];
+            mg.matID = materialMap->mappingAt(mg.matID);;
         }
-        prog->setMaterialMap(materials, materialMap.size(), materialMap.data());
+        prog->setMaterialMap(materials, materialMap);
     }
 
     // Draw all the material groups in one draw call.
@@ -871,6 +872,6 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
     prog->drawMesh();
     prog->endDrawMesh();
     
-    if(materialMap.size() > 0)
+    if(materialMap)
         prog->setMaterialMap(NULL);
 }

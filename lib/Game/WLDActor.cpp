@@ -18,6 +18,7 @@
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/Fragments.h"
+#include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 
@@ -123,6 +124,7 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
 {
     m_model = model;
+    m_materialMap = NULL;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
@@ -132,15 +134,15 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     if(model)
     {
         WLDMaterialPalette *pal = model->mainMesh()->palette();
-        m_materialMap.resize(pal->materialSlots().size());
-        for(size_t i = 0; i < m_materialMap.size(); i++)
-            m_materialMap[i] = i;
+        m_materialMap = new MaterialMap();
+        m_materialMap->resize(pal->materialSlots().size());
     }
 }
 
 WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Kind)
 {
     m_model = model;
+    m_materialMap = NULL;
     if(frag)
     {
         m_location = frag->m_location;
@@ -160,6 +162,7 @@ WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Kind
 
 WLDCharActor::~WLDCharActor()
 {
+    delete m_materialMap;
 }
 
 WLDModel * WLDCharActor::model() const
@@ -167,12 +170,7 @@ WLDModel * WLDCharActor::model() const
     return m_model;
 }
 
-std::vector<uint32_t> & WLDCharActor::materialMap()
-{
-    return m_materialMap;
-}
-
-const std::vector<uint32_t> & WLDCharActor::materialMap() const
+MaterialMap * WLDCharActor::materialMap() const
 {
     return m_materialMap;
 }

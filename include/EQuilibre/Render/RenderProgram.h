@@ -58,6 +58,7 @@ struct RENDER_DLL ShaderSymbolInfo
 class BoneTransform;
 class Material;
 class MaterialArray;
+class MaterialMap;
 
 class RENDER_DLL MeshDataGL2
 {
@@ -132,8 +133,7 @@ public:
 
     void setModelViewMatrix(const matrix4 &modelView);
     void setProjectionMatrix(const matrix4 &projection);
-    void setMaterialMap(MaterialArray *materials, int count = 0,
-                        const uint32_t *mappings = NULL, const uint32_t *offsets = NULL);
+    void setMaterialMap(MaterialArray *materials, MaterialMap *materialMap = NULL);
     void setBoneTransforms(const BoneTransform *transforms, int count);
     void setAmbientLight(vec4 lightColor);
     void setLightingMode(LightingMode newMode);

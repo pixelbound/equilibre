@@ -291,3 +291,67 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
     size_t totalMem, usedMem;
     textureArrayInfo(m_maxWidth, m_maxHeight, totalMem, usedMem);
 }
+
+//////////////////////////////////////////////////////////////////////////////
+
+uint32_t MaterialMap::count() const
+{
+    return m_mappings.count();
+}
+
+uint32_t * MaterialMap::mappings()
+{
+    return m_mappings.data();
+}
+
+const uint32_t * MaterialMap::mappings() const
+{
+    return m_mappings.constData();
+}
+
+uint32_t * MaterialMap::offsets()
+{
+    return m_offsets.data();
+}
+
+const uint32_t * MaterialMap::offsets() const
+{
+    return m_offsets.constData();
+}
+
+uint32_t MaterialMap::mappingAt(uint32_t index) const
+{
+    return (index < m_mappings.count()) ? m_mappings[index] : index;
+}
+
+void MaterialMap::setMappingAt(uint32_t index, uint32_t mapping)
+{
+    m_mappings[index] = mapping;
+}
+
+uint32_t MaterialMap::offsetAt(uint32_t index) const
+{
+    return (index < m_offsets.count()) ? m_offsets[index] : 0;
+}
+
+void MaterialMap::setOffsetAt(uint32_t index, uint32_t offset)
+{
+    m_offsets[index] = offset;
+}
+
+void MaterialMap::resize(uint32_t newCount)
+{
+    uint32_t oldCount = count();
+    m_mappings.resize(newCount);
+    for(uint32_t i = oldCount; i < newCount; i++)
+        m_mappings[i] = i;
+    m_offsets.resize(newCount);
+    for(uint32_t i = oldCount; i < newCount; i++)
+        m_offsets[i] = 0;
+}
+
+void MaterialMap::clear()
+{
+    m_mappings.clear();
+    m_offsets.clear();
+}

@@ -443,9 +443,9 @@ void CharacterScene::drawFrame()
     WLDCharActor *actor = selectedCharacter();
     if(actor)
     {
-        std::vector<uint32_t> &materialMap = actor->materialMap();
+        // XXX WLDCharActor::setSkin(skinID)
         int skinID = actor->paletteName().toInt();
-        actor->model()->mainMesh()->palette()->makeSkinMap(skinID, materialMap);
+        actor->model()->mainMesh()->palette()->makeSkinMap(skinID, actor->materialMap());
         actor->setAnimTime(currentTime());
         actor->draw(m_renderCtx, prog);
     }

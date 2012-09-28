@@ -31,6 +31,7 @@ class LightSourceFragment;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
+class MaterialMap;
 class RenderContext;
 class Octree;
 class OctreeIndex;
@@ -125,8 +126,7 @@ public:
     const static ActorType Kind = Character;
     
     WLDModel * model() const;
-    std::vector<uint32_t> & materialMap();
-    const std::vector<uint32_t> & materialMap() const;
+    MaterialMap * materialMap() const;
     
     QString animName() const;
     void setAnimName(QString name);
@@ -158,7 +158,7 @@ private:
     QString m_animName;
     double m_animTime;
     QString m_palName;
-    std::vector<uint32_t> m_materialMap; // Slot ID -> Material ID in MaterialArray
+    MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray
     QMap<EquipSlot, ActorEquip> m_equip;
 };
 

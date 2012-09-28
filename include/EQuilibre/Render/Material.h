@@ -18,6 +18,7 @@
 #define EQUILIBRE_MATERIAL_H
 
 #include <QImage>
+#include <QVarLengthArray>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 
@@ -93,6 +94,25 @@ private:
     texture_t m_arrayTexture;
     bool m_uploaded;
     int m_maxWidth, m_maxHeight;
+};
+
+class RENDER_DLL MaterialMap
+{
+public:
+    uint32_t count() const;
+    uint32_t * mappings();
+    const uint32_t * mappings() const;
+    uint32_t * offsets();
+    const uint32_t * offsets() const;
+    uint32_t mappingAt(uint32_t index) const;
+    void setMappingAt(uint32_t index, uint32_t mapping);
+    uint32_t offsetAt(uint32_t index) const;
+    void setOffsetAt(uint32_t index, uint32_t offset);
+    void resize(uint32_t count);
+    void clear();
+private:
+    QVarLengthArray<uint32_t, 32> m_mappings;
+    QVarLengthArray<uint32_t, 32> m_offsets;
 };
 
 #endif
