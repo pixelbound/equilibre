@@ -242,6 +242,11 @@ QString WLDCharActor::slotName(EquipSlot slot)
     return QString::null;
 }
 
+void WLDCharActor::setSkin(uint32_t skinID)
+{
+    m_model->mainMesh()->palette()->makeSkinMap(skinID, m_materialMap);
+}
+
 void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_model)

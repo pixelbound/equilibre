@@ -251,30 +251,7 @@ void RenderProgram::setMaterialMap(MaterialArray *materials, MaterialMap *materi
     if(count > 0)
     {
         vec3 textureMap[MAX_MATERIAL_SLOTS];
-        int maxTexWidth = materials ? materials->maxWidth() : 0;
-        int maxTexHeight = materials ? materials->maxHeight() : 0;
-        for(int i = 0; i < MAX_MATERIAL_SLOTS; i++)
-        {
-            int texID = i + 1;
-            float matScalingX = 1.0, matScalingY = 1.0;
-            if(i < count)
-            {
-                uint32_t matID = materialMap->mappingAt(i);
-                uint32_t texOffset = materialMap->offsetAt(i);
-                Material *mat = materials ? materials->material(matID) : NULL;
-                if(mat)
-                {
-                    matScalingX = (float)mat->width() / (float)maxTexWidth;
-                    matScalingY = (float)mat->height() / (float)maxTexHeight;
-                    texID = mat->subTexture() + texOffset;
-                }
-                else
-                {
-                    texID = matID + texOffset;
-                }
-            }
-            textureMap[i] = vec3(matScalingX, matScalingY, (float)texID);
-        }
+        materialMap->fillTextureMap(materials, textureMap, MAX_MATERIAL_SLOTS);
         glUniform3fv(m_uniform[U_MAT_SLOT_MAP], MAX_MATERIAL_SLOTS, (const GLfloat *)textureMap);
         glUniform1i(m_uniform[U_MAT_SLOT_MAP_ENABLED], 1);
     }

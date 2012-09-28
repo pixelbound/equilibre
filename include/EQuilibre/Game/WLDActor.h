@@ -148,6 +148,7 @@ public:
     };
 
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialArray *materials);
+    void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
 
 private:

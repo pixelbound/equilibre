@@ -355,3 +355,31 @@ void MaterialMap::clear()
     m_mappings.clear();
     m_offsets.clear();
 }
+
+void MaterialMap::fillTextureMap(MaterialArray *materials, vec3 *textureMap, uint32_t count) const
+{
+    int maxTexWidth = materials ? materials->maxWidth() : 0;
+    int maxTexHeight = materials ? materials->maxHeight() : 0;
+    for(uint32_t i = 0; i < count; i++)
+    {
+        int texID = i + 1;
+        float matScalingX = 1.0, matScalingY = 1.0;
+        if(i < count)
+        {
+            uint32_t matID = mappingAt(i);
+            uint32_t texOffset = offsetAt(i);
+            Material *mat = materials ? materials->material(matID) : NULL;
+            if(mat)
+            {
+                matScalingX = (float)mat->width() / (float)maxTexWidth;
+                matScalingY = (float)mat->height() / (float)maxTexHeight;
+                texID = mat->subTexture() + texOffset;
+            }
+            else
+            {
+                texID = matID + texOffset;
+            }
+        }
+        textureMap[i] = vec3(matScalingX, matScalingY, (float)texID);
+    }
+}

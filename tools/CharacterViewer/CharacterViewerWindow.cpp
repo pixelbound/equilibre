@@ -443,9 +443,7 @@ void CharacterScene::drawFrame()
     WLDCharActor *actor = selectedCharacter();
     if(actor)
     {
-        // XXX WLDCharActor::setSkin(skinID)
-        int skinID = actor->paletteName().toInt();
-        actor->model()->mainMesh()->palette()->makeSkinMap(skinID, actor->materialMap());
+        actor->setSkin(actor->paletteName().toUInt());
         actor->setAnimTime(currentTime());
         actor->draw(m_renderCtx, prog);
     }

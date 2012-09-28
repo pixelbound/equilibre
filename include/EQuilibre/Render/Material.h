@@ -110,6 +110,7 @@ public:
     void setOffsetAt(uint32_t index, uint32_t offset);
     void resize(uint32_t count);
     void clear();
+    void fillTextureMap(MaterialArray *materials, vec3 *textureMap, uint32_t count) const;
 private:
     QVarLengthArray<uint32_t, 32> m_mappings;
     QVarLengthArray<uint32_t, 32> m_offsets;
