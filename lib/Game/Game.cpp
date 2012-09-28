@@ -320,11 +320,6 @@ MeshBuffer * ObjectPack::buffer() const
     return m_meshBuf;
 }
 
-MaterialArray * ObjectPack::materials() const
-{
-    return m_materials;
-}
-
 void ObjectPack::clear(RenderContext *renderCtx)
 {
     foreach(WLDMesh *model, m_models)
@@ -368,27 +363,23 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDMesh *model = new WLDMesh(mesh->m_def, 0);
         model->importPalette(m_archive);
+        model->materialsFromPalette();
         m_models.insert(actorName, model);
     }
     
-    // Import materials into a single material array.
-    m_materials = new MaterialArray();
-    foreach(WLDMesh *model, m_models.values())
-        model->palette()->exportTo(m_materials);
     return true;
 }
 
 MeshBuffer * ObjectPack::upload(RenderContext *renderCtx)
 {
-    m_materials->uploadArray(renderCtx);
-    
     // Import vertices and indices for each mesh.
     m_meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, m_models.values())
     {
-        uint32_t paletteOffset = mesh->palette()->arrayOffset();
-        MeshData *meshData = mesh->importFrom(m_meshBuf, paletteOffset);
-        meshData->updateTexCoords(m_materials);
+        MaterialArray *materials = mesh->materials();
+        materials->uploadArray(renderCtx);
+        MeshData *meshData = mesh->importFrom(m_meshBuf);
+        meshData->updateTexCoords(mesh->materials());
     }
     
     // Create the GPU buffers.

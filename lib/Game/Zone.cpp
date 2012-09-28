@@ -786,7 +786,6 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
     int meshCount = 0;
     WLDMesh *previousMesh = NULL;
     MeshBuffer *meshBuf = m_pack->buffer();
-    const QVector<WLDLightActor *> &lightSources = m_zone->lights();
     foreach(WLDActor *actor, m_visibleObjects)
     {
         WLDStaticActor *staticActor = actor->cast<WLDStaticActor>();
@@ -799,12 +798,14 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
                 prog->endDrawMesh();
             meshBuf->matGroups.clear();
             meshBuf->addMaterialGroups(currentMesh->data());
-            prog->beginDrawMesh(meshBuf, m_pack->materials());
+            // XXX use setMaterialMap to animate textures.
+            prog->beginDrawMesh(meshBuf, currentMesh->materials());
             previousMesh = currentMesh;
             meshCount++;
         }
         
         // Draw the zone object.
+        // XXX Batch again (list of matrices and color segments).
         renderCtx->pushMatrix();
         renderCtx->multiplyMatrix(staticActor->modelMatrix());
         matrix4 mvMatrix = renderCtx->matrix(RenderContext::ModelView);
