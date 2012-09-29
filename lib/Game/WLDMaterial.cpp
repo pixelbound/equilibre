@@ -14,6 +14,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
+#include <math.h>
 #include <QImage>
 #include <QRegExp>
 #include "EQuilibre/Game/WLDMaterial.h"
@@ -29,6 +30,7 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
     m_def = NULL;
     m_array = NULL;
     m_arrayOffset = 0;
+    m_map = NULL;
 }
 
 WLDMaterialPalette::~WLDMaterialPalette()
@@ -37,6 +39,7 @@ WLDMaterialPalette::~WLDMaterialPalette()
     for(i = m_materialSlots.begin(); i != e; i++)
         delete *i;
     delete m_array;
+    delete m_map;
 }
 
 MaterialPaletteFragment * WLDMaterialPalette::def() const
@@ -52,6 +55,11 @@ void WLDMaterialPalette::setDef(MaterialPaletteFragment *newDef)
 MaterialArray * WLDMaterialPalette::array() const
 {
     return m_array;
+}
+
+MaterialMap * WLDMaterialPalette::map() const
+{
+    return m_map;   
 }
 
 uint32_t WLDMaterialPalette::arrayOffset() const
@@ -244,9 +252,47 @@ void WLDMaterialPalette::exportTo(MaterialArray *array)
 
 MaterialArray * WLDMaterialPalette::createArray()
 {
-    m_array = new MaterialArray();
-    exportTo(m_array);
+    if(!m_array)
+    {
+        m_array = new MaterialArray();
+        exportTo(m_array);
+    }
     return m_array;
+}
+
+MaterialMap * WLDMaterialPalette::createMap()
+{
+    if(!m_map)
+    {
+        m_map = new MaterialMap();
+        m_map->resize(m_materialSlots.size());
+    }
+    return m_map;
+}
+
+void WLDMaterialPalette::animate(double currentTime)
+{
+    if(m_array && m_map)
+    {
+        size_t count = m_map->count();
+        for(size_t i = 0; i < count; i++)
+        {
+            Material *mat = m_array->material(i);
+            uint32_t offset = 0;
+            if(mat && (mat->duration() > 0))
+            {
+                // Animated texture.
+                uint32_t frames = mat->subTextureCount();
+                if(frames)
+                {
+                    double totalSec = (1.0 / mat->duration()) * frames * 50.0;
+                    double animTime = fmod(currentTime, totalSec) / totalSec;
+                    offset = qMin((uint32_t)floor(animTime * frames), frames - 1);
+                }
+            }
+            m_map->setOffsetAt(i, offset);
+        }
+    }
 }
 
 Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)

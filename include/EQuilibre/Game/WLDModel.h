@@ -90,8 +90,6 @@ public:
     MeshData * data() const;
     void setData(MeshData *data);
     MeshDefFragment *def() const;
-    MaterialMap * materialMap() const;
-    void setMaterialMap(MaterialMap *map);
     WLDMaterialPalette * palette() const;
     uint32_t partID() const;
     const AABox & boundsAA() const;
@@ -110,7 +108,6 @@ private:
     MeshData *m_data;
     MeshDefFragment *m_meshDef;
     WLDMaterialPalette *m_palette;
-    MaterialMap *m_materialMap;
     AABox m_boundsAA;
 };
 

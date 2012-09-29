@@ -14,7 +14,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
-#include <math.h>
 #include <QFileInfo>
 #include <QImage>
 #include "EQuilibre/Game/Zone.h"
@@ -416,9 +415,6 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
         m_zoneBuffer = NULL;
     }
     
-    delete m_materialMap;
-    m_materialMap = NULL;
-    
     delete m_palette;
     m_palette = NULL;
     
@@ -478,9 +474,8 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_palette = new WLDMaterialPalette(archive);
     m_palette->setDef(matPals[0]);
     m_palette->createSlots();
-    MaterialArray *materials = m_palette->createArray();
-    m_materialMap = new MaterialMap();
-    m_materialMap->resize(materials->materials().count());
+    m_palette->createArray();
+    m_palette->createMap();
     return true;
 }
 
@@ -579,28 +574,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
 
 void ZoneTerrain::update(double currentTime)
 {
-    MaterialArray *materials = m_palette->array();
-    if(materials && m_materialMap)
-    {
-        size_t count = m_materialMap->count();
-        for(size_t i = 0; i < count; i++)
-        {
-            Material *mat = materials->material(i);
-            uint32_t offset = 0;
-            if(mat && (mat->duration() > 0))
-            {
-                // Animated texture.
-                uint32_t frames = mat->subTextureCount();
-                if(frames)
-                {
-                    double totalSec = (1.0 / mat->duration()) * frames * 50.0;
-                    double animTime = fmod(currentTime, totalSec) / totalSec;
-                    offset = qMin((uint32_t)floor(animTime * frames), frames - 1);
-                }
-            }
-            m_materialMap->setOffsetAt(i, offset);
-        }
-    }
+    m_palette->animate(currentTime);
 }
 
 void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
@@ -631,7 +605,7 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
     
     // Draw the visible parts as one big mesh.
     MaterialArray *materials = m_palette->array();
-    prog->setMaterialMap(materials, m_materialMap);
+    prog->setMaterialMap(materials, m_palette->map());
     prog->beginDrawMesh(m_zoneBuffer, materials);
     prog->drawMesh();
     prog->endDrawMesh();
@@ -773,31 +747,7 @@ static bool zoneActorGroupLessThan(const WLDStaticActor *a, const WLDStaticActor
 void ZoneObjects::update(double currentTime)
 {
     foreach(WLDMesh *mesh, models().values())
-    {
-        MaterialArray *materials = mesh->palette()->array();
-        MaterialMap *materialMap = mesh->materialMap();
-        if(materials && materialMap)
-        {
-            size_t count = materialMap->count();
-            for(size_t i = 0; i < count; i++)
-            {
-                Material *mat = materials->material(i);
-                uint32_t offset = 0;
-                if(mat && (mat->duration() > 0))
-                {
-                    // Animated texture.
-                    uint32_t frames = mat->subTextureCount();
-                    if(frames)
-                    {
-                        double totalSec = (1.0 / mat->duration()) * frames * 50.0;
-                        double animTime = fmod(currentTime, totalSec) / totalSec;
-                        offset = qMin((uint32_t)floor(animTime * frames), frames - 1);
-                    }
-                }
-                materialMap->setOffsetAt(i, offset);
-            }
-        }
-    }
+        mesh->palette()->animate(currentTime);
 }
 
 void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
@@ -833,7 +783,7 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
             meshBuf->matGroups.clear();
             meshBuf->addMaterialGroups(currentMesh->data());
             MaterialArray *materials = currentMesh->palette()->array();
-            prog->setMaterialMap(materials, currentMesh->materialMap());
+            prog->setMaterialMap(materials, currentMesh->palette()->map());
             prog->beginDrawMesh(meshBuf, materials);
             previousMesh = currentMesh;
             meshCount++;

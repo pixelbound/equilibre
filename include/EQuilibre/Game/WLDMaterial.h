@@ -91,6 +91,7 @@ public:
     void setDef(MaterialPaletteFragment *newDef);
     
     MaterialArray * array() const;
+    MaterialMap * map() const;
 
     uint32_t arrayOffset() const;
     void setArrayOffset(uint32_t offset);
@@ -104,6 +105,8 @@ public:
     void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
     void exportTo(MaterialArray *array);
     MaterialArray * createArray();
+    MaterialMap * createMap();
+    void animate(double currentTime);
     void makeSkinMap(uint32_t skinID, MaterialMap *materialMap) const;
     void makeSkinMap(const std::vector<uint32_t> &skinIDs, std::vector<uint32_t> &slotIndices) const;
 
@@ -128,6 +131,7 @@ private:
     uint32_t m_arrayOffset;
     PFSArchive *m_archive;
     MaterialArray *m_array;
+    MaterialMap *m_map;
 };
 
 #endif

@@ -365,9 +365,7 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         WLDMesh *model = new WLDMesh(mesh->m_def, 0);
         WLDMaterialPalette *pal = model->importPalette(m_archive);
         pal->createArray();
-        MaterialMap *materialMap = new MaterialMap();
-        materialMap->resize(pal->materialSlots().size());
-        model->setMaterialMap(materialMap);
+        pal->createMap();
         m_models.insert(actorName, model);
     }
     
