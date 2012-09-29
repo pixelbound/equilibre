@@ -90,7 +90,6 @@ public:
     MeshData * data() const;
     void setData(MeshData *data);
     MeshDefFragment *def() const;
-    MaterialArray * materials() const;
     MaterialMap * materialMap() const;
     void setMaterialMap(MaterialMap *map);
     WLDMaterialPalette * palette() const;
@@ -98,7 +97,6 @@ public:
     const AABox & boundsAA() const;
 
     WLDMaterialPalette * importPalette(PFSArchive *archive);
-    MaterialArray * materialsFromPalette();
     MeshData * importFrom(MeshBuffer *meshBuf, uint32_t paletteOffset = 0);
     static MeshBuffer *combine(const QVector<WLDMesh *> &meshes);
 
@@ -112,7 +110,6 @@ private:
     MeshData *m_data;
     MeshDefFragment *m_meshDef;
     WLDMaterialPalette *m_palette;
-    MaterialArray *m_materials;
     MaterialMap *m_materialMap;
     AABox m_boundsAA;
 };

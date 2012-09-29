@@ -174,7 +174,6 @@ private:
     RegionTreeFragment *m_regionTree;
     MeshBuffer *m_zoneBuffer;
     WLDMaterialPalette *m_palette;
-    MaterialArray *m_zoneMaterials;
     MaterialMap *m_materialMap;
     AABox m_zoneBounds;
     FrameStat *m_zoneStat;

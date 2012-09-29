@@ -27,6 +27,7 @@ WLDMaterialPalette::WLDMaterialPalette(PFSArchive *archive)
 {
     m_archive = archive;
     m_def = NULL;
+    m_array = NULL;
     m_arrayOffset = 0;
 }
 
@@ -35,6 +36,7 @@ WLDMaterialPalette::~WLDMaterialPalette()
     std::vector<WLDMaterialSlot *>::iterator i, e = m_materialSlots.end();
     for(i = m_materialSlots.begin(); i != e; i++)
         delete *i;
+    delete m_array;
 }
 
 MaterialPaletteFragment * WLDMaterialPalette::def() const
@@ -45,6 +47,11 @@ MaterialPaletteFragment * WLDMaterialPalette::def() const
 void WLDMaterialPalette::setDef(MaterialPaletteFragment *newDef)
 {
     m_def = newDef;
+}
+
+MaterialArray * WLDMaterialPalette::array() const
+{
+    return m_array;
 }
 
 uint32_t WLDMaterialPalette::arrayOffset() const
@@ -233,6 +240,13 @@ void WLDMaterialPalette::exportTo(MaterialArray *array)
                 exportMaterial(slot->skinMats[i], array, pos);
         }
     }
+}
+
+MaterialArray * WLDMaterialPalette::createArray()
+{
+    m_array = new MaterialArray();
+    exportTo(m_array);
+    return m_array;
 }
 
 Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)

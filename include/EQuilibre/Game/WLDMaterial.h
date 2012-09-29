@@ -89,6 +89,8 @@ public:
 
     MaterialPaletteFragment *def() const;
     void setDef(MaterialPaletteFragment *newDef);
+    
+    MaterialArray * array() const;
 
     uint32_t arrayOffset() const;
     void setArrayOffset(uint32_t offset);
@@ -96,9 +98,12 @@ public:
     std::vector<WLDMaterialSlot *> & materialSlots();
     WLDMaterialSlot * slotByName(const QString &name) const;
     
+    // XXX clear(RenderContext*)
+    
     void createSlots(bool addMatDefs = true);
     void addMeshMaterials(MeshDefFragment *meshDef, uint32_t skinID);
     void exportTo(MaterialArray *array);
+    MaterialArray * createArray();
     void makeSkinMap(uint32_t skinID, MaterialMap *materialMap) const;
     void makeSkinMap(const std::vector<uint32_t> &skinIDs, std::vector<uint32_t> &slotIndices) const;
 
@@ -122,6 +127,7 @@ private:
     std::vector<WLDMaterialSlot *> m_materialSlots;
     uint32_t m_arrayOffset;
     PFSArchive *m_archive;
+    MaterialArray *m_array;
 };
 
 #endif

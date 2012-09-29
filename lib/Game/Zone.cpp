@@ -372,7 +372,6 @@ ZoneTerrain::ZoneTerrain(Zone *zone)
     m_zoneWld = NULL;
     m_regionTree = NULL;
     m_zoneBuffer = NULL;
-    m_zoneMaterials = NULL;
     m_palette = NULL;
     m_zoneStat = NULL;
     m_zoneStatGPU = NULL;
@@ -417,9 +416,7 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
         m_zoneBuffer = NULL;
     }
     
-    delete m_zoneMaterials;
     delete m_materialMap;
-    m_zoneMaterials = NULL;
     m_materialMap = NULL;
     
     delete m_palette;
@@ -481,10 +478,9 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_palette = new WLDMaterialPalette(archive);
     m_palette->setDef(matPals[0]);
     m_palette->createSlots();
-    m_zoneMaterials = new MaterialArray();
-    m_palette->exportTo(m_zoneMaterials);
+    MaterialArray *materials = m_palette->createArray();
     m_materialMap = new MaterialMap();
-    m_materialMap->resize(m_zoneMaterials->materials().count());
+    m_materialMap->resize(materials->materials().count());
     return true;
 }
 
@@ -553,7 +549,8 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     MeshBuffer *meshBuf = NULL;
     
     // Upload the materials as a texture array, assigning z coordinates to materials.
-    m_zoneMaterials->uploadArray(renderCtx);
+    MaterialArray *materials = m_palette->array();
+    materials->uploadArray(renderCtx);
     
 #if !defined(COMBINE_ZONE_PARTS)
     meshBuf = new MeshBuffer();
@@ -565,12 +562,12 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
         if(actor)
         {
             MeshData *meshData = actor->mesh()->importFrom(meshBuf);
-            meshData->updateTexCoords(m_zoneMaterials, true);
+            meshData->updateTexCoords(materials, true);
         }
     }
 #else
     meshBuf = WLDMesh::combine(m_zoneParts);
-    meshBuf->updateTexCoords(m_zoneMaterials);
+    meshBuf->updateTexCoords(materials);
 #endif
     
     // Create the GPU buffers and free the memory used for vertices and indices.
@@ -582,12 +579,13 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
 
 void ZoneTerrain::update(double currentTime)
 {
-    if(m_zoneMaterials && m_materialMap)
+    MaterialArray *materials = m_palette->array();
+    if(materials && m_materialMap)
     {
         size_t count = m_materialMap->count();
         for(size_t i = 0; i < count; i++)
         {
-            Material *mat = m_zoneMaterials->material(i);
+            Material *mat = materials->material(i);
             uint32_t offset = 0;
             if(mat && (mat->duration() > 0))
             {
@@ -632,8 +630,9 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
 #endif
     
     // Draw the visible parts as one big mesh.
-    prog->setMaterialMap(m_zoneMaterials, m_materialMap);
-    prog->beginDrawMesh(m_zoneBuffer, m_zoneMaterials);
+    MaterialArray *materials = m_palette->array();
+    prog->setMaterialMap(materials, m_materialMap);
+    prog->beginDrawMesh(m_zoneBuffer, materials);
     prog->drawMesh();
     prog->endDrawMesh();
     prog->setMaterialMap(NULL);
@@ -775,7 +774,7 @@ void ZoneObjects::update(double currentTime)
 {
     foreach(WLDMesh *mesh, models().values())
     {
-        MaterialArray *materials = mesh->materials();
+        MaterialArray *materials = mesh->palette()->array();
         MaterialMap *materialMap = mesh->materialMap();
         if(materials && materialMap)
         {
@@ -833,8 +832,9 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
                 prog->endDrawMesh();
             meshBuf->matGroups.clear();
             meshBuf->addMaterialGroups(currentMesh->data());
-            prog->setMaterialMap(currentMesh->materials(), currentMesh->materialMap());
-            prog->beginDrawMesh(meshBuf, currentMesh->materials());
+            MaterialArray *materials = currentMesh->palette()->array();
+            prog->setMaterialMap(materials, currentMesh->materialMap());
+            prog->beginDrawMesh(meshBuf, materials);
             previousMesh = currentMesh;
             meshCount++;
         }

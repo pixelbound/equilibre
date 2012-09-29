@@ -124,7 +124,6 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
     m_partID = partID;
     m_meshDef = meshDef;
     m_data = NULL;
-    m_materials = NULL;
     m_palette = NULL;
     m_materialMap = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
@@ -135,7 +134,6 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
 WLDMesh::~WLDMesh()
 {
     delete m_materialMap;
-    delete m_materials;
     delete m_palette;
 }
 
@@ -152,11 +150,6 @@ void WLDMesh::setData(MeshData *mesh)
 MeshDefFragment * WLDMesh::def() const
 {
     return m_meshDef;
-}
-
-MaterialArray * WLDMesh::materials() const
-{
-    return m_materials;
 }
 
 MaterialMap * WLDMesh::materialMap() const
@@ -190,16 +183,6 @@ WLDMaterialPalette * WLDMesh::importPalette(PFSArchive *archive)
     m_palette->setDef(m_meshDef->m_palette);
     m_palette->createSlots();
     return m_palette;
-}
-
-MaterialArray * WLDMesh::materialsFromPalette()
-{
-    if(!m_materials)
-    {
-        m_materials = new MaterialArray();
-        m_palette->exportTo(m_materials);
-    }
-    return m_materials;
 }
 
 MeshData * WLDMesh::importFrom(MeshBuffer *meshBuf, uint32_t paletteOffset)
@@ -441,14 +424,13 @@ void WLDModelSkin::draw(RenderProgram *prog, const QVector<BoneTransform> &bones
         meshBuf->addMaterialGroups(mesh->data());
     
     // Map the slot indices to material indices if requested.
-    MaterialArray *materials = m_model->mainMesh()->materials();
+    MaterialArray *materials = m_model->mainMesh()->palette()->array();
     if(materialMap)
     {
-        const uint32_t *mappings = materialMap->mappings();
         for(size_t i = 0; i < meshBuf->matGroups.size(); i++)
         {
             MaterialGroup &mg(meshBuf->matGroups[i]);
-            mg.matID = materialMap->mappingAt(mg.matID);;
+            mg.matID = materialMap->mappingAt(mg.matID);
         }
         prog->setMaterialMap(materials, materialMap);
     }

@@ -364,7 +364,7 @@ bool ObjectPack::load(QString archivePath, QString wldName)
         QString actorName = actorDef->name().replace("_ACTORDEF", "");
         WLDMesh *model = new WLDMesh(mesh->m_def, 0);
         WLDMaterialPalette *pal = model->importPalette(m_archive);
-        model->materialsFromPalette();
+        pal->createArray();
         MaterialMap *materialMap = new MaterialMap();
         materialMap->resize(pal->materialSlots().size());
         model->setMaterialMap(materialMap);
@@ -380,10 +380,10 @@ MeshBuffer * ObjectPack::upload(RenderContext *renderCtx)
     m_meshBuf = new MeshBuffer();
     foreach(WLDMesh *mesh, m_models.values())
     {
-        MaterialArray *materials = mesh->materials();
+        MaterialArray *materials = mesh->palette()->array();
         materials->uploadArray(renderCtx);
         MeshData *meshData = mesh->importFrom(m_meshBuf);
-        meshData->updateTexCoords(mesh->materials(), true);
+        meshData->updateTexCoords(materials, true);
     }
     
     // Create the GPU buffers.
@@ -621,7 +621,7 @@ void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
         return;
 
     // Import materials.
-    MaterialArray *materials = model->mainMesh()->materialsFromPalette();
+    MaterialArray *materials = model->mainMesh()->palette()->createArray();
     materials->uploadArray(renderCtx);
 
     // Import mesh geometry.
