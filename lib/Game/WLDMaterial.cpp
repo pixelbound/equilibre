@@ -338,13 +338,30 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
         {
             // normal rendering
         }
+        else if(renderMode == 0x9)
+        {
+            // USERDEFINED 10 (?)
+            qDebug("Unsupported render mode USERDEFINED 10 (%s)", spriteDef->name().toLatin1().constData());
+        }
         else if(renderMode == 0xb)
         {
-            // this is used for ghost materials (USERDEFINED 12)
+            // USERDEFINED 12 (ghost materials, firex.bmp)
+            qDebug("Unsupported render mode USERDEFINED 12 (%s)", spriteDef->name().toLatin1().constData());
+        }
+        else if(renderMode == 0xd)
+        {
+            // USERDEFINED 14 (NORMALSKY.BMP, DESERTSKY.BMP, REDCLOUD.BMP)
+            qDebug("Unsupported render mode USERDEFINED 14 (%s)", spriteDef->name().toLatin1().constData());
+        }
+        else if(renderMode == 0xf)
+        {
+            // USERDEFINED 16 (DESERTCLOUD.BMP)
+            qDebug("Unsupported render mode USERDEFINED 16 (%s)", spriteDef->name().toLatin1().constData());
         }
         else if(renderMode == 0x12)
         {
             // this is used by SCAHE0004_MDF (USERDEFINED 19)
+            qDebug("Unsupported render mode USERDEFINED 19 (%s)", spriteDef->name().toLatin1().constData());
         }
         else if(renderMode == 0x13)
         {
@@ -365,7 +382,7 @@ Material * WLDMaterialPalette::loadMaterial(MaterialDefFragment *frag)
         }
         else if(renderMode == 0x14)
         {
-            // USERDEFINED 21
+            // USERDEFINED 21 (normal rendering?)
         }
         else if(renderMode == 0x17)
         {
