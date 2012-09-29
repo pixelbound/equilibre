@@ -6,6 +6,7 @@ set(LIB_SOURCES
     StreamReader.cpp
     WLDActor.cpp
     WLDData.cpp
+    WLDMaterial.cpp
     WLDModel.cpp
     WLDSkeleton.cpp
     Zone.cpp
@@ -15,6 +16,7 @@ set(LIB_HEADERS
     ../../include/EQuilibre/Game/WLDData.h
     ../../include/EQuilibre/Game/Fragments.h
     ../../include/EQuilibre/Game/Game.h
+    ../../include/EQuilibre/Game/WLDMaterial.h
     ../../include/EQuilibre/Game/WLDModel.h
     ../../include/EQuilibre/Game/SoundTrigger.h
     ../../include/EQuilibre/Game/StreamReader.h

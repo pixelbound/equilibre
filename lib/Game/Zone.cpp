@@ -22,6 +22,7 @@
 #include "EQuilibre/Game/PFSArchive.h"
 #include "EQuilibre/Game/WLDData.h"
 #include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDMaterial.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "EQuilibre/Game/Fragments.h"

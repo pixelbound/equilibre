@@ -23,6 +23,7 @@
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDData.h"
 #include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDMaterial.h"
 #include "EQuilibre/Game/Zone.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/RenderContext.h"

@@ -17,6 +17,7 @@
 #include <math.h>
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDModel.h"
+#include "EQuilibre/Game/WLDMaterial.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/RenderContext.h"
