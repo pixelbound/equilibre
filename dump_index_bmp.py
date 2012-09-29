@@ -22,14 +22,14 @@ def loadIndexedBitmap(stream):
     # read file header
     fileHeader = readStruct(stream, "<2sIHHI")
     if fileHeader[0] != b"BM":
-        return 0, 0, None
+        return 0, 0, None, None
     bmpHeaderSize = readStruct(stream, "I")[0]
     bmpHeader = stream.read(bmpHeaderSize - 4)
     (biWidth, biHeight, biPlanes, biBitCount, biCompression, 
         biSizeImage, biXPelsPerMeter, biYPelsPerMeter, biClrUsed, 
         biClrImportant) = struct.unpack("iiHHIIiiII", bmpHeader[0:36])
     if biBitCount != 8:
-        return 0, 0, None
+        return 0, 0, None, None
     
     # read color table
     if biClrUsed == 0:

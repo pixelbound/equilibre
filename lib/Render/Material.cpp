@@ -267,8 +267,6 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
         {
             if(!img.isNull() && (mat->texture() == 0))
             {
-                if(mat->origin() != Material::LowerLeft)
-                    img = QGLWidget::convertToGLFormat(img);
                 images.append(img);
                 subTextures++;
             }

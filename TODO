@@ -1,4 +1,6 @@
-upload texture arrays with one call per mipmap level
+Material palettes:
+    Keep them in a list
+    Enforce one MaterialArray per draw call (beginDraw/endDraw)
 pimpl for RenderProgram
     have Game create shader programs?
 lights
@@ -12,8 +14,7 @@ play XMI music and WAV sounds
 Load file for mapping animations to characters
 start animation when selecting it (remember the time when it was first selected)
 mimic character selection screen (load character selection background and rotate, random animation)
-split animation tracks into two lists (skinning, positioning) and renumber piece IDs
-import animated textures
+split animation tracks into two lists (skinning, positioning) and renumber piece IDs (to reduce the size of the uniform array).
 import item animations (gequip.s3d)
 fix Luclin/PoP skinning artefacts
 
@@ -22,3 +23,5 @@ fix 213462fe17828c1468cb39d6653da8816aea667f (Implementing a zone viewer 03/0720
 transparency/mask misses
     IT555 (gequip4)
 Unknown render mode 7, a, 14, b, 9
+Document required extensions
+    ARB_texture_swizzle
