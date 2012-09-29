@@ -294,7 +294,7 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
 
 //////////////////////////////////////////////////////////////////////////////
 
-uint32_t MaterialMap::count() const
+size_t MaterialMap::count() const
 {
     return m_mappings.count();
 }
@@ -319,34 +319,34 @@ const uint32_t * MaterialMap::offsets() const
     return m_offsets.constData();
 }
 
-uint32_t MaterialMap::mappingAt(uint32_t index) const
+uint32_t MaterialMap::mappingAt(size_t index) const
 {
     return (index < m_mappings.count()) ? m_mappings[index] : index;
 }
 
-void MaterialMap::setMappingAt(uint32_t index, uint32_t mapping)
+void MaterialMap::setMappingAt(size_t index, uint32_t mapping)
 {
     m_mappings[index] = mapping;
 }
 
-uint32_t MaterialMap::offsetAt(uint32_t index) const
+uint32_t MaterialMap::offsetAt(size_t index) const
 {
     return (index < m_offsets.count()) ? m_offsets[index] : 0;
 }
 
-void MaterialMap::setOffsetAt(uint32_t index, uint32_t offset)
+void MaterialMap::setOffsetAt(size_t index, uint32_t offset)
 {
     m_offsets[index] = offset;
 }
 
-void MaterialMap::resize(uint32_t newCount)
+void MaterialMap::resize(size_t newCount)
 {
-    uint32_t oldCount = count();
+    size_t oldCount = count();
     m_mappings.resize(newCount);
-    for(uint32_t i = oldCount; i < newCount; i++)
+    for(size_t i = oldCount; i < newCount; i++)
         m_mappings[i] = i;
     m_offsets.resize(newCount);
-    for(uint32_t i = oldCount; i < newCount; i++)
+    for(size_t i = oldCount; i < newCount; i++)
         m_offsets[i] = 0;
 }
 
@@ -356,13 +356,13 @@ void MaterialMap::clear()
     m_offsets.clear();
 }
 
-void MaterialMap::fillTextureMap(MaterialArray *materials, vec3 *textureMap, uint32_t count) const
+void MaterialMap::fillTextureMap(MaterialArray *materials, vec3 *textureMap, size_t count) const
 {
     int maxTexWidth = materials ? materials->maxWidth() : 0;
     int maxTexHeight = materials ? materials->maxHeight() : 0;
-    for(uint32_t i = 0; i < count; i++)
+    for(size_t i = 0; i < count; i++)
     {
-        int texID = i + 1;
+        uint32_t texID = (uint32_t)(i + 1);
         float matScalingX = 1.0, matScalingY = 1.0;
         if(i < count)
         {

@@ -99,18 +99,18 @@ private:
 class RENDER_DLL MaterialMap
 {
 public:
-    uint32_t count() const;
+    size_t count() const;
     uint32_t * mappings();
     const uint32_t * mappings() const;
     uint32_t * offsets();
     const uint32_t * offsets() const;
-    uint32_t mappingAt(uint32_t index) const;
-    void setMappingAt(uint32_t index, uint32_t mapping);
-    uint32_t offsetAt(uint32_t index) const;
-    void setOffsetAt(uint32_t index, uint32_t offset);
-    void resize(uint32_t count);
+    uint32_t mappingAt(size_t index) const;
+    void setMappingAt(size_t index, uint32_t mapping);
+    uint32_t offsetAt(size_t index) const;
+    void setOffsetAt(size_t index, uint32_t offset);
+    void resize(size_t count);
     void clear();
-    void fillTextureMap(MaterialArray *materials, vec3 *textureMap, uint32_t count) const;
+    void fillTextureMap(MaterialArray *materials, vec3 *textureMap, size_t count) const;
 private:
     QVarLengthArray<uint32_t, 32> m_mappings;
     QVarLengthArray<uint32_t, 32> m_offsets;
