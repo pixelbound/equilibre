@@ -196,6 +196,7 @@ public:
 
     bool load(QString path, QString name, PFSArchive *mainArchive);
     void addTo(OctreeIndex *tree);
+    void update(double currentTime);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void clear(RenderContext *renderCtx);
     void resetVisible();

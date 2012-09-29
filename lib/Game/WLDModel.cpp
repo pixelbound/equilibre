@@ -125,6 +125,7 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
     m_data = NULL;
     m_materials = NULL;
     m_palette = NULL;
+    m_materialMap = NULL;
     m_boundsAA.low = meshDef->m_boundsAA.low + meshDef->m_center;
     m_boundsAA.high = meshDef->m_boundsAA.high + meshDef->m_center;
     meshDef->setHandled(true);
@@ -132,6 +133,7 @@ WLDMesh::WLDMesh(MeshDefFragment *meshDef, uint32_t partID)
 
 WLDMesh::~WLDMesh()
 {
+    delete m_materialMap;
     delete m_materials;
     delete m_palette;
 }
@@ -154,6 +156,16 @@ MeshDefFragment * WLDMesh::def() const
 MaterialArray * WLDMesh::materials() const
 {
     return m_materials;
+}
+
+MaterialMap * WLDMesh::materialMap() const
+{
+    return m_materialMap;
+}
+
+void WLDMesh::setMaterialMap(MaterialMap *map)
+{
+    m_materialMap = map;
 }
 
 WLDMaterialPalette * WLDMesh::palette() const

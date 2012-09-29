@@ -215,6 +215,8 @@ void Zone::update(double currentTime)
 {
     if(m_terrain)
         m_terrain->update(currentTime);
+    if(m_objects)
+        m_objects->update(currentTime);
 }
 
 void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
@@ -581,8 +583,8 @@ void ZoneTerrain::update(double currentTime)
 {
     if(m_zoneMaterials && m_materialMap)
     {
-        uint32_t count = m_materialMap->count();
-        for(size_t i = 0; i <count; i++)
+        size_t count = m_materialMap->count();
+        for(size_t i = 0; i < count; i++)
         {
             Material *mat = m_zoneMaterials->material(i);
             uint32_t offset = 0;
@@ -768,6 +770,36 @@ static bool zoneActorGroupLessThan(const WLDStaticActor *a, const WLDStaticActor
     return a->mesh()->def() < b->mesh()->def();
 }
 
+void ZoneObjects::update(double currentTime)
+{
+    foreach(WLDMesh *mesh, models().values())
+    {
+        MaterialArray *materials = mesh->materials();
+        MaterialMap *materialMap = mesh->materialMap();
+        if(materials && materialMap)
+        {
+            size_t count = materialMap->count();
+            for(size_t i = 0; i < count; i++)
+            {
+                Material *mat = materials->material(i);
+                uint32_t offset = 0;
+                if(mat && (mat->duration() > 0))
+                {
+                    // Animated texture.
+                    uint32_t frames = mat->subTextureCount();
+                    if(frames)
+                    {
+                        double totalSec = (1.0 / mat->duration()) * frames * 50.0;
+                        double animTime = fmod(currentTime, totalSec) / totalSec;
+                        offset = qMin((uint32_t)floor(animTime * frames), frames - 1);
+                    }
+                }
+                materialMap->setOffsetAt(i, offset);
+            }
+        }
+    }
+}
+
 void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_objectsStat)
@@ -800,7 +832,7 @@ void ZoneObjects::draw(RenderContext *renderCtx, RenderProgram *prog)
                 prog->endDrawMesh();
             meshBuf->matGroups.clear();
             meshBuf->addMaterialGroups(currentMesh->data());
-            // XXX use setMaterialMap to animate textures.
+            prog->setMaterialMap(currentMesh->materials(), currentMesh->materialMap());
             prog->beginDrawMesh(meshBuf, currentMesh->materials());
             previousMesh = currentMesh;
             meshCount++;
