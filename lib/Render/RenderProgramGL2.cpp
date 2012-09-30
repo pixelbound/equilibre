@@ -829,7 +829,7 @@ void TextureSkinningProgram::endSkinMesh()
 {
     // restore state
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_RECTANGLE, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
 }
 
