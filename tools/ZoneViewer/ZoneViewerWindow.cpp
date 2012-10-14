@@ -315,6 +315,8 @@ void ZoneScene::drawFrame()
         .arg(camPos.x, 0, 'f', 2)
         .arg(camPos.y, 0, 'f', 2)
         .arg(camPos.z, 0, 'f', 2));
+    Frustum &viewFrustum = m_renderCtx->viewFrustum();
+    m_renderCtx->matrix(RenderContext::Projection) = viewFrustum.projection();
     m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
     zone->update(currentTime());
     zone->draw(m_renderCtx, m_program);

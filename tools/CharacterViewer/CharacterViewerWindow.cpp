@@ -428,6 +428,9 @@ RenderProgram * CharacterScene::program(RenderMode renderMode)
 
 void CharacterScene::drawFrame()
 {
+    Frustum &viewFrustum = m_renderCtx->viewFrustum();
+    m_renderCtx->matrix(RenderContext::Projection) = viewFrustum.projection();
+    
     vec3 rot = m_theta;
     m_renderCtx->translate(m_delta.x, m_delta.y, m_delta.z);
     m_renderCtx->rotate(rot.x, 1.0, 0.0, 0.0);

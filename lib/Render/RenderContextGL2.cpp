@@ -192,10 +192,6 @@ void RenderContext::setupViewport(int w, int h)
     float r = (float)w / (float)h;
     d->frustum.setAspect(r);
     glViewport(0, 0, w, h);
-    setMatrixMode(Projection);
-    loadIdentity();
-    multiplyMatrix(d->frustum.projection());
-    setMatrixMode(ModelView);
 }
 
 void RenderContext::setDepthWrite(bool write)
