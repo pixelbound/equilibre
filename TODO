@@ -1,6 +1,9 @@
 Material palettes:
     Keep them in a list
     Enforce one MaterialArray per draw call (beginDraw/endDraw)
+    use vertex texture fetch instead of uniform array
+    do the animation in the vertex shader so we don't need to upload it every frame
+    use 3D textures for animated textures so we can easily interpolate between frames?
 pimpl for RenderProgram
     have Game create shader programs?
 lights

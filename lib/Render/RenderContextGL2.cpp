@@ -168,6 +168,7 @@ void RenderContext::endFrame()
     popMatrix();
     setCurrentProgram(NULL);
     glPopAttrib();
+    glCullFace(GL_BACK);
 
     // Wait for the GPU to finish rendering the scene if we are profiling it.
     if(d->gpuTimers > 0)

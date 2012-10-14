@@ -89,9 +89,7 @@ void SceneViewport::paintEvent(QPaintEvent *)
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_end_v3(m_traceDomain, NULL); 
 #endif
-#ifndef _WIN32
-    paintOverlay(painter); // XXX fix QPainter overlay on Windows.
-#endif
+    paintOverlay(painter); // XXX fix QPainter overlay artifacts on Windows.
 }
 
 void SceneViewport::paintOverlay(QPainter &painter)
