@@ -131,7 +131,8 @@ bool WAVEPlayer::loadFile(const char *path)
         goto cleanup;
     }
 
-    num_samples = header.Subchunk2Size / (header.BitsPerSample / 8);
+    num_samples = header.Subchunk2Size / ((header.BitsPerSample / 8) *
+                                          header.NumOfChan);
     loaded = true;
 
 cleanup:
@@ -213,6 +214,7 @@ void WAVEPlayer::playCallback(uint8_t *stream, int num_bytes)
     int sample_size = 2;
     if((audioSpec.format == AUDIO_S8) || (audioSpec.format == AUDIO_U8))
         sample_size = 1;
+    sample_size *= audioSpec.channels;
     memset(stream, 0, num_bytes);
     if(current_sample < num_samples)
     {
