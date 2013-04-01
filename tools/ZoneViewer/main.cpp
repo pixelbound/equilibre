@@ -35,6 +35,7 @@ QWidget * showZoneViewer(RenderContext *renderCtx)
     QString zoneInfoFile ="zonevars.txt";
     Game *game = v->scene()->game();
     game->loadSky(assetDir.path());
+    game->loadBuiltinOjects(assetDir.path());
     if(assetDir.exists(zoneInfoFile))
         game->loadZoneInfo(assetDir.filePath(zoneInfoFile));
     return v;

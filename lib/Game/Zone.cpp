@@ -280,6 +280,17 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         //    prog->drawBox(actor->boundsAA);
     }
     
+    // Draw a capsule where the character should be.
+    if(m_game->capsule())
+    {
+        //renderCtx->pushMatrix();
+        //renderCtx->translate(box.low.x, box.low.y, box.low.z);
+        //renderCtx->scale(100.0, 100.0, 100.0);
+        //renderCtx->translate(0.5, 0.5, 0.5);
+        m_game->drawBuiltinObject(m_game->capsule(), renderCtx, prog);
+        //renderCtx->popMatrix();
+    }
+    
     m_terrain->resetVisible();
     m_objects->resetVisible();
     

@@ -20,6 +20,7 @@
 #include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/PFSArchive.h"
+#include "EQuilibre/Game/StreamReader.h"
 #include "EQuilibre/Game/WLDActor.h"
 #include "EQuilibre/Game/WLDData.h"
 #include "EQuilibre/Game/WLDModel.h"
@@ -33,6 +34,9 @@ Game::Game()
 {
     m_zone = NULL;
     m_sky = NULL;
+    m_builtinObjects = NULL;
+    m_builtinMats = NULL;
+    m_capsule = NULL;
     m_showZone = true;
     m_showObjects = true;
     m_showFog = false;
@@ -55,6 +59,14 @@ void Game::clear(RenderContext *renderCtx)
         delete m_sky;
         m_sky = NULL;
     }
+    if(m_builtinObjects)
+    {
+        m_builtinObjects->clear(renderCtx);
+        delete m_builtinObjects;
+        m_builtinObjects = NULL;
+    }
+    delete m_builtinMats;
+    m_builtinMats = NULL;
     foreach(ObjectPack *pack, m_objectPacks)
     {
         pack->clear(renderCtx);
@@ -173,6 +185,21 @@ QList<CharacterPack *> Game::characterPacks() const
     return m_charPacks;
 }
 
+MeshBuffer * Game::builtinOjectBuffer() const
+{
+    return m_builtinObjects;
+}
+
+MaterialArray * Game::builtinMaterials() const
+{
+    return m_builtinMats;
+}
+
+MeshData * Game::capsule() const
+{
+    return m_capsule;
+}
+
 Zone * Game::loadZone(QString path, QString name)
 {
     if(m_zone)
@@ -248,6 +275,24 @@ bool Game::loadSky(QString path)
     return true;
 }
 
+bool Game::loadBuiltinOjects(QString path)
+{
+    QFile capsuleFile(QString("%1/capsule.stl").arg(path));
+    if(!capsuleFile.exists())
+    {
+        return false;
+    }
+    
+    m_builtinObjects = new MeshBuffer();
+    m_capsule = loadBuiltinSTLMesh(capsuleFile.fileName());
+    
+    Material *mat = new Material();
+    mat->setOpaque(false);
+    m_builtinMats = new MaterialArray();
+    m_builtinMats->setMaterial(1, mat);
+    return true;
+}
+
 ObjectPack * Game::loadObjects(QString archivePath, QString wldName)
 {
     if(wldName.isNull())
@@ -295,6 +340,78 @@ WLDCharActor * Game::findCharacter(QString name) const
             return pack->models().value(name);
     }
     return NULL;
+}
+
+MeshData * Game::loadBuiltinSTLMesh(QString path)
+{
+    QFile file(path);
+    if(!file.open(QFile::ReadOnly))
+    {
+        return NULL;
+    }
+    
+    StreamReader reader(&file);
+    uint32_t numTriangles = 0;
+    vec3 normal;
+    uint16_t attribSize = 0;
+    uint32_t defaultColorABGR = 0xffffffff; // A=1, B=1, G=1, R=1
+    
+    // Skip header.
+    file.seek(80);
+    reader.unpackField('I', &numTriangles);
+    
+    MeshBuffer *meshBuf = m_builtinObjects;
+    MeshData *data = meshBuf->createMesh(1);
+    MaterialGroup *group = &data->matGroups[0];
+    QVector<Vertex> &vertices(meshBuf->vertices);
+    QVector<uint32_t> &indices(meshBuf->indices);
+    BufferSegment &dataLoc = data->vertexSegment;
+    uint32_t vertexCount = numTriangles * 3;
+    uint32_t vertexIndex = vertices.count();
+    dataLoc.offset = vertexIndex;
+    dataLoc.count = vertexCount;
+    dataLoc.elementSize = sizeof(Vertex);
+    group->id = 0;
+    group->offset = 0;
+    group->count = vertexCount;
+    group->matID = 1;
+    for(uint32_t i = 0; i < numTriangles; i++)
+    {
+        reader.unpackArray("f", 3, &normal);
+        for(int j = 0; j < 3; j++)
+        {
+            Vertex v;
+            reader.unpackArray("f", 3, &v.position);
+            v.normal = normal;
+            v.texCoords = vec3();
+            v.color = defaultColorABGR;
+            v.bone = 0;
+            v.padding[0] = 0;
+            vertices.append(v);
+            indices.append((i * 3) + j);
+        }
+        reader.unpackField('H', &attribSize);
+    }
+    return data;
+}
+
+void Game::drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
+                             RenderProgram *prog)
+{
+    if(!object || !renderCtx || !prog)
+    {
+        return;
+    }
+    
+    if(m_builtinObjects->vertexBuffer == 0)
+    {
+        m_builtinObjects->upload(renderCtx);
+    }
+    m_builtinObjects->matGroups.clear();
+    m_builtinObjects->addMaterialGroups(object);
+    prog->beginDrawMesh(m_builtinObjects, m_builtinMats);
+    prog->drawMesh();
+    prog->endDrawMesh();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

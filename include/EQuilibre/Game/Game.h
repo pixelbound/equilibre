@@ -70,20 +70,32 @@ public:
     ZoneSky * sky() const;
     QList<ObjectPack *> objectPacks() const;
     QList<CharacterPack *> characterPacks() const;
+    MeshBuffer *builtinOjectBuffer() const;
+    MaterialArray *builtinMaterials() const;
+    MeshData *capsule() const;
     
     Zone * loadZone(QString path, QString name);
     bool loadZoneInfo(QString file);
     bool loadSky(QString path);
+    bool loadBuiltinOjects(QString path);
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null, bool own = true);
     WLDCharActor * findCharacter(QString name) const;
     
+    void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
+                           RenderProgram *prog);
+
 private:
+    MeshData *loadBuiltinSTLMesh(QString path);
+
     QList<ObjectPack *> m_objectPacks;
     QList<CharacterPack *> m_charPacks;
     QMap<QString, ZoneInfo> m_zoneInfo;
     Zone *m_zone;
     ZoneSky *m_sky;
+    MeshBuffer *m_builtinObjects;
+    MaterialArray *m_builtinMats;
+    MeshData *m_capsule;
     bool m_showZone;
     bool m_showObjects;
     bool m_showFog;
