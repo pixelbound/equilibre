@@ -113,7 +113,7 @@ public:
     void setCameraDistance(float dist);
     void step(float x, float y, float z);
     
-    void setPlayerActor(WLDCharActor *actor);
+    void setPlayerModel(WLDModel *model);
     
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();

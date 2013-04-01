@@ -182,12 +182,8 @@ bool ZoneViewerWindow::loadZone(QString path, QString name)
     {
         return false;
     }
-    WLDCharActor *playerActor = game->findCharacter("ELM", m_renderCtx);
-    if(playerActor)
-    {
-        playerActor->setAnimName("P01");
-    }
-    game->zone()->setPlayerActor(playerActor);
+    WLDModel *playerModel = game->findCharacter("ELM", m_renderCtx);
+    game->zone()->setPlayerModel(playerModel);
     return true;
 }
 

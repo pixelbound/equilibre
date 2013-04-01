@@ -332,23 +332,23 @@ CharacterPack * Game::loadCharacters(QString archivePath, QString wldName, bool 
     return charPack;
 }
 
-WLDCharActor * Game::findCharacter(QString name)
+WLDModel * Game::findCharacter(QString name)
 {
     return findCharacter(name, NULL);
 }
 
-WLDCharActor * Game::findCharacter(QString name, RenderContext *renderCtx)
+WLDModel * Game::findCharacter(QString name, RenderContext *renderCtx)
 {
     foreach(CharacterPack *pack, m_charPacks)
     {
         if(pack->models().contains(name))
         {
-            WLDCharActor *actor = pack->models().value(name);
-            if(actor && renderCtx)
+            WLDModel *model = pack->models().value(name);
+            if(model && renderCtx)
             {
-                pack->upload(renderCtx, actor);
+                pack->upload(renderCtx, model);
             }
-            return actor;
+            return model;
         }
     }
     return NULL;
@@ -533,16 +533,15 @@ CharacterPack::~CharacterPack()
     clear(NULL);
 }
 
-const QMap<QString, WLDCharActor *> CharacterPack::models() const
+const QMap<QString, WLDModel *> CharacterPack::models() const
 {
     return m_models;
 }
 
 void CharacterPack::clear(RenderContext *renderCtx)
 {
-    foreach(WLDCharActor *actor, m_models)
+    foreach(WLDModel *model, m_models)
     {
-        WLDModel *model = actor->model();
         MeshBuffer *meshBuf = model->buffer();
         if(meshBuf)
         {
@@ -551,7 +550,6 @@ void CharacterPack::clear(RenderContext *renderCtx)
         }
         delete model->skeleton();
         delete model;
-        delete actor;
     }
     m_models.clear();
     delete m_wld;
@@ -588,10 +586,10 @@ void CharacterPack::importSkeletons(WLDData *wld)
     {
         HierSpriteDefFragment *skelDef = skelDefs[i];
         QString actorName = skelDef->name().replace("_HS_DEF", "");
-        WLDCharActor *actor = m_models.value(actorName);
-        if(!actor)
+        WLDModel *model = m_models.value(actorName);
+        if(!model)
             continue;
-        actor->model()->setSkeleton(new WLDSkeleton(skelDef));
+        model->setSkeleton(new WLDSkeleton(skelDef));
     }
 
     // import other animations
@@ -601,10 +599,10 @@ void CharacterPack::importSkeletons(WLDData *wld)
         TrackFragment *track = tracks[i];
         QString animName = track->name().left(3);
         QString actorName = track->name().mid(3, 3);
-        WLDCharActor *actor = m_models.value(actorName);
-        if(!actor)
+        WLDModel *model = m_models.value(actorName);
+        if(!model)
             continue;
-        WLDSkeleton *skel = actor->model()->skeleton();
+        WLDSkeleton *skel = model->skeleton();
         if(skel && track->m_def)
             skel->addTrack(animName, track->m_def);
     }
@@ -621,10 +619,9 @@ void CharacterPack::importCharacterPalettes(PFSArchive *archive, WLDData *wld)
         QString charName, skinName, partName;
         if(WLDMaterialPalette::explodeName(matDef, charName, skinName, partName))
         {
-            WLDCharActor *actor = m_models.value(charName);
-            if(!actor)
+            WLDModel *model = m_models.value(charName);
+            if(!model)
                 continue;
-            WLDModel *model = actor->model();
             WLDMaterialPalette *palette = model->mainMesh()->palette();
             WLDModelSkin *skin = model->skins().value(skinName);
             if(!skin)
@@ -676,7 +673,6 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
         WLDMaterialPalette *pal = mainMesh->importPalette(archive);
         WLDModel *model = new WLDModel(mainMesh);
         WLDModelSkin *defaultSkin = model->skin();
-        WLDCharActor *actor = new WLDCharActor(model);
         foreach(MeshDefFragment *meshDef, WLDModel::listMeshes(actorDef))
         {
             if(meshDef == mainMeshDef)
@@ -699,7 +695,7 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
             }
         }
 
-        m_models.insert(actorName, actor);
+        m_models.insert(actorName, model);
     }
     
     // look for alternate meshes (e.g. heads)
@@ -713,10 +709,9 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
         WLDModelSkin::explodeMeshName(meshDef->name(), actorName, meshName, skinName);
         bool skinIsInt = false;
         uint32_t skinID = skinName.toUInt(&skinIsInt);
-        WLDCharActor *actor = m_models.value(actorName);
-        if(!actor || meshName.isEmpty() || !skinIsInt)
+       WLDModel *model = m_models.value(actorName);
+        if(!model || meshName.isEmpty() || !skinIsInt)
             continue;
-        WLDModel *model = actor->model();
         WLDModelSkin *skin = model->skins().value(skinName);
         if(!skin)
             skin = model->newSkin(skinName);
@@ -736,15 +731,14 @@ void CharacterPack::importCharacters(PFSArchive *archive, WLDData *wld)
 
 void CharacterPack::upload(RenderContext *renderCtx)
 {
-    foreach(WLDCharActor *actor, m_models)
-        upload(renderCtx, actor);
+    foreach(WLDModel *model, m_models)
+        upload(renderCtx, model);
 }
 
-void CharacterPack::upload(RenderContext *renderCtx, WLDCharActor *actor)
+void CharacterPack::upload(RenderContext *renderCtx, WLDModel *model)
 {
     // Make sure we haven't uploaded this character before.
-    WLDModel *model = actor->model();
-    if(model->buffer())
+    if(!model || model->buffer())
         return;
 
     // Import materials.

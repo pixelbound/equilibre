@@ -28,6 +28,7 @@ class RenderProgram;
 class SceneViewport;
 class WLDSkeleton;
 class WLDCharActor;
+class WLDModel;
 class CharacterScene;
 class CharacterPack;
 class Game;
@@ -81,6 +82,7 @@ class CharacterScene : public Scene
 
 public:
     CharacterScene(RenderContext *renderCtx);
+    virtual ~CharacterScene();
     
     enum SkinningMode
     {
@@ -101,8 +103,9 @@ public:
     SkinningMode skinningMode() const;
     void setSkinningMode(SkinningMode newMode);
     
-    WLDCharActor *selectedCharacter() const;
     QString selectedModelName() const;
+    
+    WLDCharActor * actor() const;
     
     CharacterPack * loadCharacters(QString archivePath);
 
@@ -121,6 +124,7 @@ private:
     RenderProgram * program(RenderMode renderMode);
     void drawFrame();
     
+    WLDCharActor *m_actor;
     QString m_meshName;
     double m_started;
     vec3 m_delta;

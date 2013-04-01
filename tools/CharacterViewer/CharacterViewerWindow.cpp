@@ -176,30 +176,22 @@ void CharacterViewerWindow::loadActor(QString name)
 
 void CharacterViewerWindow::loadPalette(QString name)
 {
-    WLDCharActor *charModel = m_scene->selectedCharacter();
-    if(charModel)
-    {
-        charModel->setPaletteName(name);
-        updateLists();
-    }
+    m_scene->actor()->setPaletteName(name);
+    updateLists();
 }
 
 void CharacterViewerWindow::loadAnimation(QString animName)
 {
-    WLDCharActor *charModel = m_scene->selectedCharacter();
-    if(charModel)
-    {
-        charModel->setAnimName(animName);
-        updateLists();
-    }
+    m_scene->actor()->setAnimName(animName);
+    updateLists();
 }
 
 void CharacterViewerWindow::copyAnimations()
 {
-    WLDCharActor *charModel = m_scene->selectedCharacter();
+    WLDModel *charModel = m_scene->actor()->model();
     if(!charModel)
         return;
-    WLDSkeleton *charSkel = charModel->model()->skeleton();
+    WLDSkeleton *charSkel = charModel->skeleton();
     if(!charSkel)
         return;
     QDialog d;
@@ -207,10 +199,10 @@ void CharacterViewerWindow::copyAnimations()
     QComboBox *charList = new QComboBox();
     foreach(CharacterPack *pack, m_scene->game()->characterPacks())
     {
-        const QMap<QString, WLDCharActor *> &actors = pack->models();
+        const QMap<QString, WLDModel *> &actors = pack->models();
         foreach(QString charName, actors.keys())
         {
-            WLDSkeleton *skel = actors.value(charName)->model()->skeleton();
+            WLDSkeleton *skel = actors.value(charName)->skeleton();
             if(skel)
                 charList->addItem(charName);
         }
@@ -231,10 +223,10 @@ void CharacterViewerWindow::copyAnimations()
 
 void CharacterViewerWindow::copyAnimations(WLDSkeleton *toSkel, QString fromChar)
 {
-    WLDCharActor *actor = m_scene->game()->findCharacter(fromChar);
-    if(actor)
+    WLDModel *model = m_scene->game()->findCharacter(fromChar);
+    if(model)
     {
-        WLDSkeleton *fromSkel = actor->model()->skeleton();
+        WLDSkeleton *fromSkel = model->skeleton();
         if(fromSkel)
         {
             toSkel->copyAnimationsFrom(fromSkel);
@@ -250,7 +242,7 @@ void CharacterViewerWindow::updateLists()
     m_animationText->clear();
     foreach(CharacterPack *pack, m_scene->game()->characterPacks())
     {
-        const QMap<QString, WLDCharActor *> &actors = pack->models();
+        const QMap<QString, WLDModel *> &actors = pack->models();
         foreach(QString name, actors.keys())
             m_actorText->addItem(name);
     }
@@ -258,20 +250,20 @@ void CharacterViewerWindow::updateLists()
     if(m_scene->selectedModelName().isEmpty() && m_actorText->count() > 0)
         m_scene->setSelectedModelName(m_actorText->itemText(0));
 
-    WLDCharActor *charModel = m_scene->selectedCharacter();
+    WLDModel *charModel = m_scene->actor()->model();
     if(charModel)
     {
-        WLDSkeleton *skel = charModel->model()->skeleton();
+        WLDSkeleton *skel = charModel->skeleton();
         if(skel)
         {
             foreach(QString animName, skel->animations().keys())
                 m_animationText->addItem(animName);
         }
-        foreach(WLDModelSkin *skin, charModel->model()->skins())
+        foreach(WLDModelSkin *skin, charModel->skins())
             m_paletteText->addItem(skin->name());
         m_actorText->setCurrentIndex(m_actorText->findText(m_scene->selectedModelName()));
-        m_paletteText->setCurrentIndex(m_paletteText->findText(charModel->paletteName()));
-        m_animationText->setCurrentIndex(m_animationText->findText(charModel->animName()));
+        m_paletteText->setCurrentIndex(m_paletteText->findText(m_scene->actor()->paletteName()));
+        m_animationText->setCurrentIndex(m_animationText->findText(m_scene->actor()->animName()));
     }
     m_actorText->setEnabled(m_actorText->count() > 1);
     m_animationText->setEnabled(m_animationText->count() > 1);
@@ -328,6 +320,7 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_renderCtx = renderCtx;
     m_sigma = 1.0;
     m_game = new Game();
+    m_actor = new WLDCharActor(NULL);
     m_skinningMode = SoftwareSkinning;
     m_transState.last = vec3();
     m_rotState.last = vec3();
@@ -336,6 +329,11 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_delta = vec3(-0.0, -0.0, -5.0);
     m_theta = vec3(-90.0, 00.0, 270.0);
     m_sigma = 0.5;
+}
+
+CharacterScene::~CharacterScene()
+{
+    delete m_actor;
 }
 
 Game * CharacterScene::game() const
@@ -358,14 +356,18 @@ QString CharacterScene::selectedModelName() const
     return m_meshName;
 }
 
-void CharacterScene::setSelectedModelName(QString name)
+WLDCharActor * CharacterScene::actor() const
 {
-    m_meshName = name;
+    return m_actor;
 }
 
-WLDCharActor * CharacterScene::selectedCharacter() const
+void CharacterScene::setSelectedModelName(QString name)
 {
-    return m_game->findCharacter(m_meshName);
+    WLDModel *model = m_game->findCharacter(name, m_renderCtx);
+    m_actor->setModel(model);
+    m_actor->setPaletteName("00");
+    m_actor->setAnimName("POS");
+    m_meshName = name;
 }
 
 void CharacterScene::init()
@@ -443,12 +445,11 @@ void CharacterScene::drawFrame()
     m_renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
     
-    WLDCharActor *actor = selectedCharacter();
-    if(actor)
+    if(m_actor->model())
     {
-        actor->setSkin(actor->paletteName().toUInt());
-        actor->setAnimTime(currentTime());
-        actor->draw(m_renderCtx, prog);
+        m_actor->setSkin(m_actor->paletteName().toUInt());
+        m_actor->setAnimTime(currentTime());
+        m_actor->draw(m_renderCtx, prog);
     }
 }
 

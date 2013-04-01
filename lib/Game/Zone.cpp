@@ -129,6 +129,9 @@ bool Zone::load(QString path, QString name)
     // Load the zone's sound triggers.
     QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
     SoundTrigger::fromFile(m_soundTriggers, triggersFile);
+    
+    // Create an actor for the player.
+    m_playerActor = new WLDCharActor(NULL);
     return true;
 }
 
@@ -159,6 +162,7 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
+    delete m_playerActor;
     m_playerActor = NULL;
     foreach(CharacterPack *pack, m_charPacks)
     {
@@ -294,7 +298,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         //renderCtx->scale(100.0, 100.0, 100.0);
         renderCtx->translate(m_playerPos);
         renderCtx->rotate(-m_playerOrient + 90.0f, 0.0f, 0.0, 1.0f);
-        if(m_playerActor)
+        if(m_playerActor->model())
         {
             m_playerActor->draw(renderCtx, prog);
         }
@@ -351,9 +355,13 @@ void Zone::setCameraDistance(float dist)
     m_cameraDistance = dist;
 }
 
-void Zone::setPlayerActor(WLDCharActor *actor)
+void Zone::setPlayerModel(WLDModel *model)
 {
-    m_playerActor = actor;
+    m_playerActor->setModel(model);
+    if(model)
+    {
+        m_playerActor->setAnimName("P01");
+    }
 }
 
 void Zone::freezeFrustum(RenderContext *renderCtx)
