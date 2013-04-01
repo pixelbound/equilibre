@@ -36,6 +36,7 @@ QWidget * showZoneViewer(RenderContext *renderCtx)
     Game *game = v->scene()->game();
     game->loadSky(assetDir.path());
     game->loadBuiltinOjects(assetDir.path());
+    game->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
     if(assetDir.exists(zoneInfoFile))
         game->loadZoneInfo(assetDir.filePath(zoneInfoFile));
     return v;

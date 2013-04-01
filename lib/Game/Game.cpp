@@ -332,12 +332,24 @@ CharacterPack * Game::loadCharacters(QString archivePath, QString wldName, bool 
     return charPack;
 }
 
-WLDCharActor * Game::findCharacter(QString name) const
+WLDCharActor * Game::findCharacter(QString name)
+{
+    return findCharacter(name, NULL);
+}
+
+WLDCharActor * Game::findCharacter(QString name, RenderContext *renderCtx)
 {
     foreach(CharacterPack *pack, m_charPacks)
     {
         if(pack->models().contains(name))
-            return pack->models().value(name);
+        {
+            WLDCharActor *actor = pack->models().value(name);
+            if(actor && renderCtx)
+            {
+                pack->upload(renderCtx, actor);
+            }
+            return actor;
+        }
     }
     return NULL;
 }

@@ -39,6 +39,7 @@ Zone::Zone(Game *game)
     m_terrain = NULL;
     m_objects = NULL;
     m_actorTree = NULL;
+    m_playerActor = NULL;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
     m_cameraDistance = 0.0;
@@ -158,6 +159,7 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
+    m_playerActor = NULL;
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -285,13 +287,21 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     
     // Draw a capsule where the character should be.
     const float MinDistanceToShowCharacter = 1.0f;
-    if(m_game->capsule() && (m_cameraDistance > MinDistanceToShowCharacter))
+    if(m_cameraDistance > MinDistanceToShowCharacter)
     {
         renderCtx->pushMatrix();
         //renderCtx->translate(box.low.x, box.low.y, box.low.z);
         //renderCtx->scale(100.0, 100.0, 100.0);
         renderCtx->translate(m_playerPos);
-        m_game->drawBuiltinObject(m_game->capsule(), renderCtx, prog);
+        renderCtx->rotate(-m_playerOrient + 90.0f, 0.0f, 0.0, 1.0f);
+        if(m_playerActor)
+        {
+            m_playerActor->draw(renderCtx, prog);
+        }
+        else if(m_game->capsule())
+        {
+            m_game->drawBuiltinObject(m_game->capsule(), renderCtx, prog);
+        }
         renderCtx->popMatrix();
     }
     
@@ -339,6 +349,11 @@ float Zone::cameraDistance() const
 void Zone::setCameraDistance(float dist)
 {
     m_cameraDistance = dist;
+}
+
+void Zone::setPlayerActor(WLDCharActor *actor)
+{
+    m_playerActor = actor;
 }
 
 void Zone::freezeFrustum(RenderContext *renderCtx)

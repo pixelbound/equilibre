@@ -175,9 +175,20 @@ void ZoneViewerWindow::selectAssetDir()
 
 bool ZoneViewerWindow::loadZone(QString path, QString name)
 {
+    Game *game = m_scene->game();
     m_viewport->makeCurrent();
-    m_scene->game()->clearZone(m_renderCtx);
-    return (m_scene->game()->loadZone(path, name) != NULL);
+    game->clearZone(m_renderCtx);
+    if(!game->loadZone(path, name))
+    {
+        return false;
+    }
+    WLDCharActor *playerActor = game->findCharacter("ELM", m_renderCtx);
+    if(playerActor)
+    {
+        playerActor->setAnimName("P01");
+    }
+    game->zone()->setPlayerActor(playerActor);
+    return true;
 }
 
 void ZoneViewerWindow::updateMenus()

@@ -80,7 +80,8 @@ public:
     bool loadBuiltinOjects(QString path);
     ObjectPack * loadObjects(QString archivePath, QString wldName = QString::null);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null, bool own = true);
-    WLDCharActor * findCharacter(QString name) const;
+    WLDCharActor * findCharacter(QString name);
+    WLDCharActor * findCharacter(QString name, RenderContext *renderCtx);
     
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
@@ -140,13 +141,13 @@ public:
     
     bool load(QString archivePath, QString wldName);
     void upload(RenderContext *renderCtx);
+    void upload(RenderContext *renderCtx, WLDCharActor *actor);
     void clear(RenderContext *renderCtx);
     
 private:
     void importSkeletons(WLDData *wld);
     void importCharacterPalettes(PFSArchive *archive, WLDData *wld);
     void importCharacters(PFSArchive *archive, WLDData *wld);
-    void upload(RenderContext *renderCtx, WLDCharActor *actor);
     
     PFSArchive *m_archive;
     WLDData *m_wld;

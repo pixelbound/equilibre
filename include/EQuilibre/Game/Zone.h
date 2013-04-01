@@ -113,6 +113,8 @@ public:
     void setCameraDistance(float dist);
     void step(float x, float y, float z);
     
+    void setPlayerActor(WLDCharActor *actor);
+    
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
@@ -139,6 +141,7 @@ private:
     float m_playerOrient;
     vec3 m_cameraOrient;
     float m_cameraDistance;
+    WLDCharActor *m_playerActor;
 };
 
 /*!
