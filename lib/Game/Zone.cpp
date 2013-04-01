@@ -193,11 +193,13 @@ void Zone::clear(RenderContext *renderCtx)
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
-    vec3 eye = m_playerPos + vec3(0.0, -m_cameraDistance, 0.0);
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
+    vec3 camPos(0.0, -m_cameraDistance, 0.0);
+    camPos = viewMat.map(camPos);
+    vec3 eye = m_playerPos + camPos;
     frustum.setEye(eye);
     frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
