@@ -121,11 +121,12 @@ class GAME_DLL WLDCharActor : public WLDActor
 {
 public:
     WLDCharActor(WLDModel *model);
-    WLDCharActor(ActorFragment *frag, WLDModel *model);
     virtual ~WLDCharActor();
     const static ActorType Kind = Character;
     
     WLDModel * model() const;
+    void setModel(WLDModel *newModel);
+    
     MaterialMap * materialMap() const;
     
     QString animName() const;

@@ -124,7 +124,7 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 
 WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
 {
-    m_model = model;
+    m_model = NULL;
     m_materialMap = NULL;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
@@ -132,33 +132,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
-    if(model)
-    {
-        WLDMaterialPalette *pal = model->mainMesh()->palette();
-        m_materialMap = new MaterialMap();
-        m_materialMap->resize(pal->materialSlots().size());
-    }
-}
-
-WLDCharActor::WLDCharActor(ActorFragment *frag, WLDModel *model) : WLDActor(Kind)
-{
-    m_model = model;
-    m_materialMap = NULL;
-    if(frag)
-    {
-        m_location = frag->m_location;
-        m_rotation = frag->m_rotation;
-        m_scale = frag->m_scale;
-    }
-    else
-    {
-        m_location = vec3(0.0, 0.0, 0.0);
-        m_rotation = vec3(0.0, 0.0, 0.0);
-        m_scale = vec3(1.0, 1.0, 1.0);
-    }
-    m_animName = "POS";
-    m_animTime = 0;
-    m_palName = "00";
+    setModel(model);
 }
 
 WLDCharActor::~WLDCharActor()
@@ -169,6 +143,24 @@ WLDCharActor::~WLDCharActor()
 WLDModel * WLDCharActor::model() const
 {
     return m_model;
+}
+
+void WLDCharActor::setModel(WLDModel *newModel)
+{
+    if(newModel != m_model)
+    {
+        if(newModel && !m_materialMap)
+        {
+            m_materialMap = new MaterialMap();
+        }
+        if(newModel)
+        {
+            WLDMaterialPalette *pal = newModel->mainMesh()->palette();
+            m_materialMap->clear();
+            m_materialMap->resize(pal->materialSlots().size());
+        }
+        m_model = newModel;
+    }
 }
 
 MaterialMap * WLDCharActor::materialMap() const
