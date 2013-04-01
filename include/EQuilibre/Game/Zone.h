@@ -105,12 +105,12 @@ public:
     float playerOrient() const;
     // xyz angles that describe how the camera is oriented rel. to the player
     const vec3 & cameraOrient() const;
-    // xyz position of the camera is rel. to the player
-    const vec3 & cameraPos() const;
+    // distance between the camera and the player
+    float cameraDistance() const;
 
     void setPlayerOrient(float rot);
     void setCameraOrient(const vec3 &rot);
-    void setCameraPos(const vec3 &pos);
+    void setCameraDistance(float dist);
     void step(float x, float y, float z);
     
     void freezeFrustum(RenderContext *renderCtx);
@@ -138,7 +138,7 @@ private:
     vec3 m_playerPos;
     float m_playerOrient;
     vec3 m_cameraOrient;
-    vec3 m_cameraPos;
+    float m_cameraDistance;
 };
 
 /*!

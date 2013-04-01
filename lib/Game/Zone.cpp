@@ -41,7 +41,7 @@ Zone::Zone(Game *game)
     m_actorTree = NULL;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
-    m_cameraPos = vec3(0.0, 0.0, 0.0);
+    m_cameraDistance = 0.0;
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
 }
 
@@ -187,13 +187,13 @@ void Zone::clear(RenderContext *renderCtx)
     m_mainArchive = 0;
     m_playerPos = vec3(0.0, 0.0, 0.0);
     m_playerOrient = 0.0;
-    m_cameraPos = vec3(0.0, 0.0, 0.0);
+    m_cameraDistance = 0.0;
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
 }
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
-    vec3 eye = m_playerPos + m_cameraPos;
+    vec3 eye = m_playerPos + vec3(0.0, -m_cameraDistance, 0.0);
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
@@ -283,7 +283,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     
     // Draw a capsule where the character should be.
     const float MinDistanceToShowCharacter = 1.0f;
-    if(m_game->capsule() && (m_cameraPos.y < -MinDistanceToShowCharacter))
+    if(m_game->capsule() && (m_cameraDistance > MinDistanceToShowCharacter))
     {
         renderCtx->pushMatrix();
         //renderCtx->translate(box.low.x, box.low.y, box.low.z);
@@ -329,14 +329,14 @@ void Zone::setCameraOrient(const vec3 &rot)
     m_cameraOrient = rot;
 }
 
-const vec3 & Zone::cameraPos() const
+float Zone::cameraDistance() const
 {
-    return m_cameraPos;
+    return m_cameraDistance;
 }
 
-void Zone::setCameraPos(const vec3 &pos)
+void Zone::setCameraDistance(float dist)
 {
-    m_cameraPos = pos;
+    m_cameraDistance = dist;
 }
 
 void Zone::freezeFrustum(RenderContext *renderCtx)

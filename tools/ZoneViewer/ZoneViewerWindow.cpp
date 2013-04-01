@@ -416,8 +416,8 @@ void ZoneScene::mouseReleaseEvent(QMouseEvent *e)
 void ZoneScene::wheelEvent(QWheelEvent *e)
 {
     Zone *zone = m_game->zone();
-    vec3 cameraPos = zone->cameraPos();
+    float distance = zone->cameraDistance();
     float delta = (e->delta() * 0.01);
-    cameraPos.y = qMin(cameraPos.y + delta, 0.0f);
-    zone->setCameraPos(cameraPos);
+    distance = qMax(distance - delta, 0.0f);
+    zone->setCameraDistance(distance);
  }
