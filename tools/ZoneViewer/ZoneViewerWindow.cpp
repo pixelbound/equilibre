@@ -347,7 +347,7 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
     bool doStep = false;
     vec3 stepDist;
     int key = e->key();
-    if(key == Qt::Key_Q)
+    if(key == Qt::Key_A)
     {
         stepDist = vec3(0.0, dist, 0.0);
         doStep = true;
@@ -357,7 +357,7 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
         stepDist = vec3(0.0, -dist, 0.0);
         doStep = true;
     }
-    else if(key == Qt::Key_Z)
+    else if(key == Qt::Key_W)
     {
         stepDist = vec3(dist, 0.0, 0.0);
         doStep = true;
