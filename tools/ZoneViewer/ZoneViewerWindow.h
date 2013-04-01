@@ -90,6 +90,7 @@ public:
     virtual void mouseMoveEvent(QMouseEvent *e);
     virtual void mousePressEvent(QMouseEvent *e);
     virtual void mouseReleaseEvent(QMouseEvent *e);
+    virtual void wheelEvent(QWheelEvent *e);
 
 public slots:
     void showZone(bool show);

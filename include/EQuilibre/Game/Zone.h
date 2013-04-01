@@ -110,6 +110,7 @@ public:
 
     void setPlayerOrient(float rot);
     void setCameraOrient(const vec3 &rot);
+    void setCameraPos(const vec3 &pos);
     void step(float x, float y, float z);
     
     void freezeFrustum(RenderContext *renderCtx);

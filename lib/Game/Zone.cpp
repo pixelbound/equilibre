@@ -193,12 +193,13 @@ void Zone::clear(RenderContext *renderCtx)
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
+    vec3 eye = m_playerPos + m_cameraPos;
     vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
-    frustum.setEye(m_playerPos);
-    frustum.setFocus(m_playerPos + viewMat.map(vec3(0.0, 1.0, 0.0)));
+    frustum.setEye(eye);
+    frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
     frustum.update();
 }
@@ -281,14 +282,15 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     }
     
     // Draw a capsule where the character should be.
-    if(m_game->capsule())
+    const float MinDistanceToShowCharacter = 1.0f;
+    if(m_game->capsule() && (m_cameraPos.y < -MinDistanceToShowCharacter))
     {
-        //renderCtx->pushMatrix();
+        renderCtx->pushMatrix();
         //renderCtx->translate(box.low.x, box.low.y, box.low.z);
         //renderCtx->scale(100.0, 100.0, 100.0);
-        //renderCtx->translate(0.5, 0.5, 0.5);
+        renderCtx->translate(m_playerPos);
         m_game->drawBuiltinObject(m_game->capsule(), renderCtx, prog);
-        //renderCtx->popMatrix();
+        renderCtx->popMatrix();
     }
     
     m_terrain->resetVisible();
@@ -332,6 +334,11 @@ const vec3 & Zone::cameraPos() const
     return m_cameraPos;
 }
 
+void Zone::setCameraPos(const vec3 &pos)
+{
+    m_cameraPos = pos;
+}
+
 void Zone::freezeFrustum(RenderContext *renderCtx)
 {
     m_frozenFrustum = renderCtx->viewFrustum();
@@ -340,10 +347,9 @@ void Zone::freezeFrustum(RenderContext *renderCtx)
 
 void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 {
-    vec3 pos = m_playerPos + m_cameraPos;
     foreach(SoundTrigger *trigger, m_soundTriggers)
     {
-        if(trigger->bounds().contains(pos))
+        if(trigger->bounds().contains(m_playerPos))
             triggers.append(trigger);
     }
 }

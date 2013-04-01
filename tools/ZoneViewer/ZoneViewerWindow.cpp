@@ -310,11 +310,11 @@ void ZoneScene::drawFrame()
     if(!zone)
         return;
     
-    vec3 camPos = zone->playerPos() + zone->cameraPos();
+    vec3 playerPos = zone->playerPos();
     log(QString("%1 %2 %3")
-        .arg(camPos.x, 0, 'f', 2)
-        .arg(camPos.y, 0, 'f', 2)
-        .arg(camPos.z, 0, 'f', 2));
+        .arg(playerPos.x, 0, 'f', 2)
+        .arg(playerPos.y, 0, 'f', 2)
+        .arg(playerPos.z, 0, 'f', 2));
     Frustum &viewFrustum = m_renderCtx->viewFrustum();
     m_renderCtx->matrix(RenderContext::Projection) = viewFrustum.projection();
     m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
@@ -412,3 +412,12 @@ void ZoneScene::mouseReleaseEvent(QMouseEvent *e)
     if(e->button() & Qt::RightButton)
         m_rotState.active = false;
 }
+
+void ZoneScene::wheelEvent(QWheelEvent *e)
+{
+    Zone *zone = m_game->zone();
+    vec3 cameraPos = zone->cameraPos();
+    float delta = (e->delta() * 0.01);
+    cameraPos.y = qMin(cameraPos.y + delta, 0.0f);
+    zone->setCameraPos(cameraPos);
+ }
