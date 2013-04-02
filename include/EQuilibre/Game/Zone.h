@@ -100,19 +100,21 @@ public:
     
     // XXX WLDCharActor player()
     // XXX remove old camera accessors
+    // PlayerActor class.
+    // XXX cameraOrient -> playerLookX
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;
     void setPlayerPos(const vec3 &newPos);
     // z angle that describes where the player is facing
     float playerOrient() const;
-    // xyz angles that describe how the camera is oriented rel. to the player
-    const vec3 & cameraOrient() const;
+    // x angle that describes how the camera is oriented rel. to the player
+    float cameraOrient() const;
     // distance between the camera and the player
     float cameraDistance() const;
 
     void setPlayerOrient(float rot);
-    void setCameraOrient(const vec3 &rot);
+    void setCameraOrient(float newOrient);
     void setCameraDistance(float dist);
     void step(float x, float y, float z);
     

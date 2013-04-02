@@ -192,7 +192,7 @@ void Zone::clear(RenderContext *renderCtx)
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
-    vec3 rot = vec3(0.0, 0.0, playerOrient()) + cameraOrient();
+    vec3 rot = vec3(cameraOrient(), 0.0, playerOrient());
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
@@ -282,7 +282,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         //    prog->drawBox(actor->boundsAA);
     }
     
-    // Draw a capsule where the character should be.
+    // Draw the character if it is in view.
     if(cameraDistance() > m_game->minDistanceToShowCharacter())
     {
         if(m_playerActor->model())
@@ -321,14 +321,14 @@ void Zone::setPlayerOrient(float rot)
     m_playerActor->setOrientation(rot);
 }
 
-const vec3 & Zone::cameraOrient() const
+float Zone::cameraOrient() const
 {
     return m_playerActor->cameraOrient();
 }
 
-void Zone::setCameraOrient(const vec3 &rot)
+void Zone::setCameraOrient(float newOrient)
 {
-    m_playerActor->setCameraOrient(rot);
+    m_playerActor->setCameraOrient(newOrient);
 }
 
 float Zone::cameraDistance() const
@@ -370,7 +370,7 @@ void Zone::step(float distForward, float distSideways, float distUpDown)
     bool ghost = (cameraDistance() < m_game->minDistanceToShowCharacter());
     matrix4 m;
     if(ghost)
-        m = matrix4::rotate(cameraOrient().x, 1.0, 0.0, 0.0);
+        m = matrix4::rotate(cameraOrient(), 1.0, 0.0, 0.0);
     else
         m.setIdentity();
     m = m * matrix4::rotate(playerOrient(), 0.0, 0.0, 1.0);
@@ -970,7 +970,7 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
         return;
     
     // Restrict the movement of the camera so that we don't see the edges of the sky dome.
-    vec3 camRot = vec3(0.0, 0.0, zone->playerOrient()) + zone->cameraOrient();
+    vec3 camRot = vec3(zone->cameraOrient(), 0.0, zone->playerOrient());
     matrix4 viewMat2 = matrix4::rotate(camRot.x * 0.25, 1.0, 0.0, 0.0) *
                        matrix4::rotate(camRot.y, 0.0, 1.0, 0.0) *
                        matrix4::rotate(camRot.z * 0.25, 0.0, 0.0, 1.0);

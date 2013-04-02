@@ -131,9 +131,9 @@ public:
     void setLocation(const vec3 &newLocation);
     void setOrientation(float newOrientation);
     
-    // xyz angles that describe how the camera is oriented rel. to the player
-    const vec3 & cameraOrient() const;
-    void setCameraOrient(const vec3 &rot);
+    // x angle that describes how the camera is oriented rel. to the player
+    float cameraOrient() const;
+    void setCameraOrient(float newOrientation);
     
     float cameraDistance() const;
     void setCameraDistance(float dist);
@@ -171,7 +171,7 @@ private:
 
     vec3 m_rotation, m_scale;
     bool m_hasCamera;
-    vec3 m_cameraOrient; // XXX only X axis
+    float m_cameraOrient;
     float m_cameraDistance;
     WLDModel *m_model;
     QString m_animName;

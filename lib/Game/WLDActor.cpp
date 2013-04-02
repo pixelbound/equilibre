@@ -131,7 +131,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_scale = vec3(1.0, 1.0, 1.0);
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
-    m_cameraOrient = vec3(0.0, 0.0, 0.0);
+    m_cameraOrient = 0.0f;
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
@@ -182,14 +182,14 @@ void WLDCharActor::setOrientation(float newOrientation)
 }
 
 // xyz angles that describe how the camera is oriented rel. to the player
-const vec3 & WLDCharActor::cameraOrient() const
+float WLDCharActor::cameraOrient() const
 {
     return m_cameraOrient;
 }
 
-void WLDCharActor::setCameraOrient(const vec3 &rot)
+void WLDCharActor::setCameraOrient(float newOrientation)
 {
-    m_cameraOrient = rot;
+    m_cameraOrient = newOrientation;
 }
 
 float WLDCharActor::cameraDistance() const
