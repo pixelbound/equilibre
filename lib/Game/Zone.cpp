@@ -44,6 +44,7 @@ Zone::Zone(Game *game)
     m_playerOrient = 0.0;
     m_cameraDistance = 0.0;
     m_cameraOrient = vec3(0.0, 0.0, 0.0);
+    m_minDistanceToShowCharacter = 1.0;
 }
 
 Zone::~Zone()
@@ -290,8 +291,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     }
     
     // Draw a capsule where the character should be.
-    const float MinDistanceToShowCharacter = 1.0f;
-    if(m_cameraDistance > MinDistanceToShowCharacter)
+    if(m_cameraDistance > m_minDistanceToShowCharacter)
     {
         renderCtx->pushMatrix();
         //renderCtx->translate(box.low.x, box.low.y, box.low.z);
@@ -381,7 +381,7 @@ void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 
 void Zone::step(float distForward, float distSideways, float distUpDown)
 {
-    const bool ghost = true;
+    bool ghost = (m_cameraDistance < m_minDistanceToShowCharacter);
     matrix4 m;
     if(ghost)
         m = matrix4::rotate(m_cameraOrient.x, 1.0, 0.0, 0.0);

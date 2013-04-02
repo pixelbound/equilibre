@@ -142,6 +142,7 @@ private:
     vec3 m_cameraOrient;
     float m_cameraDistance;
     WLDCharActor *m_playerActor;
+    float m_minDistanceToShowCharacter;
 };
 
 /*!
