@@ -90,6 +90,8 @@ public:
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
+    WLDCharActor * player() const;
+    
     bool load(QString path, QString name);
     bool loadSky(PFSArchive *archive, WLDData *wld);
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null);
@@ -98,14 +100,10 @@ public:
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(double currentTime);
     
-    // XXX WLDCharActor player()
     // XXX remove old camera accessors
     // PlayerActor class.
     // XXX cameraOrient -> playerLookX
 
-    // xyz position of the player in the zone
-    const vec3 & playerPos() const;
-    void setPlayerPos(const vec3 &newPos);
     // z angle that describes where the player is facing
     float playerOrient() const;
     // x angle that describes how the camera is oriented rel. to the player

@@ -217,16 +217,15 @@ Zone * Game::loadZone(QString path, QString name)
         return NULL;
     }
     m_zone = zone;
+    
+    vec3 initialPos(0.0, 0.0, 0.1);
     if(m_zoneInfo.contains(name))
     {
         const ZoneInfo &info = m_zoneInfo[name];
         m_zone->setInfo(info);
-        m_zone->setPlayerPos(info.safePos);
+        initialPos = info.safePos;
     }
-    else
-    {
-        m_zone->setPlayerPos(vec3(0.0, 0.0, 0.1));
-    }
+    m_zone->player()->setLocation(initialPos);
     return zone;
 }
 

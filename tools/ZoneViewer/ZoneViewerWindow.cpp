@@ -317,7 +317,7 @@ void ZoneScene::drawFrame()
     if(!zone)
         return;
     
-    vec3 playerPos = zone->playerPos();
+    vec3 playerPos = zone->player()->location();
     log(QString("%1 %2 %3")
         .arg(playerPos.x, 0, 'f', 2)
         .arg(playerPos.y, 0, 'f', 2)

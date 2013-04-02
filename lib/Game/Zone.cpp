@@ -82,6 +82,11 @@ void Zone::setInfo(const ZoneInfo &info)
     m_info = info;
 }
 
+WLDCharActor * Zone::player() const
+{
+    return m_playerActor;
+}
+
 bool Zone::load(QString path, QString name)
 {
     m_info.name = name;
@@ -198,7 +203,7 @@ void Zone::setPlayerViewFrustum(Frustum &frustum) const
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
     vec3 camPos(0.0, -cameraDistance(), 0.0);
     camPos = viewMat.map(camPos);
-    vec3 eye = playerPos() + camPos;
+    vec3 eye = m_playerActor->location() + camPos;
     frustum.setEye(eye);
     frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
@@ -301,16 +306,6 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->popMatrix();
 }
 
-const vec3 & Zone::playerPos() const
-{
-    return m_playerActor->location();
-}
-
-void Zone::setPlayerPos(const vec3 &newPos)
-{
-    m_playerActor->setLocation(newPos);
-}
-
 float Zone::playerOrient() const
 {
     return m_playerActor->orientation();
@@ -360,7 +355,7 @@ void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 {
     foreach(SoundTrigger *trigger, m_soundTriggers)
     {
-        if(trigger->bounds().contains(playerPos()))
+        if(trigger->bounds().contains(m_playerActor->location()))
             triggers.append(trigger);
     }
 }
@@ -375,9 +370,9 @@ void Zone::step(float distForward, float distSideways, float distUpDown)
         m.setIdentity();
     m = m * matrix4::rotate(playerOrient(), 0.0, 0.0, 1.0);
     
-    vec3 newPos = playerPos();
+    vec3 newPos = m_playerActor->location();
     newPos = newPos + m.map(vec3(-distSideways, distForward, distUpDown));
-    setPlayerPos(newPos);
+    m_playerActor->setLocation(newPos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
