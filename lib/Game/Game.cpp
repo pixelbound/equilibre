@@ -431,6 +431,32 @@ void Game::drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
     prog->endDrawMesh();
 }
 
+void Game::drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
+                      RenderProgram *prog)
+{
+    if(player->cameraDistance() > m_minDistanceToShowCharacter)
+    {
+        if(player->model())
+        {
+            player->draw(renderCtx, prog);
+        }
+        else if(m_capsule)
+        {
+            drawBuiltinObject(m_capsule, renderCtx, prog);
+        }
+    }
+}
+
+void Game::stepPlayer(float distForward, float distSideways, float distUpDown)
+{
+    WLDCharActor *player = m_zone ? m_zone->player() : NULL;
+    if(player)
+    {
+        bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
+        player->step(distForward, distSideways, distUpDown, ghost);
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 ObjectPack::ObjectPack()

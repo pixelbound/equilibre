@@ -104,14 +104,9 @@ public:
     // PlayerActor class.
     // XXX cameraOrient -> playerLookX
 
-    // x angle that describes how the camera is oriented rel. to the player
-    float cameraOrient() const;
     // distance between the camera and the player
     float cameraDistance() const;
-
-    void setCameraOrient(float newOrient);
     void setCameraDistance(float dist);
-    void step(float x, float y, float z);
     
     void setPlayerModel(WLDModel *model);
     

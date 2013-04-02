@@ -382,9 +382,8 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
             m_game->freezeFrustum(m_renderCtx);
     }
     
-    Zone *zone = m_game->zone();
-    if(doStep && zone)
-        zone->step(stepDist.x, stepDist.y, stepDist.z);
+    if(doStep)
+        m_game->stepPlayer(stepDist.x, stepDist.y, stepDist.z);
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)
@@ -394,11 +393,11 @@ void ZoneScene::mouseMoveEvent(QMouseEvent *e)
     {
         int dx = m_rotState.x0 - e->x();
         int dy = m_rotState.y0 - e->y();
-        float camOrient = zone->cameraOrient();
         float newX = (m_rotState.last.x - (dy * 1.0));
-        camOrient = qMin(qMax(newX, -85.0f), 85.0f);
-        zone->setCameraOrient(camOrient);
-        zone->player()->setOrientation(m_rotState.last.z - (dx * 1.0));
+        float newZ = (m_rotState.last.z - (dx * 1.0));
+        newX = qMin(qMax(newX, -85.0f), 85.0f);
+        zone->player()->setCameraOrient(newX);
+        zone->player()->setOrientation(newZ);
     }
 }
 
@@ -423,8 +422,8 @@ void ZoneScene::mouseReleaseEvent(QMouseEvent *e)
 void ZoneScene::wheelEvent(QWheelEvent *e)
 {
     Zone *zone = m_game->zone();
-    float distance = zone->cameraDistance();
+    float distance = zone->player()->cameraDistance();
     float delta = (e->delta() * 0.01);
     distance = qMax(distance - delta, 0.0f);
-    zone->setCameraDistance(distance);
+    zone->player()->setCameraDistance(distance);
  }

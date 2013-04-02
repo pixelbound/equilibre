@@ -169,6 +169,9 @@ public:
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialArray *materials);
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
+    
+    void step(float distForward, float distSideways, float distUpDown,
+              bool ghost);
 
 private:
     static QString slotName(EquipSlot slot);

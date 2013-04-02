@@ -85,6 +85,10 @@ public:
     WLDModel * findCharacter(QString name);
     WLDModel * findCharacter(QString name, RenderContext *renderCtx);
     
+    void stepPlayer(float distForward, float distSideways, float distUpDown);
+    
+    void drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
+                    RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
 

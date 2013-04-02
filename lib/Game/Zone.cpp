@@ -287,33 +287,13 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         //    prog->drawBox(actor->boundsAA);
     }
     
-    // Draw the character if it is in view.
-    if(cameraDistance() > m_game->minDistanceToShowCharacter())
-    {
-        if(m_playerActor->model())
-        {
-            m_playerActor->draw(renderCtx, prog);
-        }
-        else if(m_game->capsule())
-        {
-            m_game->drawBuiltinObject(m_game->capsule(), renderCtx, prog);
-        }
-    }
+    // Draw the character, if it is in view.
+    m_game->drawPlayer(m_playerActor, renderCtx, prog);
     
     m_terrain->resetVisible();
     m_objects->resetVisible();
     
     renderCtx->popMatrix();
-}
-
-float Zone::cameraOrient() const
-{
-    return m_playerActor->cameraOrient();
-}
-
-void Zone::setCameraOrient(float newOrient)
-{
-    m_playerActor->setCameraOrient(newOrient);
 }
 
 float Zone::cameraDistance() const
@@ -348,22 +328,6 @@ void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
         if(trigger->bounds().contains(m_playerActor->location()))
             triggers.append(trigger);
     }
-}
-
-void Zone::step(float distForward, float distSideways, float distUpDown)
-{
-    bool ghost = (cameraDistance() < m_game->minDistanceToShowCharacter());
-    vec3 lookOrient = m_playerActor->lookOrient();
-    matrix4 m;
-    if(ghost)
-        m = matrix4::rotate(lookOrient.x, 1.0, 0.0, 0.0);
-    else
-        m.setIdentity();
-    m = m * matrix4::rotate(lookOrient.z, 0.0, 0.0, 1.0);
-    
-    vec3 newPos = m_playerActor->location();
-    newPos = newPos + m.map(vec3(-distSideways, distForward, distUpDown));
-    m_playerActor->setLocation(newPos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
