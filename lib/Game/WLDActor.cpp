@@ -171,6 +171,11 @@ void WLDCharActor::setLocation(const vec3 &newLocation)
     m_location = newLocation;
 }
 
+vec3 WLDCharActor::lookOrient() const
+{
+    return vec3(m_cameraOrient, 0.0f, m_rotation.z);
+}
+
 float WLDCharActor::orientation() const
 {
     return m_rotation.z;

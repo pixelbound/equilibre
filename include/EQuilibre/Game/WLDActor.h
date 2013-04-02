@@ -129,6 +129,10 @@ public:
     
     float orientation() const;
     void setLocation(const vec3 &newLocation);
+    
+    // x and z angles that describe where the character is looking at.
+    vec3 lookOrient() const;
+    
     void setOrientation(float newOrientation);
     
     // x angle that describes how the camera is oriented rel. to the player

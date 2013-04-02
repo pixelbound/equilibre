@@ -197,7 +197,7 @@ void Zone::clear(RenderContext *renderCtx)
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
-    vec3 rot = vec3(cameraOrient(), 0.0, playerOrient());
+    vec3 rot = m_playerActor->lookOrient();
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
@@ -306,16 +306,6 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->popMatrix();
 }
 
-float Zone::playerOrient() const
-{
-    return m_playerActor->orientation();
-}
-
-void Zone::setPlayerOrient(float rot)
-{
-    m_playerActor->setOrientation(rot);
-}
-
 float Zone::cameraOrient() const
 {
     return m_playerActor->cameraOrient();
@@ -363,12 +353,13 @@ void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 void Zone::step(float distForward, float distSideways, float distUpDown)
 {
     bool ghost = (cameraDistance() < m_game->minDistanceToShowCharacter());
+    vec3 lookOrient = m_playerActor->lookOrient();
     matrix4 m;
     if(ghost)
-        m = matrix4::rotate(cameraOrient(), 1.0, 0.0, 0.0);
+        m = matrix4::rotate(lookOrient.x, 1.0, 0.0, 0.0);
     else
         m.setIdentity();
-    m = m * matrix4::rotate(playerOrient(), 0.0, 0.0, 1.0);
+    m = m * matrix4::rotate(lookOrient.z, 0.0, 0.0, 1.0);
     
     vec3 newPos = m_playerActor->location();
     newPos = newPos + m.map(vec3(-distSideways, distForward, distUpDown));
@@ -965,7 +956,7 @@ void ZoneSky::draw(RenderContext *renderCtx, RenderProgram *prog, Zone *zone)
         return;
     
     // Restrict the movement of the camera so that we don't see the edges of the sky dome.
-    vec3 camRot = vec3(zone->cameraOrient(), 0.0, zone->playerOrient());
+    vec3 camRot = zone->player()->lookOrient();
     matrix4 viewMat2 = matrix4::rotate(camRot.x * 0.25, 1.0, 0.0, 0.0) *
                        matrix4::rotate(camRot.y, 0.0, 1.0, 0.0) *
                        matrix4::rotate(camRot.z * 0.25, 0.0, 0.0, 1.0);
