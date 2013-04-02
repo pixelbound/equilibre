@@ -174,6 +174,7 @@ private:
     vec3 m_rotation, m_scale;
     bool m_hasCamera;
     float m_lookOrientX;
+    float m_lookOrientZ;
     float m_cameraDistance;
     WLDModel *m_model;
     QString m_animName;

@@ -131,7 +131,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_scale = vec3(1.0, 1.0, 1.0);
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
-    m_lookOrientX = 0.0f;
+    m_lookOrientX = m_lookOrientZ = 0.0f;
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
@@ -173,7 +173,7 @@ void WLDCharActor::setLocation(const vec3 &newLocation)
 
 vec3 WLDCharActor::lookOrient() const
 {
-    return vec3(m_lookOrientX, 0.0f, m_rotation.z);
+    return vec3(m_lookOrientX, 0.0f, m_lookOrientZ);
 }
 
 void WLDCharActor::setLookOrientX(float newOrientation)
@@ -183,7 +183,7 @@ void WLDCharActor::setLookOrientX(float newOrientation)
 
 void WLDCharActor::setLookOrientZ(float newOrientation)
 {
-    m_rotation.z = newOrientation;
+    m_lookOrientZ = newOrientation;
 }
 
 float WLDCharActor::cameraDistance() const
@@ -297,19 +297,15 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
         if(anim)
             bones = anim->transformationsAtTime(m_animTime);
     }
-    
-    // XXX Find a better way to handle the orientation of the player.
-    float rotX = m_rotation.x;
-    float rotY = m_rotation.y;
-    float rotZ = m_rotation.z;
-    if(m_hasCamera)
-        rotZ = -rotZ + 90.0f;
-    
+
     renderCtx->pushMatrix();
     renderCtx->translate(m_location.x, m_location.y, m_location.z);
-    renderCtx->rotate(rotX, 1.0, 0.0, 0.0);
-    renderCtx->rotate(rotY, 0.0, 1.0, 0.0);
-    renderCtx->rotate(rotZ, 0.0, 0.0, 1.0);
+    renderCtx->rotate(m_rotation.x, 1.0, 0.0, 0.0);
+    renderCtx->rotate(m_rotation.y, 0.0, 1.0, 0.0);
+    renderCtx->rotate(m_rotation.z, 0.0, 0.0, 1.0);
+    // XXX Find a better way to handle the orientation of the player.
+    if(m_hasCamera)
+        renderCtx->rotate(-m_lookOrientZ + 90.0f, 0.0, 0.0, 1.0);
     renderCtx->scale(m_scale.x, m_scale.y, m_scale.z);
     
     // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)
