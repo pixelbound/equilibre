@@ -129,6 +129,9 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
+    m_hasCamera = false;
+    m_cameraDistance = 0.0f;
+    m_cameraOrient = vec3(0.0, 0.0, 0.0);
     m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
@@ -161,6 +164,52 @@ void WLDCharActor::setModel(WLDModel *newModel)
         }
         m_model = newModel;
     }
+}
+
+void WLDCharActor::setLocation(const vec3 &newLocation)
+{
+    m_location = newLocation;
+}
+
+float WLDCharActor::orientation() const
+{
+    return m_rotation.z;
+}
+
+void WLDCharActor::setOrientation(float newOrientation)
+{
+    m_rotation.z = newOrientation;
+}
+
+// xyz angles that describe how the camera is oriented rel. to the player
+const vec3 & WLDCharActor::cameraOrient() const
+{
+    return m_cameraOrient;
+}
+
+void WLDCharActor::setCameraOrient(const vec3 &rot)
+{
+    m_cameraOrient = rot;
+}
+
+float WLDCharActor::cameraDistance() const
+{
+    return m_cameraDistance;
+}
+
+void WLDCharActor::setCameraDistance(float dist)
+{
+    m_cameraDistance = dist;
+}
+
+bool WLDCharActor::hasCamera() const
+{
+    return m_hasCamera;
+}
+
+void WLDCharActor::setHasCamera(bool camera)
+{
+    m_hasCamera = camera;
 }
 
 MaterialMap * WLDCharActor::materialMap() const
@@ -255,11 +304,18 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
             bones = anim->transformationsAtTime(m_animTime);
     }
     
+    // XXX Find a better way to handle the orientation of the player.
+    float rotX = m_rotation.x;
+    float rotY = m_rotation.y;
+    float rotZ = m_rotation.z;
+    if(m_hasCamera)
+        rotZ = -rotZ + 90.0f;
+    
     renderCtx->pushMatrix();
     renderCtx->translate(m_location.x, m_location.y, m_location.z);
-    renderCtx->rotate(m_rotation.x, 1.0, 0.0, 0.0);
-    renderCtx->rotate(m_rotation.y, 0.0, 1.0, 0.0);
-    renderCtx->rotate(m_rotation.z, 0.0, 0.0, 1.0);
+    renderCtx->rotate(rotX, 1.0, 0.0, 0.0);
+    renderCtx->rotate(rotY, 0.0, 1.0, 0.0);
+    renderCtx->rotate(rotZ, 0.0, 0.0, 1.0);
     renderCtx->scale(m_scale.x, m_scale.y, m_scale.z);
     
     // XXX drawEquip method to allow skinned equipment (e.g. bow, epics)

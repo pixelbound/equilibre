@@ -40,11 +40,6 @@ Zone::Zone(Game *game)
     m_objects = NULL;
     m_actorTree = NULL;
     m_playerActor = NULL;
-    m_playerPos = vec3(0.0, 0.0, 0.0);
-    m_playerOrient = 0.0;
-    m_cameraDistance = 0.0;
-    m_cameraOrient = vec3(0.0, 0.0, 0.0);
-    m_minDistanceToShowCharacter = 1.0;
 }
 
 Zone::~Zone()
@@ -133,6 +128,7 @@ bool Zone::load(QString path, QString name)
     
     // Create an actor for the player.
     m_playerActor = new WLDCharActor(NULL);
+    m_playerActor->setHasCamera(true);
     return true;
 }
 
@@ -192,21 +188,17 @@ void Zone::clear(RenderContext *renderCtx)
     m_actorTree = NULL;
     m_mainWld = 0;
     m_mainArchive = 0;
-    m_playerPos = vec3(0.0, 0.0, 0.0);
-    m_playerOrient = 0.0;
-    m_cameraDistance = 0.0;
-    m_cameraOrient = vec3(0.0, 0.0, 0.0);
 }
 
 void Zone::setPlayerViewFrustum(Frustum &frustum) const
 {
-    vec3 rot = vec3(0.0, 0.0, m_playerOrient) + m_cameraOrient;
+    vec3 rot = vec3(0.0, 0.0, playerOrient()) + cameraOrient();
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
-    vec3 camPos(0.0, -m_cameraDistance, 0.0);
+    vec3 camPos(0.0, -cameraDistance(), 0.0);
     camPos = viewMat.map(camPos);
-    vec3 eye = m_playerPos + camPos;
+    vec3 eye = playerPos() + camPos;
     frustum.setEye(eye);
     frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
@@ -291,13 +283,8 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     }
     
     // Draw a capsule where the character should be.
-    if(m_cameraDistance > m_minDistanceToShowCharacter)
+    if(cameraDistance() > m_game->minDistanceToShowCharacter())
     {
-        renderCtx->pushMatrix();
-        //renderCtx->translate(box.low.x, box.low.y, box.low.z);
-        //renderCtx->scale(100.0, 100.0, 100.0);
-        renderCtx->translate(m_playerPos);
-        renderCtx->rotate(-m_playerOrient + 90.0f, 0.0f, 0.0, 1.0f);
         if(m_playerActor->model())
         {
             m_playerActor->draw(renderCtx, prog);
@@ -306,7 +293,6 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         {
             m_game->drawBuiltinObject(m_game->capsule(), renderCtx, prog);
         }
-        renderCtx->popMatrix();
     }
     
     m_terrain->resetVisible();
@@ -317,42 +303,42 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
 
 const vec3 & Zone::playerPos() const
 {
-    return m_playerPos;
+    return m_playerActor->location();
 }
 
 void Zone::setPlayerPos(const vec3 &newPos)
 {
-    m_playerPos = newPos;
+    m_playerActor->setLocation(newPos);
 }
 
 float Zone::playerOrient() const
 {
-    return m_playerOrient;
+    return m_playerActor->orientation();
 }
 
 void Zone::setPlayerOrient(float rot)
 {
-    m_playerOrient = rot;
+    m_playerActor->setOrientation(rot);
 }
 
 const vec3 & Zone::cameraOrient() const
 {
-    return m_cameraOrient;
+    return m_playerActor->cameraOrient();
 }
 
 void Zone::setCameraOrient(const vec3 &rot)
 {
-    m_cameraOrient = rot;
+    m_playerActor->setCameraOrient(rot);
 }
 
 float Zone::cameraDistance() const
 {
-    return m_cameraDistance;
+    return m_playerActor->cameraDistance();
 }
 
 void Zone::setCameraDistance(float dist)
 {
-    m_cameraDistance = dist;
+    m_playerActor->setCameraDistance(dist);
 }
 
 void Zone::setPlayerModel(WLDModel *model)
@@ -374,21 +360,24 @@ void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 {
     foreach(SoundTrigger *trigger, m_soundTriggers)
     {
-        if(trigger->bounds().contains(m_playerPos))
+        if(trigger->bounds().contains(playerPos()))
             triggers.append(trigger);
     }
 }
 
 void Zone::step(float distForward, float distSideways, float distUpDown)
 {
-    bool ghost = (m_cameraDistance < m_minDistanceToShowCharacter);
+    bool ghost = (cameraDistance() < m_game->minDistanceToShowCharacter());
     matrix4 m;
     if(ghost)
-        m = matrix4::rotate(m_cameraOrient.x, 1.0, 0.0, 0.0);
+        m = matrix4::rotate(cameraOrient().x, 1.0, 0.0, 0.0);
     else
         m.setIdentity();
-    m = m * matrix4::rotate(m_playerOrient, 0.0, 0.0, 1.0);
-    m_playerPos = m_playerPos + m.map(vec3(-distSideways, distForward, distUpDown));
+    m = m * matrix4::rotate(playerOrient(), 0.0, 0.0, 1.0);
+    
+    vec3 newPos = playerPos();
+    newPos = newPos + m.map(vec3(-distSideways, distForward, distUpDown));
+    setPlayerPos(newPos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

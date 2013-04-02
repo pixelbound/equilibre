@@ -127,6 +127,20 @@ public:
     WLDModel * model() const;
     void setModel(WLDModel *newModel);
     
+    float orientation() const;
+    void setLocation(const vec3 &newLocation);
+    void setOrientation(float newOrientation);
+    
+    // xyz angles that describe how the camera is oriented rel. to the player
+    const vec3 & cameraOrient() const;
+    void setCameraOrient(const vec3 &rot);
+    
+    float cameraDistance() const;
+    void setCameraDistance(float dist);
+    
+    bool hasCamera() const;
+    void setHasCamera(bool camera);
+    
     MaterialMap * materialMap() const;
     
     QString animName() const;
@@ -156,6 +170,9 @@ private:
     static QString slotName(EquipSlot slot);
 
     vec3 m_rotation, m_scale;
+    bool m_hasCamera;
+    vec3 m_cameraOrient; // XXX only X axis
+    float m_cameraDistance;
     WLDModel *m_model;
     QString m_animName;
     double m_animTime;

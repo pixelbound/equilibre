@@ -43,6 +43,7 @@ Game::Game()
     m_cullObjects = true;
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
+    m_minDistanceToShowCharacter = 1.0;
 }
 
 Game::~Game()
@@ -173,6 +174,11 @@ ZoneSky * Game::sky() const
 float Game::fogDensity() const
 {
     return m_showFog ? 0.003f : 0.0f;
+}
+
+float Game::minDistanceToShowCharacter() const
+{
+    return m_minDistanceToShowCharacter;
 }
 
 QList<ObjectPack *> Game::objectPacks() const

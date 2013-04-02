@@ -97,6 +97,9 @@ public:
     void clear(RenderContext *renderCtx);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(double currentTime);
+    
+    // XXX WLDCharActor player()
+    // XXX remove old camera accessors
 
     // xyz position of the player in the zone
     const vec3 & playerPos() const;
@@ -136,13 +139,7 @@ private:
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frozenFrustum;
-    // player and camera settings XXX replace by a WLDActor player
-    vec3 m_playerPos;
-    float m_playerOrient;
-    vec3 m_cameraOrient;
-    float m_cameraDistance;
     WLDCharActor *m_playerActor;
-    float m_minDistanceToShowCharacter;
 };
 
 /*!

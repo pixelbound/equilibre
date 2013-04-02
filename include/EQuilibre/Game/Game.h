@@ -63,6 +63,8 @@ public:
     
     float fogDensity() const;
     
+    float minDistanceToShowCharacter() const;
+    
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
@@ -103,6 +105,7 @@ private:
     bool m_cullObjects;
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
+    float m_minDistanceToShowCharacter;
 };
 
 /*!
