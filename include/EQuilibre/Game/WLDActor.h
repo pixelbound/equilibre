@@ -127,17 +127,12 @@ public:
     WLDModel * model() const;
     void setModel(WLDModel *newModel);
     
-    float orientation() const;
     void setLocation(const vec3 &newLocation);
     
     // x and z angles that describe where the character is looking at.
     vec3 lookOrient() const;
-    
-    void setOrientation(float newOrientation);
-    
-    // x angle that describes how the camera is oriented rel. to the player
-    float cameraOrient() const;
-    void setCameraOrient(float newOrientation);
+    void setLookOrientX(float newOrientation);
+    void setLookOrientZ(float newOrientation);
     
     float cameraDistance() const;
     void setCameraDistance(float dist);
@@ -178,7 +173,7 @@ private:
 
     vec3 m_rotation, m_scale;
     bool m_hasCamera;
-    float m_cameraOrient;
+    float m_lookOrientX;
     float m_cameraDistance;
     WLDModel *m_model;
     QString m_animName;

@@ -100,14 +100,9 @@ public:
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(double currentTime);
     
-    // XXX remove old camera accessors
     // PlayerActor class.
     // XXX cameraOrient -> playerLookX
 
-    // distance between the camera and the player
-    float cameraDistance() const;
-    void setCameraDistance(float dist);
-    
     void setPlayerModel(WLDModel *model);
     
     void freezeFrustum(RenderContext *renderCtx);

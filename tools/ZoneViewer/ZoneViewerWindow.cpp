@@ -396,8 +396,8 @@ void ZoneScene::mouseMoveEvent(QMouseEvent *e)
         float newX = (m_rotState.last.x - (dy * 1.0));
         float newZ = (m_rotState.last.z - (dx * 1.0));
         newX = qMin(qMax(newX, -85.0f), 85.0f);
-        zone->player()->setCameraOrient(newX);
-        zone->player()->setOrientation(newZ);
+        zone->player()->setLookOrientX(newX);
+        zone->player()->setLookOrientZ(newZ);
     }
 }
 

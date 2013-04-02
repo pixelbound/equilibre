@@ -201,7 +201,7 @@ void Zone::setPlayerViewFrustum(Frustum &frustum) const
     matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
         matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
-    vec3 camPos(0.0, -cameraDistance(), 0.0);
+    vec3 camPos(0.0, -m_playerActor->cameraDistance(), 0.0);
     camPos = viewMat.map(camPos);
     vec3 eye = m_playerActor->location() + camPos;
     frustum.setEye(eye);
@@ -294,16 +294,6 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     m_objects->resetVisible();
     
     renderCtx->popMatrix();
-}
-
-float Zone::cameraDistance() const
-{
-    return m_playerActor->cameraDistance();
-}
-
-void Zone::setCameraDistance(float dist)
-{
-    m_playerActor->setCameraDistance(dist);
 }
 
 void Zone::setPlayerModel(WLDModel *model)
