@@ -126,7 +126,6 @@ private:
     
     WLDCharActor *m_actor;
     QString m_meshName;
-    double m_started;
     vec3 m_delta;
     vec3 m_theta;
     float m_sigma;

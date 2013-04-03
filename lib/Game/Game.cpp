@@ -44,6 +44,7 @@ Game::Game()
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
     m_minDistanceToShowCharacter = 1.0;
+    m_movementStateX = m_movementStateY = 0;
 }
 
 Game::~Game()
@@ -159,6 +160,16 @@ bool Game::showSoundTriggers() const
 void Game::setShowSoundTriggers(bool show)
 {
     m_showSoundTriggers = show;
+}
+
+void Game::setMovementX(int movementX)
+{
+    m_movementStateX = movementX;
+}
+
+void Game::setMovementY(int movementY)
+{
+    m_movementStateY = movementY;
 }
 
 Zone * Game::zone() const
@@ -445,6 +456,39 @@ void Game::drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
             drawBuiltinObject(m_capsule, renderCtx, prog);
         }
     }
+}
+
+void Game::update(double timestamp, double sinceLastUpdate)
+{
+    updateMovement(timestamp, sinceLastUpdate);
+    if(m_zone)
+    {
+        m_zone->update(timestamp);
+    }
+}
+
+void Game::updateMovement(double t, double dt)
+{
+    const float playerVelocity = 25.0;
+    float dist = (playerVelocity * dt);
+    vec3 delta;
+    if(m_movementStateX > 0)
+    {
+        delta.x += dist; 
+    }
+    else if(m_movementStateX < 0)
+    {
+        delta.x -= dist; 
+    }
+    if(m_movementStateY > 0)
+    {
+        delta.y += dist; 
+    }
+    else if(m_movementStateY < 0)
+    {
+        delta.y -= dist; 
+    }
+    stepPlayer(delta.y, delta.x, 0.0f);
 }
 
 void Game::stepPlayer(float distForward, float distSideways, float distUpDown)

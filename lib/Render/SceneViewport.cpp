@@ -200,6 +200,17 @@ void SceneViewport::updateAnimationState()
     }
 }
 
+void SceneViewport::keyPressEvent(QKeyEvent *e)
+{
+    m_scene->keyPressEvent(e);
+    //if(!e->isAccepted())
+    {
+        QGLWidget::keyPressEvent(e);
+        //return;
+    }
+    update();
+}
+
 void SceneViewport::keyReleaseEvent(QKeyEvent *e)
 {
     m_scene->keyReleaseEvent(e);

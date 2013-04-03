@@ -61,6 +61,9 @@ public:
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
     
+    void setMovementX(int movementX);
+    void setMovementY(int movementY);
+    
     float fogDensity() const;
     
     float minDistanceToShowCharacter() const;
@@ -85,6 +88,8 @@ public:
     WLDModel * findCharacter(QString name);
     WLDModel * findCharacter(QString name, RenderContext *renderCtx);
     
+    void update(double timestamp, double sinceLastUpdate);
+    
     void stepPlayer(float distForward, float distSideways, float distUpDown);
     
     void drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
@@ -93,6 +98,7 @@ public:
                            RenderProgram *prog);
 
 private:
+    void updateMovement(double t, double dt);
     MeshData *loadBuiltinSTLMesh(QString path);
 
     QList<ObjectPack *> m_objectPacks;
@@ -110,6 +116,12 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     float m_minDistanceToShowCharacter;
+    // Current movement state for the X axis.
+    // Negative means moving left, positive moving right, zero not moving.
+    int m_movementStateX;
+    // Current movement state for the Y axis.
+    // Negative means moving backward, positive moving forward, zero not moving.
+    int m_movementStateY;
 };
 
 /*!

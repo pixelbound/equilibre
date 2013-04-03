@@ -70,6 +70,11 @@ void Scene::update(double /*timestamp*/)
 {
 }
 
+void Scene::keyPressEvent(QKeyEvent *e)
+{
+    e->ignore();
+}
+
 void Scene::keyReleaseEvent(QKeyEvent *e)
 {
     e->ignore();

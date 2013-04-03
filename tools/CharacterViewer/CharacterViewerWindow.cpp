@@ -372,7 +372,6 @@ void CharacterScene::setSelectedModelName(QString name)
 
 void CharacterScene::init()
 {
-    m_started = currentTime();
     foreach(CharacterPack *charPack, m_game->characterPacks())
         charPack->upload(m_renderCtx);
     foreach(ObjectPack *objPack, m_game->objectPacks())

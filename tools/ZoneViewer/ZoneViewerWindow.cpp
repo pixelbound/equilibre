@@ -302,9 +302,9 @@ void ZoneScene::init()
 
 void ZoneScene::update(double timestamp)
 {
-    Zone *zone = m_game->zone();
-    if(zone)
-        zone->update(timestamp);
+    double sinceLastUpdate = timestamp - m_lastTimestamp;
+    m_game->update(timestamp, sinceLastUpdate);
+    m_lastTimestamp = timestamp;
 }
 
 void ZoneScene::draw()
@@ -355,31 +355,46 @@ void ZoneScene::drawFrame()
     }
 }
 
-void ZoneScene::keyReleaseEvent(QKeyEvent *e)
+void ZoneScene::keyPressEvent(QKeyEvent *e)
 {
-    const float dist = 10.0;
-    bool doStep = false;
-    vec3 stepDist;
+    int newMovementX = 0;
+    int newMovementY = 0;
     int key = e->key();
     if(key == Qt::Key_A)
     {
-        stepDist = vec3(0.0, dist, 0.0);
-        doStep = true;
+        newMovementX = 1;
     }
     else if(key == Qt::Key_D)
     {
-        stepDist = vec3(0.0, -dist, 0.0);
-        doStep = true;
+        newMovementX = -1;
     }
     else if(key == Qt::Key_W)
     {
-        stepDist = vec3(dist, 0.0, 0.0);
-        doStep = true;
+        newMovementY = 1;
     }
     else if(key == Qt::Key_S)
     {
-        stepDist = vec3(-dist, 0.0, 0.0);
-        doStep = true;
+        newMovementY = -1;
+    }
+    
+    if(newMovementX)
+        m_game->setMovementX(newMovementX);
+    if(newMovementY)
+        m_game->setMovementY(newMovementY);
+}
+
+void ZoneScene::keyReleaseEvent(QKeyEvent *e)
+{
+    bool releaseX = false;
+    bool releaseY = false;
+    int key = e->key();
+    if((key == Qt::Key_A) || (key == Qt::Key_D))
+    {
+        releaseX = !e->isAutoRepeat();
+    }
+    else if((key == Qt::Key_W) || (key == Qt::Key_S))
+    {
+        releaseY = !e->isAutoRepeat();
     }
     else if(key == Qt::Key_Space)
     {
@@ -389,8 +404,10 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
             m_game->freezeFrustum(m_renderCtx);
     }
     
-    if(doStep)
-        m_game->stepPlayer(stepDist.x, stepDist.y, stepDist.z);
+    if(releaseX)
+        m_game->setMovementX(0);
+    if(releaseY)
+        m_game->setMovementY(0);
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)

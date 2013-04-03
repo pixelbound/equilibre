@@ -54,6 +54,7 @@ public:
     virtual void update(double timestamp);
     virtual void draw() = 0;
 
+    virtual void keyPressEvent(QKeyEvent *e);
     virtual void keyReleaseEvent(QKeyEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *e);
     virtual void mousePressEvent(QMouseEvent *e);

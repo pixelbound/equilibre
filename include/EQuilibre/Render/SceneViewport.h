@@ -55,6 +55,7 @@ protected:
     virtual void initializeGL();
     virtual void resizeGL(int width, int height);
     virtual void paintEvent(QPaintEvent *e);
+    virtual void keyPressEvent(QKeyEvent *e);
     virtual void keyReleaseEvent(QKeyEvent *e);
     virtual void mouseMoveEvent(QMouseEvent *e);
     virtual void mousePressEvent(QMouseEvent *e);
