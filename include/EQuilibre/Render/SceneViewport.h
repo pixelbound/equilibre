@@ -27,6 +27,7 @@
 #endif
 
 class QTimer;
+class QElapsedTimer;
 class QPainter;
 class QGLFormat;
 class Scene;
@@ -74,6 +75,7 @@ private:
     Scene *m_scene;
     RenderContext *m_renderCtx;
     QTimer *m_renderTimer;
+    QElapsedTimer *m_gameTimer;
     bool m_animate;
 
     // Stats

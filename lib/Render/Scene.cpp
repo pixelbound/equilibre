@@ -66,6 +66,10 @@ void Scene::init()
 {
 }
 
+void Scene::update(double /*timestamp*/)
+{
+}
+
 void Scene::keyReleaseEvent(QKeyEvent *e)
 {
     e->ignore();

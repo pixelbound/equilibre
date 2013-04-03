@@ -16,6 +16,7 @@
 
 #include <cmath>
 #include <GL/glew.h>
+#include <QElapsedTimer>
 #include <QTimer>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -33,6 +34,7 @@ SceneViewport::SceneViewport(Scene *scene, RenderContext *renderCtx, QWidget *pa
     setMinimumSize(640, 480);
     m_scene = scene;
     m_renderCtx = renderCtx;
+    m_gameTimer = new QElapsedTimer();
     m_renderTimer = new QTimer(this);
     m_renderTimer->setInterval(0);
     m_statsTimer = new QTimer(this);
@@ -47,6 +49,7 @@ SceneViewport::SceneViewport(Scene *scene, RenderContext *renderCtx, QWidget *pa
 
 SceneViewport::~SceneViewport()
 {
+    delete m_gameTimer;
 }
 
 void SceneViewport::initializeGL()
@@ -70,6 +73,7 @@ void SceneViewport::initializeGL()
     
     m_renderCtx->init();
     m_scene->init();
+    m_gameTimer->start();
     emit initialized();
 }
 
@@ -85,6 +89,8 @@ void SceneViewport::paintEvent(QPaintEvent *)
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_begin_v3(m_traceDomain, NULL); 
 #endif
+    double currentTimestamp = (double)m_gameTimer->elapsed() * 0.001;
+    m_scene->update(currentTimestamp);
     m_scene->draw();
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_end_v3(m_traceDomain, NULL); 

@@ -90,6 +90,7 @@ public:
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
+    // PlayerActor class.
     WLDCharActor * player() const;
     
     bool load(QString path, QString name);
@@ -100,9 +101,6 @@ public:
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(double currentTime);
     
-    // PlayerActor class.
-    // XXX cameraOrient -> playerLookX
-
     void setPlayerModel(WLDModel *model);
     
     void freezeFrustum(RenderContext *renderCtx);

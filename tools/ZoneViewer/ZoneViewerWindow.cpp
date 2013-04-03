@@ -251,6 +251,7 @@ ZoneScene::ZoneScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_lightingMode = (int)RenderProgram::NoLighting;
     m_rotState.last = vec3();
     m_rotState.active = false;
+    m_lastTimestamp = 0.0;
 }
 
 Game * ZoneScene::game() const
@@ -295,8 +296,15 @@ void ZoneScene::showSoundTriggers(bool show)
 
 void ZoneScene::init()
 {
-    m_started = currentTime();
+    m_lastTimestamp = 0.0;
     m_renderCtx->viewFrustum().setFarPlane(2000.0);
+}
+
+void ZoneScene::update(double timestamp)
+{
+    Zone *zone = m_game->zone();
+    if(zone)
+        zone->update(timestamp);
 }
 
 void ZoneScene::draw()
@@ -325,7 +333,6 @@ void ZoneScene::drawFrame()
     Frustum &viewFrustum = m_renderCtx->viewFrustum();
     m_renderCtx->matrix(RenderContext::Projection) = viewFrustum.projection();
     m_program->setLightingMode((RenderProgram::LightingMode)m_lightingMode);
-    zone->update(currentTime());
     zone->draw(m_renderCtx, m_program);
     
     ZoneTerrain *terrain = zone->terrain();

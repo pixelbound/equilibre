@@ -84,6 +84,7 @@ public:
     void setLightingMode(int newMode);
 
     virtual void init();
+    virtual void update(double timestamp);
     virtual void draw();
     
     virtual void keyReleaseEvent(QKeyEvent *e);
@@ -102,7 +103,7 @@ public slots:
 private:
     void drawFrame();
     
-    double m_started;
+    double m_lastTimestamp;
     Game *m_game;
     MouseState m_rotState;
     RenderProgram *m_program;

@@ -51,6 +51,7 @@ public:
     virtual void clearLog();
 
     virtual void init();
+    virtual void update(double timestamp);
     virtual void draw() = 0;
 
     virtual void keyReleaseEvent(QKeyEvent *e);
