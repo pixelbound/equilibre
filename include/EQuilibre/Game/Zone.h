@@ -101,15 +101,12 @@ public:
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(double currentTime);
     
-    void setPlayerModel(WLDModel *model);
-    
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
     void currentSoundTriggers(QVector<SoundTrigger *> &triggers) const;
 
 private:
-    void setPlayerViewFrustum(Frustum &frustum) const;
     bool importLightSources(PFSArchive *archive);
     static void frustumCullingCallback(WLDActor *actor, void *user);
 
@@ -124,7 +121,6 @@ private:
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frozenFrustum;
-    WLDCharActor *m_playerActor;
 };
 
 /*!

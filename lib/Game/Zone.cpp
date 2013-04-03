@@ -39,7 +39,6 @@ Zone::Zone(Game *game)
     m_terrain = NULL;
     m_objects = NULL;
     m_actorTree = NULL;
-    m_playerActor = NULL;
 }
 
 Zone::~Zone()
@@ -84,7 +83,7 @@ void Zone::setInfo(const ZoneInfo &info)
 
 WLDCharActor * Zone::player() const
 {
-    return m_playerActor;
+    return m_game->player();
 }
 
 bool Zone::load(QString path, QString name)
@@ -130,10 +129,6 @@ bool Zone::load(QString path, QString name)
     // Load the zone's sound triggers.
     QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
     SoundTrigger::fromFile(m_soundTriggers, triggersFile);
-    
-    // Create an actor for the player.
-    m_playerActor = new WLDCharActor(NULL);
-    m_playerActor->setHasCamera(true);
     return true;
 }
 
@@ -164,8 +159,6 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
-    delete m_playerActor;
-    m_playerActor = NULL;
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -193,21 +186,6 @@ void Zone::clear(RenderContext *renderCtx)
     m_actorTree = NULL;
     m_mainWld = 0;
     m_mainArchive = 0;
-}
-
-void Zone::setPlayerViewFrustum(Frustum &frustum) const
-{
-    vec3 rot = m_playerActor->lookOrient();
-    matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
-        matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
-        matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
-    vec3 camPos(0.0, -m_playerActor->cameraDistance(), 0.0);
-    camPos = viewMat.map(camPos);
-    vec3 eye = m_playerActor->location() + camPos;
-    frustum.setEye(eye);
-    frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
-    frustum.setUp(vec3(0.0, 0.0, 1.0));
-    frustum.update();
 }
 
 void Zone::frustumCullingCallback(WLDActor *actor, void *user)
@@ -250,7 +228,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         sky->draw(renderCtx, prog, this);
     
     Frustum &frustum = renderCtx->viewFrustum();
-    setPlayerViewFrustum(frustum);
+    m_game->player()->calculateViewFrustum(frustum);
     renderCtx->pushMatrix();
     renderCtx->multiplyMatrix(frustum.camera());
     
@@ -288,7 +266,7 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     }
     
     // Draw the character, if it is in view.
-    m_game->drawPlayer(m_playerActor, renderCtx, prog);
+    m_game->drawPlayer(renderCtx, prog);
     
     m_terrain->resetVisible();
     m_objects->resetVisible();
@@ -296,26 +274,18 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->popMatrix();
 }
 
-void Zone::setPlayerModel(WLDModel *model)
-{
-    m_playerActor->setModel(model);
-    if(model)
-    {
-        m_playerActor->setAnimName("P01");
-    }
-}
-
 void Zone::freezeFrustum(RenderContext *renderCtx)
 {
     m_frozenFrustum = renderCtx->viewFrustum();
-    setPlayerViewFrustum(m_frozenFrustum);
+    m_game->player()->calculateViewFrustum(m_frozenFrustum);
 }
 
 void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 {
+    vec3 playerPos = m_game->player()->location();
     foreach(SoundTrigger *trigger, m_soundTriggers)
     {
-        if(trigger->bounds().contains(m_playerActor->location()))
+        if(trigger->bounds().contains(playerPos))
             triggers.append(trigger);
     }
 }

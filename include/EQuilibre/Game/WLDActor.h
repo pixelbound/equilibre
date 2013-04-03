@@ -167,6 +167,7 @@ public:
     
     void calculateStep(vec3 &position, float distForward, float distSideways,
                        float distUpDown, bool ghost);
+    void calculateViewFrustum(Frustum &frustum) const;
 
 private:
     static QString slotName(EquipSlot slot);

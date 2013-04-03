@@ -71,6 +71,7 @@ public:
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
     
+    WLDCharActor * player() const;
     Zone * zone() const;
     ZoneSky * sky() const;
     QList<ObjectPack *> objectPacks() const;
@@ -88,10 +89,11 @@ public:
     WLDModel * findCharacter(QString name);
     WLDModel * findCharacter(QString name, RenderContext *renderCtx);
     
+    void setPlayerModel(WLDModel *model);
+    
     void update(double currentTime, double sinceLastUpdate);
     
-    void drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
-                    RenderProgram *prog);
+    void drawPlayer(RenderContext *renderCtx, RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
 
@@ -115,6 +117,7 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     float m_minDistanceToShowCharacter;
+    WLDCharActor *m_player;
     // Duration between the newest movement tick and the current frame.
     double m_movementAheadTime;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.

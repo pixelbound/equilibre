@@ -183,7 +183,7 @@ bool ZoneViewerWindow::loadZone(QString path, QString name)
         return false;
     }
     WLDModel *playerModel = game->findCharacter("ELM", m_renderCtx);
-    game->zone()->setPlayerModel(playerModel);
+    game->setPlayerModel(playerModel);
     return true;
 }
 
@@ -325,7 +325,7 @@ void ZoneScene::drawFrame()
     if(!zone)
         return;
     
-    vec3 playerPos = zone->player()->location();
+    vec3 playerPos = m_game->player()->location();
     log(QString("%1 %2 %3")
         .arg(playerPos.x, 0, 'f', 2)
         .arg(playerPos.y, 0, 'f', 2)
@@ -412,28 +412,26 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)
 {
-    Zone *zone = m_game->zone();
-    if(m_rotState.active && zone)
+    if(m_rotState.active)
     {
         int dx = m_rotState.x0 - e->x();
         int dy = m_rotState.y0 - e->y();
         float newX = (m_rotState.last.x - (dy * 1.0));
         float newZ = (m_rotState.last.z - (dx * 1.0));
         newX = qMin(qMax(newX, -85.0f), 85.0f);
-        zone->player()->setLookOrientX(newX);
-        zone->player()->setLookOrientZ(newZ);
+        m_game->player()->setLookOrientX(newX);
+        m_game->player()->setLookOrientZ(newZ);
     }
 }
 
 void ZoneScene::mousePressEvent(QMouseEvent *e)
 {
-    Zone *zone = m_game->zone();
-    if((e->button() & Qt::RightButton) && zone)
+    if(e->button() & Qt::RightButton)
     {
         m_rotState.active = true;
         m_rotState.x0 = e->x();
         m_rotState.y0 = e->y();
-        m_rotState.last = zone->player()->lookOrient();
+        m_rotState.last = m_game->player()->lookOrient();
     }
 }
 
@@ -445,9 +443,8 @@ void ZoneScene::mouseReleaseEvent(QMouseEvent *e)
 
 void ZoneScene::wheelEvent(QWheelEvent *e)
 {
-    Zone *zone = m_game->zone();
-    float distance = zone->player()->cameraDistance();
+    float distance = m_game->player()->cameraDistance();
     float delta = (e->delta() * 0.01);
     distance = qMax(distance - delta, 0.0f);
-    zone->player()->setCameraDistance(distance);
+    m_game->player()->setCameraDistance(distance);
  }

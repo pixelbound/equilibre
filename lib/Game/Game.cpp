@@ -32,6 +32,7 @@
 
 Game::Game()
 {
+    m_player = new WLDCharActor(NULL);
     m_zone = NULL;
     m_sky = NULL;
     m_builtinObjects = NULL;
@@ -51,6 +52,7 @@ Game::Game()
 Game::~Game()
 {
     clear(NULL);
+    delete m_player;
 }
 
 void Game::clear(RenderContext *renderCtx)
@@ -75,6 +77,8 @@ void Game::clear(RenderContext *renderCtx)
         pack->clear(renderCtx);
         delete pack;
     }
+    m_player->setModel(NULL);
+    m_player->setHasCamera(false);
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -173,6 +177,11 @@ void Game::setMovementY(int movementY)
     m_movementStateY = movementY;
 }
 
+WLDCharActor *  Game::player() const
+{
+    return m_player;   
+}
+
 Zone * Game::zone() const
 {
     return m_zone;
@@ -237,7 +246,8 @@ Zone * Game::loadZone(QString path, QString name)
         m_zone->setInfo(info);
         initialPos = info.safePos;
     }
-    m_zone->player()->setLocation(initialPos);
+    m_player->setLocation(initialPos);
+    m_player->setHasCamera(true);
     m_currentPosition = m_previousPosition = initialPos;
     return zone;
 }
@@ -444,19 +454,27 @@ void Game::drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
     prog->endDrawMesh();
 }
 
-void Game::drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
-                      RenderProgram *prog)
+void Game::drawPlayer(RenderContext *renderCtx, RenderProgram *prog)
 {
-    if(player->cameraDistance() > m_minDistanceToShowCharacter)
+    if(m_player->cameraDistance() > m_minDistanceToShowCharacter)
     {
-        if(player->model())
+        if(m_player->model())
         {
-            player->draw(renderCtx, prog);
+            m_player->draw(renderCtx, prog);
         }
         else if(m_capsule)
         {
             drawBuiltinObject(m_capsule, renderCtx, prog);
         }
+    }
+}
+
+void Game::setPlayerModel(WLDModel *model)
+{
+    m_player->setModel(model);
+    if(model)
+    {
+        m_player->setAnimName("P01");
     }
 }
 
@@ -471,26 +489,20 @@ void Game::update(double currentTime, double sinceLastUpdate)
 
 void Game::updateMovement(double sinceLastUpdate)
 {
-    WLDCharActor *player = m_zone ? m_zone->player() : NULL;
-    if(!player)
-    {
-        return;
-    }
-    
     // Calculate the next player position using fixed-duration ticks.
     const double tick = (1.0 / 30.0); // 30 movement ticks per second
     m_movementAheadTime += sinceLastUpdate;
     while(m_movementAheadTime > tick)
     {
         m_previousPosition = m_currentPosition;
-        updatePlayerPosition(player, m_currentPosition, tick);
+        updatePlayerPosition(m_player, m_currentPosition, tick);
         m_movementAheadTime -= tick;
     }
     
     // Interpolate the position since we calculated it too far in the future.
     double alpha = (m_movementAheadTime / tick);
     vec3 newPosition = (m_currentPosition * alpha) + (m_previousPosition * (1.0 - alpha));
-    player->setLocation(newPosition);
+    m_player->setLocation(newPosition);
 }
 
 void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)

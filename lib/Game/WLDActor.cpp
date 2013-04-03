@@ -340,6 +340,21 @@ void WLDCharActor::calculateStep(vec3 &position, float distForward,
     position = position + m.map(vec3(-distSideways, distForward, distUpDown));
 }
 
+void WLDCharActor::calculateViewFrustum(Frustum &frustum) const
+{
+    vec3 rot = lookOrient();
+    matrix4 viewMat = matrix4::rotate(rot.x, 1.0, 0.0, 0.0) *
+        matrix4::rotate(rot.y, 0.0, 1.0, 0.0) *
+        matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
+    vec3 camPos(0.0, -m_cameraDistance, 0.0);
+    camPos = viewMat.map(camPos);
+    vec3 eye = m_location + camPos;
+    frustum.setEye(eye);
+    frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
+    frustum.setUp(vec3(0.0, 0.0, 1.0));
+    frustum.update();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 WLDLightActor::WLDLightActor(LightSourceFragment *frag, uint16_t lightID) : WLDActor(Kind)
