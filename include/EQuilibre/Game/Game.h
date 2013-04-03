@@ -90,15 +90,13 @@ public:
     
     void update(double timestamp, double sinceLastUpdate);
     
-    void stepPlayer(float distForward, float distSideways, float distUpDown);
-    
     void drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
                     RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
 
 private:
-    void updateMovement(double t, double dt);
+    void updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt);
     MeshData *loadBuiltinSTLMesh(QString path);
 
     QList<ObjectPack *> m_objectPacks;

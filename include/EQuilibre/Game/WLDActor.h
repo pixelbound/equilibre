@@ -165,8 +165,8 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
-    void step(float distForward, float distSideways, float distUpDown,
-              bool ghost);
+    void calculateStep(vec3 &position, float distForward, float distSideways,
+                       float distUpDown, bool ghost);
 
 private:
     static QString slotName(EquipSlot slot);

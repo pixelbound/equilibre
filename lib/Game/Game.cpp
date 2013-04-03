@@ -460,14 +460,21 @@ void Game::drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
 
 void Game::update(double timestamp, double sinceLastUpdate)
 {
-    updateMovement(timestamp, sinceLastUpdate);
+    WLDCharActor *player = m_zone ? m_zone->player() : NULL;
+    if(player)
+    {
+        vec3 position = player->location();
+        updatePlayerPosition(player, position, sinceLastUpdate);
+        player->setLocation(position);
+    }
+    
     if(m_zone)
     {
         m_zone->update(timestamp);
     }
 }
 
-void Game::updateMovement(double t, double dt)
+void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
 {
     const float playerVelocity = 25.0;
     float dist = (playerVelocity * dt);
@@ -488,17 +495,9 @@ void Game::updateMovement(double t, double dt)
     {
         delta.y -= dist; 
     }
-    stepPlayer(delta.y, delta.x, 0.0f);
-}
-
-void Game::stepPlayer(float distForward, float distSideways, float distUpDown)
-{
-    WLDCharActor *player = m_zone ? m_zone->player() : NULL;
-    if(player)
-    {
-        bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
-        player->step(distForward, distSideways, distUpDown, ghost);
-    }
+    
+    bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
+    player->calculateStep(position, delta.y, delta.x, 0.0f, ghost);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
