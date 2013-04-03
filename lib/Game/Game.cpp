@@ -44,6 +44,7 @@ Game::Game()
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
     m_minDistanceToShowCharacter = 1.0;
+    m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
 }
 
@@ -237,6 +238,7 @@ Zone * Game::loadZone(QString path, QString name)
         initialPos = info.safePos;
     }
     m_zone->player()->setLocation(initialPos);
+    m_currentPosition = m_previousPosition = initialPos;
     return zone;
 }
 
@@ -458,20 +460,37 @@ void Game::drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
     }
 }
 
-void Game::update(double timestamp, double sinceLastUpdate)
+void Game::update(double currentTime, double sinceLastUpdate)
 {
-    WLDCharActor *player = m_zone ? m_zone->player() : NULL;
-    if(player)
-    {
-        vec3 position = player->location();
-        updatePlayerPosition(player, position, sinceLastUpdate);
-        player->setLocation(position);
-    }
-    
+    updateMovement(sinceLastUpdate);
     if(m_zone)
     {
-        m_zone->update(timestamp);
+        m_zone->update(currentTime);
     }
+}
+
+void Game::updateMovement(double sinceLastUpdate)
+{
+    WLDCharActor *player = m_zone ? m_zone->player() : NULL;
+    if(!player)
+    {
+        return;
+    }
+    
+    // Calculate the next player position using fixed-duration ticks.
+    const double tick = (1.0 / 30.0); // 30 movement ticks per second
+    m_movementAheadTime += sinceLastUpdate;
+    while(m_movementAheadTime > tick)
+    {
+        m_previousPosition = m_currentPosition;
+        updatePlayerPosition(player, m_currentPosition, tick);
+        m_movementAheadTime -= tick;
+    }
+    
+    // Interpolate the position since we calculated it too far in the future.
+    double alpha = (m_movementAheadTime / tick);
+    vec3 newPosition = (m_currentPosition * alpha) + (m_previousPosition * (1.0 - alpha));
+    player->setLocation(newPosition);
 }
 
 void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)

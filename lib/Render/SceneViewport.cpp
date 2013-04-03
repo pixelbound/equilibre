@@ -89,7 +89,7 @@ void SceneViewport::paintEvent(QPaintEvent *)
 #ifdef USE_VTUNE_PROFILER
     __itt_frame_begin_v3(m_traceDomain, NULL); 
 #endif
-    double currentTimestamp = (double)m_gameTimer->elapsed() * 0.001;
+    double currentTimestamp = (double)m_gameTimer->nsecsElapsed() * 0.000000001;
     m_scene->update(currentTimestamp);
     m_scene->draw();
 #ifdef USE_VTUNE_PROFILER

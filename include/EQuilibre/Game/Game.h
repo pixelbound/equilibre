@@ -88,7 +88,7 @@ public:
     WLDModel * findCharacter(QString name);
     WLDModel * findCharacter(QString name, RenderContext *renderCtx);
     
-    void update(double timestamp, double sinceLastUpdate);
+    void update(double currentTime, double sinceLastUpdate);
     
     void drawPlayer(WLDCharActor *player, RenderContext *renderCtx,
                     RenderProgram *prog);
@@ -96,6 +96,7 @@ public:
                            RenderProgram *prog);
 
 private:
+    void updateMovement(double sinceLastUpdate);
     void updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt);
     MeshData *loadBuiltinSTLMesh(QString path);
 
@@ -114,6 +115,11 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     float m_minDistanceToShowCharacter;
+    // Duration between the newest movement tick and the current frame.
+    double m_movementAheadTime;
+    // XXX Extend this to camera settings so that moving the camera isn't choppy.
+    vec3 m_currentPosition;
+    vec3 m_previousPosition;
     // Current movement state for the X axis.
     // Negative means moving left, positive moving right, zero not moving.
     int m_movementStateX;
