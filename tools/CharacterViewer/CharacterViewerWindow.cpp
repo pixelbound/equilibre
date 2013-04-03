@@ -182,7 +182,7 @@ void CharacterViewerWindow::loadPalette(QString name)
 
 void CharacterViewerWindow::loadAnimation(QString animName)
 {
-    m_scene->actor()->setAnimName(animName);
+    m_scene->setSelectedAnimName(animName);
     updateLists();
 }
 
@@ -263,7 +263,7 @@ void CharacterViewerWindow::updateLists()
             m_paletteText->addItem(skin->name());
         m_actorText->setCurrentIndex(m_actorText->findText(m_scene->selectedModelName()));
         m_paletteText->setCurrentIndex(m_paletteText->findText(m_scene->actor()->paletteName()));
-        m_animationText->setCurrentIndex(m_animationText->findText(m_scene->actor()->animName()));
+        m_animationText->setCurrentIndex(m_animationText->findText(m_scene->selectedAnimName()));
     }
     m_actorText->setEnabled(m_actorText->count() > 1);
     m_animationText->setEnabled(m_animationText->count() > 1);
@@ -356,6 +356,18 @@ QString CharacterScene::selectedModelName() const
     return m_meshName;
 }
 
+QString CharacterScene::selectedAnimName() const
+{
+    return m_animName;
+}
+
+void CharacterScene::setSelectedAnimName(QString newName)
+{
+    m_animName = newName;
+    if(m_actor->model())
+        m_actor->setAnimation(m_actor->findAnimation(newName));
+}
+
 WLDCharActor * CharacterScene::actor() const
 {
     return m_actor;
@@ -366,7 +378,7 @@ void CharacterScene::setSelectedModelName(QString name)
     WLDModel *model = m_game->findCharacter(name, m_renderCtx);
     m_actor->setModel(model);
     m_actor->setPaletteName("00");
-    m_actor->setAnimName("POS");
+    setSelectedAnimName("POS");
     m_meshName = name;
 }
 

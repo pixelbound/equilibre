@@ -126,13 +126,13 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
 {
     m_model = NULL;
     m_materialMap = NULL;
+    m_animation = NULL;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
-    m_animName = "POS";
     m_animTime = 0;
     m_palName = "00";
     setModel(model);
@@ -211,14 +211,14 @@ MaterialMap * WLDCharActor::materialMap() const
     return m_materialMap;
 }
 
-QString WLDCharActor::animName() const
+WLDAnimation * WLDCharActor::animation() const
 {
-    return m_animName;
+    return m_animation;   
 }
 
-void WLDCharActor::setAnimName(QString name)
+void WLDCharActor::setAnimation(WLDAnimation *newAnim)
 {
-    m_animName = name;
+    m_animation = newAnim;
 }
 
 double WLDCharActor::animTime() const
@@ -244,12 +244,9 @@ void WLDCharActor::setPaletteName(QString palName)
 bool WLDCharActor::addEquip(WLDCharActor::EquipSlot slot, WLDMesh *mesh, MaterialArray *materials)
 {
     QString name = slotName(slot);
-    if(name.isEmpty() || !m_model->skeleton())
+    if(name.isEmpty() || !m_animation)
         return false;
-    WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
-    if(!anim)
-        return false;
-    int trackIndex = anim->findTrack(name);
+    int trackIndex = m_animation->findTrack(name);
     if(trackIndex < 0)
         return false;
     ActorEquip eq;
@@ -283,6 +280,15 @@ void WLDCharActor::setSkin(uint32_t skinID)
     m_model->mainMesh()->palette()->makeSkinMap(skinID, m_materialMap);
 }
 
+WLDAnimation * WLDCharActor::findAnimation(QString animName)
+{
+    if(!m_model || !m_model->skeleton())
+    {
+        return NULL;
+    }
+    return m_model->skeleton()->animations().value(animName);
+}
+
 void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_model)
@@ -291,12 +297,8 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
     if(!skin)
         return;
     QVector<BoneTransform> bones;
-    if(m_model->skeleton())
-    {
-        WLDAnimation *anim = m_model->skeleton()->animations().value(m_animName);
-        if(anim)
-            bones = anim->transformationsAtTime(m_animTime);
-    }
+    if(m_animation)
+        bones = m_animation->transformationsAtTime(m_animTime);
 
     renderCtx->pushMatrix();
     renderCtx->translate(m_location.x, m_location.y, m_location.z);

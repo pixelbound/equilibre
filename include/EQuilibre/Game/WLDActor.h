@@ -31,6 +31,7 @@ class LightSourceFragment;
 class WLDModel;
 class WLDMesh;
 class WLDActor;
+class WLDAnimation;
 class MaterialMap;
 class RenderContext;
 class Octree;
@@ -142,8 +143,8 @@ public:
     
     MaterialMap * materialMap() const;
     
-    QString animName() const;
-    void setAnimName(QString name);
+    WLDAnimation * animation() const;
+    void setAnimation(WLDAnimation *newAnim);
 
     double animTime() const;
     void setAnimTime(double newTime);
@@ -162,6 +163,7 @@ public:
     };
 
     bool addEquip(EquipSlot slot, WLDMesh *actor, MaterialArray *materials);
+    WLDAnimation * findAnimation(QString animName);
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
@@ -178,7 +180,7 @@ private:
     float m_lookOrientZ;
     float m_cameraDistance;
     WLDModel *m_model;
-    QString m_animName;
+    WLDAnimation *m_animation;
     double m_animTime;
     QString m_palName;
     MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray

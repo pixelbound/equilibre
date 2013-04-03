@@ -32,6 +32,7 @@ class ObjectPack;
 class PFSArchive;
 class Zone;
 class ZoneSky;
+class WLDAnimation;
 class WLDCharActor;
 class WLDMesh;
 class WLDData;
@@ -118,6 +119,9 @@ private:
     bool m_frustumIsFrozen;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
+    WLDAnimation *m_playerIdleAnim;
+    WLDAnimation *m_playerRunningAnim;
+    double m_startAnimationTime;
     // Duration between the newest movement tick and the current frame.
     double m_movementAheadTime;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.

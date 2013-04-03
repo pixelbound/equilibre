@@ -104,6 +104,8 @@ public:
     void setSkinningMode(SkinningMode newMode);
     
     QString selectedModelName() const;
+    QString selectedAnimName() const;
+    void setSelectedAnimName(QString newName);
     
     WLDCharActor * actor() const;
     
@@ -126,6 +128,7 @@ private:
     
     WLDCharActor *m_actor;
     QString m_meshName;
+    QString m_animName;
     vec3 m_delta;
     vec3 m_theta;
     float m_sigma;

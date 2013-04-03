@@ -33,6 +33,9 @@
 Game::Game()
 {
     m_player = new WLDCharActor(NULL);
+    m_playerIdleAnim = NULL;
+    m_playerRunningAnim = NULL;
+    m_startAnimationTime = 0.0;
     m_zone = NULL;
     m_sky = NULL;
     m_builtinObjects = NULL;
@@ -79,6 +82,8 @@ void Game::clear(RenderContext *renderCtx)
     }
     m_player->setModel(NULL);
     m_player->setHasCamera(false);
+    m_playerIdleAnim = NULL;
+    m_playerRunningAnim = NULL;
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -474,13 +479,37 @@ void Game::setPlayerModel(WLDModel *model)
     m_player->setModel(model);
     if(model)
     {
-        m_player->setAnimName("P01");
+        m_playerIdleAnim = m_player->findAnimation("P01");
+        m_playerRunningAnim = m_player->findAnimation("L02");
     }
 }
 
 void Game::update(double currentTime, double sinceLastUpdate)
 {
     updateMovement(sinceLastUpdate);
+    
+    // Update the player's animation.
+    if(m_player->model())
+    {
+        WLDAnimation *oldAnimation = m_player->animation();
+        WLDAnimation *newAnimation = oldAnimation;
+        if(m_movementStateX || m_movementStateY)
+        {
+            newAnimation = m_playerRunningAnim;
+        }
+        else
+        {
+            newAnimation = m_playerIdleAnim;
+        }
+        
+        if(oldAnimation != newAnimation)
+        {
+            m_player->setAnimation(newAnimation);
+            m_startAnimationTime = currentTime;
+        }
+        m_player->setAnimTime(currentTime - m_startAnimationTime);
+    }
+    
     if(m_zone)
     {
         m_zone->update(currentTime);
