@@ -1,4 +1,7 @@
 subdirs(CharacterViewer)
 subdirs(ZoneViewer)
 subdirs(ssplayer)
-subdirs(play_wav)
+if(UNIX)
+    # Do not require SDL on Windows yet.
+    subdirs(play_wav)
+endif(UNIX)
