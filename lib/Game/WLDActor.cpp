@@ -19,6 +19,7 @@
 #include "EQuilibre/Game/WLDModel.h"
 #include "EQuilibre/Game/WLDMaterial.h"
 #include "EQuilibre/Game/Fragments.h"
+#include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
@@ -135,12 +136,17 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_lookOrientX = m_lookOrientZ = 0.0f;
     m_animTime = 0;
     m_palName = "00";
+    m_shape = NULL;
     setModel(model);
 }
 
 WLDCharActor::~WLDCharActor()
 {
     delete m_materialMap;
+    if(m_shape)
+    {
+        dGeomDestroy(m_shape);
+    }
 }
 
 WLDModel * WLDCharActor::model() const
@@ -166,9 +172,15 @@ void WLDCharActor::setModel(WLDModel *newModel)
     }
 }
 
+dGeomID WLDCharActor::shape() const
+{
+    return m_shape;
+}
+
 void WLDCharActor::setLocation(const vec3 &newLocation)
 {
     m_location = newLocation;
+    update();
 }
 
 vec3 WLDCharActor::lookOrient() const
@@ -355,6 +367,23 @@ void WLDCharActor::calculateViewFrustum(Frustum &frustum) const
     frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
     frustum.update();
+}
+
+void WLDCharActor::createShape(dSpaceID space, float length, float radius)
+{
+    m_shape = dCreateCapsule(space, radius, length);
+    dGeomSetData(m_shape, this);
+    dGeomSetCategoryBits(m_shape, Game::SHAPE_CHARACTER);
+    dGeomSetCollideBits(m_shape, Game::COLLIDES_CHARACTER);
+}
+
+void WLDCharActor::update()
+{
+    if(!m_shape)
+    {
+        return;
+    }
+    dGeomSetPosition(m_shape, m_location.x, m_location.y, m_location.z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

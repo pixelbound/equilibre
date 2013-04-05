@@ -46,6 +46,8 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
     
+    Game::initialize();
+    
     // define OpenGL options
     QGLFormat f;
     f.setAlpha(true);
@@ -59,5 +61,8 @@ int main(int argc, char **argv)
     v->setWindowState(Qt::WindowMaximized);
     v->show();
     app.exec();
+    
+    Game::cleanup();
+    
     return 0;
 }

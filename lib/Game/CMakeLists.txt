@@ -44,5 +44,6 @@ target_link_libraries(EQuilibreGame
     EQuilibreRender
     ${QT_LIBRARIES}
     ${ZLIB_LIBRARIES}
+    ${ODE_LIBRARIES}
     ${SYSTEM_LIBRARIES}
 )

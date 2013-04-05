@@ -2,10 +2,14 @@ cmake_minimum_required(VERSION 2.8)
 
 project(EQuilibre)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+
 find_package(Qt4 4.6.0 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 find_package(ZLIB 1.0.0 REQUIRED)
+find_package(ODE 0.12.0 REQUIRED)
 include(${QT_USE_FILE})
 include_directories(${ZLIB_INCLUDE_DIRS})
+add_definitions(${ODE_DEFINITIONS})
 
 if( WIN32 )
     set(GLEW_LIB_PATH "" CACHE PATH "Path to the GLEW library directory.")

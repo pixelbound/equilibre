@@ -97,10 +97,23 @@ public:
     void drawPlayer(RenderContext *renderCtx, RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
+    
+    static void initialize();
+    static void cleanup();
+    
+    // Flags used for collision detection.
+    static uint32_t SHAPE_TERRAIN;
+    static uint32_t SHAPE_STATIC_OBJECT;
+    static uint32_t SHAPE_CHARACTER;
+    static uint32_t COLLIDES_TERRAIN;
+    static uint32_t COLLIDES_STATIC_OBJECT;
+    static uint32_t COLLIDES_CHARACTER;
 
 private:
     void updateMovement(double sinceLastUpdate);
     void updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt);
+    static void collisionNearCallback(void *data, dGeomID o1, dGeomID o2);
+    void collisionNearCallback(dGeomID o1, dGeomID o2);
     MeshData *loadBuiltinSTLMesh(QString path);
 
     QList<ObjectPack *> m_objectPacks;

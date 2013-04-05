@@ -17,6 +17,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QFileInfo>
+#include "ode/ode.h"
 #include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/PFSArchive.h"
@@ -29,6 +30,17 @@
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
+
+uint32_t Game::SHAPE_TERRAIN = 1;
+uint32_t Game::SHAPE_STATIC_OBJECT = 2;
+uint32_t Game::SHAPE_CHARACTER = 4;
+
+uint32_t Game::COLLIDES_TERRAIN = 0;
+uint32_t Game::COLLIDES_STATIC_OBJECT = 0;
+uint32_t Game::COLLIDES_CHARACTER =
+        Game::SHAPE_TERRAIN |
+        Game::SHAPE_STATIC_OBJECT |
+        Game::SHAPE_CHARACTER;
 
 Game::Game()
 {
@@ -56,6 +68,16 @@ Game::~Game()
 {
     clear(NULL);
     delete m_player;
+}
+
+void Game::initialize()
+{
+    dInitODE();
+}
+
+void Game::cleanup()
+{
+    dCloseODE();
 }
 
 void Game::clear(RenderContext *renderCtx)
@@ -251,6 +273,7 @@ Zone * Game::loadZone(QString path, QString name)
         m_zone->setInfo(info);
         initialPos = info.safePos;
     }
+    m_player->createShape(m_zone->collisionIndex(), 2.0f, 1.0f);
     m_player->setLocation(initialPos);
     m_player->setHasCamera(true);
     m_currentPosition = m_previousPosition = initialPos;
@@ -467,9 +490,15 @@ void Game::drawPlayer(RenderContext *renderCtx, RenderProgram *prog)
         {
             m_player->draw(renderCtx, prog);
         }
-        else if(m_capsule)
+        if(m_capsule) //XXX
         {
+            vec3 loc = m_player->location();
+            float capsuleHeight = 4.0f;
+            renderCtx->pushMatrix();
+            renderCtx->translate(loc.x, loc.y, loc.z + (capsuleHeight / 2.0f));
+            renderCtx->rotate(-m_player->lookOrient().z + 90.0f, 0.0, 0.0, 1.0);
             drawBuiltinObject(m_capsule, renderCtx, prog);
+            renderCtx->popMatrix();
         }
     }
 }
@@ -525,6 +554,7 @@ void Game::updateMovement(double sinceLastUpdate)
     {
         m_previousPosition = m_currentPosition;
         updatePlayerPosition(m_player, m_currentPosition, tick);
+        // TODO collision detection after each tick, calling setLocation before.
         m_movementAheadTime -= tick;
     }
     
@@ -532,6 +562,10 @@ void Game::updateMovement(double sinceLastUpdate)
     double alpha = (m_movementAheadTime / tick);
     vec3 newPosition = (m_currentPosition * alpha) + (m_previousPosition * (1.0 - alpha));
     m_player->setLocation(newPosition);
+    if(m_zone)
+    {
+        dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
+    }
 }
 
 void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
@@ -558,6 +592,36 @@ void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
     
     bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
     player->calculateStep(position, delta.y, delta.x, 0.0f, ghost);
+}
+
+void Game::collisionNearCallback(void *data, dGeomID o1, dGeomID o2)
+{
+    Game *game = (Game *)data;
+    game->collisionNearCallback(o1, o2);
+}
+
+void Game::collisionNearCallback(dGeomID o1, dGeomID o2)
+{
+    uint32_t cat1 = (uint32_t)dGeomGetCategoryBits(o1);
+    uint32_t cat2 = (uint32_t)dGeomGetCategoryBits(o2);
+    
+    size_t regionID = 0;
+    if(cat2 == Game::SHAPE_TERRAIN)
+    {
+        regionID = (size_t)dGeomGetData(o2);
+    }
+    //qDebug("Possible collision between objects of type %d and %d (regionID: %d)",
+    //       cat1, cat2, regionID);
+    
+    const int MAX_CONTACTS = 10;
+    dContactGeom contacts[MAX_CONTACTS];
+    memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
+    int collision = dCollide(o1, o2, MAX_CONTACTS, contacts, sizeof(dContactGeom));
+    if(collision > 0)
+    {
+        qDebug("Collision between objects of type %d and %d (regionID: %d)",
+               cat1, cat2, regionID);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

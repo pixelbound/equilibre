@@ -20,6 +20,7 @@
 #include <QObject>
 #include <QMap>
 #include <QPair>
+#include "ode/ode.h"
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
@@ -128,6 +129,8 @@ public:
     WLDModel * model() const;
     void setModel(WLDModel *newModel);
     
+    dGeomID shape() const;
+    
     void setLocation(const vec3 &newLocation);
     
     // x and z angles that describe where the character is looking at.
@@ -167,6 +170,9 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
+    void createShape(dSpaceID space, float length, float radius);
+    void update();
+    
     void calculateStep(vec3 &position, float distForward, float distSideways,
                        float distUpDown, bool ghost);
     void calculateViewFrustum(Frustum &frustum) const;
@@ -185,6 +191,7 @@ private:
     QString m_palName;
     MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray
     QMap<EquipSlot, ActorEquip> m_equip;
+    dGeomID m_shape;
 };
 
 /*!

@@ -24,6 +24,7 @@
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/RenderContext.h"
+#include "ode/ode.h"
 
 class Game;
 class PFSArchive;
@@ -87,6 +88,7 @@ public:
     const QVector<WLDLightActor *> & lights() const;
     QList<CharacterPack *> characterPacks() const;
     OctreeIndex * actorIndex() const;
+    dSpaceID collisionIndex() const;
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
@@ -118,6 +120,7 @@ private:
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;
+    dSpaceID m_collisionIndex;
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frozenFrustum;
@@ -158,6 +161,8 @@ private:
     MeshBuffer *m_zoneBuffer;
     WLDMaterialPalette *m_palette;
     AABox m_zoneBounds;
+    std::vector<dGeomID> m_regionShapes;
+    std::vector<dTriMeshDataID> m_regionShapeData;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
 };
