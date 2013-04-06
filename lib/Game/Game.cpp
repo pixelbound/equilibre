@@ -567,27 +567,11 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
 {
     const float playerVelocity = 25.0;
     float dist = (playerVelocity * dt);
-    vec3 delta;
     vec3 &pos = state.position;
-    if(m_movementStateX > 0)
-    {
-        delta.x += dist; 
-    }
-    else if(m_movementStateX < 0)
-    {
-        delta.x -= dist; 
-    }
-    if(m_movementStateY > 0)
-    {
-        delta.y += dist; 
-    }
-    else if(m_movementStateY < 0)
-    {
-        delta.y -= dist; 
-    }
-    
+    float deltaX = dist * m_movementStateX;
+    float deltaY = dist * m_movementStateY;
     bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
-    player->calculateStep(pos, delta.y, delta.x, 0.0f, ghost);
+    player->calculateStep(pos, deltaX, deltaY, ghost);
     
     // Collision detection if the player is in a zone.
     if(!m_zone)

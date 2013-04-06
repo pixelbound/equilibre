@@ -346,9 +346,8 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->popMatrix();
 }
 
-void WLDCharActor::calculateStep(vec3 &position, float distForward,
-                                 float distSideways, float distUpDown,
-                                 bool ghost)
+void WLDCharActor::calculateStep(vec3 &position, float distSideways, 
+                                 float distForward, bool ghost)
 {
     matrix4 m;
     if(ghost)
@@ -356,7 +355,7 @@ void WLDCharActor::calculateStep(vec3 &position, float distForward,
     else
         m.setIdentity();
     m = m * matrix4::rotate(lookOrient().z, 0.0, 0.0, 1.0);
-    position = position + m.map(vec3(-distSideways, distForward, distUpDown));
+    position = position + m.map(vec3(-distSideways, distForward, 0.0));
 }
 
 void WLDCharActor::calculateViewFrustum(Frustum &frustum) const

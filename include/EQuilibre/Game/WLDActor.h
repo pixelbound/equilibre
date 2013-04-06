@@ -175,8 +175,8 @@ public:
     void createShape(dSpaceID space, float length, float radius);
     void update();
     
-    void calculateStep(vec3 &position, float distForward, float distSideways,
-                       float distUpDown, bool ghost);
+    void calculateStep(vec3 &position, float distSideways, float distForward,
+                       bool ghost);
     void calculateViewFrustum(Frustum &frustum) const;
 
 private:
