@@ -574,16 +574,21 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     player->calculateStep(pos, deltaX, deltaY, ghost);
     
     // Collision detection if the player is in a zone.
-    if(!m_zone)
+    if(!m_zone || !m_zone->collisionIndex())
     {
         return;
     }
+    
+    const vec3 gravity(0, 0, -1.0);
+    state.velocity = state.velocity + (gravity * dt);
+    pos = pos + state.velocity;
     
     const int MAX_CONTACTS = 1;
     dContactGeom contacts[MAX_CONTACTS];
     std::vector<dGeomID> &geomList = player->collidingShapes();
     dGeomID playerGeom = player->shape();
     dGeomID geom = NULL;
+    vec3 responseVelocity;
     dGeomSetPosition(playerGeom, pos.x, pos.y, pos.z);
     dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
     for(size_t i = 0; i < geomList.size(); i++)
@@ -618,10 +623,18 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
                    c.pos[0], c.pos[1], c.pos[2],
                    c.normal[0], c.normal[1], c.normal[2],
                    c.depth, d1, d2);*/
-            pos = pos + (normal * c.depth);
+            responseVelocity = responseVelocity + (normal * c.depth);
         }
     }
     geomList.clear();
+    
+    // Apply the collision response to the player.
+    if(responseVelocity.z > 1e-4)
+    {
+        // Clear the player's velocity when the ground is hit.
+        state.velocity = vec3(0, 0, 0);
+    }
+    pos = pos + responseVelocity;
 }
 
 void Game::collisionNearCallback(void *data, dGeomID o1, dGeomID o2)

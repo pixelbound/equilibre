@@ -139,6 +139,26 @@ bool Zone::load(QString path, QString name)
     // Create an index for collisions in the zone.
     m_collisionIndex = dHashSpaceCreate(0);
     dSpaceSetCleanup(m_collisionIndex, 0);
+    
+    // XXX Remove this.
+    dSpaceID space = m_collisionIndex;
+    dGeomID shape = dCreatePlane(space, 0, 0, 1, 0);
+    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+    //dGeomSetData(shape, (void *)1);
+    //m_regionShapes[1] = shape;
+    
+    shape = dCreatePlane(space, 0, 1, 0, 265);
+    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+    //dGeomSetData(shape, (void *)2);
+    //m_regionShapes[2] = shape;
+    
+    shape = dCreatePlane(space, 0, -1, 0, -265);
+    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+    //dGeomSetData(shape, (void *)3);
+    //m_regionShapes[3] = shape;
     return true;
 }
 
@@ -559,24 +579,6 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
         }
     }
     */
-    
-    dGeomID shape = dCreatePlane(space, 0, 0, 1, 0);
-    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-    dGeomSetData(shape, (void *)1);
-    m_regionShapes[1] = shape;
-    
-    shape = dCreatePlane(space, 0, 1, 0, 265);
-    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-    dGeomSetData(shape, (void *)2);
-    m_regionShapes[2] = shape;
-    
-    shape = dCreatePlane(space, 0, -1, 0, -265);
-    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-    dGeomSetData(shape, (void *)3);
-    m_regionShapes[3] = shape;
     
     // Create the GPU buffers. We cannot free the memory used for vertices and 
     // indices since the data will be used for collision detection.
