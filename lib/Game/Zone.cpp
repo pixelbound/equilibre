@@ -344,6 +344,7 @@ ZoneTerrain::ZoneTerrain(Zone *zone)
     m_zone = zone;
     m_regionCount = 0;
     m_currentRegion = 0;
+    m_uploaded = false;
     m_zoneWld = NULL;
     m_regionTree = NULL;
     m_zoneBuffer = NULL;
@@ -462,6 +463,44 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_palette->createSlots();
     m_palette->createArray();
     m_palette->createMap();
+    
+    // Import vertices and indices for each mesh.
+    m_zoneBuffer = new MeshBuffer();
+    for(uint32_t i = 1; i <= m_regionCount; i++)
+    {
+        WLDStaticActor *actor = m_regionActors[i];
+        if(actor)
+            actor->mesh()->importFrom(m_zoneBuffer);
+    }
+    
+    // Create collision shapes for zone regions.
+    dSpaceID space = m_zone->collisionIndex();
+    /*
+    const Vertex *allVertices = meshBuf->vertices.data();
+    const uint32_t *allIndices = meshBuf->indices.data();
+    for(uint32_t i = 1; i <= m_regionCount; i++)
+    {
+        WLDStaticActor *actor = m_regionActors[i];
+        if(actor)
+        {
+            dTriMeshDataID shapeData = dGeomTriMeshDataCreate();
+            MeshData *meshData = actor->mesh()->data();
+            const Vertex *vertices = allVertices + meshData->vertexSegment.offset;
+            const uint32_t *indices = allIndices + meshData->indexSegment.offset;
+            dGeomTriMeshDataBuildSingle(shapeData, vertices, sizeof(Vertex),
+                                        meshData->vertexSegment.count,
+                                        indices, meshData->indexSegment.count,
+                                        sizeof(uint32_t) * 3);
+            dGeomID shape = dCreateTriMesh(space, shapeData, NULL, NULL, NULL);
+            dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+            dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+            dGeomSetData(shape, (void *)i);
+            m_regionShapes[i] = shape;
+            m_regionShapeData[i] = shapeData;
+        }
+    }
+    */
+    
     return true;
 }
 
@@ -525,15 +564,16 @@ void ZoneTerrain::resetVisible()
     m_visibleRegions.clear();
 }
 
-MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
+void ZoneTerrain::upload(RenderContext *renderCtx)
 {
-    MeshBuffer *meshBuf = NULL;
+    if(m_uploaded)
+    {
+        return;
+    }
     
     // Upload the materials as a texture array, assigning z coordinates to materials.
     MaterialArray *materials = m_palette->array();
     materials->uploadArray(renderCtx);
-    
-    meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
     for(uint32_t i = 1; i <= m_regionCount; i++)
@@ -541,45 +581,15 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)
         {
-            MeshData *meshData = actor->mesh()->importFrom(meshBuf);
+            MeshData *meshData = actor->mesh()->data();
             meshData->updateTexCoords(materials, true);
         }
     }
     
-    // Create collision shapes for zone regions.
-    // XXX stream as needed?
-    dSpaceID space = m_zone->collisionIndex();
-    /*
-    const Vertex *allVertices = meshBuf->vertices.data();
-    const uint32_t *allIndices = meshBuf->indices.data();
-    for(uint32_t i = 1; i <= m_regionCount; i++)
-    {
-        WLDStaticActor *actor = m_regionActors[i];
-        if(actor)
-        {
-            dTriMeshDataID shapeData = dGeomTriMeshDataCreate();
-            MeshData *meshData = actor->mesh()->data();
-            const Vertex *vertices = allVertices + meshData->vertexSegment.offset;
-            const uint32_t *indices = allIndices + meshData->indexSegment.offset;
-            dGeomTriMeshDataBuildSingle(shapeData, vertices, sizeof(Vertex),
-                                        meshData->vertexSegment.count,
-                                        indices, meshData->indexSegment.count,
-                                        sizeof(uint32_t) * 3);
-            dGeomID shape = dCreateTriMesh(space, shapeData, NULL, NULL, NULL);
-            dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-            dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-            dGeomSetData(shape, (void *)i);
-            m_regionShapes[i] = shape;
-            m_regionShapeData[i] = shapeData;
-        }
-    }
-    */
-    
     // Create the GPU buffers. We cannot free the memory used for vertices and 
     // indices since the data will be used for collision detection.
-    meshBuf->upload(renderCtx);
-    
-    return meshBuf;
+    m_zoneBuffer->upload(renderCtx);
+    m_uploaded = true;
 }
 
 void ZoneTerrain::update(double currentTime)
@@ -598,8 +608,8 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
     m_zoneStatGPU->beginTime();
     
     // Create a GPU buffer for the zone's vertices and indices if needed.
-    if(m_zoneBuffer == NULL)
-        m_zoneBuffer = upload(renderCtx);
+    if(!m_uploaded)
+        upload(renderCtx);
     
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();

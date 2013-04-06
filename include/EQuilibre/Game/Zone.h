@@ -149,7 +149,7 @@ public:
 
 private:
     uint32_t findCurrentRegion(const vec3 &cameraPos, const RegionTreeNode *nodes, uint32_t nodeIdx);
-    MeshBuffer * upload(RenderContext *renderCtx);
+    void upload(RenderContext *renderCtx);
 
     WLDData *m_zoneWld;
     uint32_t m_regionCount;
@@ -160,6 +160,7 @@ private:
     RegionTreeFragment *m_regionTree;
     MeshBuffer *m_zoneBuffer;
     WLDMaterialPalette *m_palette;
+    bool m_uploaded;
     AABox m_zoneBounds;
     std::vector<dGeomID> m_regionShapes;
     std::vector<dTriMeshDataID> m_regionShapeData;
