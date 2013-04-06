@@ -131,6 +131,8 @@ public:
     
     dGeomID shape() const;
     
+    std::vector<dGeomID> & collidingShapes();
+    
     void setLocation(const vec3 &newLocation);
     
     // x and z angles that describe where the character is looking at.
@@ -192,6 +194,7 @@ private:
     MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray
     QMap<EquipSlot, ActorEquip> m_equip;
     dGeomID m_shape;
+    std::vector<dGeomID> m_collidingShapes;
 };
 
 /*!

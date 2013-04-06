@@ -533,9 +533,10 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     
     // Create collision shapes for zone regions.
     // XXX stream as needed?
+    dSpaceID space = m_zone->collisionIndex();
+    /*
     const Vertex *allVertices = meshBuf->vertices.data();
     const uint32_t *allIndices = meshBuf->indices.data();
-    dSpaceID space = m_zone->collisionIndex();
     for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
@@ -548,7 +549,7 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
             dGeomTriMeshDataBuildSingle(shapeData, vertices, sizeof(Vertex),
                                         meshData->vertexSegment.count,
                                         indices, meshData->indexSegment.count,
-                                        sizeof(uint32_t));
+                                        sizeof(uint32_t) * 3);
             dGeomID shape = dCreateTriMesh(space, shapeData, NULL, NULL, NULL);
             dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
             dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
@@ -557,6 +558,13 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
             m_regionShapeData[i] = shapeData;
         }
     }
+    */
+    
+    dGeomID shape = dCreatePlane(space, 0, 0, 1, 0);
+    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+    dGeomSetData(shape, (void *)1);
+    m_regionShapes[1] = shape;
     
     // Create the GPU buffers. We cannot free the memory used for vertices and 
     // indices since the data will be used for collision detection.

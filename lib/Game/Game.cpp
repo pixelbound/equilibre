@@ -493,9 +493,8 @@ void Game::drawPlayer(RenderContext *renderCtx, RenderProgram *prog)
         if(m_capsule) //XXX
         {
             vec3 loc = m_player->location();
-            float capsuleHeight = 4.0f;
             renderCtx->pushMatrix();
-            renderCtx->translate(loc.x, loc.y, loc.z + (capsuleHeight / 2.0f));
+            renderCtx->translate(loc.x, loc.y, loc.z);
             renderCtx->rotate(-m_player->lookOrient().z + 90.0f, 0.0, 0.0, 1.0);
             drawBuiltinObject(m_capsule, renderCtx, prog);
             renderCtx->popMatrix();
@@ -562,9 +561,31 @@ void Game::updateMovement(double sinceLastUpdate)
     double alpha = (m_movementAheadTime / tick);
     vec3 newPosition = (m_currentPosition * alpha) + (m_previousPosition * (1.0 - alpha));
     m_player->setLocation(newPosition);
+    
+    // Collision detection.
     if(m_zone)
     {
+        const int MAX_CONTACTS = 1;
+        dContactGeom contacts[MAX_CONTACTS];
+        std::vector<dGeomID> &geomList = m_player->collidingShapes();
+        dGeomID playerGeom = m_player->shape();
+        dGeomID geom = NULL;
+        geomList.clear();
         dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
+        for(size_t i = 0; i < geomList.size(); i++)
+        {
+            geom = geomList[i];
+            memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
+            int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
+                                     sizeof(dContactGeom));
+            if(collision > 0)
+            {  
+                //qDebug("Collision between player and geom %p", geom);
+                // XXX This assumes a normal vector of 0, 0, 1
+                newPosition = newPosition + vec3(0, 0, contacts[0].depth);
+                m_player->setLocation(newPosition);
+            }
+        }
     }
 }
 
@@ -603,24 +624,11 @@ void Game::collisionNearCallback(void *data, dGeomID o1, dGeomID o2)
 void Game::collisionNearCallback(dGeomID o1, dGeomID o2)
 {
     uint32_t cat1 = (uint32_t)dGeomGetCategoryBits(o1);
-    uint32_t cat2 = (uint32_t)dGeomGetCategoryBits(o2);
-    
-    size_t regionID = 0;
-    if(cat2 == Game::SHAPE_TERRAIN)
+    WLDCharActor *actor = NULL;
+    if(cat1 == Game::SHAPE_CHARACTER)
     {
-        regionID = (size_t)dGeomGetData(o2);
-    }
-    //qDebug("Possible collision between objects of type %d and %d (regionID: %d)",
-    //       cat1, cat2, regionID);
-    
-    const int MAX_CONTACTS = 10;
-    dContactGeom contacts[MAX_CONTACTS];
-    memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
-    int collision = dCollide(o1, o2, MAX_CONTACTS, contacts, sizeof(dContactGeom));
-    if(collision > 0)
-    {
-        qDebug("Collision between objects of type %d and %d (regionID: %d)",
-               cat1, cat2, regionID);
+        actor = (WLDCharActor *)dGeomGetData(o1);
+        actor->collidingShapes().push_back(o2);
     }
 }
 

@@ -177,6 +177,11 @@ dGeomID WLDCharActor::shape() const
     return m_shape;
 }
 
+std::vector<dGeomID> & WLDCharActor::collidingShapes()
+{
+    return m_collidingShapes;
+}
+
 void WLDCharActor::setLocation(const vec3 &newLocation)
 {
     m_location = newLocation;
