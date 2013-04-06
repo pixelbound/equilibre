@@ -570,7 +570,6 @@ void Game::updateMovement(double sinceLastUpdate)
         std::vector<dGeomID> &geomList = m_player->collidingShapes();
         dGeomID playerGeom = m_player->shape();
         dGeomID geom = NULL;
-        geomList.clear();
         dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
         for(size_t i = 0; i < geomList.size(); i++)
         {
@@ -579,13 +578,14 @@ void Game::updateMovement(double sinceLastUpdate)
             int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
                                      sizeof(dContactGeom));
             if(collision > 0)
-            {  
-                //qDebug("Collision between player and geom %p", geom);
-                // XXX This assumes a normal vector of 0, 0, 1
-                newPosition = newPosition + vec3(0, 0, contacts[0].depth);
+            {
+                dContactGeom &c = contacts[0];
+                vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
+                newPosition = newPosition + (normal * c.depth);
                 m_player->setLocation(newPosition);
             }
         }
+        geomList.clear();
     }
 }
 
