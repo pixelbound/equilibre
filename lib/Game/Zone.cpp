@@ -533,7 +533,6 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     MaterialArray *materials = m_palette->array();
     materials->uploadArray(renderCtx);
     
-#if !defined(COMBINE_ZONE_PARTS)
     meshBuf = new MeshBuffer();
     
     // Import vertices and indices for each mesh.
@@ -546,10 +545,6 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
             meshData->updateTexCoords(materials, true);
         }
     }
-#else
-    meshBuf = WLDMesh::combine(m_zoneParts);
-    meshBuf->updateTexCoords(materials);
-#endif
     
     // Create collision shapes for zone regions.
     // XXX stream as needed?
@@ -606,7 +601,6 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
     if(m_zoneBuffer == NULL)
         m_zoneBuffer = upload(renderCtx);
     
-#if !defined(COMBINE_ZONE_PARTS)
     // Import material groups from the visible parts.
     m_zoneBuffer->matGroups.clear();
     uint32_t visibleRegions = m_visibleRegions.size();
@@ -616,7 +610,6 @@ void ZoneTerrain::draw(RenderContext *renderCtx, RenderProgram *prog)
         if(staticActor)
             m_zoneBuffer->addMaterialGroups(staticActor->mesh()->data());
     }
-#endif
     
     // Draw the visible parts as one big mesh.
     MaterialArray *materials = m_palette->array();
