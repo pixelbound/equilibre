@@ -101,7 +101,7 @@ public:
 
     void clear(RenderContext *renderCtx);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
-    void update(double currentTime);
+    void update(RenderContext *renderCtx, double currentTime);
     
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
@@ -123,6 +123,7 @@ private:
     dSpaceID m_collisionIndex;
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
+    Frustum m_frustum;
     Frustum m_frozenFrustum;
 };
 

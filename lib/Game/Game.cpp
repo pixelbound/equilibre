@@ -512,7 +512,8 @@ void Game::setPlayerModel(WLDModel *model)
     }
 }
 
-void Game::update(double currentTime, double sinceLastUpdate)
+void Game::update(RenderContext *renderCtx, double currentTime,
+                  double sinceLastUpdate)
 {
     updateMovement(sinceLastUpdate);
     
@@ -540,7 +541,7 @@ void Game::update(double currentTime, double sinceLastUpdate)
     
     if(m_zone)
     {
-        m_zone->update(currentTime);
+        m_zone->update(renderCtx, currentTime);
     }
 }
 

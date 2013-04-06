@@ -231,12 +231,33 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
         z->objects()->visibleObjects().append(staticActor);
 }
 
-void Zone::update(double currentTime)
+void Zone::update(RenderContext *renderCtx, double currentTime)
 {
+    m_frustum = renderCtx->viewFrustum();
+    m_game->player()->calculateViewFrustum(m_frustum);
     if(m_terrain)
+    {
         m_terrain->update(currentTime);
+        m_terrain->resetVisible();
+    }
     if(m_objects)
+    {
         m_objects->update(currentTime);
+        m_objects->resetVisible();
+    }
+    
+    // Build a list of visible actors.
+    Frustum &realFrustum(m_game->frustumIsFrozen() ? m_frozenFrustum : m_frustum);
+    m_terrain->resetVisible();
+    m_actorTree->findVisible(realFrustum, frustumCullingCallback, this,
+                             m_game->cullObjects());
+    if(m_terrain)
+    {
+        if(m_terrain->findCurrentRegion(realFrustum.eye()))
+            m_terrain->showNearbyRegions(realFrustum);
+        else
+            m_terrain->showAllRegions(realFrustum);
+    }
 }
 
 void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
@@ -262,18 +283,8 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
     if(sky)
         sky->draw(renderCtx, prog, this);
     
-    Frustum &frustum = renderCtx->viewFrustum();
-    m_game->player()->calculateViewFrustum(frustum);
     renderCtx->pushMatrix();
-    renderCtx->multiplyMatrix(frustum.camera());
-    
-    // Build a list of visible actors.
-    Frustum &realFrustum(m_game->frustumIsFrozen() ? m_frozenFrustum : frustum);
-    m_actorTree->findVisible(realFrustum, frustumCullingCallback, this, m_game->cullObjects());
-    if(m_terrain->findCurrentRegion(realFrustum.eye()))
-        m_terrain->showNearbyRegions(realFrustum);
-    else
-        m_terrain->showAllRegions(realFrustum);
+    renderCtx->multiplyMatrix(m_frustum.camera());
 
     // Draw the zone's static objects.
     if(m_game->showObjects() && m_objects)
@@ -300,11 +311,8 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
         //    prog->drawBox(actor->boundsAA);
     }
     
-    // Draw the character, if it is in view.
+    // Draw the character.
     m_game->drawPlayer(renderCtx, prog);
-    
-    m_terrain->resetVisible();
-    m_objects->resetVisible();
     
     renderCtx->popMatrix();
 }

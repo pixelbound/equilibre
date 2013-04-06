@@ -303,7 +303,7 @@ void ZoneScene::init()
 void ZoneScene::update(double timestamp)
 {
     double sinceLastUpdate = timestamp - m_lastTimestamp;
-    m_game->update(timestamp, sinceLastUpdate);
+    m_game->update(m_renderCtx, timestamp, sinceLastUpdate);
     m_lastTimestamp = timestamp;
 }
 

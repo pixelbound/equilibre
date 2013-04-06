@@ -98,7 +98,8 @@ public:
     
     void setPlayerModel(WLDModel *model);
     
-    void update(double currentTime, double sinceLastUpdate);
+    void update(RenderContext *renderCtx, double currentTime,
+                double sinceLastUpdate);
     
     void drawPlayer(RenderContext *renderCtx, RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
