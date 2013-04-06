@@ -566,6 +566,18 @@ MeshBuffer * ZoneTerrain::upload(RenderContext *renderCtx)
     dGeomSetData(shape, (void *)1);
     m_regionShapes[1] = shape;
     
+    shape = dCreatePlane(space, 0, 1, 0, 265);
+    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+    dGeomSetData(shape, (void *)2);
+    m_regionShapes[2] = shape;
+    
+    shape = dCreatePlane(space, 0, -1, 0, -265);
+    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
+    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
+    dGeomSetData(shape, (void *)3);
+    m_regionShapes[3] = shape;
+    
     // Create the GPU buffers. We cannot free the memory used for vertices and 
     // indices since the data will be used for collision detection.
     meshBuf->upload(renderCtx);

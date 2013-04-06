@@ -605,8 +605,30 @@ void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
                                      sizeof(dContactGeom));
             if(collision > 0)
             {
+                // Only deal with player/plane collisions for now.
                 dContactGeom &c = contacts[0];
+                if((c.depth < 1e-4) || (dGeomGetClass(geom) != dPlaneClass))
+                {
+                    continue;
+                }
+                
+                // Make sure the player is actually crossing the plane.
                 vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
+                dReal d1 = dGeomPlanePointDepth(geom, position.x, position.y, position.z);
+                dReal d2 = dGeomPlanePointDepth(geom, c.pos[0], c.pos[1], c.pos[2]);
+                dReal depthSign = d1 * d2;
+                if(depthSign >= 0.0)
+                {
+                    continue;
+                }
+                
+                // Resolve the collision by pushing the playing to the other
+                // side of the plane.
+                qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f d1 %f d2 %f",
+                       position.x, position.y, position.z,
+                       c.pos[0], c.pos[1], c.pos[2],
+                       c.normal[0], c.normal[1], c.normal[2],
+                       c.depth, d1, d2);
                 position = position + (normal * c.depth);
             }
         }
