@@ -545,6 +545,18 @@ void ZoneTerrain::showNearbyRegions(const Frustum &frustum)
     }
 }
 
+void ZoneTerrain::showCurrentRegion(const Frustum &frustum)
+{
+    if(m_currentRegion == 0)
+        return;
+    WLDStaticActor *actor = m_regionActors[m_currentRegion];
+    if(actor)
+    {
+        if(frustum.containsAABox(actor->boundsAA()) != OUTSIDE)
+            m_visibleRegions.push_back(actor);
+    }
+}
+
 uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos)
 {
     return (m_currentRegion = findCurrentRegion(cameraPos, m_regionTree->m_nodes.constData(), 1));

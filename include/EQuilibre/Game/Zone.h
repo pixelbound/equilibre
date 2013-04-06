@@ -146,6 +146,7 @@ public:
     void resetVisible();
     void showAllRegions(const Frustum &frustum);
     void showNearbyRegions(const Frustum &frustum);
+    void showCurrentRegion(const Frustum &frustum);
     uint32_t findCurrentRegion(const vec3 &cameraPos);
 
 private:
