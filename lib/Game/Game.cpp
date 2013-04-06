@@ -553,7 +553,6 @@ void Game::updateMovement(double sinceLastUpdate)
     {
         m_previousPosition = m_currentPosition;
         updatePlayerPosition(m_player, m_currentPosition, tick);
-        // TODO collision detection after each tick, calling setLocation before.
         m_movementAheadTime -= tick;
     }
     
@@ -561,32 +560,6 @@ void Game::updateMovement(double sinceLastUpdate)
     double alpha = (m_movementAheadTime / tick);
     vec3 newPosition = (m_currentPosition * alpha) + (m_previousPosition * (1.0 - alpha));
     m_player->setLocation(newPosition);
-    
-    // Collision detection.
-    if(m_zone)
-    {
-        const int MAX_CONTACTS = 1;
-        dContactGeom contacts[MAX_CONTACTS];
-        std::vector<dGeomID> &geomList = m_player->collidingShapes();
-        dGeomID playerGeom = m_player->shape();
-        dGeomID geom = NULL;
-        dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
-        for(size_t i = 0; i < geomList.size(); i++)
-        {
-            geom = geomList[i];
-            memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
-            int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
-                                     sizeof(dContactGeom));
-            if(collision > 0)
-            {
-                dContactGeom &c = contacts[0];
-                vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
-                newPosition = newPosition + (normal * c.depth);
-                m_player->setLocation(newPosition);
-            }
-        }
-        geomList.clear();
-    }
 }
 
 void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
@@ -613,6 +586,32 @@ void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
     
     bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
     player->calculateStep(position, delta.y, delta.x, 0.0f, ghost);
+    
+    // Collision detection.
+    if(m_zone)
+    {
+        const int MAX_CONTACTS = 1;
+        dContactGeom contacts[MAX_CONTACTS];
+        std::vector<dGeomID> &geomList = player->collidingShapes();
+        dGeomID playerGeom = player->shape();
+        dGeomID geom = NULL;
+        dGeomSetPosition(playerGeom, position.x, position.y, position.z);
+        dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
+        for(size_t i = 0; i < geomList.size(); i++)
+        {
+            geom = geomList[i];
+            memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
+            int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
+                                     sizeof(dContactGeom));
+            if(collision > 0)
+            {
+                dContactGeom &c = contacts[0];
+                vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
+                position = position + (normal * c.depth);
+            }
+        }
+        geomList.clear();
+    }
 }
 
 void Game::collisionNearCallback(void *data, dGeomID o1, dGeomID o2)
