@@ -276,7 +276,7 @@ Zone * Game::loadZone(QString path, QString name)
     m_player->createShape(m_zone->collisionIndex(), 2.0f, 1.0f);
     m_player->setLocation(initialPos);
     m_player->setHasCamera(true);
-    m_currentPosition = m_previousPosition = initialPos;
+    m_currentState.position = m_previousState.position = initialPos;
     return zone;
 }
 
@@ -551,22 +551,24 @@ void Game::updateMovement(double sinceLastUpdate)
     m_movementAheadTime += sinceLastUpdate;
     while(m_movementAheadTime > tick)
     {
-        m_previousPosition = m_currentPosition;
-        updatePlayerPosition(m_player, m_currentPosition, tick);
+        m_previousState = m_currentState;
+        updatePlayerPosition(m_player, m_currentState, tick);
         m_movementAheadTime -= tick;
     }
     
     // Interpolate the position since we calculated it too far in the future.
     double alpha = (m_movementAheadTime / tick);
-    vec3 newPosition = (m_currentPosition * alpha) + (m_previousPosition * (1.0 - alpha));
+    vec3 newPosition = (m_currentState.position * alpha) +
+            (m_previousState.position * (1.0 - alpha));
     m_player->setLocation(newPosition);
 }
 
-void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
+void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
 {
     const float playerVelocity = 25.0;
     float dist = (playerVelocity * dt);
     vec3 delta;
+    vec3 &pos = state.position;
     if(m_movementStateX > 0)
     {
         delta.x += dist; 
@@ -585,55 +587,57 @@ void Game::updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt)
     }
     
     bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
-    player->calculateStep(position, delta.y, delta.x, 0.0f, ghost);
+    player->calculateStep(pos, delta.y, delta.x, 0.0f, ghost);
     
-    // Collision detection.
-    if(m_zone)
+    // Collision detection if the player is in a zone.
+    if(!m_zone)
     {
-        const int MAX_CONTACTS = 1;
-        dContactGeom contacts[MAX_CONTACTS];
-        std::vector<dGeomID> &geomList = player->collidingShapes();
-        dGeomID playerGeom = player->shape();
-        dGeomID geom = NULL;
-        dGeomSetPosition(playerGeom, position.x, position.y, position.z);
-        dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
-        for(size_t i = 0; i < geomList.size(); i++)
-        {
-            geom = geomList[i];
-            memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
-            int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
-                                     sizeof(dContactGeom));
-            if(collision > 0)
-            {
-                // Only deal with player/plane collisions for now.
-                dContactGeom &c = contacts[0];
-                if((c.depth < 1e-4) || (dGeomGetClass(geom) != dPlaneClass))
-                {
-                    continue;
-                }
-                
-                // Make sure the player is actually crossing the plane.
-                vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
-                dReal d1 = dGeomPlanePointDepth(geom, position.x, position.y, position.z);
-                dReal d2 = dGeomPlanePointDepth(geom, c.pos[0], c.pos[1], c.pos[2]);
-                dReal depthSign = d1 * d2;
-                if(depthSign >= 0.0)
-                {
-                    continue;
-                }
-                
-                // Resolve the collision by pushing the playing to the other
-                // side of the plane.
-                qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f d1 %f d2 %f",
-                       position.x, position.y, position.z,
-                       c.pos[0], c.pos[1], c.pos[2],
-                       c.normal[0], c.normal[1], c.normal[2],
-                       c.depth, d1, d2);
-                position = position + (normal * c.depth);
-            }
-        }
-        geomList.clear();
+        return;
     }
+    
+    const int MAX_CONTACTS = 1;
+    dContactGeom contacts[MAX_CONTACTS];
+    std::vector<dGeomID> &geomList = player->collidingShapes();
+    dGeomID playerGeom = player->shape();
+    dGeomID geom = NULL;
+    dGeomSetPosition(playerGeom, pos.x, pos.y, pos.z);
+    dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
+    for(size_t i = 0; i < geomList.size(); i++)
+    {
+        geom = geomList[i];
+        memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
+        int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
+                                 sizeof(dContactGeom));
+        if(collision > 0)
+        {
+            // Only deal with player/plane collisions for now.
+            dContactGeom &c = contacts[0];
+            if((c.depth < 1e-4) || (dGeomGetClass(geom) != dPlaneClass))
+            {
+                continue;
+            }
+            
+            // Make sure the player is actually crossing the plane.
+            vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
+            dReal d1 = dGeomPlanePointDepth(geom, pos.x, pos.y, pos.z);
+            dReal d2 = dGeomPlanePointDepth(geom, c.pos[0], c.pos[1], c.pos[2]);
+            dReal depthSign = d1 * d2;
+            if(depthSign >= 0.0)
+            {
+                continue;
+            }
+            
+            // Resolve the collision by pushing the playing to the other
+            // side of the plane.
+            /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f d1 %f d2 %f",
+                   pos.x, pos.y, pos.z,
+                   c.pos[0], c.pos[1], c.pos[2],
+                   c.normal[0], c.normal[1], c.normal[2],
+                   c.depth, d1, d2);*/
+            pos = pos + (normal * c.depth);
+        }
+    }
+    geomList.clear();
 }
 
 void Game::collisionNearCallback(void *data, dGeomID o1, dGeomID o2)

@@ -37,6 +37,12 @@ class WLDCharActor;
 class WLDMesh;
 class WLDData;
 
+struct GAME_DLL ActorState
+{
+    vec3 position;
+    vec3 velocity;
+};
+
 /*!
   \brief Contains the global state of the game.
   */
@@ -111,7 +117,7 @@ public:
 
 private:
     void updateMovement(double sinceLastUpdate);
-    void updatePlayerPosition(WLDCharActor *player, vec3 &position, double dt);
+    void updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt);
     static void collisionNearCallback(void *data, dGeomID o1, dGeomID o2);
     void collisionNearCallback(dGeomID o1, dGeomID o2);
     MeshData *loadBuiltinSTLMesh(QString path);
@@ -138,6 +144,8 @@ private:
     // Duration between the newest movement tick and the current frame.
     double m_movementAheadTime;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
+    ActorState m_currentState;
+    ActorState m_previousState;
     vec3 m_currentPosition;
     vec3 m_previousPosition;
     // Current movement state for the X axis.
