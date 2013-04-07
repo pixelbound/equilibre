@@ -232,7 +232,13 @@ void Zone::update(RenderContext *renderCtx, double currentTime)
 
 void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
 {
+    float dist = (player->runSpeed() * dt);
     vec3 &pos = state.position;
+    float deltaX = dist * m_game->movementX();
+    float deltaY = dist * m_game->movementY();
+    bool ghost = (player->cameraDistance() < m_game->minDistanceToShowCharacter());
+    player->calculateStep(pos, deltaX, deltaY, ghost);
+    
     if(m_game->applyGravity())
     {
         state.velocity = state.velocity + (m_game->gravity() * dt);

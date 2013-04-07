@@ -115,7 +115,6 @@ public:
 
 private:
     void updateMovement(double sinceLastUpdate);
-    void updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt);
     MeshData *loadBuiltinSTLMesh(QString path);
 
     QList<ObjectPack *> m_objectPacks;

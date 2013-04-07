@@ -558,7 +558,10 @@ void Game::updateMovement(double sinceLastUpdate)
     while(m_movementAheadTime > tick)
     {
         m_previousState = m_currentState;
-        updatePlayerPosition(m_player, m_currentState, tick);
+        if(m_zone && m_zone->terrain())
+        {
+            m_zone->updatePlayerPosition(m_player, m_currentState, tick);
+        }
         m_movementAheadTime -= tick;
     }
     
@@ -567,22 +570,6 @@ void Game::updateMovement(double sinceLastUpdate)
     vec3 newPosition = (m_currentState.position * alpha) +
             (m_previousState.position * (1.0 - alpha));
     m_player->setLocation(newPosition);
-}
-
-void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
-{
-    float dist = (player->runSpeed() * dt);
-    vec3 &pos = state.position;
-    float deltaX = dist * m_movementStateX;
-    float deltaY = dist * m_movementStateY;
-    bool ghost = (player->cameraDistance() < m_minDistanceToShowCharacter);
-    player->calculateStep(pos, deltaX, deltaY, ghost);
-    
-    // Collision detection if the player is in a zone.
-    if(m_zone && m_zone->terrain())
-    {
-        m_zone->updatePlayerPosition(player, state, dt);
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
