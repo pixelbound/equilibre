@@ -386,6 +386,7 @@ void ZoneScene::keyPressEvent(QKeyEvent *e)
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)
 {
+    Zone *zone = m_game->zone();
     bool releaseX = false;
     bool releaseY = false;
     int key = e->key();
@@ -396,6 +397,11 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
     else if((key == Qt::Key_W) || (key == Qt::Key_S))
     {
         releaseY = !e->isAutoRepeat();
+    }
+    else if(key == Qt::Key_E)
+    {
+        if(zone)
+            zone->playerJumped();
     }
     else if(key == Qt::Key_Space)
     {
@@ -409,7 +415,6 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
         m_game->setApplyGravity(!m_game->applyGravity());
     }
     
-    Zone *zone = m_game->zone();
     if(zone && releaseX)
         zone->setMovementX(0);
     if(zone && releaseY)

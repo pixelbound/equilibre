@@ -47,6 +47,7 @@ Game::Game()
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
     m_drawCapsule = false;
+    m_allowMultiJumps = false;
     m_applyGravity = true;
     m_gravity = vec3(0.0, 0.0, -1.0);
     m_updateStat = NULL;
@@ -145,6 +146,11 @@ bool Game::cullObjects() const
 void Game::setCullObjects(bool enabled)
 {
     m_cullObjects = enabled;
+}
+
+bool Game::allowMultiJumps() const
+{
+    return m_allowMultiJumps;
 }
 
 bool Game::applyGravity() const

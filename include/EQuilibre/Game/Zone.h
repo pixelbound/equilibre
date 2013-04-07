@@ -59,6 +59,7 @@ struct GAME_DLL ActorState
 {
     vec3 position;
     vec3 velocity;
+    float jumpTime;
 };
 
 /*!
@@ -116,6 +117,7 @@ public:
                 double sinceLastUpdate);
     
     void playerEntered(WLDCharActor *player, const vec3 &initialPos);
+    void playerJumped();
     
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
@@ -153,6 +155,8 @@ private:
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
     ActorState m_currentState;
     ActorState m_previousState;
+    bool m_playerWantsToJump;
+    bool m_playerJumping;
     FrameStat *m_collisionChecksStat;
     int m_collisionChecks;
     NewtonWorld *m_collisionWorld;

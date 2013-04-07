@@ -45,6 +45,8 @@ Zone::Zone(Game *game)
     m_collisionWorld = NewtonCreate();
     m_movementAheadTime = 0.0f;
     m_movementStateX = m_movementStateY = 0;
+    m_playerWantsToJump = false;
+    m_playerJumping = false;
 }
 
 Zone::~Zone()
@@ -277,6 +279,15 @@ void Zone::playerEntered(WLDCharActor *player, const vec3 &initialPos)
 {
     m_player = player;
     m_currentState.position = m_previousState.position = initialPos;
+    m_currentState.jumpTime = m_previousState.jumpTime = 0.0f;
+}
+
+void Zone::playerJumped()
+{
+    if(!m_playerJumping || m_game->allowMultiJumps())
+    {
+        m_playerWantsToJump = true;
+    }
 }
 
 void Zone::updateMovement(double sinceLastUpdate)
@@ -305,13 +316,32 @@ void Zone::updatePlayerPosition(ActorState &state, double dt)
     float deltaX = dist * m_movementStateX;
     float deltaY = dist * m_movementStateY;
     bool ghost = (m_player->cameraDistance() < m_game->minDistanceToShowCharacter());
+    ghost &= m_game->allowMultiJumps();
     m_player->calculateStep(pos, deltaX, deltaY, ghost);
+    
+    // Handle jumping.
+    const float jumpDuration = 0.2f;
+    const float jumpAccelFactor = 2.5f;
+    if(m_playerWantsToJump)
+    {
+        state.jumpTime = jumpDuration;
+        m_playerJumping = true;
+        m_playerWantsToJump = false;
+    }
+    double jumpTime = qMin((double)state.jumpTime, dt);
+    if(m_playerJumping && (jumpTime > 0.0))
+    {
+        double jumpAccel = (-jumpAccelFactor * m_game->gravity().z) * dt;
+        state.velocity = state.velocity + vec3(0.0, 0.0, (float)jumpAccel);
+        state.jumpTime -= jumpTime;
+    }
     
     if(m_game->applyGravity())
     {
         state.velocity = state.velocity + (m_game->gravity() * dt);
-        pos = pos + state.velocity;
     }
+    
+    pos = pos + state.velocity;
     
     // Make the capsule upright.
     float offsetZ = (m_player->capsuleHeight() * 0.5f);
@@ -361,6 +391,7 @@ void Zone::updatePlayerPosition(ActorState &state, double dt)
     {
         // Clear the player's velocity when the ground is hit.
         state.velocity = vec3(0, 0, 0);
+        m_playerJumping = false;
     }
     pos = pos + responseVelocity;
 }

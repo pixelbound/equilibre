@@ -52,6 +52,7 @@ public:
     bool cullObjects() const;
     bool showSoundTriggers() const;
     bool frustumIsFrozen() const;
+    bool allowMultiJumps() const;
     bool applyGravity() const;
     
     void setShowZone(bool show);
@@ -118,6 +119,7 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     bool m_drawCapsule;
+    bool m_allowMultiJumps;
     bool m_applyGravity;
     vec3 m_gravity;
     FrameStat *m_updateStat;
