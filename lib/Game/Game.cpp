@@ -586,9 +586,9 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         return;
     }
     
-    /*const vec3 gravity(0, 0, -1.0);
+    const vec3 gravity(0, 0, -1.0);
     state.velocity = state.velocity + (gravity * dt);
-    pos = pos + state.velocity;*/
+    pos = pos + state.velocity;
     
     vec3 responseVelocity;
     const int MAX_CONTACTS = 1;
@@ -601,12 +601,16 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
     playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
     
-    const int MAX_NEARBY_REGIONS = 512;
+    const int MAX_NEARBY_REGIONS = 4096;
     NewtonCollision *regionShapes[MAX_NEARBY_REGIONS];
     matrix4 regionTransform = matrix4::translate(0.0, 0.0, 0.0);
     ZoneTerrain *terrain = m_zone->terrain();
-    uint32_t regionsFound = terrain->findNearbyRegionShapes(regionShapes,
-                                                            MAX_NEARBY_REGIONS);
+    //uint32_t regionID = terrain->findCurrentRegion(pos);
+    uint32_t regionID = terrain->currentRegion();
+    uint32_t regionsFound = terrain->findAllRegionShapes(regionShapes,
+                                                         MAX_NEARBY_REGIONS);
+    //qDebug("Player now in region %d at (%f, %f, %f). Nearby: %d regions",
+    //       regionID, pos.x, pos.y, pos.z, regionsFound);
     for(uint32_t i = 0; i < regionsFound; i++)
     {
         NewtonCollision *regionShape = regionShapes[i];
@@ -620,7 +624,7 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
                    pos.x, pos.y, pos.z,
                    contacts[0].x, contacts[0].y, contacts[0].z,
                    normals[0].x, normals[0].y, normals[0].z,
-                    penetration[0]);*/
+                   penetration[0]);*/
             responseVelocity = responseVelocity - (normals[0] * penetration[0]);
         }
     }
@@ -632,8 +636,6 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         state.velocity = vec3(0, 0, 0);
     }
     pos = pos + responseVelocity;
-    
-    //qDebug("Player now at (%f, %f, %f)", pos.x, pos.y, pos.z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

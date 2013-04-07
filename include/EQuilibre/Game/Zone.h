@@ -149,6 +149,8 @@ public:
     void showCurrentRegion(const Frustum &frustum);
     uint32_t findNearbyRegionShapes(NewtonCollision **firstRegion,
                                     uint32_t maxRegions);
+    uint32_t findAllRegionShapes(NewtonCollision **firstRegion,
+                                 uint32_t maxRegions);
     uint32_t findCurrentRegion(const vec3 &cameraPos);
 
 private:

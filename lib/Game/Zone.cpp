@@ -542,12 +542,31 @@ uint32_t ZoneTerrain::findNearbyRegionShapes(NewtonCollision **firstRegion,
         return found;
     WLDFragmentArray<RegionFragment> regions = m_zoneWld->table()->byKind<RegionFragment>();
     RegionFragment *region = regions[m_currentRegion - 1];
-    uint32_t count = qMin((uint32_t)region->m_nearbyRegions.count(), maxRegions);
+    //uint32_t count = qMin((uint32_t)region->m_nearbyRegions.count(), maxRegions);
+    uint32_t count = (uint32_t)region->m_nearbyRegions.count();
+    Q_ASSERT(count <= maxRegions);
     for(uint32_t i = 0; i < count; i++)
     {
         uint32_t regionID = region->m_nearbyRegions[i];
         Q_ASSERT(regionID <= m_regionCount);
         NewtonCollision *shape = m_regionShapes[regionID];
+        if(shape)
+        {
+            firstRegion[found] = shape;
+            found++;
+        }
+    }
+    return found;
+}
+
+uint32_t ZoneTerrain::findAllRegionShapes(NewtonCollision **firstRegion,
+                                          uint32_t maxRegions)
+{
+    uint32_t found = 0;
+    Q_ASSERT(m_regionCount <= maxRegions);
+    for(uint32_t i = 0; i < m_regionCount; i++)
+    {
+        NewtonCollision *shape = m_regionShapes[i];
         if(shape)
         {
             firstRegion[found] = shape;
