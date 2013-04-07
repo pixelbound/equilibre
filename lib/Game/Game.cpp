@@ -30,6 +30,8 @@
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 
+const int Game::MOVEMENT_TICKS_PER_SEC = 60;
+
 Game::Game()
 {
     m_player = new WLDCharActor(NULL);
@@ -49,6 +51,7 @@ Game::Game()
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
     m_applyGravity = true;
+    m_gravity = vec3(0.0, 0.0, -1.0);
     m_updateStat = NULL;
     m_minDistanceToShowCharacter = 1.0;
     m_movementAheadTime = 0.0;
@@ -566,7 +569,7 @@ void Game::update(RenderContext *renderCtx, double currentTime,
 void Game::updateMovement(double sinceLastUpdate)
 {
     // Calculate the next player position using fixed-duration ticks.
-    const double tick = (1.0 / 30.0); // 30 movement ticks per second
+    const double tick = (1.0 / MOVEMENT_TICKS_PER_SEC);
     m_movementAheadTime += sinceLastUpdate;
     while(m_movementAheadTime > tick)
     {
@@ -584,8 +587,7 @@ void Game::updateMovement(double sinceLastUpdate)
 
 void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
 {
-    const float playerVelocity = 25.0;
-    float dist = (playerVelocity * dt);
+    float dist = (player->runSpeed() * dt);
     vec3 &pos = state.position;
     float deltaX = dist * m_movementStateX;
     float deltaY = dist * m_movementStateY;
@@ -598,10 +600,9 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         return;
     }
     
-    const vec3 gravity(0, 0, -1.0);
     if(m_applyGravity)
     {
-        state.velocity = state.velocity + (gravity * dt);
+        state.velocity = state.velocity + (m_gravity * dt);
         pos = pos + state.velocity;
     }
     

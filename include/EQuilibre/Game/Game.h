@@ -108,6 +108,8 @@ public:
     void drawPlayer(RenderContext *renderCtx, RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
+    
+    static const int MOVEMENT_TICKS_PER_SEC;
 
 private:
     void updateMovement(double sinceLastUpdate);
@@ -130,6 +132,7 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     bool m_applyGravity;
+    vec3 m_gravity;
     FrameStat *m_updateStat;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;

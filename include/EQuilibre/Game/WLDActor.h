@@ -134,6 +134,8 @@ public:
     NewtonCollision * shape() const;
     std::vector<NewtonCollision *> & collidingShapes();
     
+    float runSpeed() const;
+    
     const matrix4 & transform() const;
     
     void setLocation(const vec3 &newLocation);
@@ -190,6 +192,7 @@ private:
     float m_lookOrientX;
     float m_lookOrientZ;
     float m_cameraDistance;
+    float m_runSpeed;
     WLDModel *m_model;
     WLDAnimation *m_animation;
     double m_animTime;

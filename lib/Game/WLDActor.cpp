@@ -131,6 +131,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
+    m_runSpeed = 25.0f;
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
@@ -193,6 +194,11 @@ NewtonCollision * WLDCharActor::shape() const
 std::vector<NewtonCollision *> & WLDCharActor::collidingShapes()
 {
     return m_collidingShapes;
+}
+
+float WLDCharActor::runSpeed() const
+{
+    return m_runSpeed;
 }
 
 const matrix4 & WLDCharActor::transform() const
