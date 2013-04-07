@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QList>
 #include <QMap>
+#include "Newton.h"
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
@@ -86,6 +87,7 @@ public:
     MeshBuffer *builtinOjectBuffer() const;
     MaterialArray *builtinMaterials() const;
     MeshData *capsule() const;
+    NewtonWorld *collisionWorld();
     
     Zone * loadZone(QString path, QString name);
     bool loadZoneInfo(QString file);
@@ -105,9 +107,6 @@ public:
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
     
-    static void initialize();
-    static void cleanup();
-    
     // Flags used for collision detection.
     static uint32_t SHAPE_TERRAIN;
     static uint32_t SHAPE_STATIC_OBJECT;
@@ -119,8 +118,6 @@ public:
 private:
     void updateMovement(double sinceLastUpdate);
     void updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt);
-    static void collisionNearCallback(void *data, dGeomID o1, dGeomID o2);
-    void collisionNearCallback(dGeomID o1, dGeomID o2);
     MeshData *loadBuiltinSTLMesh(QString path);
 
     QList<ObjectPack *> m_objectPacks;
@@ -131,6 +128,7 @@ private:
     MeshBuffer *m_builtinObjects;
     MaterialArray *m_builtinMats;
     MeshData *m_capsule;
+    NewtonWorld *m_collisionWorld;
     bool m_showZone;
     bool m_showObjects;
     bool m_showFog;
@@ -147,8 +145,6 @@ private:
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
     ActorState m_currentState;
     ActorState m_previousState;
-    vec3 m_currentPosition;
-    vec3 m_previousPosition;
     // Current movement state for the X axis.
     // Negative means moving left, positive moving right, zero not moving.
     int m_movementStateX;

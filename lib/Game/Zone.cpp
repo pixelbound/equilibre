@@ -39,7 +39,7 @@ Zone::Zone(Game *game)
     m_terrain = NULL;
     m_objects = NULL;
     m_actorTree = NULL;
-    m_collisionIndex = NULL;
+    m_groundShape = NULL;
 }
 
 Zone::~Zone()
@@ -72,9 +72,14 @@ OctreeIndex * Zone::actorIndex() const
     return m_actorTree;
 }
 
-dSpaceID Zone::collisionIndex() const
+NewtonWorld * Zone::collisionWorld()
 {
-    return m_collisionIndex;
+    return m_game->collisionWorld();
+}
+
+NewtonCollision * Zone::groundShape() const
+{
+    return m_groundShape;
 }
 
 const ZoneInfo & Zone::info() const
@@ -136,29 +141,11 @@ bool Zone::load(QString path, QString name)
     QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
     SoundTrigger::fromFile(m_soundTriggers, triggersFile);
     
-    // Create an index for collisions in the zone.
-    m_collisionIndex = dHashSpaceCreate(0);
-    dSpaceSetCleanup(m_collisionIndex, 0);
-    
     // XXX Remove this.
-    dSpaceID space = m_collisionIndex;
-    dGeomID shape = dCreatePlane(space, 0, 0, 1, 0);
-    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-    //dGeomSetData(shape, (void *)1);
-    //m_regionShapes[1] = shape;
-    
-    shape = dCreatePlane(space, 0, 1, 0, 265);
-    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-    //dGeomSetData(shape, (void *)2);
-    //m_regionShapes[2] = shape;
-    
-    shape = dCreatePlane(space, 0, -1, 0, -265);
-    dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-    dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-    //dGeomSetData(shape, (void *)3);
-    //m_regionShapes[3] = shape;
+    m_groundShape = NewtonCreateBox(m_game->collisionWorld(),
+                                    6000.0, 6000.0, 1.0, 0, NULL);
+    NewtonCollisionSetUserID(m_groundShape, Game::COLLIDES_TERRAIN);
+    /* shape = dCreatePlane(space, 0, 1, 0, 265); */
     return true;
 }
 
@@ -189,11 +176,6 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
-    if(m_collisionIndex)
-    {
-        dSpaceDestroy(m_collisionIndex);
-        m_collisionIndex = NULL;
-    }
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -381,21 +363,19 @@ void ZoneTerrain::clear(RenderContext *renderCtx)
     for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *part = m_regionActors[i];
-        dGeomID shape = m_regionShapes[i];
-        dTriMeshDataID shapeData = m_regionShapeData[i];
+        NewtonCollision *shape = m_regionShapes[i];
         if(part)
         {
             delete part->mesh();
             delete part;
         }
         if(shape)
-            dGeomDestroy(shape);
-        if(shapeData)
-            dGeomTriMeshDataDestroy(shapeData);
+        {
+            NewtonReleaseCollision(m_zone->collisionWorld(), shape);
+        }
     }
     m_regionActors.clear();
     m_regionShapes.clear();
-    m_regionShapeData.clear();
     m_visibleRegions.clear();
     m_regionCount = 0;
     m_currentRegion = 0;
@@ -437,7 +417,6 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     m_regionCount = regionDefs.count();
     m_regionActors.resize(m_regionCount + 1, NULL);
     m_regionShapes.resize(m_regionCount + 1, NULL);
-    m_regionShapeData.resize(m_regionCount + 1, NULL);
     m_visibleRegions.reserve(m_regionCount);
     
     // Load zone regions as model parts, computing the zone's bounding box.
@@ -482,7 +461,6 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     }
     
     // Create collision shapes for zone regions.
-    dSpaceID space = m_zone->collisionIndex();
     /*
     const Vertex *allVertices = meshBuf->vertices.data();
     const uint32_t *allIndices = meshBuf->indices.data();

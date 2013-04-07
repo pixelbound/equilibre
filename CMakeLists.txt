@@ -6,10 +6,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 find_package(Qt4 4.6.0 COMPONENTS QtCore QtGui QtOpenGL REQUIRED)
 find_package(ZLIB 1.0.0 REQUIRED)
-find_package(ODE 0.12.0 REQUIRED)
+find_package(Newton 2.32 REQUIRED)
 include(${QT_USE_FILE})
 include_directories(${ZLIB_INCLUDE_DIRS})
-add_definitions(${ODE_DEFINITIONS})
+include_directories(${NEWTON_INCLUDE_DIRS})
 
 if( WIN32 )
     set(GLEW_LIB_PATH "" CACHE PATH "Path to the GLEW library directory.")

@@ -17,7 +17,6 @@
 #include <QFile>
 #include <QTextStream>
 #include <QFileInfo>
-#include "ode/ode.h"
 #include "EQuilibre/Game/Game.h"
 #include "EQuilibre/Game/Fragments.h"
 #include "EQuilibre/Game/PFSArchive.h"
@@ -53,6 +52,7 @@ Game::Game()
     m_builtinObjects = NULL;
     m_builtinMats = NULL;
     m_capsule = NULL;
+    m_collisionWorld = NewtonCreate();
     m_showZone = true;
     m_showObjects = true;
     m_showFog = false;
@@ -62,22 +62,17 @@ Game::Game()
     m_minDistanceToShowCharacter = 1.0;
     m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
+    
+    float min[3] = {-5000.0, -5000.0, -5000.0};
+    float max[3] = { 5000.0,  5000.0,  5000.0};
+    NewtonSetWorldSize(m_collisionWorld, min, max);
 }
 
 Game::~Game()
 {
     clear(NULL);
     delete m_player;
-}
-
-void Game::initialize()
-{
-    dInitODE();
-}
-
-void Game::cleanup()
-{
-    dCloseODE();
+    NewtonDestroy(m_collisionWorld);
 }
 
 void Game::clear(RenderContext *renderCtx)
@@ -254,6 +249,11 @@ MeshData * Game::capsule() const
     return m_capsule;
 }
 
+NewtonWorld * Game::collisionWorld()
+{
+    return m_collisionWorld;
+}
+
 Zone * Game::loadZone(QString path, QString name)
 {
     if(m_zone)
@@ -273,7 +273,7 @@ Zone * Game::loadZone(QString path, QString name)
         m_zone->setInfo(info);
         initialPos = info.safePos;
     }
-    m_player->createShape(m_zone->collisionIndex(), 2.0f, 1.0f);
+    m_player->createShape(m_zone->collisionWorld(), 2.0f, 1.0f);
     m_player->setLocation(initialPos);
     m_player->setHasCamera(true);
     m_currentState.position = m_previousState.position = initialPos;
@@ -575,7 +575,7 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     player->calculateStep(pos, deltaX, deltaY, ghost);
     
     // Collision detection if the player is in a zone.
-    if(!m_zone || !m_zone->collisionIndex())
+    if(!m_zone)
     {
         return;
     }
@@ -584,6 +584,28 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     state.velocity = state.velocity + (gravity * dt);
     pos = pos + state.velocity;
     
+    vec3 responseVelocity;
+    const int MAX_CONTACTS = 1;
+    vec3 contacts[MAX_CONTACTS];
+    vec3 normals[MAX_CONTACTS];
+    float penetration[MAX_CONTACTS] = {0};
+    matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z);
+    matrix4 groundTransform = matrix4::translate(0.0, 0.0, -0.5);
+    int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
+        m_player->shape(), (const float *)playerTransform.columns(),
+        m_zone->groundShape(), (const float *)groundTransform.columns(),
+        (float *)contacts, (float *)normals, penetration, 0);
+    if(hits > 0)
+    {
+        /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
+               pos.x, pos.y, pos.z,
+               contacts[0].x, contacts[0].y, contacts[0].z,
+               normals[0].x, normals[0].y, normals[0].z,
+                penetration[0]);*/
+        responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+    }
+    
+#if 0
     const int MAX_CONTACTS = 1;
     dContactGeom contacts[MAX_CONTACTS];
     std::vector<dGeomID> &geomList = player->collidingShapes();
@@ -628,6 +650,7 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         }
     }
     geomList.clear();
+#endif
     
     // Apply the collision response to the player.
     if(responseVelocity.z > 1e-4)
@@ -636,23 +659,8 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         state.velocity = vec3(0, 0, 0);
     }
     pos = pos + responseVelocity;
-}
-
-void Game::collisionNearCallback(void *data, dGeomID o1, dGeomID o2)
-{
-    Game *game = (Game *)data;
-    game->collisionNearCallback(o1, o2);
-}
-
-void Game::collisionNearCallback(dGeomID o1, dGeomID o2)
-{
-    uint32_t cat1 = (uint32_t)dGeomGetCategoryBits(o1);
-    WLDCharActor *actor = NULL;
-    if(cat1 == Game::SHAPE_CHARACTER)
-    {
-        actor = (WLDCharActor *)dGeomGetData(o1);
-        actor->collidingShapes().push_back(o2);
-    }
+    
+    //qDebug("Player now at (%f, %f, %f)", pos.x, pos.y, pos.z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

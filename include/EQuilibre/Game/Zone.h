@@ -20,11 +20,11 @@
 #include <vector>
 #include <QList>
 #include <QMap>
+#include "Newton.h"
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
 #include "EQuilibre/Render/RenderContext.h"
-#include "ode/ode.h"
 
 class Game;
 class PFSArchive;
@@ -88,7 +88,8 @@ public:
     const QVector<WLDLightActor *> & lights() const;
     QList<CharacterPack *> characterPacks() const;
     OctreeIndex * actorIndex() const;
-    dSpaceID collisionIndex() const;
+    NewtonWorld * collisionWorld();
+    NewtonCollision * groundShape() const;
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
@@ -120,7 +121,7 @@ private:
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;
-    dSpaceID m_collisionIndex;
+    NewtonCollision *m_groundShape;
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frustum;
@@ -164,8 +165,7 @@ private:
     WLDMaterialPalette *m_palette;
     bool m_uploaded;
     AABox m_zoneBounds;
-    std::vector<dGeomID> m_regionShapes;
-    std::vector<dTriMeshDataID> m_regionShapeData;
+    std::vector<NewtonCollision *> m_regionShapes;
     FrameStat *m_zoneStat;
     FrameStat *m_zoneStatGPU;
 };

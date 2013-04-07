@@ -137,15 +137,16 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_animTime = 0;
     m_palName = "00";
     m_shape = NULL;
+    m_collisionWorld = NULL;
     setModel(model);
 }
 
 WLDCharActor::~WLDCharActor()
 {
     delete m_materialMap;
-    if(m_shape)
+    if(m_shape && m_collisionWorld)
     {
-        dGeomDestroy(m_shape);
+        NewtonReleaseCollision(m_collisionWorld, m_shape);
     }
 }
 
@@ -172,14 +173,19 @@ void WLDCharActor::setModel(WLDModel *newModel)
     }
 }
 
-dGeomID WLDCharActor::shape() const
+NewtonCollision * WLDCharActor::shape() const
 {
     return m_shape;
 }
 
-std::vector<dGeomID> & WLDCharActor::collidingShapes()
+std::vector<NewtonCollision *> & WLDCharActor::collidingShapes()
 {
     return m_collidingShapes;
+}
+
+const matrix4 & WLDCharActor::transform() const
+{
+    return m_transform;
 }
 
 void WLDCharActor::setLocation(const vec3 &newLocation)
@@ -373,12 +379,11 @@ void WLDCharActor::calculateViewFrustum(Frustum &frustum) const
     frustum.update();
 }
 
-void WLDCharActor::createShape(dSpaceID space, float length, float radius)
+void WLDCharActor::createShape(NewtonWorld *space, float length, float radius)
 {
-    m_shape = dCreateCapsule(space, radius, length);
-    dGeomSetData(m_shape, this);
-    dGeomSetCategoryBits(m_shape, Game::SHAPE_CHARACTER);
-    dGeomSetCollideBits(m_shape, Game::COLLIDES_CHARACTER);
+    m_collisionWorld = space;
+    m_shape = NewtonCreateCapsule(space, radius, length + radius * 2.0, 0, NULL);
+    NewtonCollisionSetUserID(m_shape, Game::SHAPE_CHARACTER);
 }
 
 void WLDCharActor::update()
@@ -387,7 +392,7 @@ void WLDCharActor::update()
     {
         return;
     }
-    dGeomSetPosition(m_shape, m_location.x, m_location.y, m_location.z);
+    m_transform = matrix4::translate(m_location.x, m_location.y, m_location.z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

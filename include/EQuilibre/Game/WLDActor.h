@@ -20,7 +20,7 @@
 #include <QObject>
 #include <QMap>
 #include <QPair>
-#include "ode/ode.h"
+#include "Newton.h"
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
@@ -129,9 +129,11 @@ public:
     WLDModel * model() const;
     void setModel(WLDModel *newModel);
     
-    dGeomID shape() const;
+    NewtonCollision * shape() const;
     
-    std::vector<dGeomID> & collidingShapes();
+    std::vector<NewtonCollision *> & collidingShapes();
+    
+    const matrix4 & transform() const;
     
     void setLocation(const vec3 &newLocation);
     
@@ -172,7 +174,7 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
-    void createShape(dSpaceID space, float length, float radius);
+    void createShape(NewtonWorld *space, float length, float radius);
     void update();
     
     void calculateStep(vec3 &position, float distSideways, float distForward,
@@ -193,8 +195,10 @@ private:
     QString m_palName;
     MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray
     QMap<EquipSlot, ActorEquip> m_equip;
-    dGeomID m_shape;
-    std::vector<dGeomID> m_collidingShapes;
+    NewtonWorld *m_collisionWorld;
+    NewtonCollision *m_shape;
+    std::vector<NewtonCollision *> m_collidingShapes;
+    matrix4 m_transform;
 };
 
 /*!
