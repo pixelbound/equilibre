@@ -123,9 +123,8 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDCharActor::WLDCharActor(Game *game, WLDModel *model) : WLDActor(Kind)
+WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
 {
-    m_game = game;
     m_zone = NULL;
     m_model = NULL;
     m_materialMap = NULL;
@@ -151,15 +150,10 @@ WLDCharActor::WLDCharActor(Game *game, WLDModel *model) : WLDActor(Kind)
 WLDCharActor::~WLDCharActor()
 {
     delete m_materialMap;
-    if(m_shape && m_game->collisionWorld())
+    if(m_shape && m_zone->collisionWorld())
     {
-        NewtonReleaseCollision(m_game->collisionWorld(), m_shape);
+        NewtonReleaseCollision(m_zone->collisionWorld(), m_shape);
     }
-}
-
-Game * WLDCharActor::game() const
-{
-    return m_game;
 }
 
 Zone * WLDCharActor::zone() const
@@ -415,7 +409,7 @@ void WLDCharActor::update(double currentTime)
     {
         WLDAnimation *oldAnimation = m_animation;
         WLDAnimation *newAnimation = oldAnimation;
-        if(m_game->movementX() || m_game->movementY())
+        if(m_zone && (m_zone->movementX() || m_zone->movementY()))
         {
             newAnimation = m_runningAnim;
         }

@@ -42,12 +42,15 @@ Zone::Zone(Game *game)
     m_actorTree = NULL;
     m_collisionChecksStat = NULL;
     m_collisionChecks = 0;
+    m_collisionWorld = NewtonCreate();
     m_movementAheadTime = 0.0f;
+    m_movementStateX = m_movementStateY = 0;
 }
 
 Zone::~Zone()
 {
     clear(NULL);
+    NewtonDestroy(m_collisionWorld);
 }
 
 ZoneTerrain * Zone::terrain() const
@@ -77,7 +80,7 @@ OctreeIndex * Zone::actorIndex() const
 
 NewtonWorld * Zone::collisionWorld()
 {
-    return m_game->collisionWorld();
+    return m_collisionWorld;
 }
 
 const ZoneInfo & Zone::info() const
@@ -93,6 +96,26 @@ void Zone::setInfo(const ZoneInfo &info)
 WLDCharActor * Zone::player() const
 {
     return m_player;
+}
+
+int Zone::movementX() const
+{
+    return m_movementStateX;
+}
+
+int Zone::movementY() const
+{
+    return m_movementStateY;
+}
+
+void Zone::setMovementX(int movementX)
+{
+    m_movementStateX = movementX;
+}
+
+void Zone::setMovementY(int movementY)
+{
+    m_movementStateY = movementY;
 }
 
 bool Zone::load(QString path, QString name)
@@ -279,8 +302,8 @@ void Zone::updatePlayerPosition(ActorState &state, double dt)
 {
     float dist = (m_player->runSpeed() * dt);
     vec3 &pos = state.position;
-    float deltaX = dist * m_game->movementX();
-    float deltaY = dist * m_game->movementY();
+    float deltaX = dist * m_movementStateX;
+    float deltaY = dist * m_movementStateY;
     bool ghost = (m_player->cameraDistance() < m_game->minDistanceToShowCharacter());
     m_player->calculateStep(pos, deltaX, deltaY, ghost);
     

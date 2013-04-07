@@ -124,11 +124,10 @@ private:
 class GAME_DLL WLDCharActor : public WLDActor
 {
 public:
-    WLDCharActor(Game *game, WLDModel *model);
+    WLDCharActor(WLDModel *model);
     virtual ~WLDCharActor();
     const static ActorType Kind = Character;
     
-    Game * game() const;
     Zone * zone() const;
     
     WLDModel * model() const;
@@ -195,7 +194,6 @@ private:
     float m_lookOrientZ;
     float m_cameraDistance;
     float m_runSpeed;
-    Game *m_game;
     Zone *m_zone;
     WLDModel *m_model;
     WLDAnimation *m_animation;

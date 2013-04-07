@@ -21,7 +21,6 @@
 #include <QObject>
 #include <QList>
 #include <QMap>
-#include "Newton.h"
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Vertex.h"
 #include "EQuilibre/Render/Geometry.h"
@@ -46,9 +45,6 @@ class GAME_DLL Game
 public:
     Game();
     virtual ~Game();
-    
-    void clearZone(RenderContext *renderCtx);
-    void clear(RenderContext *renderCtx);
 
     bool showZone() const;
     bool showObjects() const;
@@ -67,11 +63,6 @@ public:
     
     const vec3 & gravity() const;
     
-    int movementX() const;
-    int movementY() const;
-    void setMovementX(int movementX);
-    void setMovementY(int movementY);
-    
     float fogDensity() const;
     
     float minDistanceToShowCharacter() const;
@@ -87,7 +78,6 @@ public:
     MeshBuffer *builtinOjectBuffer() const;
     MaterialArray *builtinMaterials() const;
     MeshData *capsule() const;
-    NewtonWorld *collisionWorld();
     
     Zone * loadZone(QString path, QString name);
     bool loadZoneInfo(QString file);
@@ -105,6 +95,9 @@ public:
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
     
+    void clear(RenderContext *renderCtx);
+    void clearZone(RenderContext *renderCtx);
+    
     static const int MOVEMENT_TICKS_PER_SEC;
 
 private:
@@ -118,7 +111,6 @@ private:
     MeshBuffer *m_builtinObjects;
     MaterialArray *m_builtinMats;
     MeshData *m_capsule;
-    NewtonWorld *m_collisionWorld;
     bool m_showZone;
     bool m_showObjects;
     bool m_showFog;
@@ -131,12 +123,6 @@ private:
     FrameStat *m_updateStat;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
-    // Current movement state for the X axis.
-    // Negative means moving left, positive moving right, zero not moving.
-    int m_movementStateX;
-    // Current movement state for the Y axis.
-    // Negative means moving backward, positive moving forward, zero not moving.
-    int m_movementStateY;
 };
 
 /*!

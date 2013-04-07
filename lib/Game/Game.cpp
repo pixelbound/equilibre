@@ -34,13 +34,12 @@ const int Game::MOVEMENT_TICKS_PER_SEC = 60;
 
 Game::Game()
 {
-    m_player = new WLDCharActor(this, NULL);
+    m_player = new WLDCharActor(NULL);
     m_zone = NULL;
     m_sky = NULL;
     m_builtinObjects = NULL;
     m_builtinMats = NULL;
     m_capsule = NULL;
-    m_collisionWorld = NewtonCreate();
     m_showZone = true;
     m_showObjects = true;
     m_showFog = false;
@@ -52,14 +51,12 @@ Game::Game()
     m_gravity = vec3(0.0, 0.0, -1.0);
     m_updateStat = NULL;
     m_minDistanceToShowCharacter = 1.0;
-    m_movementStateX = m_movementStateY = 0;
 }
 
 Game::~Game()
 {
     clear(NULL);
     delete m_player;
-    NewtonDestroy(m_collisionWorld);
 }
 
 void Game::clear(RenderContext *renderCtx)
@@ -194,26 +191,6 @@ const vec3 & Game::gravity() const
     return m_gravity;
 }
 
-int Game::movementX() const
-{
-    return m_movementStateX;
-}
-
-int Game::movementY() const
-{
-    return m_movementStateY;
-}
-
-void Game::setMovementX(int movementX)
-{
-    m_movementStateX = movementX;
-}
-
-void Game::setMovementY(int movementY)
-{
-    m_movementStateY = movementY;
-}
-
 WLDCharActor *  Game::player() const
 {
     return m_player;   
@@ -262,11 +239,6 @@ MaterialArray * Game::builtinMaterials() const
 MeshData * Game::capsule() const
 {
     return m_capsule;
-}
-
-NewtonWorld * Game::collisionWorld()
-{
-    return m_collisionWorld;
 }
 
 Zone * Game::loadZone(QString path, QString name)

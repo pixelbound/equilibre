@@ -377,10 +377,11 @@ void ZoneScene::keyPressEvent(QKeyEvent *e)
         newMovementY = -1;
     }
     
-    if(newMovementX)
-        m_game->setMovementX(newMovementX);
-    if(newMovementY)
-        m_game->setMovementY(newMovementY);
+    Zone *zone = m_game->zone();
+    if(zone && newMovementX)
+        zone->setMovementX(newMovementX);
+    if(zone && newMovementY)
+        zone->setMovementY(newMovementY);
 }
 
 void ZoneScene::keyReleaseEvent(QKeyEvent *e)
@@ -408,10 +409,11 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
         m_game->setApplyGravity(!m_game->applyGravity());
     }
     
-    if(releaseX)
-        m_game->setMovementX(0);
-    if(releaseY)
-        m_game->setMovementY(0);
+    Zone *zone = m_game->zone();
+    if(zone && releaseX)
+        zone->setMovementX(0);
+    if(zone && releaseY)
+        zone->setMovementY(0);
 }
 
 void ZoneScene::mouseMoveEvent(QMouseEvent *e)
