@@ -107,11 +107,10 @@ public:
 
     void clear(RenderContext *renderCtx);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
-    void update(RenderContext *renderCtx, double currentTime);
+    void update(RenderContext *renderCtx, double currentTime,
+                double sinceLastUpdate);
     
     void playerEntered(WLDCharActor *player, const vec3 &initialPos);
-    void updateMovement(WLDCharActor *player, double sinceLastUpdate);
-    void updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt);
     
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
@@ -121,8 +120,11 @@ public:
 private:
     bool importLightSources(PFSArchive *archive);
     static void frustumCullingCallback(WLDActor *actor, void *user);
+    void updateMovement(double sinceLastUpdate);
+    void updatePlayerPosition(ActorState &state, double dt);
 
     Game *m_game;
+    WLDCharActor *m_player;
     ZoneInfo m_info;
     ZoneTerrain *m_terrain;
     ZoneObjects *m_objects;

@@ -526,19 +526,8 @@ void Game::update(RenderContext *renderCtx, double currentTime,
     if(!m_updateStat)
         m_updateStat = renderCtx->createStat("Update (ms)", FrameStat::CPUTime);
     m_updateStat->beginTime();
-    
-    if(m_zone && m_zone->terrain())
-    {
-        m_zone->updateMovement(m_player, sinceLastUpdate);
-    }
-    
-    // Update the player's animation.
-    m_player->update(currentTime);
-    
     if(m_zone)
-    {
-        m_zone->update(renderCtx, currentTime);
-    }
+        m_zone->update(renderCtx, currentTime, sinceLastUpdate);
     m_updateStat->endTime();
 }
 

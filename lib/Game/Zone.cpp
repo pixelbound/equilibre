@@ -34,6 +34,7 @@
 Zone::Zone(Game *game)
 {
     m_game = game;
+    m_player = NULL;
     m_mainArchive = 0;
     m_mainWld = 0;
     m_terrain = NULL;
@@ -91,7 +92,7 @@ void Zone::setInfo(const ZoneInfo &info)
 
 WLDCharActor * Zone::player() const
 {
-    return m_game->player();
+    return m_player;
 }
 
 bool Zone::load(QString path, QString name)
@@ -209,14 +210,18 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
         z->objects()->visibleObjects().append(staticActor);
 }
 
-void Zone::update(RenderContext *renderCtx, double currentTime)
+void Zone::update(RenderContext *renderCtx, double currentTime,
+                  double sinceLastUpdate)
 {
+    if(!m_terrain || !m_player)
+        return;
+    
     if(!m_collisionChecksStat)
         m_collisionChecksStat = renderCtx->createStat("Collision checks",
                                                       FrameStat::Counter);
     m_collisionChecks = 0;
     m_frustum = renderCtx->viewFrustum();
-    m_game->player()->calculateViewFrustum(m_frustum);
+    m_player->calculateViewFrustum(m_frustum);
     if(m_terrain)
     {
         m_terrain->update(currentTime);
@@ -233,23 +238,25 @@ void Zone::update(RenderContext *renderCtx, double currentTime)
     m_terrain->resetVisible();
     m_actorTree->findVisible(realFrustum, frustumCullingCallback, this,
                              m_game->cullObjects());
-    if(m_terrain)
-    {
-        if(m_terrain->findCurrentRegion(realFrustum.eye()))
-            m_terrain->showNearbyRegions(realFrustum);
-        else
-            m_terrain->showAllRegions(realFrustum);
-    }
+    if(m_terrain->findCurrentRegion(realFrustum.eye()))
+        m_terrain->showNearbyRegions(realFrustum);
+    else
+        m_terrain->showAllRegions(realFrustum);
+    
+    updateMovement(sinceLastUpdate);
+    
+    m_player->update(currentTime);
     
     m_collisionChecksStat->setCurrent(m_collisionChecks);
 }
 
 void Zone::playerEntered(WLDCharActor *player, const vec3 &initialPos)
 {
+    m_player = player;
     m_currentState.position = m_previousState.position = initialPos;
 }
 
-void Zone::updateMovement(WLDCharActor *player, double sinceLastUpdate)
+void Zone::updateMovement(double sinceLastUpdate)
 {
     // Calculate the next player position using fixed-duration ticks.
     const double tick = (1.0 / Game::MOVEMENT_TICKS_PER_SEC);
@@ -257,7 +264,7 @@ void Zone::updateMovement(WLDCharActor *player, double sinceLastUpdate)
     while(m_movementAheadTime > tick)
     {
         m_previousState = m_currentState;
-        updatePlayerPosition(player, m_currentState, tick);
+        updatePlayerPosition(m_currentState, tick);
         m_movementAheadTime -= tick;
     }
     
@@ -265,17 +272,17 @@ void Zone::updateMovement(WLDCharActor *player, double sinceLastUpdate)
     double alpha = (m_movementAheadTime / tick);
     vec3 newPosition = (m_currentState.position * alpha) +
             (m_previousState.position * (1.0 - alpha));
-    player->setLocation(newPosition);
+    m_player->setLocation(newPosition);
 }
 
-void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
+void Zone::updatePlayerPosition(ActorState &state, double dt)
 {
-    float dist = (player->runSpeed() * dt);
+    float dist = (m_player->runSpeed() * dt);
     vec3 &pos = state.position;
     float deltaX = dist * m_game->movementX();
     float deltaY = dist * m_game->movementY();
-    bool ghost = (player->cameraDistance() < m_game->minDistanceToShowCharacter());
-    player->calculateStep(pos, deltaX, deltaY, ghost);
+    bool ghost = (m_player->cameraDistance() < m_game->minDistanceToShowCharacter());
+    m_player->calculateStep(pos, deltaX, deltaY, ghost);
     
     if(m_game->applyGravity())
     {
@@ -284,7 +291,7 @@ void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     }
     
     // Make the capsule upright.
-    float offsetZ = (player->capsuleHeight() * 0.5f);
+    float offsetZ = (m_player->capsuleHeight() * 0.5f);
     matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
     playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
     
@@ -311,7 +318,7 @@ void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     {
         NewtonCollision *regionShape = regionShapes[i];
         int hits = NewtonCollisionCollide(collisionWorld(), MAX_CONTACTS,
-            player->shape(), (const float *)playerTransform.columns(),
+            m_player->shape(), (const float *)playerTransform.columns(),
             regionShape, (const float *)regionTransform.columns(),
             (float *)contacts, (float *)normals, penetration, 0);
         if(hits > 0)
@@ -337,7 +344,7 @@ void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
 
 void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
-    if(!m_actorTree)
+    if(!m_actorTree || !m_player)
         return;
     
     // Setup the render program.
@@ -395,12 +402,12 @@ void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
 void Zone::freezeFrustum(RenderContext *renderCtx)
 {
     m_frozenFrustum = renderCtx->viewFrustum();
-    m_game->player()->calculateViewFrustum(m_frozenFrustum);
+    m_player->calculateViewFrustum(m_frozenFrustum);
 }
 
 void Zone::currentSoundTriggers(QVector<SoundTrigger *> &triggers) const
 {
-    vec3 playerPos = m_game->player()->location();
+    vec3 playerPos = m_player->location();
     foreach(SoundTrigger *trigger, m_soundTriggers)
     {
         if(trigger->bounds().contains(playerPos))
