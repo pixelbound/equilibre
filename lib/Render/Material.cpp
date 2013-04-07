@@ -15,7 +15,6 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <QImage>
-#include <QGLWidget>
 #include "EQuilibre/Render/Platform.h"
 #include "EQuilibre/Render/Material.h"
 #include "EQuilibre/Render/RenderContext.h"
@@ -238,10 +237,8 @@ void MaterialArray::upload(RenderContext *renderCtx)
             if(!img.isNull() && (mat->texture() == 0))
             {
                 texture_t tex = 0;
-                if(mat->origin() != Material::LowerLeft)
-                    tex = renderCtx->loadTexture(QGLWidget::convertToGLFormat(img));
-                else
-                    tex = renderCtx->loadTexture(img);
+                bool isDDS = (mat->origin() != Material::LowerLeft);
+                tex = renderCtx->loadTexture(img, isDDS);
                 mat->setTexture(tex);
             }
         }
@@ -258,6 +255,7 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
         return;
     QVector<Material *> uploadMats;
     QVector<QImage> images;
+    QVector<bool> isDDS;
     foreach(Material *mat, m_materials)
     {
         if(!mat)
@@ -268,6 +266,7 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
             if(!img.isNull() && (mat->texture() == 0))
             {
                 images.append(img);
+                isDDS.append(mat->origin() == Material::LowerLeft);
                 subTextures++;
             }
         }
@@ -275,7 +274,9 @@ void MaterialArray::uploadArray(RenderContext *renderCtx)
         uploadMats.append(mat);
     }
     
-    m_arrayTexture = renderCtx->loadTextures(images.constData(), images.count());
+    m_arrayTexture = renderCtx->loadTextures(images.constData(),
+                                             images.count(),
+                                             isDDS.constData());
     uint32_t subTex = 1;
     for(uint i = 0; i < uploadMats.count(); i++)
     {

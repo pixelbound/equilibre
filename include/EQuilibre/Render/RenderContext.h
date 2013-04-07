@@ -106,8 +106,8 @@ public:
 
     // material operations
 
-    texture_t loadTexture(const QImage &img);
-    texture_t loadTextures(const QImage *images, size_t count);
+    texture_t loadTexture(const QImage &img, bool isDDS);
+    texture_t loadTextures(const QImage *images, size_t count, const bool *isDDS);
     void freeTexture(texture_t tex);
     
     // buffer operations

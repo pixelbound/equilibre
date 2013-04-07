@@ -358,12 +358,13 @@ static uint32_t maxMipmapLevel(uint32_t texWidth, uint32_t texHeight, uint32_t m
     return 0;
 }
 
-texture_t RenderContext::loadTexture(const QImage &img)
+texture_t RenderContext::loadTexture(const QImage &img, bool isDDS)
 {
-    return loadTextures(&img, 1);
+    return loadTextures(&img, 1, &isDDS);
 }
 
-texture_t RenderContext::loadTextures(const QImage *images, size_t count)
+texture_t RenderContext::loadTextures(const QImage *images, size_t count,
+                                      const bool *isDDS)
 {
     GLuint target = GL_TEXTURE_2D_ARRAY;
     texture_t texID = 0;
@@ -390,6 +391,24 @@ texture_t RenderContext::loadTextures(const QImage *images, size_t count)
     }
     maxLevel = maxMipmapLevel(maxWidth, maxHeight, maxRepeat);
     
+    // Figure out the format of the images.
+    bool seenDDS = false, seenBMP = false;
+    if(isDDS)
+    {
+        for(size_t i = 0; i < count; i++)
+        {
+            if(isDDS[i])
+                seenDDS = true;
+            else
+                seenBMP = true;
+        }
+    }
+    else
+    {
+        // Assume BMP when we don't have any format information.
+        seenBMP = true;
+    }
+    
     // Copy all images to a single image for each mipmap level.
     int maxGenLevel = useGenMipmaps ? 0 : maxLevel;
     int layerWidth = maxWidth, layerHeight = maxHeight;
@@ -414,7 +433,8 @@ texture_t RenderContext::loadTextures(const QImage *images, size_t count)
             // so that we can easily use GL_REPEAT.            
             uint32_t repeatX = qMin(maxWidth / origWidth, layerWidth);
             uint32_t repeatY = qMin(maxHeight / origHeight, layerHeight);
-            copyImage(img, levelImg, slicePitch, i, repeatX, repeatY, true);
+            bool flipY = (isDDS != NULL) ? !isDDS[i] : true;
+            copyImage(img, levelImg, slicePitch, i, repeatX, repeatY, flipY);
         }
         glTexImage3D(target, level, GL_RGBA, layerWidth, layerHeight, count, 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, levelImg.bits());
@@ -423,8 +443,16 @@ texture_t RenderContext::loadTextures(const QImage *images, size_t count)
     }
     
     // Set texture parameters.
-    GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
-    glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+    if(seenBMP)
+    {
+        GLint swizzleMask[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
+        glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
+        if(seenDDS)
+        {
+            qDebug("FIXME: mixed BMP and DDS textures. "
+                   "The DDS textures will have incorrect channels.");
+        }
+    }
     glTexParameterf(target, GL_TEXTURE_MAX_LEVEL, maxLevel);
     glTexParameterf(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
