@@ -618,35 +618,48 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     }
     
     // Create collision shapes for zone regions.
-    MeshBuffer *meshBuf = m_zoneBuffer;
-    const Vertex *allVertices = meshBuf->vertices.data();
-    const uint32_t *allIndices = meshBuf->indices.data();
     for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
         if(actor)
         {
-            MeshData *meshData = actor->mesh()->data();
+            MeshDefFragment *meshDef = actor->mesh()->def();
             vec3 faceVertices[3];
-            uint32_t numFaces = (meshData->indexSegment.count / 3);
-            uint32_t indexLoc = meshData->indexSegment.offset;
+            uint32_t numFaces = meshDef->m_polygonFlags.count();
+            uint32_t facesAdded = 0;
+            uint32_t indexLoc = 0;
             NewtonCollision *shape =
                     NewtonCreateTreeCollision(m_zone->collisionWorld(), 0);
             NewtonTreeCollisionBeginBuild(shape);
             for(uint32_t j = 0; j < numFaces; j++)
             {
+                uint16_t faceFlag = meshDef->m_polygonFlags[j];
+                if(faceFlag & MeshDefFragment::POLY_WALK_THROUGH)
+                {
+                    // Do not pass walk-through polygons such as water surface
+                    // to the collision engine.
+                    continue;
+                }
                 for(uint32_t k = 0; k < 3; k++)
                 {
-                    uint32_t index = allIndices[indexLoc];
-                    Vertex v = allVertices[index];
-                    faceVertices[k] = v.position;
+                    uint32_t index = meshDef->m_indices[indexLoc];
+                    vec3 v = meshDef->m_center + meshDef->m_vertices[index];
+                    faceVertices[k] = v;
                     indexLoc++;
                 }
                 NewtonTreeCollisionAddFace(shape, 3, (float *)faceVertices,
                                            sizeof(vec3), j);
+                facesAdded++;
             }
-            NewtonTreeCollisionEndBuild(shape, 0); // XXX test with optimize = 1
-            m_regionShapes[i] = shape;
+            if(facesAdded > 0)
+            {
+                NewtonTreeCollisionEndBuild(shape, 0); // XXX test with optimize = 1
+                m_regionShapes[i] = shape;
+            }
+            else
+            {
+                NewtonReleaseCollision(m_zone->collisionWorld(), shape);
+            }
         }
     }
     

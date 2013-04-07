@@ -426,6 +426,8 @@ public:
     virtual bool unpack(WLDReader *s);
 
     const static uint16_t KIND = 0x36;
+    const static uint16_t POLY_WALK_THROUGH = 0x10;
+    
     uint32_t m_flags;
     MaterialPaletteFragment *m_palette;
     WLDFragmentRef m_ref[3];
@@ -439,6 +441,7 @@ public:
     QVector<vec3> m_normals;
     QVector<uint32_t> m_colors;
     QVector<uint16_t> m_indices;
+    QVector<uint16_t> m_polygonFlags;
     QVector<vec2us> m_vertexPieces;
     QVector<vec2us> m_polygonsByTex;
     QVector<vec2us> m_verticesByTex;

@@ -524,6 +524,7 @@ bool MeshDefFragment::unpack(WLDReader *s)
     for(uint16_t i = 0; i < polyCount; i++)
     {
         s->unpackStruct("HHHH", polygon);
+        m_polygonFlags.append(polygon[0]);
         m_indices.append(polygon[1]);
         m_indices.append(polygon[2]);
         m_indices.append(polygon[3]);
