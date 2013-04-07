@@ -578,23 +578,78 @@ uint32_t ZoneTerrain::findAllRegionShapes(NewtonCollision **firstRegion,
 
 uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos)
 {
-    return (m_currentRegion = findCurrentRegion(cameraPos, m_regionTree->m_nodes.constData(), 1));
+    return (m_currentRegion = findRegion(cameraPos, m_regionTree->m_nodes.constData(), 1));
 }
 
-uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos, const RegionTreeNode *nodes, uint32_t nodeIdx)
+uint32_t ZoneTerrain::findRegion(const vec3 &pos, const RegionTreeNode *nodes, uint32_t nodeIdx)
 {
     if(nodeIdx == 0)
         return 0;
     const RegionTreeNode &node = nodes[nodeIdx-1];
     if(node.regionID == 0)
     {
-        float distance = vec3::dot(node.normal, cameraPos) + node.distance;
-        return findCurrentRegion(cameraPos, nodes, (distance >= 0.0f) ? node.left : node.right);
+        float distance = vec3::dot(node.normal, pos) + node.distance;
+        return findRegion(pos, nodes, (distance >= 0.0f) ? node.left : node.right);
     }
     else
     {
         // Leaf node.
         return node.regionID;
+    }
+}
+
+/**
+ * @brief Add all regions that intersect the sphere to the region list.
+ *
+ * @param sphere Sphere to intersect.
+ * @param regions Array to copy the intersecting regions to.
+ * @param maxRegions Maximum number of regions to return in @ref regions.
+ * @return Number of intersecting regions copied to @ref regions.
+ */
+uint32_t ZoneTerrain::findRegionShapes(Sphere sphere,
+                                       NewtonCollision **regions,
+                                       uint32_t maxRegions)
+{
+    uint32_t found = 0;
+    findRegionShapes(sphere, m_regionTree->m_nodes.constData(), 1,
+                     regions, maxRegions, found);
+    return found;
+}
+
+/**
+ * @brief Add all regions that intersect the sphere to the region list.
+ *
+ * @param sphere Sphere to intersect.
+ * @param nodes List of nodes that make the region BSP tree.
+ * @param nodeIdx Current node to test for intersection.
+ * @param regions Array to copy the intersecting regions to.
+ * @param maxRegions Maximum number of regions to return in @ref regions.
+ * @param found Number of intersection regions found so far.
+ */
+void ZoneTerrain::findRegionShapes(const Sphere &sphere,
+                                   const RegionTreeNode *nodes,
+                                   uint32_t nodeIdx,
+                                   NewtonCollision **regions,
+                                   uint32_t maxRegions, uint32_t &found)
+{
+    if((nodeIdx == 0) || (maxRegions == found))
+        return;
+    const RegionTreeNode &node = nodes[nodeIdx-1];
+    if(node.regionID == 0)
+    {
+        float distance = vec3::dot(node.normal, sphere.pos) + node.distance;
+        if((distance >= 0.0f) || (sphere.radius >= -distance))
+            findRegionShapes(sphere, nodes, node.left, regions, maxRegions, found);
+        if((distance <= 0.0f) || (sphere.radius >= distance))
+            findRegionShapes(sphere, nodes, node.right, regions, maxRegions, found);
+    }
+    else
+    {
+        // Leaf node.
+        Q_ASSERT(node.regionID <= m_regionCount);
+        NewtonCollision *shape = m_regionShapes[node.regionID];
+        if(shape)
+            regions[found++] = shape;
     }
 }
 

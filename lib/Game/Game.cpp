@@ -616,16 +616,15 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
     playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
     
-    const int MAX_NEARBY_REGIONS = 4096;
+    const int MAX_NEARBY_REGIONS = 128;
     NewtonCollision *regionShapes[MAX_NEARBY_REGIONS];
     matrix4 regionTransform = matrix4::translate(0.0, 0.0, 0.0);
     ZoneTerrain *terrain = m_zone->terrain();
-    //uint32_t regionID = terrain->findCurrentRegion(pos);
-    uint32_t regionID = terrain->currentRegion();
-    uint32_t regionsFound = terrain->findAllRegionShapes(regionShapes,
-                                                         MAX_NEARBY_REGIONS);
-    //qDebug("Player now in region %d at (%f, %f, %f). Nearby: %d regions",
-    //       regionID, pos.x, pos.y, pos.z, regionsFound);
+    Sphere playerSphere(pos, offsetZ);
+    uint32_t regionsFound = terrain->findRegionShapes(playerSphere, regionShapes,
+                                                      MAX_NEARBY_REGIONS);
+    /*qDebug("Player now at (%f, %f, %f). Nearby: %d regions",
+           pos.x, pos.y, pos.z, regionsFound);*/
     for(uint32_t i = 0; i < regionsFound; i++)
     {
         NewtonCollision *regionShape = regionShapes[i];

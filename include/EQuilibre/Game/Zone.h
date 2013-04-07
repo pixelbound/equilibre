@@ -147,6 +147,8 @@ public:
     void showAllRegions(const Frustum &frustum);
     void showNearbyRegions(const Frustum &frustum);
     void showCurrentRegion(const Frustum &frustum);
+    uint32_t findRegionShapes(Sphere sphere, NewtonCollision **regions,
+                              uint32_t maxRegions);
     uint32_t findNearbyRegionShapes(NewtonCollision **firstRegion,
                                     uint32_t maxRegions);
     uint32_t findAllRegionShapes(NewtonCollision **firstRegion,
@@ -154,7 +156,10 @@ public:
     uint32_t findCurrentRegion(const vec3 &cameraPos);
 
 private:
-    uint32_t findCurrentRegion(const vec3 &cameraPos, const RegionTreeNode *nodes, uint32_t nodeIdx);
+    uint32_t findRegion(const vec3 &pos, const RegionTreeNode *nodes, uint32_t nodeIdx);
+    void findRegionShapes(const Sphere &sphere, const RegionTreeNode *nodes,
+                          uint32_t nodeIdx, NewtonCollision **regions,
+                          uint32_t maxRegions, uint32_t &found);
     void upload(RenderContext *renderCtx);
 
     WLDData *m_zoneWld;
