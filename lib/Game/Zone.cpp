@@ -434,6 +434,9 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     vec3 padding(1.0, 1.0, 1.0);
     m_zoneBounds.low = m_zoneBounds.low - padding;
     m_zoneBounds.high = m_zoneBounds.high + padding;
+    NewtonSetWorldSize(m_zone->collisionWorld(),
+                       (float *)&m_zoneBounds.low,
+                       (float *)&m_zoneBounds.high);
     
     // Load zone textures into the material palette.
     WLDFragmentArray<MaterialPaletteFragment> matPals = wld->table()->byKind<MaterialPaletteFragment>();

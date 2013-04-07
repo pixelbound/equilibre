@@ -58,11 +58,6 @@ Game::Game()
     m_minDistanceToShowCharacter = 1.0;
     m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
-    
-    // XXX feed the zone's AABB.
-    float min[3] = {-5000.0, -5000.0, -5000.0};
-    float max[3] = { 5000.0,  5000.0,  5000.0};
-    NewtonSetWorldSize(m_collisionWorld, min, max);
 }
 
 Game::~Game()
