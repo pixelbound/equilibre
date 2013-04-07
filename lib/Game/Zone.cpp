@@ -230,6 +230,67 @@ void Zone::update(RenderContext *renderCtx, double currentTime)
     }
 }
 
+void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
+{
+    vec3 &pos = state.position;
+    if(m_game->applyGravity())
+    {
+        state.velocity = state.velocity + (m_game->gravity() * dt);
+        pos = pos + state.velocity;
+    }
+    
+    // Make the capsule upright.
+    float offsetZ = (player->capsuleHeight() * 0.5f);
+    matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
+    playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
+    
+    // Find regions that are possibly intersecting with the player.
+    // Using a bounding sphere should not increase the number of regions to
+    // check too much and it makes the query faster.
+    const int MAX_NEARBY_REGIONS = 128;
+    NewtonCollision *regionShapes[MAX_NEARBY_REGIONS];
+    matrix4 regionTransform = matrix4::translate(0.0, 0.0, 0.0);
+    Sphere playerSphere(pos, offsetZ);
+    uint32_t regionsFound = m_terrain->findRegionShapes(playerSphere,
+                                                        regionShapes,
+                                                        MAX_NEARBY_REGIONS);
+    /*qDebug("Player now at (%f, %f, %f). Nearby: %d regions",
+           pos.x, pos.y, pos.z, regionsFound);*/
+    
+    // Check for collisions between the player and nearby regions.
+    vec3 responseVelocity;
+    const int MAX_CONTACTS = 1;
+    vec3 contacts[MAX_CONTACTS];
+    vec3 normals[MAX_CONTACTS];
+    float penetration[MAX_CONTACTS] = {0};
+    for(uint32_t i = 0; i < regionsFound; i++)
+    {
+        NewtonCollision *regionShape = regionShapes[i];
+        int hits = NewtonCollisionCollide(collisionWorld(), MAX_CONTACTS,
+            player->shape(), (const float *)playerTransform.columns(),
+            regionShape, (const float *)regionTransform.columns(),
+            (float *)contacts, (float *)normals, penetration, 0);
+        if(hits > 0)
+        {
+            /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
+                   pos.x, pos.y, pos.z,
+                   contacts[0].x, contacts[0].y, contacts[0].z,
+                   normals[0].x, normals[0].y, normals[0].z,
+                   penetration[0]);*/
+            responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+        }
+        //m_collisionChecks++; XXX
+    }
+    
+    // Apply the collision response to the player.
+    if((responseVelocity.z > 1e-4) || !m_game->applyGravity())
+    {
+        // Clear the player's velocity when the ground is hit.
+        state.velocity = vec3(0, 0, 0);
+    }
+    pos = pos + responseVelocity;
+}
+
 void Zone::draw(RenderContext *renderCtx, RenderProgram *prog)
 {
     if(!m_actorTree)

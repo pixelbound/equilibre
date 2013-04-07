@@ -71,6 +71,8 @@ public:
     void setShowSoundTriggers(bool show);
     void setApplyGravity(bool enabled);
     
+    const vec3 & gravity() const;
+    
     int movementX() const;
     int movementY() const;
     void setMovementX(int movementX);

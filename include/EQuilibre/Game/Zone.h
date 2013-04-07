@@ -38,6 +38,7 @@ class WLDLightActor;
 class ActorIndex;
 class ActorIndexNode;
 class OctreeIndex;
+struct ActorState;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialArray;
@@ -102,6 +103,8 @@ public:
     void clear(RenderContext *renderCtx);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(RenderContext *renderCtx, double currentTime);
+    
+    void updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt);
     
     void freezeFrustum(RenderContext *renderCtx);
     void unFreezeFrustum();
