@@ -183,7 +183,7 @@ bool ZoneViewerWindow::loadZone(QString path, QString name)
         return false;
     }
     WLDModel *playerModel = game->findCharacter("ELM", m_renderCtx);
-    game->setPlayerModel(playerModel);
+    game->player()->setModel(playerModel);
     return true;
 }
 

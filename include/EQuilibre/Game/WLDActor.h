@@ -33,6 +33,7 @@ class WLDModel;
 class WLDMesh;
 class WLDActor;
 class WLDAnimation;
+class Game;
 class MaterialMap;
 class RenderContext;
 class Octree;
@@ -122,7 +123,7 @@ private:
 class GAME_DLL WLDCharActor : public WLDActor
 {
 public:
-    WLDCharActor(WLDModel *model);
+    WLDCharActor(Game *game, WLDModel *model);
     virtual ~WLDCharActor();
     const static ActorType Kind = Character;
     
@@ -178,7 +179,7 @@ public:
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
     void createShape(NewtonWorld *space);
-    void update();
+    void update(double currentTime);
     
     void calculateStep(vec3 &position, float distSideways, float distForward,
                        bool ghost);
@@ -193,8 +194,12 @@ private:
     float m_lookOrientZ;
     float m_cameraDistance;
     float m_runSpeed;
+    Game *m_game;
     WLDModel *m_model;
     WLDAnimation *m_animation;
+    WLDAnimation *m_idleAnim;
+    WLDAnimation *m_runningAnim;
+    double m_startAnimationTime;
     double m_animTime;
     QString m_palName;
     MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray

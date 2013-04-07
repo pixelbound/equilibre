@@ -34,10 +34,7 @@ const int Game::MOVEMENT_TICKS_PER_SEC = 60;
 
 Game::Game()
 {
-    m_player = new WLDCharActor(NULL);
-    m_playerIdleAnim = NULL;
-    m_playerRunningAnim = NULL;
-    m_startAnimationTime = 0.0;
+    m_player = new WLDCharActor(this, NULL);
     m_zone = NULL;
     m_sky = NULL;
     m_builtinObjects = NULL;
@@ -51,6 +48,7 @@ Game::Game()
     m_cullObjects = true;
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
+    m_drawCapsule = false;
     m_applyGravity = true;
     m_gravity = vec3(0.0, 0.0, -1.0);
     m_updateStat = NULL;
@@ -91,8 +89,6 @@ void Game::clear(RenderContext *renderCtx)
     }
     m_player->setModel(NULL);
     m_player->setHasCamera(false);
-    m_playerIdleAnim = NULL;
-    m_playerRunningAnim = NULL;
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -196,6 +192,16 @@ bool Game::showSoundTriggers() const
 void Game::setShowSoundTriggers(bool show)
 {
     m_showSoundTriggers = show;
+}
+
+int Game::movementX() const
+{
+    return m_movementStateX;
+}
+
+int Game::movementY() const
+{
+    return m_movementStateY;
 }
 
 void Game::setMovementX(int movementX)
@@ -499,7 +505,7 @@ void Game::drawPlayer(RenderContext *renderCtx, RenderProgram *prog)
         {
             m_player->draw(renderCtx, prog);
         }
-        if(m_capsule) //XXX
+        if(m_capsule && m_drawCapsule)
         {
             vec3 loc = m_player->location();
             const float modelHeight = 4.0;
@@ -517,16 +523,6 @@ void Game::drawPlayer(RenderContext *renderCtx, RenderProgram *prog)
     }
 }
 
-void Game::setPlayerModel(WLDModel *model)
-{
-    m_player->setModel(model);
-    if(model)
-    {
-        m_playerIdleAnim = m_player->findAnimation("P01");
-        m_playerRunningAnim = m_player->findAnimation("L02");
-    }
-}
-
 void Game::update(RenderContext *renderCtx, double currentTime,
                   double sinceLastUpdate)
 {
@@ -541,26 +537,7 @@ void Game::update(RenderContext *renderCtx, double currentTime,
     updateMovement(sinceLastUpdate);
     
     // Update the player's animation.
-    if(m_player->model())
-    {
-        WLDAnimation *oldAnimation = m_player->animation();
-        WLDAnimation *newAnimation = oldAnimation;
-        if(m_movementStateX || m_movementStateY)
-        {
-            newAnimation = m_playerRunningAnim;
-        }
-        else
-        {
-            newAnimation = m_playerIdleAnim;
-        }
-        
-        if(oldAnimation != newAnimation)
-        {
-            m_player->setAnimation(newAnimation);
-            m_startAnimationTime = currentTime;
-        }
-        m_player->setAnimTime(currentTime - m_startAnimationTime);
-    }
+    m_player->update(currentTime);
     
     if(m_zone)
     {

@@ -320,7 +320,7 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_renderCtx = renderCtx;
     m_sigma = 1.0;
     m_game = new Game();
-    m_actor = new WLDCharActor(NULL);
+    m_actor = new WLDCharActor(m_game, NULL);
     m_skinningMode = SoftwareSkinning;
     m_transState.last = vec3();
     m_rotState.last = vec3();

@@ -71,6 +71,8 @@ public:
     void setShowSoundTriggers(bool show);
     void setApplyGravity(bool enabled);
     
+    int movementX() const;
+    int movementY() const;
     void setMovementX(int movementX);
     void setMovementY(int movementY);
     
@@ -99,8 +101,6 @@ public:
     CharacterPack * loadCharacters(QString archivePath, QString wldName = QString::null, bool own = true);
     WLDModel * findCharacter(QString name);
     WLDModel * findCharacter(QString name, RenderContext *renderCtx);
-    
-    void setPlayerModel(WLDModel *model);
     
     void update(RenderContext *renderCtx, double currentTime,
                 double sinceLastUpdate);
@@ -132,15 +132,13 @@ private:
     bool m_cullObjects;
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
+    bool m_drawCapsule;
     bool m_applyGravity;
     vec3 m_gravity;
     FrameStat *m_updateStat;
     FrameStat *m_collisionChecksStat;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
-    WLDAnimation *m_playerIdleAnim;
-    WLDAnimation *m_playerRunningAnim;
-    double m_startAnimationTime;
     // Duration between the newest movement tick and the current frame.
     double m_movementAheadTime;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.

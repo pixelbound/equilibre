@@ -123,11 +123,14 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
+WLDCharActor::WLDCharActor(Game *game, WLDModel *model) : WLDActor(Kind)
 {
+    m_game = game;
     m_model = NULL;
     m_materialMap = NULL;
     m_animation = NULL;
+    m_idleAnim = NULL;
+    m_runningAnim = NULL;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
@@ -135,7 +138,8 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
-    m_animTime = 0;
+    m_animTime = 0.0f;
+    m_startAnimationTime = 0.0f;
     m_palName = "00";
     m_shape = NULL;
     m_collisionWorld = NULL;
@@ -171,8 +175,14 @@ void WLDCharActor::setModel(WLDModel *newModel)
             WLDMaterialPalette *pal = newModel->mainMesh()->palette();
             m_materialMap->clear();
             m_materialMap->resize(pal->materialSlots().size());
+            m_model = newModel;
+            m_idleAnim = findAnimation("P01");
+            m_runningAnim = findAnimation("L02");
         }
-        m_model = newModel;
+        else
+        {
+            m_model = NULL;
+        }
     }
 }
 
@@ -209,7 +219,6 @@ const matrix4 & WLDCharActor::transform() const
 void WLDCharActor::setLocation(const vec3 &newLocation)
 {
     m_location = newLocation;
-    update();
 }
 
 vec3 WLDCharActor::lookOrient() const
@@ -406,13 +415,30 @@ void WLDCharActor::createShape(NewtonWorld *space)
     m_shape = NewtonCreateCapsule(space, m_capsuleRadius, m_capsuleHeight, 0, NULL);
 }
 
-void WLDCharActor::update()
+void WLDCharActor::update(double currentTime)
 {
-    if(!m_shape)
-    {
-        return;
-    }
     m_transform = matrix4::translate(m_location.x, m_location.y, m_location.z);
+    
+    if(m_model)
+    {
+        WLDAnimation *oldAnimation = m_animation;
+        WLDAnimation *newAnimation = oldAnimation;
+        if(m_game->movementX() || m_game->movementY())
+        {
+            newAnimation = m_runningAnim;
+        }
+        else
+        {
+            newAnimation = m_idleAnim;
+        }
+        
+        if(oldAnimation != newAnimation)
+        {
+            m_animation = newAnimation;
+            m_startAnimationTime = currentTime;
+        }
+        m_animTime = (currentTime - m_startAnimationTime);
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
