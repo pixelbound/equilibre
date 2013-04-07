@@ -274,19 +274,23 @@ const matrix4 & RenderContext::matrix(RenderContext::MatrixMode mode) const
 }
 
 static void copyImageARGB32(const QImage &src, QImage &dst, size_t slicePitch, uint32_t z,
-                          uint32_t repeatX, uint32_t repeatY, bool invertY)
+                            uint32_t repeatX, uint32_t repeatY, bool invertY)
 {
     uint32_t width = src.width(), height = src.height();
-    QRgb *dstPos = (QRgb *)dst.bits() + (slicePitch * z);
+    QRgb *dstBits = (QRgb *)dst.bits();
+    int dstPos = (slicePitch * z);
+    int dstSize = dst.byteCount();
     for(uint32_t i = 0; i < repeatY; i++)
     {
         for(uint32_t y = 0; y < height; y++)
         {
             int scanIndex = invertY ? (height - y - 1) : y;
-            const QRgb *srcPos = (const QRgb *)src.scanLine(scanIndex);
+            const QRgb *srcBits = (const QRgb *)src.scanLine(scanIndex);
             for(uint32_t j = 0; j < repeatX; j++)
             {
-                memcpy(dstPos, srcPos, width * sizeof(QRgb));
+                int widthBytes = width * sizeof(QRgb);
+                Q_ASSERT(((dstPos * sizeof(QRgb)) + widthBytes) <= dstSize);
+                memcpy(dstBits + dstPos, srcBits, widthBytes);
                 dstPos += width;
             }
         }
@@ -297,20 +301,23 @@ static void copyImageIndexed8(const QImage &src, QImage &dst, size_t slicePitch,
                               uint32_t repeatX, uint32_t repeatY, bool invertY)
 {
     uint32_t width = src.width(), height = src.height();
-    QRgb *dstPos = (QRgb *)dst.bits() + (slicePitch * z);
+    QRgb *dstBits = (QRgb *)dst.bits();
+    int dstPos = (slicePitch * z);
+    int dstSize = dst.byteCount();
     QVector<QRgb> colors = src.colorTable();
     for(uint32_t i = 0; i < repeatY; i++)
     {
         for(uint32_t y = 0; y < height; y++)
         {
             int scanIndex = invertY ? (height - y - 1) : y;
-            const uint8_t *srcPos = (const uint8_t *)src.scanLine(scanIndex);
+            const uint8_t *srcBits = (const uint8_t *)src.scanLine(scanIndex);
             for(uint32_t j = 0; j < repeatX; j++)
             {
                 for(uint32_t x = 0; x < width; x++)
                 {
-                    uint8_t index = srcPos[x];
-                    *dstPos++ = (index < colors.count()) ? colors.value(index) : 0;
+                    Q_ASSERT(((dstPos + 1) * sizeof(QRgb)) <= dstSize);
+                    uint8_t index = srcBits[x];
+                    dstBits[dstPos++] = (index < colors.count()) ? colors.value(index) : 0;
                 }
             }
         }
@@ -393,18 +400,20 @@ texture_t RenderContext::loadTextures(const QImage *images, size_t count)
         levelImg.fill(0);
         for(size_t i = 0; i < count; i++)
         {
-            // Repeat textures smaller than the texture array
-            // so that we can easily use GL_REPEAT.
-            QImage img = images[i];
-            uint32_t repeatX = maxWidth / img.width(), repeatY = maxHeight / img.height();
-            
             // Scale down the original image to generate the mipmap.
-            int scaledWidth = (img.width() >> level), scaledHeight = (img.height() >> level);
+            QImage img = images[i];
+            int origWidth = img.width(), origHeight = img.height();
+            int scaledWidth = (origWidth >> level), scaledHeight = (origHeight >> level);
             Q_ASSERT((scaledWidth > 0) || (scaledHeight > 0));
             scaledWidth = qMax(scaledWidth, 1);
             scaledHeight = qMax(scaledHeight, 1);
             if(level > 0)
                 img = img.scaled(scaledWidth, scaledHeight);
+            
+            // Repeat textures smaller than the texture array
+            // so that we can easily use GL_REPEAT.            
+            uint32_t repeatX = qMin(maxWidth / origWidth, layerWidth);
+            uint32_t repeatY = qMin(maxHeight / origHeight, layerHeight);
             copyImage(img, levelImg, slicePitch, i, repeatX, repeatY, true);
         }
         glTexImage3D(target, level, GL_RGBA, layerWidth, layerHeight, count, 0,
