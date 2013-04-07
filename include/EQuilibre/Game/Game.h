@@ -125,6 +125,7 @@ private:
     MaterialArray *m_builtinMats;
     MeshData *m_capsule;
     NewtonWorld *m_collisionWorld;
+    int m_collisionChecks;
     bool m_showZone;
     bool m_showObjects;
     bool m_showFog;
@@ -134,6 +135,7 @@ private:
     bool m_applyGravity;
     vec3 m_gravity;
     FrameStat *m_updateStat;
+    FrameStat *m_collisionChecksStat;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
     WLDAnimation *m_playerIdleAnim;

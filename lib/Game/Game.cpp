@@ -44,6 +44,7 @@ Game::Game()
     m_builtinMats = NULL;
     m_capsule = NULL;
     m_collisionWorld = NewtonCreate();
+    m_collisionChecks = 0;
     m_showZone = true;
     m_showObjects = true;
     m_showFog = false;
@@ -53,6 +54,7 @@ Game::Game()
     m_applyGravity = true;
     m_gravity = vec3(0.0, 0.0, -1.0);
     m_updateStat = NULL;
+    m_collisionChecksStat = NULL;
     m_minDistanceToShowCharacter = 1.0;
     m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
@@ -106,7 +108,9 @@ void Game::clear(RenderContext *renderCtx)
     if(renderCtx)
     {
         renderCtx->destroyStat(m_updateStat);
+        renderCtx->destroyStat(m_collisionChecksStat);
         m_updateStat = NULL;
+        m_collisionChecksStat = NULL;
     }
 }
 
@@ -533,6 +537,10 @@ void Game::update(RenderContext *renderCtx, double currentTime,
 {
     if(!m_updateStat)
         m_updateStat = renderCtx->createStat("Update (ms)", FrameStat::CPUTime);
+    if(!m_collisionChecksStat)
+        m_collisionChecksStat = renderCtx->createStat("Collision checks",
+                                                      FrameStat::Counter);
+    m_collisionChecks = 0;
     m_updateStat->beginTime();
     
     updateMovement(sinceLastUpdate);
@@ -564,6 +572,7 @@ void Game::update(RenderContext *renderCtx, double currentTime,
         m_zone->update(renderCtx, currentTime);
     }
     m_updateStat->endTime();
+    m_collisionChecksStat->setCurrent(m_collisionChecks);
 }
 
 void Game::updateMovement(double sinceLastUpdate)
@@ -606,17 +615,14 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         pos = pos + state.velocity;
     }
     
-    vec3 responseVelocity;
-    const int MAX_CONTACTS = 1;
-    vec3 contacts[MAX_CONTACTS];
-    vec3 normals[MAX_CONTACTS];
-    float penetration[MAX_CONTACTS] = {0};
-    
     // Make the capsule upright.
     float offsetZ = (m_player->capsuleHeight() * 0.5f);
     matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
     playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
     
+    // Find regions that are possibly intersecting with the player.
+    // Using a bounding sphere should not increase the number of regions to
+    // check too much and it makes the query faster.
     const int MAX_NEARBY_REGIONS = 128;
     NewtonCollision *regionShapes[MAX_NEARBY_REGIONS];
     matrix4 regionTransform = matrix4::translate(0.0, 0.0, 0.0);
@@ -626,6 +632,13 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
                                                       MAX_NEARBY_REGIONS);
     /*qDebug("Player now at (%f, %f, %f). Nearby: %d regions",
            pos.x, pos.y, pos.z, regionsFound);*/
+    
+    // Check for collisions between the player and nearby regions.
+    vec3 responseVelocity;
+    const int MAX_CONTACTS = 1;
+    vec3 contacts[MAX_CONTACTS];
+    vec3 normals[MAX_CONTACTS];
+    float penetration[MAX_CONTACTS] = {0};
     for(uint32_t i = 0; i < regionsFound; i++)
     {
         NewtonCollision *regionShape = regionShapes[i];
@@ -642,6 +655,7 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
                    penetration[0]);*/
             responseVelocity = responseVelocity - (normals[0] * penetration[0]);
         }
+        m_collisionChecks++;
     }
     
     // Apply the collision response to the player.
