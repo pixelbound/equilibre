@@ -49,6 +49,7 @@ Game::Game()
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
     m_applyGravity = true;
+    m_updateStat = NULL;
     m_minDistanceToShowCharacter = 1.0;
     m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
@@ -99,6 +100,11 @@ void Game::clear(RenderContext *renderCtx)
     }
     m_objectPacks.clear();
     m_charPacks.clear();
+    if(renderCtx)
+    {
+        renderCtx->destroyStat(m_updateStat);
+        m_updateStat = NULL;
+    }
 }
 
 void Game::clearZone(RenderContext *renderCtx)
@@ -522,6 +528,10 @@ void Game::setPlayerModel(WLDModel *model)
 void Game::update(RenderContext *renderCtx, double currentTime,
                   double sinceLastUpdate)
 {
+    if(!m_updateStat)
+        m_updateStat = renderCtx->createStat("Update (ms)", FrameStat::CPUTime);
+    m_updateStat->beginTime();
+    
     updateMovement(sinceLastUpdate);
     
     // Update the player's animation.
@@ -550,6 +560,7 @@ void Game::update(RenderContext *renderCtx, double currentTime,
     {
         m_zone->update(renderCtx, currentTime);
     }
+    m_updateStat->endTime();
 }
 
 void Game::updateMovement(double sinceLastUpdate)

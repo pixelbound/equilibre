@@ -130,6 +130,7 @@ private:
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
     bool m_applyGravity;
+    FrameStat *m_updateStat;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
     WLDAnimation *m_playerIdleAnim;
