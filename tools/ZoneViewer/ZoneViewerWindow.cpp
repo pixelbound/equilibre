@@ -403,6 +403,10 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
         else
             m_game->freezeFrustum(m_renderCtx);
     }
+    else if(key == Qt::Key_G)
+    {
+        m_game->setApplyGravity(!m_game->applyGravity());
+    }
     
     if(releaseX)
         m_game->setMovementX(0);

@@ -30,17 +30,6 @@
 #include "EQuilibre/Render/RenderContext.h"
 #include "EQuilibre/Render/RenderProgram.h"
 
-uint32_t Game::SHAPE_TERRAIN = 1;
-uint32_t Game::SHAPE_STATIC_OBJECT = 2;
-uint32_t Game::SHAPE_CHARACTER = 4;
-
-uint32_t Game::COLLIDES_TERRAIN = 0;
-uint32_t Game::COLLIDES_STATIC_OBJECT = 0;
-uint32_t Game::COLLIDES_CHARACTER =
-        Game::SHAPE_TERRAIN |
-        Game::SHAPE_STATIC_OBJECT |
-        Game::SHAPE_CHARACTER;
-
 Game::Game()
 {
     m_player = new WLDCharActor(NULL);
@@ -59,10 +48,12 @@ Game::Game()
     m_cullObjects = true;
     m_showSoundTriggers = false;
     m_frustumIsFrozen = false;
+    m_applyGravity = true;
     m_minDistanceToShowCharacter = 1.0;
     m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
     
+    // XXX feed the zone's AABB.
     float min[3] = {-5000.0, -5000.0, -5000.0};
     float max[3] = { 5000.0,  5000.0,  5000.0};
     NewtonSetWorldSize(m_collisionWorld, min, max);
@@ -158,6 +149,16 @@ bool Game::cullObjects() const
 void Game::setCullObjects(bool enabled)
 {
     m_cullObjects = enabled;
+}
+
+bool Game::applyGravity() const
+{
+    return m_applyGravity;
+}
+
+void Game::setApplyGravity(bool enabled)
+{
+    m_applyGravity = enabled;
 }
 
 bool Game::frustumIsFrozen() const
@@ -587,8 +588,11 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     }
     
     const vec3 gravity(0, 0, -1.0);
-    state.velocity = state.velocity + (gravity * dt);
-    pos = pos + state.velocity;
+    if(m_applyGravity)
+    {
+        state.velocity = state.velocity + (gravity * dt);
+        pos = pos + state.velocity;
+    }
     
     vec3 responseVelocity;
     const int MAX_CONTACTS = 1;
@@ -630,7 +634,7 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     }
     
     // Apply the collision response to the player.
-    if(responseVelocity.z > 1e-4)
+    if((responseVelocity.z > 1e-4) || !m_applyGravity)
     {
         // Clear the player's velocity when the ground is hit.
         state.velocity = vec3(0, 0, 0);

@@ -62,12 +62,14 @@ public:
     bool cullObjects() const;
     bool showSoundTriggers() const;
     bool frustumIsFrozen() const;
+    bool applyGravity() const;
     
     void setShowZone(bool show);
     void setShowObjects(bool show);
     void setShowFog(bool show);
     void setCullObjects(bool enabled);
     void setShowSoundTriggers(bool show);
+    void setApplyGravity(bool enabled);
     
     void setMovementX(int movementX);
     void setMovementY(int movementY);
@@ -106,14 +108,6 @@ public:
     void drawPlayer(RenderContext *renderCtx, RenderProgram *prog);
     void drawBuiltinObject(MeshData *object, RenderContext *renderCtx,
                            RenderProgram *prog);
-    
-    // Flags used for collision detection.
-    static uint32_t SHAPE_TERRAIN;
-    static uint32_t SHAPE_STATIC_OBJECT;
-    static uint32_t SHAPE_CHARACTER;
-    static uint32_t COLLIDES_TERRAIN;
-    static uint32_t COLLIDES_STATIC_OBJECT;
-    static uint32_t COLLIDES_CHARACTER;
 
 private:
     void updateMovement(double sinceLastUpdate);
@@ -135,6 +129,7 @@ private:
     bool m_cullObjects;
     bool m_showSoundTriggers;
     bool m_frustumIsFrozen;
+    bool m_applyGravity;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
     WLDAnimation *m_playerIdleAnim;
