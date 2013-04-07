@@ -39,6 +39,9 @@ Zone::Zone(Game *game)
     m_terrain = NULL;
     m_objects = NULL;
     m_actorTree = NULL;
+    m_collisionChecksStat = NULL;
+    m_collisionChecks = 0;
+    m_movementAheadTime = 0.0f;
 }
 
 Zone::~Zone()
@@ -191,6 +194,11 @@ void Zone::clear(RenderContext *renderCtx)
     m_actorTree = NULL;
     m_mainWld = 0;
     m_mainArchive = 0;
+    if(renderCtx)
+    {
+        renderCtx->destroyStat(m_collisionChecksStat);
+        m_collisionChecksStat = NULL;
+    }
 }
 
 void Zone::frustumCullingCallback(WLDActor *actor, void *user)
@@ -203,6 +211,10 @@ void Zone::frustumCullingCallback(WLDActor *actor, void *user)
 
 void Zone::update(RenderContext *renderCtx, double currentTime)
 {
+    if(!m_collisionChecksStat)
+        m_collisionChecksStat = renderCtx->createStat("Collision checks",
+                                                      FrameStat::Counter);
+    m_collisionChecks = 0;
     m_frustum = renderCtx->viewFrustum();
     m_game->player()->calculateViewFrustum(m_frustum);
     if(m_terrain)
@@ -228,6 +240,32 @@ void Zone::update(RenderContext *renderCtx, double currentTime)
         else
             m_terrain->showAllRegions(realFrustum);
     }
+    
+    m_collisionChecksStat->setCurrent(m_collisionChecks);
+}
+
+void Zone::playerEntered(WLDCharActor *player, const vec3 &initialPos)
+{
+    m_currentState.position = m_previousState.position = initialPos;
+}
+
+void Zone::updateMovement(WLDCharActor *player, double sinceLastUpdate)
+{
+    // Calculate the next player position using fixed-duration ticks.
+    const double tick = (1.0 / Game::MOVEMENT_TICKS_PER_SEC);
+    m_movementAheadTime += sinceLastUpdate;
+    while(m_movementAheadTime > tick)
+    {
+        m_previousState = m_currentState;
+        updatePlayerPosition(player, m_currentState, tick);
+        m_movementAheadTime -= tick;
+    }
+    
+    // Interpolate the position since we calculated it too far in the future.
+    double alpha = (m_movementAheadTime / tick);
+    vec3 newPosition = (m_currentState.position * alpha) +
+            (m_previousState.position * (1.0 - alpha));
+    player->setLocation(newPosition);
 }
 
 void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt)
@@ -285,7 +323,7 @@ void Zone::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
                    penetration[0]);*/
             responseVelocity = responseVelocity - (normals[0] * penetration[0]);
         }
-        //m_collisionChecks++; XXX
+        m_collisionChecks++;
     }
     
     // Apply the collision response to the player.

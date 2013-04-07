@@ -443,6 +443,7 @@ void WLDCharActor::enterZone(Zone *newZone, const vec3 &initialPos)
     m_location = initialPos;
     m_hasCamera = true;
     m_zone = newZone;
+    newZone->playerEntered(this, initialPos);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

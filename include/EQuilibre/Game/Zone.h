@@ -38,7 +38,6 @@ class WLDLightActor;
 class ActorIndex;
 class ActorIndexNode;
 class OctreeIndex;
-struct ActorState;
 class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialArray;
@@ -55,6 +54,12 @@ class ZoneTerrain;
 class ZoneObjects;
 class CharacterPack;
 class ObjectPack;
+
+struct GAME_DLL ActorState
+{
+    vec3 position;
+    vec3 velocity;
+};
 
 /*!
   \brief Contains some rendering information about a zone.
@@ -104,6 +109,8 @@ public:
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     void update(RenderContext *renderCtx, double currentTime);
     
+    void playerEntered(WLDCharActor *player, const vec3 &initialPos);
+    void updateMovement(WLDCharActor *player, double sinceLastUpdate);
     void updatePlayerPosition(WLDCharActor *player, ActorState &state, double dt);
     
     void freezeFrustum(RenderContext *renderCtx);
@@ -127,6 +134,14 @@ private:
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frustum;
     Frustum m_frozenFrustum;
+    
+    // Duration between the newest movement tick and the current frame.
+    double m_movementAheadTime;
+    // XXX Extend this to camera settings so that moving the camera isn't choppy.
+    ActorState m_currentState;
+    ActorState m_previousState;
+    FrameStat *m_collisionChecksStat;
+    int m_collisionChecks;
 };
 
 /*!

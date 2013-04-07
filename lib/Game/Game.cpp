@@ -41,7 +41,6 @@ Game::Game()
     m_builtinMats = NULL;
     m_capsule = NULL;
     m_collisionWorld = NewtonCreate();
-    m_collisionChecks = 0;
     m_showZone = true;
     m_showObjects = true;
     m_showFog = false;
@@ -52,9 +51,7 @@ Game::Game()
     m_applyGravity = true;
     m_gravity = vec3(0.0, 0.0, -1.0);
     m_updateStat = NULL;
-    m_collisionChecksStat = NULL;
     m_minDistanceToShowCharacter = 1.0;
-    m_movementAheadTime = 0.0;
     m_movementStateX = m_movementStateY = 0;
 }
 
@@ -99,9 +96,7 @@ void Game::clear(RenderContext *renderCtx)
     if(renderCtx)
     {
         renderCtx->destroyStat(m_updateStat);
-        renderCtx->destroyStat(m_collisionChecksStat);
         m_updateStat = NULL;
-        m_collisionChecksStat = NULL;
     }
 }
 
@@ -294,7 +289,6 @@ Zone * Game::loadZone(QString path, QString name)
         initialPos = info.safePos;
     }
     m_player->enterZone(m_zone, initialPos);
-    m_currentState.position = m_previousState.position = initialPos;
     return zone;
 }
 
@@ -531,13 +525,12 @@ void Game::update(RenderContext *renderCtx, double currentTime,
 {
     if(!m_updateStat)
         m_updateStat = renderCtx->createStat("Update (ms)", FrameStat::CPUTime);
-    if(!m_collisionChecksStat)
-        m_collisionChecksStat = renderCtx->createStat("Collision checks",
-                                                      FrameStat::Counter);
-    m_collisionChecks = 0;
     m_updateStat->beginTime();
     
-    updateMovement(sinceLastUpdate);
+    if(m_zone && m_zone->terrain())
+    {
+        m_zone->updateMovement(m_player, sinceLastUpdate);
+    }
     
     // Update the player's animation.
     m_player->update(currentTime);
@@ -547,29 +540,6 @@ void Game::update(RenderContext *renderCtx, double currentTime,
         m_zone->update(renderCtx, currentTime);
     }
     m_updateStat->endTime();
-    m_collisionChecksStat->setCurrent(m_collisionChecks);
-}
-
-void Game::updateMovement(double sinceLastUpdate)
-{
-    // Calculate the next player position using fixed-duration ticks.
-    const double tick = (1.0 / MOVEMENT_TICKS_PER_SEC);
-    m_movementAheadTime += sinceLastUpdate;
-    while(m_movementAheadTime > tick)
-    {
-        m_previousState = m_currentState;
-        if(m_zone && m_zone->terrain())
-        {
-            m_zone->updatePlayerPosition(m_player, m_currentState, tick);
-        }
-        m_movementAheadTime -= tick;
-    }
-    
-    // Interpolate the position since we calculated it too far in the future.
-    double alpha = (m_movementAheadTime / tick);
-    vec3 newPosition = (m_currentState.position * alpha) +
-            (m_previousState.position * (1.0 - alpha));
-    m_player->setLocation(newPosition);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

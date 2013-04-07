@@ -38,12 +38,6 @@ class WLDCharActor;
 class WLDMesh;
 class WLDData;
 
-struct GAME_DLL ActorState
-{
-    vec3 position;
-    vec3 velocity;
-};
-
 /*!
   \brief Contains the global state of the game.
   */
@@ -114,7 +108,6 @@ public:
     static const int MOVEMENT_TICKS_PER_SEC;
 
 private:
-    void updateMovement(double sinceLastUpdate);
     MeshData *loadBuiltinSTLMesh(QString path);
 
     QList<ObjectPack *> m_objectPacks;
@@ -126,7 +119,6 @@ private:
     MaterialArray *m_builtinMats;
     MeshData *m_capsule;
     NewtonWorld *m_collisionWorld;
-    int m_collisionChecks;
     bool m_showZone;
     bool m_showObjects;
     bool m_showFog;
@@ -137,14 +129,8 @@ private:
     bool m_applyGravity;
     vec3 m_gravity;
     FrameStat *m_updateStat;
-    FrameStat *m_collisionChecksStat;
     float m_minDistanceToShowCharacter;
     WLDCharActor *m_player;
-    // Duration between the newest movement tick and the current frame.
-    double m_movementAheadTime;
-    // XXX Extend this to camera settings so that moving the camera isn't choppy.
-    ActorState m_currentState;
-    ActorState m_previousState;
     // Current movement state for the X axis.
     // Negative means moving left, positive moving right, zero not moving.
     int m_movementStateX;
