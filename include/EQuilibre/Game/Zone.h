@@ -89,9 +89,6 @@ public:
     QList<CharacterPack *> characterPacks() const;
     OctreeIndex * actorIndex() const;
     NewtonWorld * collisionWorld();
-    NewtonCollision * groundShape() const;
-    void setGroundShape(NewtonCollision *shape);
-    NewtonCollision * wallShape() const;
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
@@ -123,8 +120,6 @@ private:
     PFSArchive *m_mainArchive;
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;
-    NewtonCollision *m_groundShape;
-    NewtonCollision *m_wallShape;
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frustum;
@@ -142,6 +137,7 @@ public:
     
     const AABox & bounds() const;
     uint32_t currentRegion() const;
+    NewtonCollision * currentRegionShape() const;
 
     bool load(PFSArchive *archive, WLDData *wld);
     void update(double currentTime);
@@ -151,6 +147,8 @@ public:
     void showAllRegions(const Frustum &frustum);
     void showNearbyRegions(const Frustum &frustum);
     void showCurrentRegion(const Frustum &frustum);
+    uint32_t findNearbyRegionShapes(NewtonCollision **firstRegion,
+                                    uint32_t maxRegions);
     uint32_t findCurrentRegion(const vec3 &cameraPos);
 
 private:

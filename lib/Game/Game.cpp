@@ -581,7 +581,7 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     player->calculateStep(pos, deltaX, deltaY, ghost);
     
     // Collision detection if the player is in a zone.
-    if(!m_zone)
+    if(!m_zone || !m_zone->terrain())
     {
         return;
     }
@@ -595,17 +595,24 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     vec3 contacts[MAX_CONTACTS];
     vec3 normals[MAX_CONTACTS];
     float penetration[MAX_CONTACTS] = {0};
+    
+    // Make the capsule upright.
     float offsetZ = (m_player->capsuleHeight() * 0.5f);
     matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
-    // Make the capsule upright.
     playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
     
-    if(m_zone->groundShape())
+    const int MAX_NEARBY_REGIONS = 512;
+    NewtonCollision *regionShapes[MAX_NEARBY_REGIONS];
+    matrix4 regionTransform = matrix4::translate(0.0, 0.0, 0.0);
+    ZoneTerrain *terrain = m_zone->terrain();
+    uint32_t regionsFound = terrain->findNearbyRegionShapes(regionShapes,
+                                                            MAX_NEARBY_REGIONS);
+    for(uint32_t i = 0; i < regionsFound; i++)
     {
-        matrix4 groundTransform = matrix4::translate(0.0, 0.0, 0.0);
+        NewtonCollision *regionShape = regionShapes[i];
         int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
             m_player->shape(), (const float *)playerTransform.columns(),
-            m_zone->groundShape(), (const float *)groundTransform.columns(),
+            regionShape, (const float *)regionTransform.columns(),
             (float *)contacts, (float *)normals, penetration, 0);
         if(hits > 0)
         {
@@ -617,71 +624,6 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
             responseVelocity = responseVelocity - (normals[0] * penetration[0]);
         }
     }
-    
-    if(m_zone->wallShape())
-    {
-        matrix4 wallTransform = matrix4::translate(0.0, 265.0, 0.0);
-        int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
-                m_player->shape(), (const float *)playerTransform.columns(),
-                m_zone->wallShape(), (const float *)wallTransform.columns(),
-                (float *)contacts, (float *)normals, penetration, 0);
-        if(hits > 0)
-        {
-            /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
-                   pos.x, pos.y, pos.z,
-                   contacts[0].x, contacts[0].y, contacts[0].z,
-                   normals[0].x, normals[0].y, normals[0].z,
-                    penetration[0]);*/
-            responseVelocity = responseVelocity - (normals[0] * penetration[0]);
-        }
-    }
-    
-#if 0
-    const int MAX_CONTACTS = 1;
-    dContactGeom contacts[MAX_CONTACTS];
-    std::vector<dGeomID> &geomList = player->collidingShapes();
-    dGeomID playerGeom = player->shape();
-    dGeomID geom = NULL;
-    vec3 responseVelocity;
-    dGeomSetPosition(playerGeom, pos.x, pos.y, pos.z);
-    dSpaceCollide(m_zone->collisionIndex(), this, collisionNearCallback);
-    for(size_t i = 0; i < geomList.size(); i++)
-    {
-        geom = geomList[i];
-        memset(contacts, 0, MAX_CONTACTS * sizeof(dContactGeom));
-        int collision = dCollide(playerGeom, geom, MAX_CONTACTS, contacts,
-                                 sizeof(dContactGeom));
-        if(collision > 0)
-        {
-            // Only deal with player/plane collisions for now.
-            dContactGeom &c = contacts[0];
-            if((c.depth < 1e-4) || (dGeomGetClass(geom) != dPlaneClass))
-            {
-                continue;
-            }
-            
-            // Make sure the player is actually crossing the plane.
-            vec3 normal(c.normal[0], c.normal[1], c.normal[2]);
-            dReal d1 = dGeomPlanePointDepth(geom, pos.x, pos.y, pos.z);
-            dReal d2 = dGeomPlanePointDepth(geom, c.pos[0], c.pos[1], c.pos[2]);
-            dReal depthSign = d1 * d2;
-            if(depthSign >= 0.0)
-            {
-                continue;
-            }
-            
-            // Resolve the collision by pushing the playing to the other
-            // side of the plane.
-            /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f d1 %f d2 %f",
-                   pos.x, pos.y, pos.z,
-                   c.pos[0], c.pos[1], c.pos[2],
-                   c.normal[0], c.normal[1], c.normal[2],
-                   c.depth, d1, d2);*/
-            responseVelocity = responseVelocity + (normal * c.depth);
-        }
-    }
-    geomList.clear();
-#endif
     
     // Apply the collision response to the player.
     if(responseVelocity.z > 1e-4)

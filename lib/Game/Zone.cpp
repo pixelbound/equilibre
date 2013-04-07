@@ -39,8 +39,6 @@ Zone::Zone(Game *game)
     m_terrain = NULL;
     m_objects = NULL;
     m_actorTree = NULL;
-    m_groundShape = NULL;
-    m_wallShape = NULL;
 }
 
 Zone::~Zone()
@@ -76,21 +74,6 @@ OctreeIndex * Zone::actorIndex() const
 NewtonWorld * Zone::collisionWorld()
 {
     return m_game->collisionWorld();
-}
-
-NewtonCollision * Zone::groundShape() const
-{
-    return m_groundShape;
-}
-
-void Zone::setGroundShape(NewtonCollision *shape)
-{
-    m_groundShape = shape;
-}
-
-NewtonCollision * Zone::wallShape() const
-{
-    return m_wallShape;
 }
 
 const ZoneInfo & Zone::info() const
@@ -151,12 +134,6 @@ bool Zone::load(QString path, QString name)
     // Load the zone's sound triggers.
     QString triggersFile = QString("%1/%2_sounds.eff").arg(path).arg(name);
     SoundTrigger::fromFile(m_soundTriggers, triggersFile);
-    
-    // XXX Remove this.
-    /*m_groundShape = NewtonCreateBox(m_game->collisionWorld(),
-                                    6000.0, 6000.0, 0.01, 0, NULL);
-    m_wallShape = NewtonCreateBox(m_game->collisionWorld(),
-                                  6000.0, 0.01, 6000.0, 0, NULL);*/
     return true;
 }
 
@@ -187,16 +164,6 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
-    if(m_groundShape)
-    {
-        NewtonReleaseCollision(m_game->collisionWorld(), m_groundShape);
-        m_groundShape = NULL;
-    }
-    if(m_wallShape)
-    {
-        NewtonReleaseCollision(m_game->collisionWorld(), m_wallShape);
-        m_wallShape = NULL;
-    }
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -379,6 +346,11 @@ uint32_t ZoneTerrain::currentRegion() const
     return m_currentRegion;
 }
 
+NewtonCollision * ZoneTerrain::currentRegionShape() const
+{
+    return m_regionShapes[m_currentRegion];
+}
+
 void ZoneTerrain::clear(RenderContext *renderCtx)
 {
     for(uint32_t i = 1; i <= m_regionCount; i++)
@@ -488,7 +460,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
-        if(actor && (i == 1754))
+        if(actor)
         {
             MeshData *meshData = actor->mesh()->data();
             vec3 faceVertices[3];
@@ -510,7 +482,7 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
                                            sizeof(vec3), j);
             }
             NewtonTreeCollisionEndBuild(shape, 0); // XXX test with optimize = 1
-            m_zone->setGroundShape(shape);
+            m_regionShapes[i] = shape;
         }
     }
     
@@ -560,6 +532,29 @@ void ZoneTerrain::showCurrentRegion(const Frustum &frustum)
         if(frustum.containsAABox(actor->boundsAA()) != OUTSIDE)
             m_visibleRegions.push_back(actor);
     }
+}
+
+uint32_t ZoneTerrain::findNearbyRegionShapes(NewtonCollision **firstRegion,
+                                             uint32_t maxRegions)
+{
+    uint32_t found = 0;
+    if(m_currentRegion == 0)
+        return found;
+    WLDFragmentArray<RegionFragment> regions = m_zoneWld->table()->byKind<RegionFragment>();
+    RegionFragment *region = regions[m_currentRegion - 1];
+    uint32_t count = qMin((uint32_t)region->m_nearbyRegions.count(), maxRegions);
+    for(uint32_t i = 0; i < count; i++)
+    {
+        uint32_t regionID = region->m_nearbyRegions[i];
+        Q_ASSERT(regionID <= m_regionCount);
+        NewtonCollision *shape = m_regionShapes[regionID];
+        if(shape)
+        {
+            firstRegion[found] = shape;
+            found++;
+        }
+    }
+    return found;
 }
 
 uint32_t ZoneTerrain::findCurrentRegion(const vec3 &cameraPos)
