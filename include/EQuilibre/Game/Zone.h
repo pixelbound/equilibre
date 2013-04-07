@@ -90,6 +90,7 @@ public:
     OctreeIndex * actorIndex() const;
     NewtonWorld * collisionWorld();
     NewtonCollision * groundShape() const;
+    void setGroundShape(NewtonCollision *shape);
     NewtonCollision * wallShape() const;
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);

@@ -83,6 +83,11 @@ NewtonCollision * Zone::groundShape() const
     return m_groundShape;
 }
 
+void Zone::setGroundShape(NewtonCollision *shape)
+{
+    m_groundShape = shape;
+}
+
 NewtonCollision * Zone::wallShape() const
 {
     return m_wallShape;
@@ -148,10 +153,10 @@ bool Zone::load(QString path, QString name)
     SoundTrigger::fromFile(m_soundTriggers, triggersFile);
     
     // XXX Remove this.
-    m_groundShape = NewtonCreateBox(m_game->collisionWorld(),
+    /*m_groundShape = NewtonCreateBox(m_game->collisionWorld(),
                                     6000.0, 6000.0, 0.01, 0, NULL);
     m_wallShape = NewtonCreateBox(m_game->collisionWorld(),
-                                  6000.0, 0.01, 6000.0, 0, NULL);
+                                  6000.0, 0.01, 6000.0, 0, NULL);*/
     return true;
 }
 
@@ -477,31 +482,37 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
     }
     
     // Create collision shapes for zone regions.
-    /*
+    MeshBuffer *meshBuf = m_zoneBuffer;
     const Vertex *allVertices = meshBuf->vertices.data();
     const uint32_t *allIndices = meshBuf->indices.data();
     for(uint32_t i = 1; i <= m_regionCount; i++)
     {
         WLDStaticActor *actor = m_regionActors[i];
-        if(actor)
+        if(actor && (i == 1754))
         {
-            dTriMeshDataID shapeData = dGeomTriMeshDataCreate();
             MeshData *meshData = actor->mesh()->data();
-            const Vertex *vertices = allVertices + meshData->vertexSegment.offset;
-            const uint32_t *indices = allIndices + meshData->indexSegment.offset;
-            dGeomTriMeshDataBuildSingle(shapeData, vertices, sizeof(Vertex),
-                                        meshData->vertexSegment.count,
-                                        indices, meshData->indexSegment.count,
-                                        sizeof(uint32_t) * 3);
-            dGeomID shape = dCreateTriMesh(space, shapeData, NULL, NULL, NULL);
-            dGeomSetCategoryBits(shape, Game::SHAPE_TERRAIN);
-            dGeomSetCollideBits(shape, Game::COLLIDES_TERRAIN);
-            dGeomSetData(shape, (void *)i);
-            m_regionShapes[i] = shape;
-            m_regionShapeData[i] = shapeData;
+            vec3 faceVertices[3];
+            uint32_t numFaces = (meshData->indexSegment.count / 3);
+            uint32_t indexLoc = meshData->indexSegment.offset;
+            NewtonCollision *shape =
+                    NewtonCreateTreeCollision(m_zone->collisionWorld(), 0);
+            NewtonTreeCollisionBeginBuild(shape);
+            for(uint32_t j = 0; j < numFaces; j++)
+            {
+                for(uint32_t k = 0; k < 3; k++)
+                {
+                    uint32_t index = allIndices[indexLoc];
+                    Vertex v = allVertices[index];
+                    faceVertices[k] = v.position;
+                    indexLoc++;
+                }
+                NewtonTreeCollisionAddFace(shape, 3, (float *)faceVertices,
+                                           sizeof(vec3), j);
+            }
+            NewtonTreeCollisionEndBuild(shape, 0); // XXX test with optimize = 1
+            m_zone->setGroundShape(shape);
         }
     }
-    */
     
     return true;
 }

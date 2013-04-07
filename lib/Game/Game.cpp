@@ -586,9 +586,9 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
         return;
     }
     
-    const vec3 gravity(0, 0, -1.0);
+    /*const vec3 gravity(0, 0, -1.0);
     state.velocity = state.velocity + (gravity * dt);
-    pos = pos + state.velocity;
+    pos = pos + state.velocity;*/
     
     vec3 responseVelocity;
     const int MAX_CONTACTS = 1;
@@ -599,34 +599,41 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
     // Make the capsule upright.
     playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
-    matrix4 groundTransform = matrix4::translate(0.0, 0.0, 0.0);
-    int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
-        m_player->shape(), (const float *)playerTransform.columns(),
-        m_zone->groundShape(), (const float *)groundTransform.columns(),
-        (float *)contacts, (float *)normals, penetration, 0);
-    if(hits > 0)
+    
+    if(m_zone->groundShape())
     {
-        /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
-               pos.x, pos.y, pos.z,
-               contacts[0].x, contacts[0].y, contacts[0].z,
-               normals[0].x, normals[0].y, normals[0].z,
-                penetration[0]);*/
-        responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+        matrix4 groundTransform = matrix4::translate(0.0, 0.0, 0.0);
+        int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
+            m_player->shape(), (const float *)playerTransform.columns(),
+            m_zone->groundShape(), (const float *)groundTransform.columns(),
+            (float *)contacts, (float *)normals, penetration, 0);
+        if(hits > 0)
+        {
+            /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
+                   pos.x, pos.y, pos.z,
+                   contacts[0].x, contacts[0].y, contacts[0].z,
+                   normals[0].x, normals[0].y, normals[0].z,
+                    penetration[0]);*/
+            responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+        }
     }
     
-    matrix4 wallTransform = matrix4::translate(0.0, 265.0, 0.0);
-    hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
-            m_player->shape(), (const float *)playerTransform.columns(),
-            m_zone->wallShape(), (const float *)wallTransform.columns(),
-            (float *)contacts, (float *)normals, penetration, 0);
-    if(hits > 0)
+    if(m_zone->wallShape())
     {
-        /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
-               pos.x, pos.y, pos.z,
-               contacts[0].x, contacts[0].y, contacts[0].z,
-               normals[0].x, normals[0].y, normals[0].z,
-                penetration[0]);*/
-        responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+        matrix4 wallTransform = matrix4::translate(0.0, 265.0, 0.0);
+        int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
+                m_player->shape(), (const float *)playerTransform.columns(),
+                m_zone->wallShape(), (const float *)wallTransform.columns(),
+                (float *)contacts, (float *)normals, penetration, 0);
+        if(hits > 0)
+        {
+            /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
+                   pos.x, pos.y, pos.z,
+                   contacts[0].x, contacts[0].y, contacts[0].z,
+                   normals[0].x, normals[0].y, normals[0].z,
+                    penetration[0]);*/
+            responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+        }
     }
     
 #if 0

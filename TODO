@@ -6,6 +6,11 @@ z=0
 const vec3 gravity(0.0, 0.0, -9.8);
 state.position = state + (gravity * dt);
 
+Newton 2.36 is r2169
+Newton 2.35 is r1498
+Newton 2.34 is r609
+Newton 2.33 is r509 (header says 2.31)
+
 Material palettes:
     Keep them in a list
     Enforce one MaterialArray per draw call (beginDraw/endDraw)
