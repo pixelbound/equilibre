@@ -141,7 +141,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
-    m_walk = false;
+    m_moveMode = Running;
     m_jumping = false;
     m_animTime = 0.0f;
     m_startAnimationTime = 0.0f;
@@ -212,19 +212,28 @@ NewtonCollision * WLDCharActor::shape() const
     return m_shape;
 }
 
+WLDCharActor::ActorMoveMode WLDCharActor::moveMode() const
+{
+    return m_moveMode;
+}
+
+void WLDCharActor::setMoveMode(WLDCharActor::ActorMoveMode newMode)
+{
+    m_moveMode = newMode;
+}
+
 float WLDCharActor::speed() const
 {
-    return m_walk ? m_walkSpeed : m_runSpeed;
-}
-
-bool WLDCharActor::walk() const
-{
-    return m_walk;
-}
-
-void WLDCharActor::setWalk(bool forceWalk)
-{
-    m_walk = forceWalk;
+    switch(m_moveMode)
+    {
+    default:
+    case Running:
+        return m_runSpeed;
+    case Walking:
+        return m_walkSpeed;
+    case Sitting:
+        return 0.0f;
+    }
 }
 
 bool WLDCharActor::jumping() const
@@ -453,10 +462,16 @@ void WLDCharActor::update(double currentTime)
         }
         else if(m_zone && (m_zone->movementX() || m_zone->movementY()))
         {
-            if(m_walk)
-                newAnimation = m_walkingAnim;
-            else
+            switch(m_moveMode)
+            {
+            default:
+            case Running:
                 newAnimation = m_runningAnim;
+                break;
+            case Walking:
+                newAnimation = m_walkingAnim;
+                break;
+            }
         }
         else
         {

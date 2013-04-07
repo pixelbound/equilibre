@@ -381,7 +381,11 @@ void ZoneScene::keyPressEvent(QKeyEvent *e)
     else if(e->modifiers() & Qt::ShiftModifier)
     {
         if(player)
-            player->setWalk(!player->walk());
+        {
+            bool isWalking = (player->moveMode() == WLDCharActor::Walking);
+            player->setMoveMode(isWalking ? WLDCharActor::Running
+                                          : WLDCharActor::Walking);
+        }
     }
     
     if(zone && newMovementX)
