@@ -273,7 +273,7 @@ Zone * Game::loadZone(QString path, QString name)
         m_zone->setInfo(info);
         initialPos = info.safePos;
     }
-    m_player->createShape(m_zone->collisionWorld(), 2.0f, 1.0f);
+    m_player->createShape(m_zone->collisionWorld());
     m_player->setLocation(initialPos);
     m_player->setHasCamera(true);
     m_currentState.position = m_previousState.position = initialPos;
@@ -493,9 +493,15 @@ void Game::drawPlayer(RenderContext *renderCtx, RenderProgram *prog)
         if(m_capsule) //XXX
         {
             vec3 loc = m_player->location();
+            const float modelHeight = 4.0;
+            const float modelRadius = 1.0;
+            float scaleXY = (m_player->capsuleRadius() / modelRadius);
+            float scaleZ = (m_player->capsuleHeight() / modelHeight);
+            float offsetZ = (m_player->capsuleHeight() * 0.5f);
             renderCtx->pushMatrix();
-            renderCtx->translate(loc.x, loc.y, loc.z);
+            renderCtx->translate(loc.x, loc.y, loc.z + offsetZ);
             renderCtx->rotate(-m_player->lookOrient().z + 90.0f, 0.0, 0.0, 1.0);
+            renderCtx->scale(scaleXY, scaleXY, scaleZ);
             drawBuiltinObject(m_capsule, renderCtx, prog);
             renderCtx->popMatrix();
         }
@@ -589,12 +595,30 @@ void Game::updatePlayerPosition(WLDCharActor *player, ActorState &state, double 
     vec3 contacts[MAX_CONTACTS];
     vec3 normals[MAX_CONTACTS];
     float penetration[MAX_CONTACTS] = {0};
-    matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z);
-    matrix4 groundTransform = matrix4::translate(0.0, 0.0, -0.5);
+    float offsetZ = (m_player->capsuleHeight() * 0.5f);
+    matrix4 playerTransform = matrix4::translate(pos.x, pos.y, pos.z + offsetZ);
+    // Make the capsule upright.
+    playerTransform = playerTransform * matrix4::rotate(90.0, 0.0, 1.0, 0.0);
+    matrix4 groundTransform = matrix4::translate(0.0, 0.0, 0.0);
     int hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
         m_player->shape(), (const float *)playerTransform.columns(),
         m_zone->groundShape(), (const float *)groundTransform.columns(),
         (float *)contacts, (float *)normals, penetration, 0);
+    if(hits > 0)
+    {
+        /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",
+               pos.x, pos.y, pos.z,
+               contacts[0].x, contacts[0].y, contacts[0].z,
+               normals[0].x, normals[0].y, normals[0].z,
+                penetration[0]);*/
+        responseVelocity = responseVelocity - (normals[0] * penetration[0]);
+    }
+    
+    matrix4 wallTransform = matrix4::translate(0.0, 265.0, 0.0);
+    hits = NewtonCollisionCollide(m_collisionWorld, MAX_CONTACTS,
+            m_player->shape(), (const float *)playerTransform.columns(),
+            m_zone->wallShape(), (const float *)wallTransform.columns(),
+            (float *)contacts, (float *)normals, penetration, 0);
     if(hits > 0)
     {
         /*qDebug("Collision with player (%f, %f, %f) at (%f, %f, %f) normal (%f, %f, %f) depth %f",

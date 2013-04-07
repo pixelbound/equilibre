@@ -40,6 +40,7 @@ Zone::Zone(Game *game)
     m_objects = NULL;
     m_actorTree = NULL;
     m_groundShape = NULL;
+    m_wallShape = NULL;
 }
 
 Zone::~Zone()
@@ -80,6 +81,11 @@ NewtonWorld * Zone::collisionWorld()
 NewtonCollision * Zone::groundShape() const
 {
     return m_groundShape;
+}
+
+NewtonCollision * Zone::wallShape() const
+{
+    return m_wallShape;
 }
 
 const ZoneInfo & Zone::info() const
@@ -143,9 +149,9 @@ bool Zone::load(QString path, QString name)
     
     // XXX Remove this.
     m_groundShape = NewtonCreateBox(m_game->collisionWorld(),
-                                    6000.0, 6000.0, 1.0, 0, NULL);
-    NewtonCollisionSetUserID(m_groundShape, Game::COLLIDES_TERRAIN);
-    /* shape = dCreatePlane(space, 0, 1, 0, 265); */
+                                    6000.0, 6000.0, 0.01, 0, NULL);
+    m_wallShape = NewtonCreateBox(m_game->collisionWorld(),
+                                  6000.0, 0.01, 6000.0, 0, NULL);
     return true;
 }
 
@@ -176,6 +182,16 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
+    if(m_groundShape)
+    {
+        NewtonReleaseCollision(m_game->collisionWorld(), m_groundShape);
+        m_groundShape = NULL;
+    }
+    if(m_wallShape)
+    {
+        NewtonReleaseCollision(m_game->collisionWorld(), m_wallShape);
+        m_wallShape = NULL;
+    }
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);

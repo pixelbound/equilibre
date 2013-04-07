@@ -138,6 +138,8 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_palName = "00";
     m_shape = NULL;
     m_collisionWorld = NULL;
+    m_capsuleHeight = 6.0;
+    m_capsuleRadius = 1.0;
     setModel(model);
 }
 
@@ -171,6 +173,16 @@ void WLDCharActor::setModel(WLDModel *newModel)
         }
         m_model = newModel;
     }
+}
+
+float WLDCharActor::capsuleHeight() const
+{
+    return m_capsuleHeight;
+}
+
+float WLDCharActor::capsuleRadius() const
+{
+    return m_capsuleRadius;
 }
 
 NewtonCollision * WLDCharActor::shape() const
@@ -323,8 +335,9 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
     if(m_animation)
         bones = m_animation->transformationsAtTime(m_animTime);
 
+    float offsetZ = (m_capsuleHeight * 0.5f);
     renderCtx->pushMatrix();
-    renderCtx->translate(m_location.x, m_location.y, m_location.z);
+    renderCtx->translate(m_location.x, m_location.y, m_location.z + offsetZ);
     renderCtx->rotate(m_rotation.x, 1.0, 0.0, 0.0);
     renderCtx->rotate(m_rotation.y, 0.0, 1.0, 0.0);
     renderCtx->rotate(m_rotation.z, 0.0, 0.0, 1.0);
@@ -372,18 +385,19 @@ void WLDCharActor::calculateViewFrustum(Frustum &frustum) const
         matrix4::rotate(rot.z, 0.0, 0.0, 1.0);
     vec3 camPos(0.0, -m_cameraDistance, 0.0);
     camPos = viewMat.map(camPos);
-    vec3 eye = m_location + camPos;
+    const float eyeLevel = 0.8;
+    vec3 eyePos(0.0, 0.0, m_capsuleHeight * eyeLevel);
+    vec3 eye = m_location + eyePos + camPos;
     frustum.setEye(eye);
     frustum.setFocus(eye + viewMat.map(vec3(0.0, 1.0, 0.0)));
     frustum.setUp(vec3(0.0, 0.0, 1.0));
     frustum.update();
 }
 
-void WLDCharActor::createShape(NewtonWorld *space, float length, float radius)
+void WLDCharActor::createShape(NewtonWorld *space)
 {
     m_collisionWorld = space;
-    m_shape = NewtonCreateCapsule(space, radius, length + radius * 2.0, 0, NULL);
-    NewtonCollisionSetUserID(m_shape, Game::SHAPE_CHARACTER);
+    m_shape = NewtonCreateCapsule(space, m_capsuleRadius, m_capsuleHeight, 0, NULL);
 }
 
 void WLDCharActor::update()

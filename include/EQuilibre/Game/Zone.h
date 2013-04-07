@@ -90,6 +90,7 @@ public:
     OctreeIndex * actorIndex() const;
     NewtonWorld * collisionWorld();
     NewtonCollision * groundShape() const;
+    NewtonCollision * wallShape() const;
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
@@ -122,6 +123,7 @@ private:
     WLDData *m_mainWld;
     OctreeIndex *m_actorTree;
     NewtonCollision *m_groundShape;
+    NewtonCollision *m_wallShape;
     QVector<WLDLightActor *> m_lights;
     QVector<SoundTrigger *> m_soundTriggers;
     Frustum m_frustum;

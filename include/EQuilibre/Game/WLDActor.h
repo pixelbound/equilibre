@@ -129,8 +129,9 @@ public:
     WLDModel * model() const;
     void setModel(WLDModel *newModel);
     
+    float capsuleHeight() const;
+    float capsuleRadius() const;
     NewtonCollision * shape() const;
-    
     std::vector<NewtonCollision *> & collidingShapes();
     
     const matrix4 & transform() const;
@@ -174,7 +175,7 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
-    void createShape(NewtonWorld *space, float length, float radius);
+    void createShape(NewtonWorld *space);
     void update();
     
     void calculateStep(vec3 &position, float distSideways, float distForward,
@@ -198,6 +199,8 @@ private:
     NewtonWorld *m_collisionWorld;
     NewtonCollision *m_shape;
     std::vector<NewtonCollision *> m_collidingShapes;
+    float m_capsuleHeight;
+    float m_capsuleRadius;
     matrix4 m_transform;
 };
 
