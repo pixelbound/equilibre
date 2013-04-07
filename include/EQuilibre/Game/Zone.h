@@ -147,7 +147,6 @@ private:
     // Negative means moving backward, positive moving forward, zero not moving.
     int m_movementStateY;
     bool m_playerWantsToJump;
-    bool m_playerJumping;
     FrameStat *m_collisionChecksStat;
     int m_collisionChecks;
     NewtonWorld *m_collisionWorld;

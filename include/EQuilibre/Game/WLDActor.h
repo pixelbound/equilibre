@@ -145,7 +145,11 @@ public:
     float capsuleRadius() const;
     NewtonCollision * shape() const;
     
-    float runSpeed() const;
+    float speed() const;
+    bool walk() const;
+    void setWalk(bool forceWalk);
+    bool jumping() const;
+    void setJumping(bool isJumping);
     ActorState & currentState();
     ActorState & previousState();
     
@@ -202,7 +206,10 @@ private:
     float m_lookOrientX;
     float m_lookOrientZ;
     float m_cameraDistance;
+    float m_walkSpeed;
     float m_runSpeed;
+    bool m_walk;
+    bool m_jumping;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
     ActorState m_currentState;
     ActorState m_previousState;
@@ -210,7 +217,9 @@ private:
     WLDModel *m_model;
     WLDAnimation *m_animation;
     WLDAnimation *m_idleAnim;
+    WLDAnimation *m_walkingAnim;
     WLDAnimation *m_runningAnim;
+    WLDAnimation *m_jumpingAnim;
     double m_startAnimationTime;
     double m_animTime;
     QString m_palName;

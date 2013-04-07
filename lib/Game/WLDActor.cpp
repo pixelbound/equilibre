@@ -130,14 +130,19 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_materialMap = NULL;
     m_animation = NULL;
     m_idleAnim = NULL;
+    m_walkingAnim = NULL;
     m_runningAnim = NULL;
+    m_jumpingAnim = NULL;
     m_location = vec3(0.0, 0.0, 0.0);
     m_rotation = vec3(0.0, 0.0, 0.0);
     m_scale = vec3(1.0, 1.0, 1.0);
+    m_walkSpeed = 10.0f;
     m_runSpeed = 25.0f;
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
+    m_walk = false;
+    m_jumping = false;
     m_animTime = 0.0f;
     m_startAnimationTime = 0.0f;
     m_palName = "00";
@@ -181,7 +186,9 @@ void WLDCharActor::setModel(WLDModel *newModel)
             m_materialMap->resize(pal->materialSlots().size());
             m_model = newModel;
             m_idleAnim = findAnimation("P01");
+            m_walkingAnim = findAnimation("L01");
             m_runningAnim = findAnimation("L02");
+            m_jumpingAnim = findAnimation("L03");
         }
         else
         {
@@ -205,9 +212,29 @@ NewtonCollision * WLDCharActor::shape() const
     return m_shape;
 }
 
-float WLDCharActor::runSpeed() const
+float WLDCharActor::speed() const
 {
-    return m_runSpeed;
+    return m_walk ? m_walkSpeed : m_runSpeed;
+}
+
+bool WLDCharActor::walk() const
+{
+    return m_walk;
+}
+
+void WLDCharActor::setWalk(bool forceWalk)
+{
+    m_walk = forceWalk;
+}
+
+bool WLDCharActor::jumping() const
+{
+    return m_jumping;
+}
+
+void WLDCharActor::setJumping(bool isJumping)
+{
+    m_jumping = isJumping;
 }
 
 ActorState & WLDCharActor::currentState()
@@ -420,9 +447,16 @@ void WLDCharActor::update(double currentTime)
     {
         WLDAnimation *oldAnimation = m_animation;
         WLDAnimation *newAnimation = oldAnimation;
-        if(m_zone && (m_zone->movementX() || m_zone->movementY()))
+        if(m_jumping)
         {
-            newAnimation = m_runningAnim;
+            newAnimation = m_jumpingAnim;
+        }
+        else if(m_zone && (m_zone->movementX() || m_zone->movementY()))
+        {
+            if(m_walk)
+                newAnimation = m_walkingAnim;
+            else
+                newAnimation = m_runningAnim;
         }
         else
         {

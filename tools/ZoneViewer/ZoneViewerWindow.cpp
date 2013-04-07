@@ -357,6 +357,8 @@ void ZoneScene::drawFrame()
 
 void ZoneScene::keyPressEvent(QKeyEvent *e)
 {
+    Zone *zone = m_game->zone();
+    WLDCharActor *player = zone ? zone->player() : NULL;
     int newMovementX = 0;
     int newMovementY = 0;
     int key = e->key();
@@ -376,8 +378,12 @@ void ZoneScene::keyPressEvent(QKeyEvent *e)
     {
         newMovementY = -1;
     }
+    else if(e->modifiers() & Qt::ShiftModifier)
+    {
+        if(player)
+            player->setWalk(!player->walk());
+    }
     
-    Zone *zone = m_game->zone();
     if(zone && newMovementX)
         zone->setMovementX(newMovementX);
     if(zone && newMovementY)

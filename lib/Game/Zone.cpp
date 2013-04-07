@@ -46,7 +46,6 @@ Zone::Zone(Game *game)
     m_movementAheadTime = 0.0f;
     m_movementStateX = m_movementStateY = 0;
     m_playerWantsToJump = false;
-    m_playerJumping = false;
 }
 
 Zone::~Zone()
@@ -282,7 +281,7 @@ void Zone::playerEntered(WLDCharActor *player)
 
 void Zone::playerJumped()
 {
-    if(!m_playerJumping || m_game->allowMultiJumps())
+    if(!m_player->jumping() || m_game->allowMultiJumps())
     {
         m_playerWantsToJump = true;
     }
@@ -307,7 +306,7 @@ void Zone::updateMovement(double sinceLastUpdate)
 
 void Zone::updatePlayerPosition(ActorState &state, double dt)
 {
-    float dist = (m_player->runSpeed() * dt);
+    float dist = (m_player->speed() * dt);
     vec3 &pos = state.position;
     float deltaX = dist * m_movementStateX;
     float deltaY = dist * m_movementStateY;
@@ -321,11 +320,11 @@ void Zone::updatePlayerPosition(ActorState &state, double dt)
     if(m_playerWantsToJump)
     {
         state.jumpTime = jumpDuration;
-        m_playerJumping = true;
+        m_player->setJumping(true);
         m_playerWantsToJump = false;
     }
     double jumpTime = qMin((double)state.jumpTime, dt);
-    if(m_playerJumping && (jumpTime > 0.0))
+    if(m_player->jumping() && (jumpTime > 0.0))
     {
         double jumpAccel = (-jumpAccelFactor * m_game->gravity().z) * dt;
         state.velocity = state.velocity + vec3(0.0, 0.0, (float)jumpAccel);
@@ -387,7 +386,7 @@ void Zone::updatePlayerPosition(ActorState &state, double dt)
     {
         // Clear the player's velocity when the ground is hit.
         state.velocity = vec3(0, 0, 0);
-        m_playerJumping = false;
+        m_player->setJumping(false);
     }
     pos = pos + responseVelocity;
 }
