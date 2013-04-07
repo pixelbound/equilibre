@@ -275,11 +275,9 @@ void Zone::update(RenderContext *renderCtx, double currentTime,
     m_collisionChecksStat->setCurrent(m_collisionChecks);
 }
 
-void Zone::playerEntered(WLDCharActor *player, const vec3 &initialPos)
+void Zone::playerEntered(WLDCharActor *player)
 {
     m_player = player;
-    m_currentState.position = m_previousState.position = initialPos;
-    m_currentState.jumpTime = m_previousState.jumpTime = 0.0f;
 }
 
 void Zone::playerJumped()
@@ -297,16 +295,14 @@ void Zone::updateMovement(double sinceLastUpdate)
     m_movementAheadTime += sinceLastUpdate;
     while(m_movementAheadTime > tick)
     {
-        m_previousState = m_currentState;
-        updatePlayerPosition(m_currentState, tick);
+        m_player->previousState() = m_player->currentState();
+        updatePlayerPosition(m_player->currentState(), tick);
         m_movementAheadTime -= tick;
     }
     
     // Interpolate the position since we calculated it too far in the future.
     double alpha = (m_movementAheadTime / tick);
-    vec3 newPosition = (m_currentState.position * alpha) +
-            (m_previousState.position * (1.0 - alpha));
-    m_player->setLocation(newPosition);
+    m_player->interpolateState(alpha);
 }
 
 void Zone::updatePlayerPosition(ActorState &state, double dt)

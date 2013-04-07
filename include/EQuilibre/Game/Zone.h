@@ -42,6 +42,7 @@ class WLDSkeleton;
 class WLDMaterialPalette;
 class MaterialArray;
 class MaterialMap;
+struct ActorState;
 class ActorDefFragment;
 class RegionTreeFragment;
 class RegionFragment;
@@ -54,13 +55,6 @@ class ZoneTerrain;
 class ZoneObjects;
 class CharacterPack;
 class ObjectPack;
-
-struct GAME_DLL ActorState
-{
-    vec3 position;
-    vec3 velocity;
-    float jumpTime;
-};
 
 /*!
   \brief Contains some rendering information about a zone.
@@ -116,7 +110,7 @@ public:
     void update(RenderContext *renderCtx, double currentTime,
                 double sinceLastUpdate);
     
-    void playerEntered(WLDCharActor *player, const vec3 &initialPos);
+    void playerEntered(WLDCharActor *player);
     void playerJumped();
     
     void freezeFrustum(RenderContext *renderCtx);
@@ -152,9 +146,6 @@ private:
     // Current movement state for the Y axis.
     // Negative means moving backward, positive moving forward, zero not moving.
     int m_movementStateY;
-    // XXX Extend this to camera settings so that moving the camera isn't choppy.
-    ActorState m_currentState;
-    ActorState m_previousState;
     bool m_playerWantsToJump;
     bool m_playerJumping;
     FrameStat *m_collisionChecksStat;

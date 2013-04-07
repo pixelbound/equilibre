@@ -210,9 +210,14 @@ float WLDCharActor::runSpeed() const
     return m_runSpeed;
 }
 
-void WLDCharActor::setLocation(const vec3 &newLocation)
+ActorState & WLDCharActor::currentState()
 {
-    m_location = newLocation;
+    return m_currentState;
+}
+
+ActorState & WLDCharActor::previousState()
+{
+    return m_previousState;
 }
 
 vec3 WLDCharActor::lookOrient() const
@@ -374,6 +379,12 @@ void WLDCharActor::draw(RenderContext *renderCtx, RenderProgram *prog)
     renderCtx->popMatrix();
 }
 
+void WLDCharActor::interpolateState(double alpha)
+{
+    m_location = (m_currentState.position * alpha) +
+        (m_previousState.position * (1.0 - alpha));
+}
+
 void WLDCharActor::calculateStep(vec3 &position, float distSideways, 
                                  float distForward, bool ghost)
 {
@@ -436,8 +447,10 @@ void WLDCharActor::enterZone(Zone *newZone, const vec3 &initialPos)
                                   m_capsuleRadius, m_capsuleHeight, 0, NULL);
     m_location = initialPos;
     m_hasCamera = true;
+    m_currentState.position = m_previousState.position = initialPos;
+    m_currentState.jumpTime = m_previousState.jumpTime = 0.0f;
     m_zone = newZone;
-    newZone->playerEntered(this, initialPos);
+    newZone->playerEntered(this);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

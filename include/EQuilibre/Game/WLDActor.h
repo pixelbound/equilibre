@@ -48,6 +48,14 @@ public:
     MaterialArray *Materials;
 };
 
+
+struct GAME_DLL ActorState
+{
+    vec3 position;
+    vec3 velocity;
+    float jumpTime;
+};
+
 /*!
   \brief Describes an instance of an entity that can be referenced by a spatial index.
   */
@@ -138,8 +146,8 @@ public:
     NewtonCollision * shape() const;
     
     float runSpeed() const;
-    
-    void setLocation(const vec3 &newLocation);
+    ActorState & currentState();
+    ActorState & previousState();
     
     // x and z angles that describe where the character is looking at.
     vec3 lookOrient() const;
@@ -181,6 +189,7 @@ public:
     void enterZone(Zone *newZone, const vec3 &initialPos);
     void update(double currentTime);
     
+    void interpolateState(double alpha);
     void calculateStep(vec3 &position, float distSideways, float distForward,
                        bool ghost);
     void calculateViewFrustum(Frustum &frustum) const;
@@ -194,6 +203,9 @@ private:
     float m_lookOrientZ;
     float m_cameraDistance;
     float m_runSpeed;
+    // XXX Extend this to camera settings so that moving the camera isn't choppy.
+    ActorState m_currentState;
+    ActorState m_previousState;
     Zone *m_zone;
     WLDModel *m_model;
     WLDAnimation *m_animation;
