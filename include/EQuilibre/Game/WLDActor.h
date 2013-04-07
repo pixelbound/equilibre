@@ -38,6 +38,7 @@ class MaterialMap;
 class RenderContext;
 class Octree;
 class OctreeIndex;
+class Zone;
 
 class ActorEquip
 {
@@ -127,6 +128,9 @@ public:
     virtual ~WLDCharActor();
     const static ActorType Kind = Character;
     
+    Game * game() const;
+    Zone * zone() const;
+    
     WLDModel * model() const;
     void setModel(WLDModel *newModel);
     
@@ -175,7 +179,7 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
-    void createShape();
+    void enterZone(Zone *newZone, const vec3 &initialPos);
     void update(double currentTime);
     
     void calculateStep(vec3 &position, float distSideways, float distForward,
@@ -192,6 +196,7 @@ private:
     float m_cameraDistance;
     float m_runSpeed;
     Game *m_game;
+    Zone *m_zone;
     WLDModel *m_model;
     WLDAnimation *m_animation;
     WLDAnimation *m_idleAnim;

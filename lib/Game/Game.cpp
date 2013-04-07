@@ -288,9 +288,7 @@ Zone * Game::loadZone(QString path, QString name)
         m_zone->setInfo(info);
         initialPos = info.safePos;
     }
-    m_player->createShape();
-    m_player->setLocation(initialPos);
-    m_player->setHasCamera(true);
+    m_player->enterZone(m_zone, initialPos);
     m_currentState.position = m_previousState.position = initialPos;
     return zone;
 }

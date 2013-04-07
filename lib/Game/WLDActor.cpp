@@ -126,6 +126,7 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 WLDCharActor::WLDCharActor(Game *game, WLDModel *model) : WLDActor(Kind)
 {
     m_game = game;
+    m_zone = NULL;
     m_model = NULL;
     m_materialMap = NULL;
     m_animation = NULL;
@@ -154,6 +155,16 @@ WLDCharActor::~WLDCharActor()
     {
         NewtonReleaseCollision(m_game->collisionWorld(), m_shape);
     }
+}
+
+Game * WLDCharActor::game() const
+{
+    return m_game;
+}
+
+Zone * WLDCharActor::zone() const
+{
+    return m_zone;
 }
 
 WLDModel * WLDCharActor::model() const
@@ -398,12 +409,6 @@ void WLDCharActor::calculateViewFrustum(Frustum &frustum) const
     frustum.update();
 }
 
-void WLDCharActor::createShape()
-{
-    m_shape = NewtonCreateCapsule(m_game->collisionWorld(),
-                                  m_capsuleRadius, m_capsuleHeight, 0, NULL);
-}
-
 void WLDCharActor::update(double currentTime)
 {
     if(m_model)
@@ -426,6 +431,18 @@ void WLDCharActor::update(double currentTime)
         }
         m_animTime = (currentTime - m_startAnimationTime);
     }
+}
+
+void WLDCharActor::enterZone(Zone *newZone, const vec3 &initialPos)
+{
+    // Move the player's collision shape from the old zone to the new zone.
+    if(m_shape)
+        NewtonReleaseCollision(m_zone->collisionWorld(), m_shape);
+    m_shape = NewtonCreateCapsule(newZone->collisionWorld(),
+                                  m_capsuleRadius, m_capsuleHeight, 0, NULL);
+    m_location = initialPos;
+    m_hasCamera = true;
+    m_zone = newZone;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
