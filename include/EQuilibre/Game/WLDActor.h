@@ -133,11 +133,8 @@ public:
     float capsuleHeight() const;
     float capsuleRadius() const;
     NewtonCollision * shape() const;
-    std::vector<NewtonCollision *> & collidingShapes();
     
     float runSpeed() const;
-    
-    const matrix4 & transform() const;
     
     void setLocation(const vec3 &newLocation);
     
@@ -178,7 +175,7 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
-    void createShape(NewtonWorld *space);
+    void createShape();
     void update(double currentTime);
     
     void calculateStep(vec3 &position, float distSideways, float distForward,
@@ -204,12 +201,9 @@ private:
     QString m_palName;
     MaterialMap *m_materialMap; // Slot ID -> Material ID in MaterialArray
     QMap<EquipSlot, ActorEquip> m_equip;
-    NewtonWorld *m_collisionWorld;
     NewtonCollision *m_shape;
-    std::vector<NewtonCollision *> m_collidingShapes;
     float m_capsuleHeight;
     float m_capsuleRadius;
-    matrix4 m_transform;
 };
 
 /*!

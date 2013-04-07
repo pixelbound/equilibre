@@ -142,7 +142,6 @@ WLDCharActor::WLDCharActor(Game *game, WLDModel *model) : WLDActor(Kind)
     m_startAnimationTime = 0.0f;
     m_palName = "00";
     m_shape = NULL;
-    m_collisionWorld = NULL;
     m_capsuleHeight = 6.0;
     m_capsuleRadius = 1.0;
     setModel(model);
@@ -151,9 +150,9 @@ WLDCharActor::WLDCharActor(Game *game, WLDModel *model) : WLDActor(Kind)
 WLDCharActor::~WLDCharActor()
 {
     delete m_materialMap;
-    if(m_shape && m_collisionWorld)
+    if(m_shape && m_game->collisionWorld())
     {
-        NewtonReleaseCollision(m_collisionWorld, m_shape);
+        NewtonReleaseCollision(m_game->collisionWorld(), m_shape);
     }
 }
 
@@ -201,19 +200,9 @@ NewtonCollision * WLDCharActor::shape() const
     return m_shape;
 }
 
-std::vector<NewtonCollision *> & WLDCharActor::collidingShapes()
-{
-    return m_collidingShapes;
-}
-
 float WLDCharActor::runSpeed() const
 {
     return m_runSpeed;
-}
-
-const matrix4 & WLDCharActor::transform() const
-{
-    return m_transform;
 }
 
 void WLDCharActor::setLocation(const vec3 &newLocation)
@@ -409,16 +398,14 @@ void WLDCharActor::calculateViewFrustum(Frustum &frustum) const
     frustum.update();
 }
 
-void WLDCharActor::createShape(NewtonWorld *space)
+void WLDCharActor::createShape()
 {
-    m_collisionWorld = space;
-    m_shape = NewtonCreateCapsule(space, m_capsuleRadius, m_capsuleHeight, 0, NULL);
+    m_shape = NewtonCreateCapsule(m_game->collisionWorld(),
+                                  m_capsuleRadius, m_capsuleHeight, 0, NULL);
 }
 
 void WLDCharActor::update(double currentTime)
 {
-    m_transform = matrix4::translate(m_location.x, m_location.y, m_location.z);
-    
     if(m_model)
     {
         WLDAnimation *oldAnimation = m_animation;
