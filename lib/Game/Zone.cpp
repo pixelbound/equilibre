@@ -192,6 +192,11 @@ bool Zone::importLightSources(PFSArchive *archive)
 
 void Zone::clear(RenderContext *renderCtx)
 {
+    if(m_player)
+    {
+        m_player->leftZone(this);
+        m_player = NULL;
+    }
     foreach(CharacterPack *pack, m_charPacks)
     {
         pack->clear(renderCtx);
@@ -274,9 +279,10 @@ void Zone::update(RenderContext *renderCtx, double currentTime,
     m_collisionChecksStat->setCurrent(m_collisionChecks);
 }
 
-void Zone::playerEntered(WLDCharActor *player)
+void Zone::acceptPlayer(WLDCharActor *player, const vec3 &initialPos)
 {
     m_player = player;
+    player->enteredZone(this, initialPos);
 }
 
 void Zone::playerJumped()

@@ -266,7 +266,7 @@ Zone * Game::loadZone(QString path, QString name)
         m_zone->setInfo(info);
         initialPos = info.safePos;
     }
-    m_player->enterZone(m_zone, initialPos);
+    m_zone->acceptPlayer(m_player, initialPos);
     return zone;
 }
 

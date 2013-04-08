@@ -487,11 +487,9 @@ void WLDCharActor::update(double currentTime)
     }
 }
 
-void WLDCharActor::enterZone(Zone *newZone, const vec3 &initialPos)
+void WLDCharActor::enteredZone(Zone *newZone, const vec3 &initialPos)
 {
-    // Move the player's collision shape from the old zone to the new zone.
-    if(m_shape)
-        NewtonReleaseCollision(m_zone->collisionWorld(), m_shape);
+    Q_ASSERT(!m_shape && !m_zone);
     m_shape = NewtonCreateCapsule(newZone->collisionWorld(),
                                   m_capsuleRadius, m_capsuleHeight, 0, NULL);
     m_location = initialPos;
@@ -499,7 +497,17 @@ void WLDCharActor::enterZone(Zone *newZone, const vec3 &initialPos)
     m_currentState.position = m_previousState.position = initialPos;
     m_currentState.jumpTime = m_previousState.jumpTime = 0.0f;
     m_zone = newZone;
-    newZone->playerEntered(this);
+}
+
+void WLDCharActor::leftZone(Zone *oldZone)
+{
+    if(m_shape)
+    {
+        NewtonReleaseCollision(oldZone->collisionWorld(), m_shape);
+        m_shape = NULL;
+    }
+    m_hasCamera = false;
+    m_zone = NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

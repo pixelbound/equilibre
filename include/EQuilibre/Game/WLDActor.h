@@ -197,7 +197,8 @@ public:
     void setSkin(uint32_t skinID);
     void draw(RenderContext *renderCtx, RenderProgram *prog);
     
-    void enterZone(Zone *newZone, const vec3 &initialPos);
+    void enteredZone(Zone *newZone, const vec3 &initialPos);
+    void leftZone(Zone *oldZone);
     void update(double currentTime);
     
     void interpolateState(double alpha);

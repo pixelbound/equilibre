@@ -110,7 +110,7 @@ public:
     void update(RenderContext *renderCtx, double currentTime,
                 double sinceLastUpdate);
     
-    void playerEntered(WLDCharActor *player);
+    void acceptPlayer(WLDCharActor *player, const vec3 &initialPos);
     void playerJumped();
     
     void freezeFrustum(RenderContext *renderCtx);
