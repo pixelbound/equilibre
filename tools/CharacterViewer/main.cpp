@@ -28,10 +28,8 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "CharacterViewerWindow.h"
 
-QWidget * showCharViewer(RenderContext *renderCtx)
+void initCharViewer(CharacterViewerWindow *v)
 {
-    // create viewport for rendering the scene
-    CharacterViewerWindow *v = new CharacterViewerWindow(renderCtx);
     /*CharacterScene *scene = v->scene();
     Game *game = scene->game();
     QDir assetDir(scene->assetPath());
@@ -58,7 +56,6 @@ QWidget * showCharViewer(RenderContext *renderCtx)
         charActor->setAnimName("P01");
         //charActor->setPaletteName("03");
     }*/
-    return v;
 }
 
 int main(int argc, char **argv)
@@ -74,9 +71,10 @@ int main(int argc, char **argv)
     RenderContext renderCtx;
 
     // main window loop
-    QWidget *v = showCharViewer(&renderCtx);
-    v->setWindowState(Qt::WindowMaximized);
-    v->show();
+    CharacterViewerWindow v(&renderCtx);
+    initCharViewer(&v);
+    v.setWindowState(Qt::WindowMaximized);
+    v.show();
     app.exec();
     
     return 0;

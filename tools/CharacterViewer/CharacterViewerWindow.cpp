@@ -333,7 +333,7 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
 
 CharacterScene::~CharacterScene()
 {
-    delete m_player;
+    delete m_game;
 }
 
 Game * CharacterScene::game() const

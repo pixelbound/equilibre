@@ -38,6 +38,7 @@ class ZoneViewerWindow : public QMainWindow
 
 public:
     ZoneViewerWindow(RenderContext *renderCtx, QWidget *parent = 0);
+    ~ZoneViewerWindow();
 
     ZoneScene * scene() const;
 
@@ -79,6 +80,7 @@ class ZoneScene : public Scene
 
 public:
     ZoneScene(RenderContext *renderCtx);
+    virtual ~ZoneScene();
 
     Game * game() const;
     int lightingMode() const;

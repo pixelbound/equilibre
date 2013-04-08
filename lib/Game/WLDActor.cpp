@@ -622,6 +622,11 @@ OctreeIndex::OctreeIndex(AABox bounds, int maxDepth)
     m_maxDepth = maxDepth;
 }
 
+OctreeIndex::~OctreeIndex()
+{
+    delete m_root;
+}
+
 Octree * OctreeIndex::add(WLDActor *actor)
 {
     AABox actorBounds = actor->boundsAA();
@@ -746,6 +751,12 @@ Octree::Octree(AABox bounds, OctreeIndex *index)
     m_index = index;
     for(int i = 0; i < 8; i++)
         m_children[i] = NULL;
+}
+
+Octree::~Octree()
+{
+    for(int i = 0; i < 8; i++)
+        delete m_children[i];
 }
 
 const AABox & Octree::strictBounds() const

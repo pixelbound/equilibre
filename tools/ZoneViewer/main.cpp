@@ -28,9 +28,8 @@
 #include "EQuilibre/Game/WLDSkeleton.h"
 #include "ZoneViewerWindow.h"
 
-QWidget * showZoneViewer(RenderContext *renderCtx)
+void initZoneViewer(ZoneViewerWindow *v)
 {
-    ZoneViewerWindow *v = new ZoneViewerWindow(renderCtx);
     QDir assetDir(v->scene()->assetPath());
     QString zoneInfoFile ="zonevars.txt";
     Game *game = v->scene()->game();
@@ -39,7 +38,6 @@ QWidget * showZoneViewer(RenderContext *renderCtx)
     game->loadCharacters(assetDir.absoluteFilePath("global_chr.s3d"));
     if(assetDir.exists(zoneInfoFile))
         game->loadZoneInfo(assetDir.filePath(zoneInfoFile));
-    return v;
 }
 
 int main(int argc, char **argv)
@@ -55,9 +53,10 @@ int main(int argc, char **argv)
     RenderContext renderCtx;
 
     // main window loop
-    QWidget *v = showZoneViewer(&renderCtx);
-    v->setWindowState(Qt::WindowMaximized);
-    v->show();
+    ZoneViewerWindow v(&renderCtx);
+    initZoneViewer(&v);
+    v.setWindowState(Qt::WindowMaximized);
+    v.show();
     app.exec();
     
     return 0;

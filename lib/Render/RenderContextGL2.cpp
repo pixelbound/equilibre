@@ -91,6 +91,10 @@ RenderContext::RenderContext()
 
 RenderContext::~RenderContext()
 {
+    destroyStat(d->clearStat);
+    destroyStat(d->frameStat);
+    destroyStat(d->textureBindsStat);
+    destroyStat(d->drawCallsStat);
     delete d->programs[(int)BasicShader];
     delete d->programs[(int)SkinningUniformShader];
     delete d->programs[(int)SkinningTextureShader];

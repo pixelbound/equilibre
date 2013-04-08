@@ -187,8 +187,11 @@ void Zone::clear(RenderContext *renderCtx)
     }
     foreach(WLDLightActor *light, m_lights)
         delete light;
+    foreach(SoundTrigger *trigger, m_soundTriggers)
+        delete trigger;
     m_lights.clear();
     m_charPacks.clear();
+    m_soundTriggers.clear();
     if(m_objects)
     {
         m_objects->clear(renderCtx);

@@ -48,6 +48,13 @@ ZoneViewerWindow::ZoneViewerWindow(RenderContext *renderCtx, QWidget *parent) : 
     initMenus();
 }
 
+ZoneViewerWindow::~ZoneViewerWindow()
+{
+    delete m_viewport;
+    m_scene->game()->clear(m_renderCtx);
+    delete m_scene;
+}
+
 ZoneScene * ZoneViewerWindow::scene() const
 {
     return m_scene;
@@ -72,7 +79,7 @@ void ZoneViewerWindow::initMenus()
     fileMenu->addSeparator();
     fileMenu->addAction(quitAction);
 
-    QMenu *renderMenu = new QMenu();
+    QMenu *renderMenu = new QMenu(this);
     renderMenu->setTitle("&Render");
 
     m_noLightingAction = new QAction("No Lighting", this);
@@ -260,6 +267,11 @@ ZoneScene::ZoneScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_rotState.last = vec3();
     m_rotState.active = false;
     m_lastTimestamp = 0.0;
+}
+
+ZoneScene::~ZoneScene()
+{
+    delete m_game;
 }
 
 Game * ZoneScene::game() const

@@ -282,6 +282,8 @@ class GAME_DLL OctreeIndex
 {
 public:
     OctreeIndex(AABox bounds, int maxDepth=5);
+    ~OctreeIndex();
+    
     Octree * add(WLDActor *actor);
     void findVisible(const Frustum &f, OctreeCallback callback, void *user, bool cull);
     void findVisible(const Sphere &s, OctreeCallback callback, void *user, bool cull);
@@ -300,6 +302,7 @@ class GAME_DLL Octree
 {
 public:
     Octree(AABox bounds, OctreeIndex *index);
+    ~Octree();
     const AABox & strictBounds() const;
     AABox looseBounds() const;
     const QVector<WLDActor *> & actors() const;
