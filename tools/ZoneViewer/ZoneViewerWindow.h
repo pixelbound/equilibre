@@ -45,6 +45,7 @@ public:
 
 private slots:
     void openArchive();
+    void clearZone();
     void selectAssetDir();
     void setNoLighting();
     void setBakedLighting();

@@ -60,12 +60,14 @@ void ZoneViewerWindow::initMenus()
 
     QAction *openAction = new QAction("&Open S3D archive...", this);
     openAction->setShortcut(QKeySequence::Open);
+    QAction *clearAction = new QAction("&Clear", this);
     QAction *selectDirAction = new QAction("Select Asset Directory...", this);
 
     QAction *quitAction = new QAction("&Quit", this);
     quitAction->setShortcut(QKeySequence::Quit);
 
     fileMenu->addAction(openAction);
+    fileMenu->addAction(clearAction);
     fileMenu->addAction(selectDirAction);
     fileMenu->addSeparator();
     fileMenu->addAction(quitAction);
@@ -128,6 +130,7 @@ void ZoneViewerWindow::initMenus()
     updateMenus();
 
     connect(openAction, SIGNAL(triggered()), this, SLOT(openArchive()));
+    connect(clearAction, SIGNAL(triggered()), this, SLOT(clearZone()));
     connect(selectDirAction, SIGNAL(triggered()), this, SLOT(selectAssetDir()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
@@ -158,6 +161,11 @@ void ZoneViewerWindow::openArchive()
         m_viewport->setFocus();
     }
     m_viewport->setAnimation(true);
+}
+
+void ZoneViewerWindow::clearZone()
+{
+    m_scene->game()->clearZone(m_renderCtx);
 }
 
 void ZoneViewerWindow::selectAssetDir()

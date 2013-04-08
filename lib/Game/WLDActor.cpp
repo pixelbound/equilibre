@@ -146,6 +146,7 @@ WLDCharActor::WLDCharActor(Game *game) : WLDActor(Kind)
     m_moveMode = Running;
     m_wantsToJump = false;
     m_jumping = false;
+    m_jumpTime = 0.0f;
     m_animTime = 0.0f;
     m_startAnimationTime = 0.0f;
     m_palName = "00";
