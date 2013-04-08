@@ -320,7 +320,7 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
     m_renderCtx = renderCtx;
     m_sigma = 1.0;
     m_game = new Game();
-    m_actor = new WLDCharActor(NULL);
+    m_player = m_game->player();
     m_skinningMode = SoftwareSkinning;
     m_transState.last = vec3();
     m_rotState.last = vec3();
@@ -333,7 +333,7 @@ CharacterScene::CharacterScene(RenderContext *renderCtx) : Scene(renderCtx)
 
 CharacterScene::~CharacterScene()
 {
-    delete m_actor;
+    delete m_player;
 }
 
 Game * CharacterScene::game() const
@@ -364,20 +364,20 @@ QString CharacterScene::selectedAnimName() const
 void CharacterScene::setSelectedAnimName(QString newName)
 {
     m_animName = newName;
-    if(m_actor->model())
-        m_actor->setAnimation(m_actor->findAnimation(newName));
+    if(m_player->model())
+        m_player->setAnimation(m_player->findAnimation(newName));
 }
 
 WLDCharActor * CharacterScene::actor() const
 {
-    return m_actor;
+    return m_player;
 }
 
 void CharacterScene::setSelectedModelName(QString name)
 {
     WLDModel *model = m_game->findCharacter(name, m_renderCtx);
-    m_actor->setModel(model);
-    m_actor->setPaletteName("00");
+    m_player->setModel(model);
+    m_player->setPaletteName("00");
     setSelectedAnimName("POS");
     m_meshName = name;
 }
@@ -456,11 +456,11 @@ void CharacterScene::drawFrame()
     m_renderCtx->setCurrentProgram(prog);
     prog->setAmbientLight(ambientLight);
     
-    if(m_actor->model())
+    if(m_player->model())
     {
-        m_actor->setSkin(m_actor->paletteName().toUInt());
-        m_actor->setAnimTime(currentTime());
-        m_actor->draw(m_renderCtx, prog);
+        m_player->setSkin(m_player->paletteName().toUInt());
+        m_player->setAnimTime(currentTime());
+        m_player->draw(m_renderCtx, prog);
     }
 }
 

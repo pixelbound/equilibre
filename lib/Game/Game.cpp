@@ -34,7 +34,7 @@ const int Game::MOVEMENT_TICKS_PER_SEC = 60;
 
 Game::Game()
 {
-    m_player = new WLDCharActor(NULL);
+    m_player = new WLDCharActor(this);
     m_zone = NULL;
     m_sky = NULL;
     m_builtinObjects = NULL;

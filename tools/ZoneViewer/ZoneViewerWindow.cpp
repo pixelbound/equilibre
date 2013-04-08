@@ -411,8 +411,8 @@ void ZoneScene::keyReleaseEvent(QKeyEvent *e)
     }
     else if(key == Qt::Key_E)
     {
-        if(zone)
-            zone->playerJumped();
+        if(player)
+            player->jump();
     }
     else if(key == Qt::Key_Space)
     {

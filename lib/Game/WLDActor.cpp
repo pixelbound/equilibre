@@ -123,8 +123,9 @@ void WLDStaticActor::importColorData(MeshBuffer *meshBuf)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
+WLDCharActor::WLDCharActor(Game *game) : WLDActor(Kind)
 {
+    m_game = game;
     m_zone = NULL;
     m_model = NULL;
     m_materialMap = NULL;
@@ -143,6 +144,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
     m_moveMode = Running;
+    m_wantsToJump = false;
     m_jumping = false;
     m_animTime = 0.0f;
     m_startAnimationTime = 0.0f;
@@ -150,7 +152,6 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_shape = NULL;
     m_capsuleHeight = 6.0;
     m_capsuleRadius = 1.0;
-    setModel(model);
 }
 
 WLDCharActor::~WLDCharActor()
@@ -160,6 +161,11 @@ WLDCharActor::~WLDCharActor()
     {
         NewtonReleaseCollision(m_zone->collisionWorld(), m_shape);
     }
+}
+
+Game * WLDCharActor::game() const
+{
+    return m_game;
 }
 
 Zone * WLDCharActor::zone() const
@@ -442,22 +448,53 @@ void WLDCharActor::interpolateState(double alpha)
         (m_previousState.position * (1.0 - alpha));
 }
 
-void WLDCharActor::updatePosition(ActorState &state, double dt)
+void WLDCharActor::updatePosition(double dt)
 {
-    Game *game = m_zone->game();
+    // Perform a step if the player is moving.
+    ActorState &state = m_currentState;
     float dist = (speed() * dt);
-    vec3 &pos = state.position;
     float deltaX = dist * m_movementStateX;
     float deltaY = dist * m_movementStateY;
-    bool ghost = (m_cameraDistance < game->minDistanceToShowCharacter());
-    ghost &= game->allowMultiJumps();
+    bool ghost = (m_cameraDistance < m_game->minDistanceToShowCharacter());
+    ghost &= m_game->allowMultiJumps();
     matrix4 m;
     if(ghost)
         m = matrix4::rotate(lookOrient().x, 1.0, 0.0, 0.0);
     else
         m.setIdentity();
     m = m * matrix4::rotate(lookOrient().z, 0.0, 0.0, 1.0);
-    pos = pos + m.map(vec3(-deltaX, deltaY, 0.0));
+    state.position = state.position + m.map(vec3(-deltaX, deltaY, 0.0));
+    
+    // Handle jumping.
+    const float jumpDuration = 0.2f;
+    const float jumpAccelFactor = 2.5f;
+    if(m_wantsToJump)
+    {
+        state.jumpTime = jumpDuration;
+        m_jumping = true;
+        m_wantsToJump = false;
+    }
+    double jumpTime = qMin((double)state.jumpTime, dt);
+    if(m_jumping && (jumpTime > 0.0))
+    {
+        double jumpAccel = (-jumpAccelFactor * m_game->gravity().z) * dt;
+        state.velocity = state.velocity + vec3(0.0, 0.0, (float)jumpAccel);
+        state.jumpTime -= jumpTime;
+    }
+    
+    // Handle gravity.
+    if(m_game->applyGravity())
+    {
+        state.velocity = state.velocity + (m_game->gravity() * dt);
+    }
+}
+
+void WLDCharActor::jump()
+{
+    if(!m_jumping || m_game->allowMultiJumps())
+    {
+        m_wantsToJump = true;
+    }
 }
 
 void WLDCharActor::calculateViewFrustum(Frustum &frustum) const

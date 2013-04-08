@@ -126,7 +126,7 @@ private:
     RenderProgram * program(RenderMode renderMode);
     void drawFrame();
     
-    WLDCharActor *m_actor;
+    WLDCharActor *m_player;
     QString m_meshName;
     QString m_animName;
     vec3 m_delta;

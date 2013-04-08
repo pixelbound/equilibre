@@ -132,10 +132,11 @@ private:
 class GAME_DLL WLDCharActor : public WLDActor
 {
 public:
-    WLDCharActor(WLDModel *model);
+    WLDCharActor(Game *game);
     virtual ~WLDCharActor();
     const static ActorType Kind = Character;
     
+    Game * game() const;
     Zone * zone() const;
     
     WLDModel * model() const;
@@ -206,8 +207,10 @@ public:
     void leftZone(Zone *oldZone);
     void update(double currentTime);
     
+    void jump();
+    
     void interpolateState(double alpha);
-    void updatePosition(ActorState &state, double dt);
+    void updatePosition(double dt);
     void calculateViewFrustum(Frustum &frustum) const;
 
 private:
@@ -222,6 +225,7 @@ private:
     float m_runSpeed;
     bool m_walk;
     ActorMoveMode m_moveMode;
+    bool m_wantsToJump;
     bool m_jumping;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
     ActorState m_currentState;
@@ -233,6 +237,7 @@ private:
     // Negative means moving backward, positive moving forward, zero not moving.
     int m_movementStateY;
     
+    Game *m_game;
     Zone *m_zone;
     WLDModel *m_model;
     WLDAnimation *m_animation;

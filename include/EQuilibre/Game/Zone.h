@@ -118,7 +118,7 @@ private:
     bool importLightSources(PFSArchive *archive);
     static void frustumCullingCallback(WLDActor *actor, void *user);
     void updateMovement(double sinceLastUpdate);
-    void updatePlayerPosition(ActorState &state, double dt);
+    void handlePlayerCollisions(ActorState &state);
 
     Game *m_game;
     WLDCharActor *m_player;
@@ -136,7 +136,6 @@ private:
     
     // Duration between the newest movement tick and the current frame.
     double m_movementAheadTime;
-    bool m_playerWantsToJump;
     FrameStat *m_collisionChecksStat;
     int m_collisionChecks;
     NewtonWorld *m_collisionWorld;

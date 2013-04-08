@@ -44,7 +44,6 @@ Zone::Zone(Game *game)
     m_collisionChecks = 0;
     m_collisionWorld = NewtonCreate();
     m_movementAheadTime = 0.0f;
-    m_playerWantsToJump = false;
 }
 
 Zone::~Zone()
@@ -269,14 +268,6 @@ void Zone::acceptPlayer(WLDCharActor *player, const vec3 &initialPos)
     player->enteredZone(this, initialPos);
 }
 
-void Zone::playerJumped()
-{
-    if(!m_player->jumping() || m_game->allowMultiJumps())
-    {
-        m_playerWantsToJump = true;
-    }
-}
-
 void Zone::updateMovement(double sinceLastUpdate)
 {
     // Calculate the next player position using fixed-duration ticks.
@@ -285,7 +276,8 @@ void Zone::updateMovement(double sinceLastUpdate)
     while(m_movementAheadTime > tick)
     {
         m_player->previousState() = m_player->currentState();
-        updatePlayerPosition(m_player->currentState(), tick);
+        m_player->updatePosition(tick);
+        handlePlayerCollisions(m_player->currentState());
         m_movementAheadTime -= tick;
     }
     
@@ -294,32 +286,8 @@ void Zone::updateMovement(double sinceLastUpdate)
     m_player->interpolateState(alpha);
 }
 
-void Zone::updatePlayerPosition(ActorState &state, double dt)
+void Zone::handlePlayerCollisions(ActorState &state)
 {
-    m_player->updatePosition(state, dt);
-    
-    // Handle jumping.
-    const float jumpDuration = 0.2f;
-    const float jumpAccelFactor = 2.5f;
-    if(m_playerWantsToJump)
-    {
-        state.jumpTime = jumpDuration;
-        m_player->setJumping(true);
-        m_playerWantsToJump = false;
-    }
-    double jumpTime = qMin((double)state.jumpTime, dt);
-    if(m_player->jumping() && (jumpTime > 0.0))
-    {
-        double jumpAccel = (-jumpAccelFactor * m_game->gravity().z) * dt;
-        state.velocity = state.velocity + vec3(0.0, 0.0, (float)jumpAccel);
-        state.jumpTime -= jumpTime;
-    }
-    
-    if(m_game->applyGravity())
-    {
-        state.velocity = state.velocity + (m_game->gravity() * dt);
-    }
-    
     vec3 &pos = state.position;
     pos = pos + state.velocity;
     
