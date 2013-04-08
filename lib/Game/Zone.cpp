@@ -507,11 +507,6 @@ uint32_t ZoneTerrain::currentRegion() const
     return m_currentRegion;
 }
 
-NewtonCollision * ZoneTerrain::currentRegionShape() const
-{
-    return m_regionShapes[m_currentRegion];
-}
-
 void ZoneTerrain::clear(RenderContext *renderCtx)
 {
     for(uint32_t i = 1; i <= m_regionCount; i++)
@@ -617,52 +612,6 @@ bool ZoneTerrain::load(PFSArchive *archive, WLDData *wld)
             actor->mesh()->importFrom(m_zoneBuffer);
     }
     
-    // Create collision shapes for zone regions.
-    for(uint32_t i = 1; i <= m_regionCount; i++)
-    {
-        WLDStaticActor *actor = m_regionActors[i];
-        if(actor)
-        {
-            MeshDefFragment *meshDef = actor->mesh()->def();
-            vec3 faceVertices[3];
-            uint32_t numFaces = meshDef->m_polygonFlags.count();
-            uint32_t facesAdded = 0;
-            uint32_t indexLoc = 0;
-            NewtonCollision *shape =
-                    NewtonCreateTreeCollision(m_zone->collisionWorld(), 0);
-            NewtonTreeCollisionBeginBuild(shape);
-            for(uint32_t j = 0; j < numFaces; j++)
-            {
-                uint16_t faceFlag = meshDef->m_polygonFlags[j];
-                if(faceFlag & MeshDefFragment::POLY_WALK_THROUGH)
-                {
-                    // Do not pass walk-through polygons such as water surface
-                    // to the collision engine.
-                    continue;
-                }
-                for(uint32_t k = 0; k < 3; k++)
-                {
-                    uint32_t index = meshDef->m_indices[indexLoc];
-                    vec3 v = meshDef->m_center + meshDef->m_vertices[index];
-                    faceVertices[k] = v;
-                    indexLoc++;
-                }
-                NewtonTreeCollisionAddFace(shape, 3, (float *)faceVertices,
-                                           sizeof(vec3), j);
-                facesAdded++;
-            }
-            if(facesAdded > 0)
-            {
-                NewtonTreeCollisionEndBuild(shape, 0); // XXX test with optimize = 1
-                m_regionShapes[i] = shape;
-            }
-            else
-            {
-                NewtonReleaseCollision(m_zone->collisionWorld(), shape);
-            }
-        }
-    }
-    
     return true;
 }
 
@@ -719,14 +668,11 @@ uint32_t ZoneTerrain::findNearbyRegionShapes(NewtonCollision **firstRegion,
         return found;
     WLDFragmentArray<RegionFragment> regions = m_zoneWld->table()->byKind<RegionFragment>();
     RegionFragment *region = regions[m_currentRegion - 1];
-    //uint32_t count = qMin((uint32_t)region->m_nearbyRegions.count(), maxRegions);
-    uint32_t count = (uint32_t)region->m_nearbyRegions.count();
-    Q_ASSERT(count <= maxRegions);
+    uint32_t count = qMin((uint32_t)region->m_nearbyRegions.count(), maxRegions);
     for(uint32_t i = 0; i < count; i++)
     {
         uint32_t regionID = region->m_nearbyRegions[i];
-        Q_ASSERT(regionID <= m_regionCount);
-        NewtonCollision *shape = m_regionShapes[regionID];
+        NewtonCollision *shape = loadRegionShape(regionID);
         if(shape)
         {
             firstRegion[found] = shape;
@@ -740,10 +686,10 @@ uint32_t ZoneTerrain::findAllRegionShapes(NewtonCollision **firstRegion,
                                           uint32_t maxRegions)
 {
     uint32_t found = 0;
-    Q_ASSERT(m_regionCount <= maxRegions);
-    for(uint32_t i = 0; i < m_regionCount; i++)
+    uint32_t count = qMin(m_regionCount, maxRegions);
+    for(uint32_t i = 1; i < count; i++)
     {
-        NewtonCollision *shape = m_regionShapes[i];
+        NewtonCollision *shape = loadRegionShape(i);
         if(shape)
         {
             firstRegion[found] = shape;
@@ -823,11 +769,57 @@ void ZoneTerrain::findRegionShapes(const Sphere &sphere,
     else
     {
         // Leaf node.
-        Q_ASSERT(node.regionID <= m_regionCount);
-        NewtonCollision *shape = m_regionShapes[node.regionID];
+        NewtonCollision *shape = loadRegionShape(node.regionID);
         if(shape)
             regions[found++] = shape;
     }
+}
+
+NewtonCollision * ZoneTerrain::loadRegionShape(uint32_t regionID)
+{
+    if(!regionID || (regionID > m_regionCount))
+    {
+        return NULL;
+    }
+    NewtonCollision *shape = m_regionShapes[regionID];
+    if(shape)
+    {
+        return shape;
+    }
+    WLDStaticActor *region = m_regionActors[regionID];
+    if(!region || !region->mesh())
+    {
+        return NULL;
+    }
+    
+    // Create collision shapes for zone regions.
+    MeshDefFragment *meshDef = region->mesh()->def();
+    vec3 faceVertices[3];
+    uint32_t numFaces = meshDef->m_polygonFlags.count();
+    uint32_t indexLoc = 0;
+    shape = NewtonCreateTreeCollision(m_zone->collisionWorld(), 0);
+    NewtonTreeCollisionBeginBuild(shape);
+    for(uint32_t i = 0; i < numFaces; i++)
+    {
+        uint16_t faceFlag = meshDef->m_polygonFlags[i];
+        if(faceFlag & MeshDefFragment::POLY_WALK_THROUGH)
+        {
+            // Do not pass walk-through polygons such as water surface
+            // to the collision engine.
+            continue;
+        }
+        for(uint32_t j = 0; j < 3; j++)
+        {
+            uint32_t index = meshDef->m_indices[indexLoc];
+            vec3 v = meshDef->m_center + meshDef->m_vertices[index];
+            faceVertices[j] = v;
+            indexLoc++;
+        }
+        NewtonTreeCollisionAddFace(shape, 3, (float *)faceVertices, sizeof(vec3), i);
+    }
+    NewtonTreeCollisionEndBuild(shape, 0); // XXX test with optimize = 1
+    m_regionShapes[regionID] = shape;
+    return shape;
 }
 
 void ZoneTerrain::resetVisible()
@@ -857,9 +849,10 @@ void ZoneTerrain::upload(RenderContext *renderCtx)
         }
     }
     
-    // Create the GPU buffers. We cannot free the memory used for vertices and 
-    // indices since the data will be used for collision detection.
+    // Create the GPU buffers and free the memory used for vertices and indices.
     m_zoneBuffer->upload(renderCtx);
+    m_zoneBuffer->clearVertices();
+    m_zoneBuffer->clearIndices();
     m_uploaded = true;
 }
 

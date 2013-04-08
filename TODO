@@ -4,11 +4,10 @@ Newton 2.34 is r609
 Newton 2.33 is r509 (header says 2.31)
 
 collisions
-    do not load all the regions into Newton when loading the zone, load lazily when needed
-    do not pass polygons that can be walked through (like water) to Newton
     update the build instructions for Newton (esp on Windows)
         figure out if versions newer than 2.33 are easier to build on Windows. Newton.dll is corrupted (singleDllRelease)
         need #define _NEWTON_USE_LIB when building static library
+    investigate what goes wrong when entering Kunark/Velious zones (falling below the world or stuck below the world)
 
 Material palettes:
     Keep them in a list

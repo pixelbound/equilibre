@@ -180,6 +180,7 @@ public:
     uint32_t findAllRegionShapes(NewtonCollision **firstRegion,
                                  uint32_t maxRegions);
     uint32_t findCurrentRegion(const vec3 &cameraPos);
+    NewtonCollision * loadRegionShape(uint32_t regionID);
 
 private:
     uint32_t findRegion(const vec3 &pos, const RegionTreeNode *nodes, uint32_t nodeIdx);
