@@ -93,13 +93,9 @@ public:
     const ZoneInfo & info() const;
     void setInfo(const ZoneInfo &info);
     
-    // PlayerActor class.
+    Game * game() const;
+    // XXX PlayerActor class.
     WLDCharActor * player() const;
-    
-    int movementX() const;
-    int movementY() const;
-    void setMovementX(int movementX);
-    void setMovementY(int movementY);
     
     bool load(QString path, QString name);
     bool loadSky(PFSArchive *archive, WLDData *wld);
@@ -140,12 +136,6 @@ private:
     
     // Duration between the newest movement tick and the current frame.
     double m_movementAheadTime;
-    // Current movement state for the X axis.
-    // Negative means moving left, positive moving right, zero not moving.
-    int m_movementStateX;
-    // Current movement state for the Y axis.
-    // Negative means moving backward, positive moving forward, zero not moving.
-    int m_movementStateY;
     bool m_playerWantsToJump;
     FrameStat *m_collisionChecksStat;
     int m_collisionChecks;

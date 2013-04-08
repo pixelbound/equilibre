@@ -138,6 +138,7 @@ WLDCharActor::WLDCharActor(WLDModel *model) : WLDActor(Kind)
     m_scale = vec3(1.0, 1.0, 1.0);
     m_walkSpeed = 10.0f;
     m_runSpeed = 25.0f;
+    m_movementStateX = m_movementStateY = 0;
     m_hasCamera = false;
     m_cameraDistance = 0.0f;
     m_lookOrientX = m_lookOrientZ = 0.0f;
@@ -254,6 +255,26 @@ ActorState & WLDCharActor::currentState()
 ActorState & WLDCharActor::previousState()
 {
     return m_previousState;
+}
+
+int WLDCharActor::movementX() const
+{
+    return m_movementStateX;
+}
+
+int WLDCharActor::movementY() const
+{
+    return m_movementStateY;
+}
+
+void WLDCharActor::setMovementX(int movementX)
+{
+    m_movementStateX = movementX;
+}
+
+void WLDCharActor::setMovementY(int movementY)
+{
+    m_movementStateY = movementY;
 }
 
 vec3 WLDCharActor::lookOrient() const
@@ -421,6 +442,18 @@ void WLDCharActor::interpolateState(double alpha)
         (m_previousState.position * (1.0 - alpha));
 }
 
+void WLDCharActor::updatePosition(ActorState &state, double dt)
+{
+    Game *game = m_zone->game();
+    float dist = (speed() * dt);
+    vec3 &pos = state.position;
+    float deltaX = dist * m_movementStateX;
+    float deltaY = dist * m_movementStateY;
+    bool ghost = (m_cameraDistance < game->minDistanceToShowCharacter());
+    ghost &= game->allowMultiJumps();
+    calculateStep(pos, deltaX, deltaY, ghost);
+}
+
 void WLDCharActor::calculateStep(vec3 &position, float distSideways, 
                                  float distForward, bool ghost)
 {
@@ -460,7 +493,7 @@ void WLDCharActor::update(double currentTime)
         {
             newAnimation = m_jumpingAnim;
         }
-        else if(m_zone && (m_zone->movementX() || m_zone->movementY()))
+        else if(m_movementStateX || m_movementStateY)
         {
             switch(m_moveMode)
             {

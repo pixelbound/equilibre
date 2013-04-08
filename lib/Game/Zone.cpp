@@ -44,7 +44,6 @@ Zone::Zone(Game *game)
     m_collisionChecks = 0;
     m_collisionWorld = NewtonCreate();
     m_movementAheadTime = 0.0f;
-    m_movementStateX = m_movementStateY = 0;
     m_playerWantsToJump = false;
 }
 
@@ -94,29 +93,14 @@ void Zone::setInfo(const ZoneInfo &info)
     m_info = info;
 }
 
+Game * Zone::game() const
+{
+    return m_game;
+}
+
 WLDCharActor * Zone::player() const
 {
     return m_player;
-}
-
-int Zone::movementX() const
-{
-    return m_movementStateX;
-}
-
-int Zone::movementY() const
-{
-    return m_movementStateY;
-}
-
-void Zone::setMovementX(int movementX)
-{
-    m_movementStateX = movementX;
-}
-
-void Zone::setMovementY(int movementY)
-{
-    m_movementStateY = movementY;
 }
 
 bool Zone::load(QString path, QString name)
@@ -312,13 +296,7 @@ void Zone::updateMovement(double sinceLastUpdate)
 
 void Zone::updatePlayerPosition(ActorState &state, double dt)
 {
-    float dist = (m_player->speed() * dt);
-    vec3 &pos = state.position;
-    float deltaX = dist * m_movementStateX;
-    float deltaY = dist * m_movementStateY;
-    bool ghost = (m_player->cameraDistance() < m_game->minDistanceToShowCharacter());
-    ghost &= m_game->allowMultiJumps();
-    m_player->calculateStep(pos, deltaX, deltaY, ghost);
+    m_player->updatePosition(state, dt);
     
     // Handle jumping.
     const float jumpDuration = 0.2f;
@@ -342,6 +320,7 @@ void Zone::updatePlayerPosition(ActorState &state, double dt)
         state.velocity = state.velocity + (m_game->gravity() * dt);
     }
     
+    vec3 &pos = state.position;
     pos = pos + state.velocity;
     
     // Make the capsule upright.

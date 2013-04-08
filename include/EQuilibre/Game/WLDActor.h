@@ -160,6 +160,11 @@ public:
     ActorState & currentState();
     ActorState & previousState();
     
+    int movementX() const;
+    int movementY() const;
+    void setMovementX(int movementX);
+    void setMovementY(int movementY);
+    
     // x and z angles that describe where the character is looking at.
     vec3 lookOrient() const;
     void setLookOrientX(float newOrientation);
@@ -202,6 +207,7 @@ public:
     void update(double currentTime);
     
     void interpolateState(double alpha);
+    void updatePosition(ActorState &state, double dt);
     void calculateStep(vec3 &position, float distSideways, float distForward,
                        bool ghost);
     void calculateViewFrustum(Frustum &frustum) const;
@@ -222,6 +228,13 @@ private:
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
     ActorState m_currentState;
     ActorState m_previousState;
+    // Current movement state for the X axis.
+    // Negative means moving left, positive moving right, zero not moving.
+    int m_movementStateX;
+    // Current movement state for the Y axis.
+    // Negative means moving backward, positive moving forward, zero not moving.
+    int m_movementStateY;
+    
     Zone *m_zone;
     WLDModel *m_model;
     WLDAnimation *m_animation;
