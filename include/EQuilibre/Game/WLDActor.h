@@ -51,9 +51,10 @@ public:
 
 struct GAME_DLL ActorState
 {
+    /** Position of the actor in the zone. */
     vec3 position;
+    /** Velocity of the actor. */
     vec3 velocity;
-    float jumpTime;
 };
 
 /*!
@@ -227,14 +228,16 @@ private:
     ActorMoveMode m_moveMode;
     bool m_wantsToJump;
     bool m_jumping;
+    /** If the actor is jumping, remaining duration of the jump. */
+    float m_jumpTime;
     // XXX Extend this to camera settings so that moving the camera isn't choppy.
     ActorState m_currentState;
     ActorState m_previousState;
-    // Current movement state for the X axis.
-    // Negative means moving left, positive moving right, zero not moving.
+    /** Movement state for the Y axis.
+      * -1: moving backward, 1: moving forward, 0: not moving. */
     int m_movementStateX;
-    // Current movement state for the Y axis.
-    // Negative means moving backward, positive moving forward, zero not moving.
+    /** Movement state for the X axis.
+      * -1: moving left, 1: moving right, 0: not moving. */
     int m_movementStateY;
     
     Game *m_game;

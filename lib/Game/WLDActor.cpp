@@ -470,16 +470,16 @@ void WLDCharActor::updatePosition(double dt)
     const float jumpAccelFactor = 2.5f;
     if(m_wantsToJump)
     {
-        state.jumpTime = jumpDuration;
+        m_jumpTime = jumpDuration;
         m_jumping = true;
         m_wantsToJump = false;
     }
-    double jumpTime = qMin((double)state.jumpTime, dt);
+    double jumpTime = qMin((double)m_jumpTime, dt);
     if(m_jumping && (jumpTime > 0.0))
     {
         double jumpAccel = (-jumpAccelFactor * m_game->gravity().z) * dt;
         state.velocity = state.velocity + vec3(0.0, 0.0, (float)jumpAccel);
-        state.jumpTime -= jumpTime;
+        m_jumpTime -= jumpTime;
     }
     
     // Handle gravity.
@@ -559,7 +559,6 @@ void WLDCharActor::enteredZone(Zone *newZone, const vec3 &initialPos)
     m_location = initialPos;
     m_hasCamera = true;
     m_currentState.position = m_previousState.position = initialPos;
-    m_currentState.jumpTime = m_previousState.jumpTime = 0.0f;
     m_zone = newZone;
 }
 
