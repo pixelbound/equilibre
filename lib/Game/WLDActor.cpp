@@ -451,19 +451,13 @@ void WLDCharActor::updatePosition(ActorState &state, double dt)
     float deltaY = dist * m_movementStateY;
     bool ghost = (m_cameraDistance < game->minDistanceToShowCharacter());
     ghost &= game->allowMultiJumps();
-    calculateStep(pos, deltaX, deltaY, ghost);
-}
-
-void WLDCharActor::calculateStep(vec3 &position, float distSideways, 
-                                 float distForward, bool ghost)
-{
     matrix4 m;
     if(ghost)
         m = matrix4::rotate(lookOrient().x, 1.0, 0.0, 0.0);
     else
         m.setIdentity();
     m = m * matrix4::rotate(lookOrient().z, 0.0, 0.0, 1.0);
-    position = position + m.map(vec3(-distSideways, distForward, 0.0));
+    pos = pos + m.map(vec3(-deltaX, deltaY, 0.0));
 }
 
 void WLDCharActor::calculateViewFrustum(Frustum &frustum) const

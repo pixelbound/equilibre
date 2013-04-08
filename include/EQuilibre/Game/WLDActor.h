@@ -208,8 +208,6 @@ public:
     
     void interpolateState(double alpha);
     void updatePosition(ActorState &state, double dt);
-    void calculateStep(vec3 &position, float distSideways, float distForward,
-                       bool ghost);
     void calculateViewFrustum(Frustum &frustum) const;
 
 private:
