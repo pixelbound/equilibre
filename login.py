@@ -149,6 +149,16 @@ class Client(object):
                              binascii.b2a_hex(response).decode('utf8')))
         return self.parse_session(response)
     
+    def create_session_message(self, msg_type):
+        return Message(msg_type, "SM")
+    
+    def create_login_message(self, msg_type):
+        msg = self.create_session_message(SM_LoginPacket)
+        msg.add_param("SeqNum", "H", self.client_seq)
+        self.client_seq += 1
+        msg.body = Message(msg_type, "LM")
+        return msg
+    
     def crc32_round(self, a, b):
         return (a >> 8) ^ CRC32Lookup[(b ^ a) & 0xff]
     
@@ -189,6 +199,24 @@ class Client(object):
                 fn(msg, packet)
         return msg
     
+    def parse_login(self, packet):
+        """ Parse a login message. """
+        # Extract the message type.
+        msg_type = struct.unpack("<H", packet[0:2])[0]
+        msg = Message(msg_type, "LM")
+        
+        # Call the function that can parse the message, if it exists.
+        try:
+            msg_name = LM_Types[msg_type]
+        except KeyError:
+            pass
+        else:
+            fn_name = "parse_%s" % msg_name
+            if hasattr(self, fn_name):
+                fn = getattr(self, fn_name)
+                fn(msg, packet)
+        return msg
+    
     def parse_SM_SessionResponse(self, msg, data):
         msg.add_param("Session", "I")
         msg.add_param("Key", "I")
@@ -199,16 +227,11 @@ class Client(object):
         msg.add_param("UnknownC", "I")
         msg.deserialize(data)
     
-    def create_session_message(self, msg_type):
-        return Message(msg_type, "SM")
-    
-    def create_login_message(self, msg_type):
-        msg = self.create_session_message(SM_LoginPacket)
-        msg.add_param("SeqNum", "H", self.client_seq)
-        self.client_seq += 1
-        msg.body = Message(msg_type, "LM")
-        return msg
-
+    def parse_SM_LoginPacket(self, msg, data):
+        msg.add_param("SeqNum", "H")
+        msg.deserialize(data)
+        msg.body = self.parse_login(data[0:-2]) # Remove checksum
+        
 def login(server_addr, user, password):
     client = Client(addr)
     stage = 0
@@ -221,7 +244,7 @@ def login(server_addr, user, password):
             request.add_param("MaxLength", "I", 0x00000200)
             client.send(request)
         response = client.receive()
-        if response.type == SM_SessionResponse:
+        if (response.ns == "SM") and (response.type == SM_SessionResponse):
             stage = 1
             if response.params["Session"].value != session:
                 print("Server responded with different session ID: 0x%x, ours: 0x%x" %
@@ -233,7 +256,8 @@ def login(server_addr, user, password):
             request.body.add_param("UnknownB", "I", 0)
             request.body.add_param("UnknownC", "I", 0x00080000)
             client.send(request)
-        #print(response)
+        else:
+            print(response)
 
 if __name__ == "__main__":
     addr = ("192.168.0.3", 5998)
