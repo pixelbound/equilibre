@@ -3,14 +3,19 @@ import struct
 import collections
 import binascii
 
-LM_SessionRequest = 0x01
-LM_SessionResponse = 0x02
-LM_Combined = 0x03
-LM_SessionDisconnect = 0x05
-LM_ApplicationPacket = 0x09
-LM_Ack = 0x15
+# Session message types.
+SM_SessionRequest = 0x01
+SM_SessionResponse = 0x02
+SM_Combined = 0x03
+SM_SessionDisconnect = 0x05
+SM_ApplicationPacket = 0x09
+SM_Ack = 0x15
+SM_Types = {value: name for name, value in globals().items() if name.startswith("SM_")}
 
-LM_Types = {value: name for name, value in globals().items() if name.startswith("LM_")}
+# Login message types.
+LM_GetChatMessage = 0x01
+LM_Login = 0x02
+LM_ListServers = 0x04
 
 class Parameter(object):
     def __init__(self, name, code, value):
@@ -18,7 +23,7 @@ class Parameter(object):
         self.code = code
         self.value = value
 
-class LoginMessage(object):
+class SessionMessage(object):
     def __init__(self, type):
         self.type = type
         self.params = collections.OrderedDict()
@@ -47,9 +52,9 @@ class LoginMessage(object):
     def __str__(self):
         chunks = []
         try:
-            msg_name = LM_Types[self.type]
+            msg_name = SM_Types[self.type]
         except KeyError:
-            msg_name = "LoginMessage_%02x" % self.type
+            msg_name = "SessionMessage_%02x" % self.type
             
         param_chunks = []
         for param in self.params.values():
@@ -90,17 +95,17 @@ class Client(object):
         msg_type = struct.unpack("!H", packet[0:2])[0]
         if msg_type > 0xff:
             raise ValueError("Message type out of range: 0x%04x" % msg_type)
-        has_crc = msg_type not in (LM_SessionRequest, LM_SessionResponse)
+        has_crc = msg_type not in (SM_SessionRequest, SM_SessionResponse)
         if has_crc:
             crc, packet = struct.unpack("!H", packet[-2:])[0], packet[0:-2]
             computed_crc = self.crc16(packet, self.key)
             if (crc != 0) and (crc != computed_crc):
                 raise ValueError("Invalid CRC: computed 0x%04x, but found 0x%04x." % (computed_crc, crc))
-        msg = LoginMessage(msg_type)
+        msg = SessionMessage(msg_type)
         
         # Call the function that can parse the message, if it exists.
         try:
-            msg_name = LM_Types[msg_type]
+            msg_name = SM_Types[msg_type]
         except KeyError:
             pass
         else:
@@ -110,7 +115,7 @@ class Client(object):
                 fn(msg, packet)
         return msg
     
-    def parse_LM_SessionResponse(self, msg, data):
+    def parse_SM_SessionResponse(self, msg, data):
         msg.add_param("Session", "I")
         msg.add_param("Key", "I")
         msg.add_param("UnknownA", "B")
@@ -124,7 +129,7 @@ if __name__ == "__main__":
     addr = ("192.168.0.3", 5998)
     client = Client(addr)
 
-    m = LoginMessage(LM_SessionRequest)
+    m = SessionMessage(SM_SessionRequest)
     m.add_param("UnknownA", "I", 0x00000002)
     m.add_param("Session", "I", 0x26ec5075)
     m.add_param("MaxLength", "I", 0x00000200)
