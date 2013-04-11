@@ -18,7 +18,8 @@ LM_Login = 0x02
 LM_ListServers = 0x04
 LM_Types = {value: name for name, value in globals().items() if name.startswith("LM_")}
 
-CRC16Lookup = [
+# Table used for a byte-wise 32-bit CRC calculation using the Ehternet polynomial (0x04C11DB7).
+CRC32Lookup = [
     0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3, 
     0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91, 
     0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7, 
@@ -148,18 +149,19 @@ class Client(object):
                              binascii.b2a_hex(response).decode('utf8')))
         return self.parse_session(response)
     
-    def crc16_round(self, a, b):
-        return (a >> 8) ^ CRC16Lookup[(b ^ a) & 0xFF]
+    def crc32_round(self, a, b):
+        return (a >> 8) ^ CRC32Lookup[(b ^ a) & 0xff]
     
-    def crc16(self, data):
-        seed = self.crc_key
-        x = CRC16Lookup[~seed & 0xFF] ^ 0x00FFFFFF
-        x = self.crc16_round(x, (seed >> 8))
-        x = self.crc16_round(x, (seed >> 16))
-        x = self.crc16_round(x, (seed >> 24))
+    def crc32(self, data):
+        crc = 0xffffffff
+        crc = self.crc32_round(crc, (self.crc_key >> 0))
+        crc = self.crc32_round(crc, (self.crc_key >> 8))
+        crc = self.crc32_round(crc, (self.crc_key >> 16))
+        crc = self.crc32_round(crc, (self.crc_key >> 24))
         for i in range(0, len(data)):
-            x = self.crc16_round(x, ord(data[i]))
-        return ~x & 0xffff
+            crc = self.crc32_round(crc, ord(data[i]))
+        crc ^= 0xffffff
+        return crc & 0xffffffff
     
     def parse_session(self, packet):
         """ Parse a session message. """
@@ -170,7 +172,7 @@ class Client(object):
         has_crc = msg_type not in (SM_SessionRequest, SM_SessionResponse)
         if has_crc:
             crc, packet = struct.unpack("!H", packet[-2:])[0], packet[0:-2]
-            computed_crc = self.crc16(packet)
+            computed_crc = self.crc32(packet) & 0xffff
             if (crc != 0) and (crc != computed_crc):
                 raise ValueError("Invalid CRC: computed 0x%04x, but found 0x%04x." % (computed_crc, crc))
         msg = Message(msg_type, "SM")
