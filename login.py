@@ -144,6 +144,7 @@ class SessionClient(object):
         self.crc_key = 0
         self.client_seq = 0
         self.server_seq = 0
+        self.pending_messages = []
     
     def start_session(self):
         """ Initiate a session with the remote server. """
@@ -181,9 +182,17 @@ class SessionClient(object):
                 self.active = False
                 break
             elif session_msg.type == SM_Combined:
-                pass
+                pos, data = 0, session_msg.body
+                while pos < len(data):
+                    sub_msg_len = ord(data[pos])
+                    pos += 1
+                    if (pos + sub_msg_len) > len(data):
+                        raise Exception("Sub-message length out of range.")
+                    sub_msg_data = data[pos:pos + sub_msg_len]
+                    pos += sub_msg_len
+                    self.pending_messages.append(self._parse_session(sub_msg_data, True))
             elif session_msg.type == SM_LoginPacket:
-                # Parse the login message data, removing the checksum before.
+                # Parse the login message data, removing the checksum beforehand.
                 login_msg = self._parse_login(session_msg.body[0:-2])
         return login_msg
     
@@ -199,6 +208,8 @@ class SessionClient(object):
         self.socket.sendto(bytes(packet), self.addr)
     
     def _receive_session(self, max_size=1024):
+        if self.pending_messages:
+            return self.pending_messages.pop(0)
         response, remote = self.socket.recvfrom(1024)
         print("%s <<< %s" % (self.format_addr(remote),
                              binascii.b2a_hex(response).decode('utf8')))
@@ -218,13 +229,13 @@ class SessionClient(object):
         crc ^= 0xffffff
         return crc & 0xffffffff
     
-    def _parse_session(self, packet):
+    def _parse_session(self, packet, no_crc=False):
         """ Parse a session message. """
         # Extract the message type and CRC and validate them.
         msg_type = struct.unpack("!H", packet[0:2])[0]
         if msg_type > 0xff:
             raise ValueError("Message type out of range: 0x%04x" % msg_type)
-        has_crc = msg_type not in (SM_SessionRequest, SM_SessionResponse)
+        has_crc = (msg_type not in (SM_SessionRequest, SM_SessionResponse) and not no_crc)
         if has_crc:
             crc, packet = struct.unpack("!H", packet[-2:])[0], packet[0:-2]
             computed_crc = self._crc32(packet) & 0xffff
