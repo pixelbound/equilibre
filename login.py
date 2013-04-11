@@ -13,10 +13,12 @@ SM_Ack = 0x15
 SM_Types = {value: name for name, value in globals().items() if name.startswith("SM_")}
 
 # Login message types.
-LM_GetChatMessage = 0x01
-LM_Login = 0x02
-LM_ListServers = 0x04
-LM_ChatMessage = 0x16
+LM_ChatMessageRequest = 0x01
+LM_LoginRequest = 0x02
+LM_ServerListRequest = 0x04
+LM_ChatMessageResponse = 0x16
+LM_LoginResponse = 0x17
+LM_ServerListResponse = 0x18
 LM_Types = {value: name for name, value in globals().items() if name.startswith("LM_")}
 
 # Table used for a byte-wise 32-bit CRC calculation using the Ehternet polynomial (0x04C11DB7).
@@ -84,7 +86,7 @@ class Message(object):
             args.append(param.value)
         data = struct.pack("".join(patterns), *args)
         if self.body:
-            data += self.body.serialize()
+            data += self.body
         # Add checksum at the end of the packet.
         if (self.ns == "SM") and (self.type not in (SM_SessionRequest, SM_SessionResponse)):
             crc = 0
@@ -189,7 +191,7 @@ class SessionClient(object):
         session_msg = SessionMessage(SM_LoginPacket)
         session_msg.add_param("SeqNum", "H", self.client_seq)
         self.client_seq += 1
-        session_msg.body = login_msg
+        session_msg.body = login_msg.serialize()
         self._send_session(session_msg)
     
     def receive(self):
@@ -307,11 +309,17 @@ class SessionClient(object):
                 fn(msg, packet)
         return msg
     
-    def _parse_LM_ChatMessage(self, msg, packet):
+    def _parse_LM_ChatMessageResponse(self, msg, packet):
         msg.add_param("UnknownA", "I")
         msg.add_param("UnknownB", "I")
         msg.add_param("UnknownC", "BBB")
         msg.add_param("UnknownD", "I")
+        msg.deserialize(packet)
+    
+    def _parse_LM_LoginResponse(self, msg, packet):
+        msg.add_param("UnknownA", "I")
+        msg.add_param("UnknownB", "I")
+        msg.add_param("UnknownC", "H")
         msg.deserialize(packet)
         
 def client_login(server_addr, user, password):
@@ -319,7 +327,7 @@ def client_login(server_addr, user, password):
     client = SessionClient(addr, session_id)
     client.start_session()
     stage = 0
-    request = LoginMessage(LM_GetChatMessage)
+    request = LoginMessage(LM_ChatMessageRequest)
     request.add_param("UnknownA", "I", 2)
     request.add_param("UnknownB", "I", 0)
     request.add_param("UnknownC", "I", 0x00080000)
@@ -329,18 +337,25 @@ def client_login(server_addr, user, password):
         handled = False
         if stage == 0:
             # Waiting for a chat message response.
-            if response.type == LM_ChatMessage:
+            if response.type == LM_ChatMessageResponse:
                 stage = 1
                 print("Chat message: %s" % response.body)
-                #request = LoginMessage(LM_Login)
-                #request.add_param("UnknownA", "I", 2)
-                #request.add_param("UnknownB", "I", 0)
-                #request.add_param("UnknownC", "I", 0x00080000)
+                handled = True
+
+                # Try to log in.
+                request = LoginMessage(LM_LoginRequest)
+                request.add_param("UnknownA", "I", 3)
+                request.add_param("UnknownB", "I", 2)
+                request.add_param("UnknownC", "H", 0)
+                padding = ((len(user) + len(password) + 2) % 8) + 1
+                credentials_chunks = [user, "\x00", password, "\x00" * padding]
+                request.body = "".join(credentials_chunks)
+                client.send(request)
+
         elif stage == 1:
             # Waiting for a login response.
-            pass
-        else:
-            pass
+            if response.type == LM_LoginResponse:
+                stage = 2
         if not handled:
             print(response)
         response = client.receive()
