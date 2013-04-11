@@ -230,21 +230,22 @@ class SessionClient(object):
             computed_crc = self._crc32(packet) & 0xffff
             if (crc != 0) and (crc != computed_crc):
                 raise ValueError("Invalid CRC: computed 0x%04x, but found 0x%04x." % (computed_crc, crc))
-        msg = SessionMessage(msg_type)
         
-        # Call the function that can parse the message, if it exists.
-        parsed = False
-        try:
-            msg_name = SM_Types[msg_type]
-        except KeyError:
-            pass
-        else:
-            fn_name = "parse_%s" % msg_name
-            if hasattr(self, fn_name):
-                fn = getattr(self, fn_name)
-                parsed = fn(msg, packet)
-        if not parsed:
-            msg.deserialize(packet)
+        # Specify the header fields for the message, if we know about any.
+        msg = SessionMessage(msg_type)
+        if msg_type == SM_SessionResponse:
+            msg.add_param("Session", "I")
+            msg.add_param("Key", "I")
+            msg.add_param("UnknownA", "B")
+            msg.add_param("Format", "B")
+            msg.add_param("UnknownB", "B")
+            msg.add_param("MaxLength", "I")
+            msg.add_param("UnknownC", "I")
+        elif msg_type == SM_LoginPacket:
+            msg.add_param("SeqNum", "H")
+
+        # Deserialize the session data, copying any unknown data to the body.
+        msg.deserialize(packet)
         return msg
     
     def _parse_login(self, packet):
@@ -264,18 +265,6 @@ class SessionClient(object):
                 fn = getattr(self, fn_name)
                 fn(msg, packet)
         return msg
-    
-    def parse_SM_SessionResponse(self, msg, data):
-        msg.add_param("Session", "I")
-        msg.add_param("Key", "I")
-        msg.add_param("UnknownA", "B")
-        msg.add_param("Format", "B")
-        msg.add_param("UnknownB", "B")
-        msg.add_param("MaxLength", "I")
-        msg.add_param("UnknownC", "I")
-    
-    def parse_SM_LoginPacket(self, msg, data):
-        msg.add_param("SeqNum", "H")
         
 def login(server_addr, user, password):
     session_id = 0x26ec5075 # XXX Should it be random?
@@ -292,7 +281,5 @@ def login(server_addr, user, password):
         response = client.receive()
 
 if __name__ == "__main__":
-    addr = ("192.168.0.3", 5998)
-    user = "foo"
-    password = "bar"
+    addr, user, password = ("192.168.0.3", 5998), "foo", "bar"
     login(addr, user, password)
