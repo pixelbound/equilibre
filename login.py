@@ -73,7 +73,7 @@ class Message(object):
     def add_param(self, name, code, value=None):
         self.params[name] = Parameter(name, code, value)
     
-    def serialize(self):
+    def serialize(self, crc32_fn=None):
         patterns = []
         if self.ns == "SM":
             patterns.append("!")
@@ -89,8 +89,7 @@ class Message(object):
             data += self.body
         # Add checksum at the end of the packet.
         if (self.ns == "SM") and (self.type not in (SM_SessionRequest, SM_SessionResponse)):
-            crc = 0
-            data += struct.pack("H", crc)
+            data += struct.pack("H", crc32_fn(data))
         return data
     
     def deserialize(self, data):
@@ -224,10 +223,12 @@ class SessionClient(object):
     def format_addr(self, addr):
         return "%s:%d" % addr
     
-    def _send_session(self, message):
-        if message.ns != "SM":
+    def _send_session(self, msg):
+        if msg.ns != "SM":
             raise ValueError("Not a session message.")
-        packet = message.serialize()
+        #XXX Figure out why we need to byte-swap the checksum before sending it.
+        crc32_fn = lambda data: socket.htons(self._crc32(data) & 0xffff)
+        packet = msg.serialize(crc32_fn)
         print("%s >>> %s" % (self.format_addr(self.addr),
                              binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
