@@ -92,16 +92,31 @@ class Message(object):
         return data
     
     def deserialize(self, data):
-        patterns = ["!H"]
-        args = [self.type]
+        if self.ns == "SM":
+            patterns = ["!H"]
+        else:
+            patterns = ["<H"]
         for param in self.params.values():
             patterns.append(param.code)
         pattern = "".join(patterns)
         total_size = struct.calcsize(pattern)
-        args = struct.unpack(pattern, data[0:total_size])
+        values = struct.unpack(pattern, data[0:total_size])
+
+        # Assign the deserialised values to the message parameters.
         param_names = list(self.params)
-        for name, arg in zip(param_names, args[1:]):
-            self.params[name].value = arg
+        value_pos = 1
+        for param_index in range(0, len(patterns) - 1):
+            name = param_names[param_index]
+            pattern = patterns[param_index + 1]
+            num_values = len(pattern)
+            if num_values == 1:
+                param_value = values[value_pos]
+            else:
+                param_value = values[value_pos:value_pos + num_values]
+            self.params[name].value = param_value
+            value_pos += num_values
+
+        # Any remaining data belongs to the message body.
         if len(data) > total_size:
             self.body = data[total_size:]
     
@@ -199,7 +214,7 @@ class SessionClient(object):
                 # Only accept messages in order.
                 if self.server_seq == session_msg["SeqNum"]:
                     # Parse the login message data, removing the checksum beforehand.
-                    login_msg = self._parse_login(session_msg.body[0:-2])
+                    login_msg = self._parse_login(session_msg.body)
                     # Acknowledge that we have received this message.
                     self._send_session_ack()
         return login_msg
@@ -285,16 +300,24 @@ class SessionClient(object):
         except KeyError:
             pass
         else:
-            fn_name = "parse_%s" % msg_name
+            fn_name = "_parse_%s" % msg_name
             if hasattr(self, fn_name):
                 fn = getattr(self, fn_name)
                 fn(msg, packet)
         return msg
+    
+    def _parse_LM_ChatMessage(self, msg, packet):
+        msg.add_param("UnknownA", "I")
+        msg.add_param("UnknownB", "I")
+        msg.add_param("UnknownC", "BBB")
+        msg.add_param("UnknownD", "I")
+        msg.deserialize(packet)
         
-def login(server_addr, user, password):
+def client_login(server_addr, user, password):
     session_id = 0x26ec5075 # XXX Should it be random?
     client = SessionClient(addr, session_id)
     client.start_session()
+    stage = 0
     request = LoginMessage(LM_GetChatMessage)
     request.add_param("UnknownA", "I", 2)
     request.add_param("UnknownB", "I", 0)
@@ -302,9 +325,25 @@ def login(server_addr, user, password):
     client.send(request)
     response = client.receive()
     while response:
-        print(response)
+        handled = False
+        if stage == 0:
+            # Waiting for a chat message response.
+            if response.type == LM_ChatMessage:
+                stage = 1
+                print("Chat message: %s" % response.body)
+                #request = LoginMessage(LM_Login)
+                #request.add_param("UnknownA", "I", 2)
+                #request.add_param("UnknownB", "I", 0)
+                #request.add_param("UnknownC", "I", 0x00080000)
+        elif stage == 1:
+            # Waiting for a login response.
+            pass
+        else:
+            pass
+        if not handled:
+            print(response)
         response = client.receive()
 
 if __name__ == "__main__":
     addr, user, password = ("192.168.0.3", 5998), "foo", "bar"
-    login(addr, user, password)
+    client_login(addr, user, password)
