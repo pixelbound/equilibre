@@ -16,6 +16,7 @@ SM_Types = {value: name for name, value in globals().items() if name.startswith(
 LM_GetChatMessage = 0x01
 LM_Login = 0x02
 LM_ListServers = 0x04
+LM_ChatMessage = 0x16
 LM_Types = {value: name for name, value in globals().items() if name.startswith("LM_")}
 
 # Table used for a byte-wise 32-bit CRC calculation using the Ehternet polynomial (0x04C11DB7).
@@ -61,9 +62,9 @@ class Parameter(object):
         self.value = value
 
 class Message(object):
-    def __init__(self, type, ns):
-        self.type = type
+    def __init__(self, ns, type):
         self.ns = ns
+        self.type = type
         self.params = collections.OrderedDict()
         self.body = None
     
@@ -126,32 +127,27 @@ class Message(object):
         chunks.append(">")
         return "".join(chunks)
 
+class SessionMessage(Message):
+    def __init__(self, type):
+        super(SessionMessage, self).__init__("SM", type)
+
+class LoginMessage(Message):
+    def __init__(self, type):
+        super(LoginMessage, self).__init__("LM", type)
+
 class SessionClient(object):
     def __init__(self, addr, session_id):
         self.addr = addr
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.session_id = session_id
+        self.active = False
         self.crc_key = 0
         self.client_seq = 0
         self.server_seq = 0
     
-    def format_addr(self, addr):
-        return "%s:%d" % addr
-    
-    def _send_session(self, message):
-        packet = message.serialize()
-        print("%s >>> %s" % (self.format_addr(self.addr),
-                             binascii.b2a_hex(packet).decode('utf8')))
-        self.socket.sendto(bytes(packet), self.addr)
-    
-    def _receive_session(self, max_size=1024):
-        response, remote = self.socket.recvfrom(1024)
-        print("%s <<< %s" % (self.format_addr(remote),
-                             binascii.b2a_hex(response).decode('utf8')))
-        return self.parse_session(response)
-    
-    def initiate(self):
-        request = self.create_session_message(SM_SessionRequest)
+    def start_session(self):
+        """ Initiate a session with the remote server. """
+        request = SessionMessage(SM_SessionRequest)
         request.add_param("UnknownA", "I", 0x00000002)
         request.add_param("Session", "I", self.session_id)
         request.add_param("MaxLength", "I", 0x00000200)
@@ -164,32 +160,65 @@ class SessionClient(object):
             raise Exception("Server responded with different session ID: 0x%x, ours: 0x%x"
                 % (response_id, self.session_id))
         self.crc_key = response.params["Key"].value
+        self.active = True
     
-    def create_session_message(self, msg_type):
-        return Message(msg_type, "SM")
-    
-    def create_login_message(self, msg_type):
-        msg = self.create_session_message(SM_LoginPacket)
-        msg.add_param("SeqNum", "H", self.client_seq)
+    def send(self, login_msg):
+        """ Send a login message to the server. """
+        if login_msg.ns != "LM":
+            raise ValueError("Not a login message.")
+        session_msg = SessionMessage(SM_LoginPacket)
+        session_msg.add_param("SeqNum", "H", self.client_seq)
         self.client_seq += 1
-        msg.body = Message(msg_type, "LM")
-        return msg
+        session_msg.body = login_msg
+        self._send_session(session_msg)
     
-    def crc32_round(self, a, b):
+    def receive(self):
+        """ Receive a login message from the server. """
+        login_msg = None
+        while not login_msg:
+            session_msg = self._receive_session()
+            if session_msg.type == SM_SessionDisconnect:
+                self.active = False
+                break
+            elif session_msg.type == SM_Combined:
+                pass
+            elif session_msg.type == SM_LoginPacket:
+                # Parse the login message data, removing the checksum before.
+                login_msg = self._parse_login(session_msg.body[0:-2])
+        return login_msg
+    
+    def format_addr(self, addr):
+        return "%s:%d" % addr
+    
+    def _send_session(self, message):
+        if message.ns != "SM":
+            raise ValueError("Not a session message.")
+        packet = message.serialize()
+        print("%s >>> %s" % (self.format_addr(self.addr),
+                             binascii.b2a_hex(packet).decode('utf8')))
+        self.socket.sendto(bytes(packet), self.addr)
+    
+    def _receive_session(self, max_size=1024):
+        response, remote = self.socket.recvfrom(1024)
+        print("%s <<< %s" % (self.format_addr(remote),
+                             binascii.b2a_hex(response).decode('utf8')))
+        return self._parse_session(response)
+
+    def _crc32_round(self, a, b):
         return (a >> 8) ^ CRC32Lookup[(b ^ a) & 0xff]
     
-    def crc32(self, data):
+    def _crc32(self, data):
         crc = 0xffffffff
-        crc = self.crc32_round(crc, (self.crc_key >> 0))
-        crc = self.crc32_round(crc, (self.crc_key >> 8))
-        crc = self.crc32_round(crc, (self.crc_key >> 16))
-        crc = self.crc32_round(crc, (self.crc_key >> 24))
+        crc = self._crc32_round(crc, (self.crc_key >> 0))
+        crc = self._crc32_round(crc, (self.crc_key >> 8))
+        crc = self._crc32_round(crc, (self.crc_key >> 16))
+        crc = self._crc32_round(crc, (self.crc_key >> 24))
         for i in range(0, len(data)):
-            crc = self.crc32_round(crc, ord(data[i]))
+            crc = self._crc32_round(crc, ord(data[i]))
         crc ^= 0xffffff
         return crc & 0xffffffff
     
-    def parse_session(self, packet):
+    def _parse_session(self, packet):
         """ Parse a session message. """
         # Extract the message type and CRC and validate them.
         msg_type = struct.unpack("!H", packet[0:2])[0]
@@ -198,12 +227,13 @@ class SessionClient(object):
         has_crc = msg_type not in (SM_SessionRequest, SM_SessionResponse)
         if has_crc:
             crc, packet = struct.unpack("!H", packet[-2:])[0], packet[0:-2]
-            computed_crc = self.crc32(packet) & 0xffff
+            computed_crc = self._crc32(packet) & 0xffff
             if (crc != 0) and (crc != computed_crc):
                 raise ValueError("Invalid CRC: computed 0x%04x, but found 0x%04x." % (computed_crc, crc))
-        msg = Message(msg_type, "SM")
+        msg = SessionMessage(msg_type)
         
         # Call the function that can parse the message, if it exists.
+        parsed = False
         try:
             msg_name = SM_Types[msg_type]
         except KeyError:
@@ -212,14 +242,16 @@ class SessionClient(object):
             fn_name = "parse_%s" % msg_name
             if hasattr(self, fn_name):
                 fn = getattr(self, fn_name)
-                fn(msg, packet)
+                parsed = fn(msg, packet)
+        if not parsed:
+            msg.deserialize(packet)
         return msg
     
-    def parse_login(self, packet):
+    def _parse_login(self, packet):
         """ Parse a login message. """
         # Extract the message type.
         msg_type = struct.unpack("<H", packet[0:2])[0]
-        msg = Message(msg_type, "LM")
+        msg = LoginMessage(msg_type)
         
         # Call the function that can parse the message, if it exists.
         try:
@@ -241,25 +273,23 @@ class SessionClient(object):
         msg.add_param("UnknownB", "B")
         msg.add_param("MaxLength", "I")
         msg.add_param("UnknownC", "I")
-        msg.deserialize(data)
     
     def parse_SM_LoginPacket(self, msg, data):
         msg.add_param("SeqNum", "H")
-        msg.deserialize(data)
-        msg.body = self.parse_login(data[0:-2]) # Remove checksum
         
 def login(server_addr, user, password):
     session_id = 0x26ec5075 # XXX Should it be random?
     client = SessionClient(addr, session_id)
-    client.initiate()
-    request = client.create_login_message(LM_GetChatMessage)
-    request.body.add_param("UnknownA", "I", 2)
-    request.body.add_param("UnknownB", "I", 0)
-    request.body.add_param("UnknownC", "I", 0x00080000)
-    client._send_session(request)
-    while True:
-        response = client._receive_session()
+    client.start_session()
+    request = LoginMessage(LM_GetChatMessage)
+    request.add_param("UnknownA", "I", 2)
+    request.add_param("UnknownB", "I", 0)
+    request.add_param("UnknownC", "I", 0x00080000)
+    client.send(request)
+    response = client.receive()
+    while response:
         print(response)
+        response = client.receive()
 
 if __name__ == "__main__":
     addr = ("192.168.0.3", 5998)
