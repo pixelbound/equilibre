@@ -126,10 +126,11 @@ class Message(object):
         chunks.append(">")
         return "".join(chunks)
 
-class Client(object):
-    def __init__(self, addr):
+class SessionClient(object):
+    def __init__(self, addr, session_id):
         self.addr = addr
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.session_id = session_id
         self.crc_key = 0
         self.client_seq = 0
         self.server_seq = 0
@@ -137,17 +138,32 @@ class Client(object):
     def format_addr(self, addr):
         return "%s:%d" % addr
     
-    def send(self, message):
+    def _send_session(self, message):
         packet = message.serialize()
         print("%s >>> %s" % (self.format_addr(self.addr),
                              binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
     
-    def receive(self, max_size=1024):
+    def _receive_session(self, max_size=1024):
         response, remote = self.socket.recvfrom(1024)
         print("%s <<< %s" % (self.format_addr(remote),
                              binascii.b2a_hex(response).decode('utf8')))
         return self.parse_session(response)
+    
+    def initiate(self):
+        request = self.create_session_message(SM_SessionRequest)
+        request.add_param("UnknownA", "I", 0x00000002)
+        request.add_param("Session", "I", self.session_id)
+        request.add_param("MaxLength", "I", 0x00000200)
+        self._send_session(request)
+        response = self._receive_session()
+        if response.type != SM_SessionResponse:
+            raise Exception("Server did not respond with SessionResponse")
+        response_id = response.params["Session"].value
+        if response_id != self.session_id:
+            raise Exception("Server responded with different session ID: 0x%x, ours: 0x%x"
+                % (response_id, self.session_id))
+        self.crc_key = response.params["Key"].value
     
     def create_session_message(self, msg_type):
         return Message(msg_type, "SM")
@@ -233,31 +249,17 @@ class Client(object):
         msg.body = self.parse_login(data[0:-2]) # Remove checksum
         
 def login(server_addr, user, password):
-    client = Client(addr)
-    stage = 0
-    session = 0x26ec5075 # XXX Should it be random?
+    session_id = 0x26ec5075 # XXX Should it be random?
+    client = SessionClient(addr, session_id)
+    client.initiate()
+    request = client.create_login_message(LM_GetChatMessage)
+    request.body.add_param("UnknownA", "I", 2)
+    request.body.add_param("UnknownB", "I", 0)
+    request.body.add_param("UnknownC", "I", 0x00080000)
+    client._send_session(request)
     while True:
-        if stage == 0:
-            request = client.create_session_message(SM_SessionRequest)
-            request.add_param("UnknownA", "I", 0x00000002)
-            request.add_param("Session", "I", session)
-            request.add_param("MaxLength", "I", 0x00000200)
-            client.send(request)
-        response = client.receive()
-        if (response.ns == "SM") and (response.type == SM_SessionResponse):
-            stage = 1
-            if response.params["Session"].value != session:
-                print("Server responded with different session ID: 0x%x, ours: 0x%x" %
-                    (response.params["Session"].value, session))
-                break
-            client.crc_key = response.params["Key"].value
-            request = client.create_login_message(LM_GetChatMessage)
-            request.body.add_param("UnknownA", "I", 2)
-            request.body.add_param("UnknownB", "I", 0)
-            request.body.add_param("UnknownC", "I", 0x00080000)
-            client.send(request)
-        else:
-            print(response)
+        response = client._receive_session()
+        print(response)
 
 if __name__ == "__main__":
     addr = ("192.168.0.3", 5998)
