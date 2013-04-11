@@ -93,21 +93,21 @@ class Message(object):
     
     def deserialize(self, data):
         if self.ns == "SM":
-            patterns = ["!H"]
+            byte_order = "!"
         else:
-            patterns = ["<H"]
-        for param in self.params.values():
-            patterns.append(param.code)
-        pattern = "".join(patterns)
+            byte_order = "<"
+        patterns = [param.code for param in self.params.values()]
+        pattern = byte_order + "".join(patterns)
         total_size = struct.calcsize(pattern)
+        #print("deserialize() -> pattern: %s total_size: %d data: %s" % (pattern, total_size, repr(data)))
         values = struct.unpack(pattern, data[0:total_size])
 
-        # Assign the deserialised values to the message parameters.
+        # Assign the deserialized values to the message parameters.
         param_names = list(self.params)
-        value_pos = 1
-        for param_index in range(0, len(patterns) - 1):
+        value_pos = 0
+        for param_index in range(0, len(patterns)):
             name = param_names[param_index]
-            pattern = patterns[param_index + 1]
+            pattern = patterns[param_index]
             num_values = len(pattern)
             if num_values == 1:
                 param_value = values[value_pos]
@@ -270,6 +270,7 @@ class SessionClient(object):
             computed_crc = self._crc32(packet) & 0xffff
             if (crc != 0) and (crc != computed_crc):
                 raise ValueError("Invalid CRC: computed 0x%04x, but found 0x%04x." % (computed_crc, crc))
+        packet = packet[2:]
         
         # Specify the header fields for the message, if we know about any.
         msg = SessionMessage(msg_type)
@@ -291,7 +292,7 @@ class SessionClient(object):
     def _parse_login(self, packet):
         """ Parse a login message. """
         # Extract the message type.
-        msg_type = struct.unpack("<H", packet[0:2])[0]
+        msg_type, packet = struct.unpack("<H", packet[0:2])[0], packet[2:]
         msg = LoginMessage(msg_type)
         
         # Call the function that can parse the message, if it exists.
