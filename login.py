@@ -105,6 +105,10 @@ class Message(object):
         if len(data) > total_size:
             self.body = data[total_size:]
     
+    def __getitem__(self, name):
+        param = self.params[name]
+        return param.value
+
     def __str__(self):
         chunks = []
         if self.ns == "SM":
@@ -192,8 +196,12 @@ class SessionClient(object):
                     pos += sub_msg_len
                     self.pending_messages.append(self._parse_session(sub_msg_data, True))
             elif session_msg.type == SM_LoginPacket:
-                # Parse the login message data, removing the checksum beforehand.
-                login_msg = self._parse_login(session_msg.body[0:-2])
+                # Only accept messages in order.
+                if self.server_seq == session_msg["SeqNum"]:
+                    # Parse the login message data, removing the checksum beforehand.
+                    login_msg = self._parse_login(session_msg.body[0:-2])
+                    # Acknowledge that we have received this message.
+                    self._send_session_ack()
         return login_msg
     
     def format_addr(self, addr):
@@ -207,6 +215,12 @@ class SessionClient(object):
                              binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
     
+    def _send_session_ack(self):
+        ack_msg = SessionMessage(SM_Ack)
+        ack_msg.add_param("SeqNum", "H", self.server_seq)
+        self._send_session(ack_msg)
+        self.server_seq += 1
+
     def _receive_session(self, max_size=1024):
         if self.pending_messages:
             return self.pending_messages.pop(0)
