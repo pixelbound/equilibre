@@ -124,6 +124,9 @@ class Message(object):
     def __getitem__(self, name):
         param = self.params[name]
         return param.value
+    
+    def has_param(self, name):
+        return name in self.params
 
     def __str__(self):
         chunks = []
@@ -209,7 +212,6 @@ class SessionClient(object):
             elif session_msg.type == SM_Combined:
                 pos = 0
                 data = session_msg.body
-                session_msg = None
                 while pos < len(data):
                     sub_msg_len = ord(data[pos])
                     pos += 1
@@ -217,8 +219,9 @@ class SessionClient(object):
                         raise Exception("Sub-message length out of range.")
                     sub_msg_data = data[pos:pos + sub_msg_len]
                     pos += sub_msg_len
-                    self.pending_messages.append(self._parse_session(sub_msg_data, True))
-            elif session_msg.type == SM_LoginPacket:
+                    sub_msg = self._parse_session(sub_msg_data, True)
+                    self.pending_messages.append(sub_msg)
+            elif session_msg.has_param("SeqNum"):
                 # Only accept messages in order.
                 seq_num = session_msg["SeqNum"]
                 if self.next_seq_in == seq_num:
