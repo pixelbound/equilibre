@@ -165,7 +165,6 @@ class SessionClient(object):
         self.addr = addr
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.session_id = session_id
-        self.active = False
         self.crc_key = 0
         self.next_ack_in = 0
         self.next_seq_in = 0
@@ -187,6 +186,12 @@ class SessionClient(object):
             raise Exception("Server responded with different session ID: 0x%x, ours: 0x%x"
                 % (response_id, self.session_id))
         self.crc_key = response.params["Key"].value
+    
+    def terminate_session(self):
+        request = SessionMessage(SM_SessionDisconnect)
+        request.add_param("Session", "I", self.session_id)
+        request.add_param("UnknownA", "H", 6)
+        self.send(request)
     
     def receive(self):
         """ Receive a session message from the server. """
@@ -321,10 +326,19 @@ class LoginClient(object):
         self.session_client = None
         self.active = False
     
+    def __enter__(self):
+        pass
+    
+    def __exit__(self, type, value, tb):
+        if self.active:
+            self.session_client.terminate_session()
+            self.active = False
+    
     def connect(self, remote_addr):
         session_id = 0x26ec5075 # XXX Should it be random?
         self.session_client = SessionClient(remote_addr, session_id)
         self.session_client.start_session()
+        self.active = True
     
     def receive(self):
         """ Wait until a message has been received from the server. """
@@ -431,32 +445,32 @@ class LoginClient(object):
 def client_login(server_addr, username, password):
     client = LoginClient()
     client.connect(server_addr)
-    stage = 0
-    client.begin_get_chat_message()
-    response = client.receive()
-    while response:
-        handled = False
-        if (stage == 0) and (response.type == LM_ChatMessageResponse):
-            # Waiting for a chat message response.
-            print("Chat message: %s" % client.end_get_chat_message(response))
-            stage = 1
-            handled = True
-            client.begin_login(username, password)
-
-        elif (stage == 1) and (response.type == LM_LoginResponse):
-            # Waiting for a login response.
-            success, user_id, session_key = client.end_login(response)
-            if success:
-                print("Successfully logged in.")
-            else:
-                print("Failed to logd in.")
-                break
-            stage = 2
-            handled = True
-            client.begin_list_server()
-        if not handled:
-            print(response)
+    with client:
+        stage = 0
+        client.begin_get_chat_message()
         response = client.receive()
+        while response:
+            handled = False
+            if (stage == 0) and (response.type == LM_ChatMessageResponse):
+                # Waiting for a chat message response.
+                print("Chat message: %s" % client.end_get_chat_message(response))
+                stage = 1
+                handled = True
+                client.begin_login(username, password)
+            elif (stage == 1) and (response.type == LM_LoginResponse):
+                # Waiting for a login response.
+                success, user_id, session_key = client.end_login(response)
+                if success:
+                    print("Successfully logged in.")
+                else:
+                    print("Failed to logd in.")
+                    break
+                stage = 2
+                handled = True
+                client.begin_list_server()
+            if not handled:
+                print(response)
+            response = client.receive()
 
 def main():
     parser = argparse.ArgumentParser(description='Connect to an EQEmu login server.')
@@ -465,7 +479,10 @@ def main():
     parser.add_argument("-u", "--user", default='user')
     parser.add_argument("-p", "--password", default='password')
     args = parser.parse_args()
-    client_login((args.host, args.port), args.user, args.password)
+    try:
+        client_login((args.host, args.port), args.user, args.password)
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == "__main__":
     main()
