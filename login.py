@@ -349,12 +349,12 @@ def client_login(server_addr, user, password):
                 request.add_param("UnknownB", "I", 2)
                 request.add_param("UnknownC", "H", 0)
                 # Allowed packet lengths: 20, 28, 36, 44, etc.
-                packet_size = (len(user) + len(password) + 14)
+                packet_size = (len(password) + len(user) + 14)
                 allowed_size = 20
                 while allowed_size < packet_size:
                     allowed_size += 8
                 padding = (allowed_size - packet_size + 1)
-                credentials_chunks = [user, "\x00", password, "\x00" * padding]
+                credentials_chunks = [password, "\x00", user, "\x00" * padding]
                 request.body = "".join(credentials_chunks)
                 client.send(request)
 
