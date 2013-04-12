@@ -162,8 +162,10 @@ class SessionClient(object):
         self.session_id = session_id
         self.active = False
         self.crc_key = 0
-        self.client_seq = 0
-        self.server_seq = 0
+        self.next_ack_in = 0
+        self.next_ack_out = 0
+        self.next_seq_in = 0
+        self.next_seq_out = 0
         self.pending_messages = []
     
     def start_session(self):
@@ -181,28 +183,30 @@ class SessionClient(object):
             raise Exception("Server responded with different session ID: 0x%x, ours: 0x%x"
                 % (response_id, self.session_id))
         self.crc_key = response.params["Key"].value
-        self.active = True
     
     def send(self, login_msg):
         """ Send a login message to the server. """
         if login_msg.ns != "LM":
             raise ValueError("Not a login message.")
         session_msg = SessionMessage(SM_LoginPacket)
-        session_msg.add_param("SeqNum", "H", self.client_seq)
-        self.client_seq += 1
+        session_msg.add_param("SeqNum", "H", self.next_seq_out)
+        self.next_seq_out += 1
         session_msg.body = login_msg.serialize()
         self._send_session(session_msg)
     
     def receive(self):
-        """ Receive a login message from the server. """
-        login_packet = None
-        while not login_packet:
+        """ Receive a session message from the server. """
+        while True:
             session_msg = self._receive_session()
-            if session_msg.type == SM_SessionDisconnect:
-                self.active = False
-                break
+            if not session_msg:
+                # XXX Is it really possible to receive zero from recvfrom?
+                return None
+            elif session_msg.type == SM_Ack:
+                self.next_ack_in = session_msg["SeqNum"] + 1
             elif session_msg.type == SM_Combined:
-                pos, data = 0, session_msg.body
+                pos = 0
+                data = session_msg.body
+                session_msg = None
                 while pos < len(data):
                     sub_msg_len = ord(data[pos])
                     pos += 1
@@ -213,10 +217,11 @@ class SessionClient(object):
                     self.pending_messages.append(self._parse_session(sub_msg_data, True))
             elif session_msg.type == SM_LoginPacket:
                 # Only accept messages in order.
-                if self.server_seq == session_msg["SeqNum"]:
-                    login_packet = session_msg.body
+                if self.next_seq_in == session_msg["SeqNum"]:
                     self._send_session_ack()
-        return login_packet
+                    return session_msg
+            else:
+                return session_msg
     
     def format_addr(self, addr):
         return "%s:%d" % addr
@@ -233,9 +238,9 @@ class SessionClient(object):
     
     def _send_session_ack(self):
         ack_msg = SessionMessage(SM_Ack)
-        ack_msg.add_param("SeqNum", "H", self.server_seq)
+        ack_msg.add_param("SeqNum", "H", self.next_ack_out)
         self._send_session(ack_msg)
-        self.server_seq += 1
+        self.next_ack_out += 1
 
     def _receive_session(self, max_size=1024):
         if self.pending_messages:
@@ -285,6 +290,8 @@ class SessionClient(object):
             msg.add_param("UnknownC", "I")
         elif msg_type == SM_LoginPacket:
             msg.add_param("SeqNum", "H")
+        elif msg_type == SM_Ack:
+            msg.add_param("SeqNum", "H")
 
         # Deserialize the session data, copying any unknown data to the body.
         msg.deserialize(packet)
@@ -294,6 +301,7 @@ class LoginClient(object):
     """ High-level interface to talk to a login server. """
     def __init__(self):
         self.session_client = None
+        self.active = False
     
     def connect(self, remote_addr):
         session_id = 0x26ec5075 # XXX Should it be random?
@@ -302,8 +310,15 @@ class LoginClient(object):
     
     def receive(self):
         """ Wait until a message has been received from the server. """
-        login_packet = self.session_client.receive()
-        return self._parse_packet(login_packet)
+        session_msg = self.session_client.receive()
+        if (not session_msg) or (session_msg.type == SM_SessionDisconnect):
+            self.active = False
+            return None
+        elif session_msg.type == SM_LoginPacket:
+            return self._parse_packet(session_msg.body)
+        else:
+            print("Unexpected session message: %s" % session_msg)
+            return None
     
     def request_chat_message(self):
         request = LoginMessage(LM_ChatMessageRequest)
@@ -326,7 +341,7 @@ class LoginClient(object):
         credentials_chunks = [password, "\x00", username, "\x00" * padding]
         request.body = "".join(credentials_chunks)
         self.session_client.send(request)
-    
+
     def _parse_packet(self, packet):
         """ Parse a login message from a received packet. """
         # Extract the message type.
