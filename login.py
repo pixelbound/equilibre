@@ -163,7 +163,6 @@ class SessionClient(object):
         self.active = False
         self.crc_key = 0
         self.next_ack_in = 0
-        self.next_ack_out = 0
         self.next_seq_in = 0
         self.next_seq_out = 0
         self.pending_messages = []
@@ -217,8 +216,9 @@ class SessionClient(object):
                     self.pending_messages.append(self._parse_session(sub_msg_data, True))
             elif session_msg.type == SM_LoginPacket:
                 # Only accept messages in order.
-                if self.next_seq_in == session_msg["SeqNum"]:
-                    self._send_session_ack()
+                seq_num = session_msg["SeqNum"]
+                if self.next_seq_in == seq_num:
+                    self._send_session_ack(seq_num)
                     return session_msg
             else:
                 return session_msg
@@ -236,12 +236,14 @@ class SessionClient(object):
                              binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
     
-    def _send_session_ack(self):
+    def _send_session_ack(self, seq_num):
+        if seq_num != self.next_seq_in:
+            raise ValueError("Sending ack for message that was not received: %d (seq_in = %d)"
+                % (seq_num, self.next_seq_in - 1))
         ack_msg = SessionMessage(SM_Ack)
-        ack_msg.add_param("SeqNum", "H", self.next_ack_out)
+        ack_msg.add_param("SeqNum", "H", seq_num)
         self._send_session(ack_msg)
-        self.next_ack_out += 1
-        self.next_seq_in = self.next_ack_out
+        self.next_seq_in += 1
 
     def _receive_session(self, max_size=1024):
         if self.pending_messages:
