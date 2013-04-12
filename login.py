@@ -342,7 +342,8 @@ class LoginClient(object):
         request = LoginMessage(LM_ChatMessageRequest)
         request.add_param("UnknownA", "I", 2)
         request.add_param("UnknownB", "I", 0)
-        request.add_param("UnknownC", "I", 0x00080000)
+        request.add_param("UnknownC", "H", 8)
+        request.add_param("UnknownD", "H", 0)
         self.send(request)
     
     def begin_login(self, username, password):
@@ -358,6 +359,13 @@ class LoginClient(object):
         padding = (allowed_size - packet_size + 1)
         credentials_chunks = [password, "\x00", username, "\x00" * padding]
         request.body = "".join(credentials_chunks)
+        self.send(request)
+    
+    def begin_list_server(self):
+        request = LoginMessage(LM_ServerListRequest)
+        request.add_param("UnknownA", "I", 4)
+        request.add_param("UnknownB", "I", 0)
+        request.add_param("UnknownC", "H", 0)
         self.send(request)
     
     def end_get_chat_message(self, response):
@@ -411,6 +419,14 @@ class LoginClient(object):
         msg.add_param("UnknownB", "I")
         msg.add_param("UnknownC", "H")
         msg.deserialize(packet)
+    
+    def _parse_LM_ServerListResponse(self, msg, packet):
+        msg.add_param("UnknownA", "I")
+        msg.add_param("UnknownB", "I")
+        msg.add_param("UnknownC", "I")
+        msg.add_param("UnknownD", "I")
+        msg.add_param("ServerCount", "I")
+        msg.deserialize(packet)
 
 def client_login(server_addr, username, password):
     client = LoginClient()
@@ -437,6 +453,7 @@ def client_login(server_addr, username, password):
                 break
             stage = 2
             handled = True
+            client.begin_list_server()
         if not handled:
             print(response)
         response = client.receive()
