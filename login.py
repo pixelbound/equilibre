@@ -161,38 +161,18 @@ class LoginMessage(Message):
         super(LoginMessage, self).__init__("LM", type)
 
 class SessionClient(object):
-    def __init__(self, addr, session_id):
+    def __init__(self, addr):
         self.addr = addr
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.session_id = session_id
         self.crc_key = 0
         self.next_ack_in = 0
         self.next_seq_in = 0
         self.next_seq_out = 0
         self.pending_packets = []
     
-    def start_session(self):
-        """ Initiate a session with the remote server. """
-        request = SessionMessage(SM_SessionRequest)
-        request.add_param("UnknownA", "I", 0x00000002)
-        request.add_param("Session", "I", self.session_id)
-        request.add_param("MaxLength", "I", 0x00000200)
-        self.send(request)
-        response = self.receive()
-        if response.type != SM_SessionResponse:
-            raise Exception("Server did not respond with SessionResponse")
-        response_id = response.params["Session"].value
-        if response_id != self.session_id:
-            raise Exception("Server responded with different session ID: 0x%x, ours: 0x%x"
-                % (response_id, self.session_id))
-        self.crc_key = response.params["Key"].value
-    
-    def terminate_session(self):
-        request = SessionMessage(SM_SessionDisconnect)
-        request.add_param("Session", "I", self.session_id)
-        request.add_param("UnknownA", "H", 6)
-        self.send(request)
-    
+    def close(self):
+        self.socket.close()
+
     def receive(self):
         """ Receive a session message from the server. """
         while True:
@@ -323,26 +303,56 @@ class SessionClient(object):
 class LoginClient(object):
     """ High-level interface to talk to a login server. """
     def __init__(self):
-        self.session_client = None
-        self.active = False
+        self.session_id = 0x26ec5075 # XXX Should it be random?
+        self.session = None
     
     def __enter__(self):
         pass
     
     def __exit__(self, type, value, tb):
-        if self.active:
-            self.session_client.terminate_session()
-            self.active = False
+        self.disconnect()
     
     def connect(self, remote_addr):
-        session_id = 0x26ec5075 # XXX Should it be random?
-        self.session_client = SessionClient(remote_addr, session_id)
-        self.session_client.start_session()
-        self.active = True
+        """ Initiate a session with the remote server. """
+        if self.session:
+            pass
+        session = SessionClient(remote_addr)
+        connected = False
+        try:
+            request = SessionMessage(SM_SessionRequest)
+            request.add_param("UnknownA", "I", 0x00000002)
+            request.add_param("Session", "I", self.session_id)
+            request.add_param("MaxLength", "I", 0x00000200)
+            session.send(request)
+            response = session.receive()
+            if response.type != SM_SessionResponse:
+                raise Exception("Server did not respond with SessionResponse")
+            response_id = response["Session"]
+            if response_id != self.session_id:
+                raise Exception("Server responded with different session ID: 0x%x, ours: 0x%x"
+                    % (response_id, self.session_id))
+            session.crc_key = response["Key"]
+            connected = True
+        finally:
+            if not connected:
+                session.close()
+        self.session = session
+    
+    def disconnect(self):
+        if not self.session:
+            return
+        try:
+            request = SessionMessage(SM_SessionDisconnect)
+            request.add_param("Session", "I", self.session_id)
+            request.add_param("UnknownA", "H", 6)
+            self.session.send(request)
+        finally:
+            self.session.close()
+            self.session = None
     
     def receive(self):
         """ Wait until a message has been received from the server. """
-        session_msg = self.session_client.receive()
+        session_msg = self.session.receive()
         if (not session_msg) or (session_msg.type == SM_SessionDisconnect):
             self.active = False
             return None
@@ -419,7 +429,7 @@ class LoginClient(object):
             raise ValueError("Not a login message.")
         session_msg = SessionMessage(SM_LoginPacket)
         session_msg.body = login_msg.serialize()
-        self.session_client.send(session_msg)
+        self.session.send(session_msg)
 
     def _parse_packet(self, packet):
         """ Parse a login message from a received packet. """
