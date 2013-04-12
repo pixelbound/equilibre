@@ -224,17 +224,12 @@ class SessionClient(object):
         """ Send a session message to the server. """
         if msg.ns != "SM":
             raise ValueError("Not a session message.")
-        
-        if self._has_seq_num(msg.type):
+        elif self._has_seq_num(msg.type):
             msg.add_param("SeqNum", "H", self.next_seq_out)
             self.next_seq_out += 1
-    
         #XXX Figure out why we need to byte-swap the checksum before sending it.
         crc32_fn = lambda data: socket.htons(self._crc32(data) & 0xffff)
-        packet = msg.serialize(crc32_fn)
-        print("%s >>> %s" % (self._format_addr(self.addr),
-                             binascii.b2a_hex(packet).decode('utf8')))
-        self.socket.sendto(bytes(packet), self.addr)
+        self._send_packet(msg.serialize(crc32_fn))
     
     def _format_addr(self, addr):
         return "%s:%d" % addr
