@@ -241,6 +241,7 @@ class SessionClient(object):
         ack_msg.add_param("SeqNum", "H", self.next_ack_out)
         self._send_session(ack_msg)
         self.next_ack_out += 1
+        self.next_seq_in = self.next_ack_out
 
     def _receive_session(self, max_size=1024):
         if self.pending_messages:
