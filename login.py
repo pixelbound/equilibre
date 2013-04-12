@@ -2,6 +2,8 @@ import socket
 import struct
 import collections
 import binascii
+import sys
+import argparse
 
 # Session message types.
 SM_SessionRequest = 0x01
@@ -257,8 +259,8 @@ class SessionClient(object):
         else:
             packet, remote = self.socket.recvfrom(1024)
             crc_removed = False
-        print("%s <<< %s" % (self._format_addr(remote),
-                             binascii.b2a_hex(packet).decode('utf8')))
+            print("%s <<< %s" % (self._format_addr(remote),
+                                 binascii.b2a_hex(packet).decode('utf8')))
         return packet, crc_removed
     
     def _has_seq_num(self, sm_type):
@@ -336,14 +338,14 @@ class LoginClient(object):
             print("Unexpected session message: %s" % session_msg)
             return None
     
-    def request_chat_message(self):
+    def begin_get_chat_message(self):
         request = LoginMessage(LM_ChatMessageRequest)
         request.add_param("UnknownA", "I", 2)
         request.add_param("UnknownB", "I", 0)
         request.add_param("UnknownC", "I", 0x00080000)
         self.send(request)
     
-    def request_login(self, username, password):
+    def begin_login(self, username, password):
         request = LoginMessage(LM_LoginRequest)
         request.add_param("UnknownA", "I", 3)
         request.add_param("UnknownB", "I", 2)
@@ -357,6 +359,19 @@ class LoginClient(object):
         credentials_chunks = [password, "\x00", username, "\x00" * padding]
         request.body = "".join(credentials_chunks)
         self.send(request)
+    
+    def end_get_chat_message(self, response):
+        """ Extract the chat message from the response. """
+        return response.body
+    
+    def end_login(self, response):
+        """ Extract the login result from the response.
+        This is a tuple with the values: success, user ID and session key. """
+        result_fields = struct.unpack("IIi16sI", response.body[0:32])
+        status, unknown_a, user_id, key, failed_attempts = result_fields
+        if (status != 1) or (user_id == -1):
+            return False, user_id, None
+        return True, user_id, key
 
     def send(self, login_msg):
         """ Send a login message to the server. """
@@ -401,24 +416,39 @@ def client_login(server_addr, username, password):
     client = LoginClient()
     client.connect(server_addr)
     stage = 0
-    client.request_chat_message()
+    client.begin_get_chat_message()
     response = client.receive()
     while response:
         handled = False
         if (stage == 0) and (response.type == LM_ChatMessageResponse):
             # Waiting for a chat message response.
+            print("Chat message: %s" % client.end_get_chat_message(response))
             stage = 1
-            print("Chat message: %s" % response.body)
             handled = True
-            client.request_login(username, password)
+            client.begin_login(username, password)
 
         elif (stage == 1) and (response.type == LM_LoginResponse):
             # Waiting for a login response.
+            success, user_id, session_key = client.end_login(response)
+            if success:
+                print("Successfully logged in.")
+            else:
+                print("Failed to logd in.")
+                break
             stage = 2
+            handled = True
         if not handled:
             print(response)
         response = client.receive()
 
+def main():
+    parser = argparse.ArgumentParser(description='Connect to an EQEmu login server.')
+    parser.add_argument("-H", "--host", default="localhost")
+    parser.add_argument("-P", "--port", type=int, default=5998)
+    parser.add_argument("-u", "--user", default='user')
+    parser.add_argument("-p", "--password", default='password')
+    args = parser.parse_args()
+    client_login((args.host, args.port), args.user, args.password)
+
 if __name__ == "__main__":
-    addr, user, password = ("192.168.0.3", 5998), "foo", "bar"
-    client_login(addr, user, password)
+    main()
