@@ -322,46 +322,60 @@ class SessionClient(object):
         msg.add_param("UnknownB", "I")
         msg.add_param("UnknownC", "H")
         msg.deserialize(packet)
-        
-def client_login(server_addr, user, password):
-    session_id = 0x26ec5075 # XXX Should it be random?
-    client = SessionClient(addr, session_id)
-    client.start_session()
+
+class LoginClient(object):
+    """ High-level interface to talk to a login server. """
+    def __init__(self):
+        self.session_client = None
+    
+    def connect(self, remote_addr):
+        session_id = 0x26ec5075 # XXX Should it be random?
+        self.session_client = SessionClient(remote_addr, session_id)
+        self.session_client.start_session()
+    
+    def receive(self):
+        return self.session_client.receive()
+    
+    def request_chat_message(self):
+        request = LoginMessage(LM_ChatMessageRequest)
+        request.add_param("UnknownA", "I", 2)
+        request.add_param("UnknownB", "I", 0)
+        request.add_param("UnknownC", "I", 0x00080000)
+        self.session_client.send(request)
+    
+    def request_login(self, username, password):
+        request = LoginMessage(LM_LoginRequest)
+        request.add_param("UnknownA", "I", 3)
+        request.add_param("UnknownB", "I", 2)
+        request.add_param("UnknownC", "H", 0)
+        # Allowed packet lengths: 20, 28, 36, 44, etc.
+        packet_size = (len(password) + len(username) + 14)
+        allowed_size = 20
+        while allowed_size < packet_size:
+            allowed_size += 8
+        padding = (allowed_size - packet_size + 1)
+        credentials_chunks = [password, "\x00", username, "\x00" * padding]
+        request.body = "".join(credentials_chunks)
+        self.session_client.send(request)
+
+def client_login(server_addr, username, password):
+    client = LoginClient()
+    client.connect(server_addr)
     stage = 0
-    request = LoginMessage(LM_ChatMessageRequest)
-    request.add_param("UnknownA", "I", 2)
-    request.add_param("UnknownB", "I", 0)
-    request.add_param("UnknownC", "I", 0x00080000)
-    client.send(request)
+    client.request_chat_message()
     response = client.receive()
     while response:
         handled = False
-        if stage == 0:
+        if (stage == 0) and (response.type == LM_ChatMessageResponse):
             # Waiting for a chat message response.
-            if response.type == LM_ChatMessageResponse:
-                stage = 1
-                print("Chat message: %s" % response.body)
-                handled = True
+            stage = 1
+            print("Chat message: %s" % response.body)
+            handled = True
+            client.request_login(username, password)
 
-                # Try to log in.
-                request = LoginMessage(LM_LoginRequest)
-                request.add_param("UnknownA", "I", 3)
-                request.add_param("UnknownB", "I", 2)
-                request.add_param("UnknownC", "H", 0)
-                # Allowed packet lengths: 20, 28, 36, 44, etc.
-                packet_size = (len(password) + len(user) + 14)
-                allowed_size = 20
-                while allowed_size < packet_size:
-                    allowed_size += 8
-                padding = (allowed_size - packet_size + 1)
-                credentials_chunks = [password, "\x00", user, "\x00" * padding]
-                request.body = "".join(credentials_chunks)
-                client.send(request)
-
-        elif stage == 1:
+        elif (stage == 1) and (response.type == LM_LoginResponse):
             # Waiting for a login response.
-            if response.type == LM_LoginResponse:
-                stage = 2
+            stage = 2
         if not handled:
             print(response)
         response = client.receive()
