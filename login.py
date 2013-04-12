@@ -375,7 +375,7 @@ class LoginClient(object):
         request.body = "".join(credentials_chunks)
         self.send(request)
     
-    def begin_list_server(self):
+    def begin_list_servers(self):
         request = LoginMessage(LM_ServerListRequest)
         request.add_param("UnknownA", "I", 4)
         request.add_param("UnknownB", "I", 0)
@@ -394,6 +394,24 @@ class LoginClient(object):
         if (status != 1) or (user_id == -1):
             return False, user_id, None
         return True, user_id, key
+
+    def end_list_servers(self, response):
+        msg = response
+        servers = []
+        pos = 0
+        while pos < len(msg.body):
+            server = ServerInfo()
+            server.host, pos = self._read_c_string(msg.body, pos)
+            server.type, pos = self._read_field(msg.body, pos, "I")
+            server.runtime_id, pos = self._read_field(msg.body, pos, "I")
+            server.name, pos = self._read_c_string(msg.body, pos)
+            locale_1, pos = self._read_c_string(msg.body, pos)
+            locale_2, pos = self._read_c_string(msg.body, pos)
+            server.locale = (locale_1, locale_2)
+            server.status, pos = self._read_field(msg.body, pos, "I")
+            server.players, pos = self._read_field(msg.body, pos, "I")
+            servers.append(server)
+        return servers
 
     def send(self, login_msg):
         """ Send a login message to the server. """
@@ -421,6 +439,14 @@ class LoginClient(object):
                 fn(msg, packet)
         return msg
     
+    def _read_c_string(self, data, pos):
+        nul_pos = data.index("\0", pos)
+        return data[pos:nul_pos], nul_pos + 1
+    
+    def _read_field(self, data, pos, pattern):
+        size = struct.calcsize(pattern)
+        return struct.unpack(pattern, data[pos:pos+size])[0], pos + size
+    
     def _parse_LM_ChatMessageResponse(self, msg, packet):
         msg.add_param("UnknownA", "I")
         msg.add_param("UnknownB", "I")
@@ -441,6 +467,16 @@ class LoginClient(object):
         msg.add_param("UnknownD", "I")
         msg.add_param("ServerCount", "I")
         msg.deserialize(packet)
+
+class ServerInfo(object):
+    def __init__(self):
+        self.type = 0
+        self.runtime_id = 0
+        self.status = 0
+        self.players = 0
+        self.host = None
+        self.name = None
+        self.locale = None
 
 def client_login(server_addr, username, password):
     client = LoginClient()
@@ -467,7 +503,15 @@ def client_login(server_addr, username, password):
                     break
                 stage = 2
                 handled = True
-                client.begin_list_server()
+                client.begin_list_servers()
+            elif (stage == 2) and (response.type == LM_ServerListResponse):
+                # Waiting for a server list response.
+                handled = True
+                servers = client.end_list_servers(response)
+                print("%d servers online." % len(servers))
+                for i, server in enumerate(servers):
+                    print("%d: %s (%d players)" % (i, server.name, server.players))
+                break
             if not handled:
                 print(response)
             response = client.receive()
