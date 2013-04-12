@@ -168,7 +168,7 @@ class SessionClient(object):
         self.next_ack_in = 0
         self.next_seq_in = 0
         self.next_seq_out = 0
-        self.pending_messages = []
+        self.pending_packets = []
     
     def start_session(self):
         """ Initiate a session with the remote server. """
@@ -176,8 +176,8 @@ class SessionClient(object):
         request.add_param("UnknownA", "I", 0x00000002)
         request.add_param("Session", "I", self.session_id)
         request.add_param("MaxLength", "I", 0x00000200)
-        self._send_session(request)
-        response = self._receive_session()
+        self.send(request)
+        response = self.receive()
         if response.type != SM_SessionResponse:
             raise Exception("Server did not respond with SessionResponse")
         response_id = response.params["Session"].value
@@ -186,24 +186,15 @@ class SessionClient(object):
                 % (response_id, self.session_id))
         self.crc_key = response.params["Key"].value
     
-    def send(self, login_msg):
-        """ Send a login message to the server. """
-        if login_msg.ns != "LM":
-            raise ValueError("Not a login message.")
-        session_msg = SessionMessage(SM_LoginPacket)
-        session_msg.add_param("SeqNum", "H", self.next_seq_out)
-        self.next_seq_out += 1
-        session_msg.body = login_msg.serialize()
-        self._send_session(session_msg)
-    
     def receive(self):
         """ Receive a session message from the server. """
         while True:
-            session_msg = self._receive_session()
-            if not session_msg:
+            packet, crc_removed = self._receive_packet()
+            if not packet:
                 # XXX Is it really possible to receive zero from recvfrom?
                 return None
-            elif session_msg.type == SM_Ack:
+            session_msg = self._parse_packet(packet, crc_removed)
+            if session_msg.type == SM_Ack:
                 seq_num = session_msg["SeqNum"]
                 if seq_num >= self.next_seq_out:
                     raise Exception("Received ack for message that was not sent: %d (seq_out = %d)"
@@ -219,46 +210,66 @@ class SessionClient(object):
                         raise Exception("Sub-message length out of range.")
                     sub_msg_data = data[pos:pos + sub_msg_len]
                     pos += sub_msg_len
-                    sub_msg = self._parse_session(sub_msg_data, True)
-                    self.pending_messages.append(sub_msg)
-            elif session_msg.has_param("SeqNum"):
+                    self.pending_packets.append((sub_msg_data, True))
+            elif self._has_seq_num(session_msg.type):
                 # Only accept messages in order.
                 seq_num = session_msg["SeqNum"]
                 if self.next_seq_in == seq_num:
-                    self._send_session_ack(seq_num)
+                    self._send_ack(seq_num)
                     return session_msg
             else:
                 return session_msg
     
-    def format_addr(self, addr):
-        return "%s:%d" % addr
-    
-    def _send_session(self, msg):
+    def send(self, msg):
+        """ Send a session message to the server. """
         if msg.ns != "SM":
             raise ValueError("Not a session message.")
+        
+        if self._has_seq_num(msg.type):
+            msg.add_param("SeqNum", "H", self.next_seq_out)
+            self.next_seq_out += 1
+    
         #XXX Figure out why we need to byte-swap the checksum before sending it.
         crc32_fn = lambda data: socket.htons(self._crc32(data) & 0xffff)
         packet = msg.serialize(crc32_fn)
-        print("%s >>> %s" % (self.format_addr(self.addr),
+        print("%s >>> %s" % (self._format_addr(self.addr),
                              binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
     
-    def _send_session_ack(self, seq_num):
+    def _format_addr(self, addr):
+        return "%s:%d" % addr
+    
+    def _send_ack(self, seq_num):
         if seq_num != self.next_seq_in:
             raise ValueError("Sending ack for message that was not received: %d (seq_in = %d)"
                 % (seq_num, self.next_seq_in - 1))
         ack_msg = SessionMessage(SM_Ack)
         ack_msg.add_param("SeqNum", "H", seq_num)
-        self._send_session(ack_msg)
+        self.send(ack_msg)
         self.next_seq_in += 1
-
-    def _receive_session(self, max_size=1024):
-        if self.pending_messages:
-            return self.pending_messages.pop(0)
-        response, remote = self.socket.recvfrom(1024)
-        print("%s <<< %s" % (self.format_addr(remote),
-                             binascii.b2a_hex(response).decode('utf8')))
-        return self._parse_session(response)
+    
+    def _send_packet(self, packet):
+        """ Send a session packet to the server. """
+        print("%s >>> %s" % (self._format_addr(self.addr),
+                             binascii.b2a_hex(packet).decode('utf8')))
+        self.socket.sendto(bytes(packet), self.addr)
+    
+    def _receive_packet(self, max_size=1024):
+        """ Return a session packet from the server. """
+        if self.pending_packets:
+            packet, crc_removed = self.pending_packets.pop(0)
+            remote = self.addr
+        else:
+            packet, remote = self.socket.recvfrom(1024)
+            crc_removed = False
+        print("%s <<< %s" % (self._format_addr(remote),
+                             binascii.b2a_hex(packet).decode('utf8')))
+        return packet, crc_removed
+    
+    def _has_seq_num(self, sm_type):
+        """ Determine whether the message has a sequence number parameter and
+        whether it should be incremented before sending it. """
+        return sm_type in (SM_LoginPacket, )
 
     def _crc32_round(self, a, b):
         return (a >> 8) ^ CRC32Lookup[(b ^ a) & 0xff]
@@ -274,8 +285,8 @@ class SessionClient(object):
         crc ^= 0xffffff
         return crc & 0xffffffff
     
-    def _parse_session(self, packet, no_crc=False):
-        """ Parse a session message. """
+    def _parse_packet(self, packet, no_crc=False):
+        """ Parse a session packet. """
         # Extract the message type and CRC and validate them.
         msg_type = struct.unpack("!H", packet[0:2])[0]
         if msg_type > 0xff:
@@ -335,7 +346,7 @@ class LoginClient(object):
         request.add_param("UnknownA", "I", 2)
         request.add_param("UnknownB", "I", 0)
         request.add_param("UnknownC", "I", 0x00080000)
-        self.session_client.send(request)
+        self.send(request)
     
     def request_login(self, username, password):
         request = LoginMessage(LM_LoginRequest)
@@ -350,7 +361,15 @@ class LoginClient(object):
         padding = (allowed_size - packet_size + 1)
         credentials_chunks = [password, "\x00", username, "\x00" * padding]
         request.body = "".join(credentials_chunks)
-        self.session_client.send(request)
+        self.send(request)
+
+    def send(self, login_msg):
+        """ Send a login message to the server. """
+        if login_msg.ns != "LM":
+            raise ValueError("Not a login message.")
+        session_msg = SessionMessage(SM_LoginPacket)
+        session_msg.body = login_msg.serialize()
+        self.session_client.send(session_msg)
 
     def _parse_packet(self, packet):
         """ Parse a login message from a received packet. """
