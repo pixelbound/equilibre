@@ -201,7 +201,11 @@ class SessionClient(object):
                 # XXX Is it really possible to receive zero from recvfrom?
                 return None
             elif session_msg.type == SM_Ack:
-                self.next_ack_in = session_msg["SeqNum"] + 1
+                seq_num = session_msg["SeqNum"]
+                if seq_num >= self.next_seq_out:
+                    raise Exception("Received ack for message that was not sent: %d (seq_out = %d)"
+                        % (seq_num, self.next_seq_out - 1))
+                self.next_ack_in = seq_num + 1
             elif session_msg.type == SM_Combined:
                 pos = 0
                 data = session_msg.body
