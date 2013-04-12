@@ -195,8 +195,8 @@ class SessionClient(object):
     
     def receive(self):
         """ Receive a login message from the server. """
-        login_msg = None
-        while not login_msg:
+        login_packet = None
+        while not login_packet:
             session_msg = self._receive_session()
             if session_msg.type == SM_SessionDisconnect:
                 self.active = False
@@ -214,11 +214,9 @@ class SessionClient(object):
             elif session_msg.type == SM_LoginPacket:
                 # Only accept messages in order.
                 if self.server_seq == session_msg["SeqNum"]:
-                    # Parse the login message data, removing the checksum beforehand.
-                    login_msg = self._parse_login(session_msg.body)
-                    # Acknowledge that we have received this message.
+                    login_packet = session_msg.body
                     self._send_session_ack()
-        return login_msg
+        return login_packet
     
     def format_addr(self, addr):
         return "%s:%d" % addr
@@ -291,9 +289,46 @@ class SessionClient(object):
         # Deserialize the session data, copying any unknown data to the body.
         msg.deserialize(packet)
         return msg
+
+class LoginClient(object):
+    """ High-level interface to talk to a login server. """
+    def __init__(self):
+        self.session_client = None
     
-    def _parse_login(self, packet):
-        """ Parse a login message. """
+    def connect(self, remote_addr):
+        session_id = 0x26ec5075 # XXX Should it be random?
+        self.session_client = SessionClient(remote_addr, session_id)
+        self.session_client.start_session()
+    
+    def receive(self):
+        """ Wait until a message has been received from the server. """
+        login_packet = self.session_client.receive()
+        return self._parse_packet(login_packet)
+    
+    def request_chat_message(self):
+        request = LoginMessage(LM_ChatMessageRequest)
+        request.add_param("UnknownA", "I", 2)
+        request.add_param("UnknownB", "I", 0)
+        request.add_param("UnknownC", "I", 0x00080000)
+        self.session_client.send(request)
+    
+    def request_login(self, username, password):
+        request = LoginMessage(LM_LoginRequest)
+        request.add_param("UnknownA", "I", 3)
+        request.add_param("UnknownB", "I", 2)
+        request.add_param("UnknownC", "H", 0)
+        # Allowed packet lengths: 20, 28, 36, 44, etc.
+        packet_size = (len(password) + len(username) + 14)
+        allowed_size = 20
+        while allowed_size < packet_size:
+            allowed_size += 8
+        padding = (allowed_size - packet_size + 1)
+        credentials_chunks = [password, "\x00", username, "\x00" * padding]
+        request.body = "".join(credentials_chunks)
+        self.session_client.send(request)
+    
+    def _parse_packet(self, packet):
+        """ Parse a login message from a received packet. """
         # Extract the message type.
         msg_type, packet = struct.unpack("<H", packet[0:2])[0], packet[2:]
         msg = LoginMessage(msg_type)
@@ -322,41 +357,6 @@ class SessionClient(object):
         msg.add_param("UnknownB", "I")
         msg.add_param("UnknownC", "H")
         msg.deserialize(packet)
-
-class LoginClient(object):
-    """ High-level interface to talk to a login server. """
-    def __init__(self):
-        self.session_client = None
-    
-    def connect(self, remote_addr):
-        session_id = 0x26ec5075 # XXX Should it be random?
-        self.session_client = SessionClient(remote_addr, session_id)
-        self.session_client.start_session()
-    
-    def receive(self):
-        return self.session_client.receive()
-    
-    def request_chat_message(self):
-        request = LoginMessage(LM_ChatMessageRequest)
-        request.add_param("UnknownA", "I", 2)
-        request.add_param("UnknownB", "I", 0)
-        request.add_param("UnknownC", "I", 0x00080000)
-        self.session_client.send(request)
-    
-    def request_login(self, username, password):
-        request = LoginMessage(LM_LoginRequest)
-        request.add_param("UnknownA", "I", 3)
-        request.add_param("UnknownB", "I", 2)
-        request.add_param("UnknownC", "H", 0)
-        # Allowed packet lengths: 20, 28, 36, 44, etc.
-        packet_size = (len(password) + len(username) + 14)
-        allowed_size = 20
-        while allowed_size < packet_size:
-            allowed_size += 8
-        padding = (allowed_size - packet_size + 1)
-        credentials_chunks = [password, "\x00", username, "\x00" * padding]
-        request.body = "".join(credentials_chunks)
-        self.session_client.send(request)
 
 def client_login(server_addr, username, password):
     client = LoginClient()
