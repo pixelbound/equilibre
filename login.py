@@ -165,11 +165,11 @@ class SessionClient(object):
     def receive(self):
         """ Receive a session message from the server. """
         while True:
-            packet, crc_removed = self._receive_packet()
+            packet, unwrapped = self._receive_packet()
             if not packet:
                 # XXX Is it really possible to receive zero from recvfrom?
                 return None
-            session_msg = self._parse_packet(packet, crc_removed)
+            session_msg = self._parse_packet(packet, unwrapped)
             if session_msg.type == SM_Ack:
                 seq_num = session_msg["SeqNum"]
                 if seq_num >= self.next_seq_out:
@@ -241,14 +241,14 @@ class SessionClient(object):
     def _receive_packet(self, max_size=1024):
         """ Return a session packet from the server. """
         if self.pending_packets:
-            packet, crc_removed = self.pending_packets.pop(0)
+            packet, unwrapped = self.pending_packets.pop(0)
             remote = self.addr
         else:
             packet, remote = self.socket.recvfrom(1024)
-            crc_removed = False
+            unwrapped = False
             print("%s <<< %s" % (self._format_addr(remote),
                                  binascii.b2a_hex(packet).decode('utf8')))
-        return packet, crc_removed
+        return packet, unwrapped
     
     def _has_seq_num(self, sm_type):
         """ Determine whether the message has a sequence number parameter and
@@ -263,13 +263,13 @@ class SessionClient(object):
         crc = binascii.crc32(data, crc)
         return crc & 0xffffffff
     
-    def _parse_packet(self, packet, no_crc=False):
+    def _parse_packet(self, packet, unwrapped=False):
         """ Parse a session packet. """
         # Extract the message type and CRC and validate them.
         msg_type = struct.unpack("!H", packet[0:2])[0]
         if msg_type > 0xff:
             raise ValueError("Message type out of range: 0x%04x" % msg_type)
-        has_crc = (msg_type not in (SM_SessionRequest, SM_SessionResponse) and not no_crc)
+        has_crc = (msg_type not in (SM_SessionRequest, SM_SessionResponse) and not unwrapped)
         if has_crc:
             crc, packet = struct.unpack("!H", packet[-2:])[0], packet[0:-2]
             computed_crc = self._crc32(packet) & 0xffff
@@ -278,7 +278,7 @@ class SessionClient(object):
         packet = packet[2:]
         
         # Decompresse the packet's payload if needed.
-        if self.compressed:
+        if self.compressed and not unwrapped:
             # Check the flag byte to see if the packet really is compressed.
             compression_flag = packet[0]
             packet = packet[1:]
@@ -429,6 +429,8 @@ class ApplicationClient(object):
             if hasattr(self, fn_name):
                 fn = getattr(self, fn_name)
                 fn(msg, packet)
+            else:
+                msg.body = packet
         return msg
     
     def _read_c_string(self, data, pos):
