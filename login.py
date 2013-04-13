@@ -17,11 +17,21 @@ SM_Types = {value: name for name, value in globals().items() if name.startswith(
 # Login message types.
 LM_ChatMessageRequest = 0x01
 LM_LoginRequest = 0x02
+LM_UnknownRequest = 0x03
 LM_ServerListRequest = 0x04
+LM_PlayRequest = 0x0d
 LM_ChatMessageResponse = 0x16
 LM_LoginResponse = 0x17
 LM_ServerListResponse = 0x18
+LM_PlayResponse = 0x21
 LM_Types = {value: name for name, value in globals().items() if name.startswith("LM_")}
+
+# Possible status values in PlayResponse messages.
+PLAY_Allowed = 101
+PLAY_Denied = 326
+PLAY_Suspended = 337
+PLAY_Banned = 338
+PLAY_WordFull = 303
 
 class Parameter(object):
     def __init__(self, name, code, value):
@@ -350,6 +360,14 @@ class LoginClient(object):
         request.add_param("UnknownC", "H", 0)
         self.send(request)
     
+    def begin_play(self, server_id):
+        request = LoginMessage(LM_PlayRequest)
+        request.add_param("Sequence", "H", 5)
+        request.add_param("UnknownA", "I", 0)
+        request.add_param("UnknownB", "I", 0)
+        request.add_param("ServerID", "I", server_id)
+        self.send(request)
+    
     def end_get_chat_message(self, response):
         """ Extract the chat message from the response. """
         return response.body
@@ -380,6 +398,15 @@ class LoginClient(object):
             server.players, pos = self._read_field(msg.body, pos, "I")
             servers.append(server)
         return servers
+    
+    def end_play(self, response):
+        """ Extract the play result from the response.
+        This is a tuple with the values: success, status, server ID and sequence. """
+        success = (response["Allowed"] == 1)
+        status = response["Status"]
+        server_id = response["ServerID"]
+        sequence = response["Sequence"]
+        return success, status, server_id, sequence
 
     def send(self, login_msg):
         """ Send a login message to the server. """
@@ -435,6 +462,16 @@ class LoginClient(object):
         msg.add_param("UnknownD", "I")
         msg.add_param("ServerCount", "I")
         msg.deserialize(packet)
+    
+    def _parse_LM_PlayResponse(self, msg, packet):
+        # 0009 0003 2100 05000000 000000000000 01 6500 000000 02000000 2cb6
+        msg.add_param("Sequence", "I")
+        msg.add_param("UnknownA", "B" * 6)
+        msg.add_param("Allowed", "B")
+        msg.add_param("Status", "H")
+        msg.add_param("UnknownB", "B" * 3)
+        msg.add_param("ServerID", "I")
+        msg.deserialize(packet)
 
 class ServerInfo(object):
     def __init__(self):
@@ -474,12 +511,28 @@ def client_login(server_addr, username, password):
                 client.begin_list_servers()
             elif (stage == 2) and (response.type == LM_ServerListResponse):
                 # Waiting for a server list response.
-                handled = True
                 servers = client.end_list_servers(response)
                 print("%d servers online." % len(servers))
                 for i, server in enumerate(servers):
-                    print("%d: %s (%d players)" % (i, server.name, server.players))
-                break
+                    print("%d: %s (%d players, ID=%d)" % (i, server.name,
+                        server.players, server.runtime_id))
+                # Login in the first server in the list.
+                handled = True
+                if servers:
+                    stage = 3
+                    client.begin_play(servers[0].runtime_id)
+                else:
+                    print("No server to connect to, exiting.")
+                    break
+            elif (stage == 3) and (response.type == LM_PlayResponse):
+                # Waiting for a play response.
+                handled = True
+                success, status, server_id, sequence = client.end_play(response)
+                if success:
+                    print("Server %d allowed play." % server_id)
+                else:
+                    print("Server %d disallowed play, reason = %d." % (server_id, status))
+                    break
             if not handled:
                 print(response)
             response = client.receive()
