@@ -268,8 +268,8 @@ class SessionClient(object):
         msg.deserialize(packet)
         return msg
 
-class LoginClient(object):
-    """ High-level interface to talk to a login server. """
+class ApplicationClient(object):
+    """ High-level interface to send and receive messages over a session. """
     def __init__(self):
         self.session_id = 0x26ec5075 # XXX Should it be random?
         self.session = None
@@ -329,6 +329,45 @@ class LoginClient(object):
         else:
             print("Unexpected session message: %s" % session_msg)
             return None
+
+    def send(self, login_msg):
+        """ Send a login message to the server. """
+        if login_msg.ns != "LM":
+            raise ValueError("Not a login message.")
+        session_msg = SessionMessage(SM_LoginPacket)
+        session_msg.body = login_msg.serialize()
+        self.session.send(session_msg)
+
+    def _parse_packet(self, packet):
+        """ Parse an application message from a received packet. """
+        # Extract the message type.
+        msg_type, packet = struct.unpack("<H", packet[0:2])[0], packet[2:]
+        msg = LoginMessage(msg_type)
+        
+        # Call the function that can parse the message, if it exists.
+        try:
+            msg_name = LM_Types[msg_type]
+        except KeyError:
+            pass
+        else:
+            fn_name = "_parse_%s" % msg_name
+            if hasattr(self, fn_name):
+                fn = getattr(self, fn_name)
+                fn(msg, packet)
+        return msg
+    
+    def _read_c_string(self, data, pos):
+        nul_pos = data.index("\0", pos)
+        return data[pos:nul_pos], nul_pos + 1
+    
+    def _read_field(self, data, pos, pattern):
+        size = struct.calcsize(pattern)
+        return struct.unpack(pattern, data[pos:pos+size])[0], pos + size
+
+class LoginClient(ApplicationClient):
+    """ High-level interface to talk to a login server. """
+    def __init__(self):
+        super(LoginClient, self).__init__()
     
     def begin_get_chat_message(self):
         request = LoginMessage(LM_ChatMessageRequest)
@@ -360,9 +399,9 @@ class LoginClient(object):
         request.add_param("UnknownC", "H", 0)
         self.send(request)
     
-    def begin_play(self, server_id):
+    def begin_play(self, server_id, sequence):
         request = LoginMessage(LM_PlayRequest)
-        request.add_param("Sequence", "H", 5)
+        request.add_param("Sequence", "H", sequence)
         request.add_param("UnknownA", "I", 0)
         request.add_param("UnknownB", "I", 0)
         request.add_param("ServerID", "I", server_id)
@@ -408,40 +447,6 @@ class LoginClient(object):
         sequence = response["Sequence"]
         return success, status, server_id, sequence
 
-    def send(self, login_msg):
-        """ Send a login message to the server. """
-        if login_msg.ns != "LM":
-            raise ValueError("Not a login message.")
-        session_msg = SessionMessage(SM_LoginPacket)
-        session_msg.body = login_msg.serialize()
-        self.session.send(session_msg)
-
-    def _parse_packet(self, packet):
-        """ Parse a login message from a received packet. """
-        # Extract the message type.
-        msg_type, packet = struct.unpack("<H", packet[0:2])[0], packet[2:]
-        msg = LoginMessage(msg_type)
-        
-        # Call the function that can parse the message, if it exists.
-        try:
-            msg_name = LM_Types[msg_type]
-        except KeyError:
-            pass
-        else:
-            fn_name = "_parse_%s" % msg_name
-            if hasattr(self, fn_name):
-                fn = getattr(self, fn_name)
-                fn(msg, packet)
-        return msg
-    
-    def _read_c_string(self, data, pos):
-        nul_pos = data.index("\0", pos)
-        return data[pos:nul_pos], nul_pos + 1
-    
-    def _read_field(self, data, pos, pattern):
-        size = struct.calcsize(pattern)
-        return struct.unpack(pattern, data[pos:pos+size])[0], pos + size
-    
     def _parse_LM_ChatMessageResponse(self, msg, packet):
         msg.add_param("UnknownA", "I")
         msg.add_param("UnknownB", "I")
@@ -464,7 +469,6 @@ class LoginClient(object):
         msg.deserialize(packet)
     
     def _parse_LM_PlayResponse(self, msg, packet):
-        # 0009 0003 2100 05000000 000000000000 01 6500 000000 02000000 2cb6
         msg.add_param("Sequence", "I")
         msg.add_param("UnknownA", "B" * 6)
         msg.add_param("Allowed", "B")
@@ -520,7 +524,8 @@ def client_login(server_addr, username, password):
                 handled = True
                 if servers:
                     stage = 3
-                    client.begin_play(servers[0].runtime_id)
+                    sequence = 5
+                    client.begin_play(servers[0].runtime_id, sequence)
                 else:
                     print("No server to connect to, exiting.")
                     break
