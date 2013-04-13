@@ -13,6 +13,7 @@ SM_SessionResponse = 0x02
 SM_Combined = 0x03
 SM_SessionDisconnect = 0x05
 SM_ApplicationPacket = 0x09
+SM_Fragment = 0x0d
 SM_Ack = 0x15
 SM_Types = {value: name for name, value in globals().items() if name.startswith("SM_")}
 
@@ -30,6 +31,13 @@ LM_Types = {value: name for name, value in globals().items() if name.startswith(
 
 # World message types (Titanium).
 WM_SendLoginInfo = 0x4dd0
+WM_GuildList = 0x6957
+WM_LogServer = 0x0fa6
+WM_ApproveWorld = 0x3c25
+WM_EnterWorld = 0x7cba
+WM_PostEnterWorld = 0x52a4
+WM_ExpansionInfo = 0x04ec
+WM_SendCharInfo = 0x4513
 WM_Types = {value: name for name, value in globals().items() if name.startswith("WM_")}
 
 ALL_Types = {"SM": SM_Types, "LM": LM_Types, "WM": WM_Types}
@@ -115,7 +123,7 @@ class Message(object):
         try:
             msg_name = msg_types[self.type]
         except KeyError:
-            msg_name = "%s_%02x" % (self.__class__.__name__, self.type)
+            msg_name = "%s_0x%04x" % (self.__class__.__name__, self.type)
             
         param_chunks = []
         for param in self.params.values():
@@ -123,6 +131,8 @@ class Message(object):
         chunks.append("<")
         chunks.append(msg_name)
         chunks.append("(%s)" % ", ".join(param_chunks))
+        if self.body:
+            chunks.append(" body=[%d bytes]" % len(self.body))
         chunks.append(">")
         return "".join(chunks)
 
@@ -136,7 +146,7 @@ class LoginMessage(Message):
 
 class WorldMessage(Message):
     def __init__(self, type):
-        super(LoginMessage, self).__init__("WM", type)
+        super(WorldMessage, self).__init__("WM", type)
 
 class SessionClient(object):
     def __init__(self, addr):
@@ -243,7 +253,7 @@ class SessionClient(object):
     def _has_seq_num(self, sm_type):
         """ Determine whether the message has a sequence number parameter and
         whether it should be incremented before sending it. """
-        return sm_type in (SM_ApplicationPacket, )
+        return sm_type in (SM_ApplicationPacket, SM_Fragment)
 
     def _crc32_round(self, a, b):
         return (a >> 8) ^ CRC32Lookup[(b ^ a) & 0xff]
@@ -293,6 +303,8 @@ class SessionClient(object):
             msg.add_param("UnknownC", "I")
         elif msg_type == SM_ApplicationPacket:
             msg.add_param("SeqNum", "H")
+        elif msg_type == SM_Fragment:
+            msg.add_param("SeqNum", "H")
         elif msg_type == SM_Ack:
             msg.add_param("SeqNum", "H")
 
@@ -302,11 +314,15 @@ class SessionClient(object):
 
 class ApplicationClient(object):
     """ High-level interface to send and receive messages over a session. """
-    def __init__(self, msg_types, compressed):
+    def __init__(self, ns, msg_types, compressed):
+        self.ns = ns
         self.msg_types = msg_types
         self.session_id = 0x26ec5075 # XXX Should it be random?
         self.session = None
         self.compressed = compressed
+        self.pending_fragments = []
+        self.fragmented_total_size = 0
+        self.fragmented_current_size = 0
     
     def __enter__(self):
         pass
@@ -355,15 +371,34 @@ class ApplicationClient(object):
     
     def receive(self):
         """ Wait until an application message has been received from the server. """
-        session_msg = self.session.receive()
-        if (not session_msg) or (session_msg.type == SM_SessionDisconnect):
-            self.active = False
-            return None
-        elif session_msg.type == SM_ApplicationPacket:
-            return self._parse_packet(session_msg.body)
-        else:
-            print("Unexpected session message: %s" % session_msg)
-            return None
+        while True:
+            session_msg = self.session.receive()
+            if (not session_msg) or (session_msg.type == SM_SessionDisconnect):
+                self.active = False
+                return None
+            elif session_msg.type == SM_ApplicationPacket:
+                return self._parse_packet(session_msg.body)
+            elif session_msg.type == SM_Fragment:
+                if not self.pending_fragments:
+                    # First fragment that contains the total size.
+                    self.fragmented_total_size = struct.unpack("!I", session_msg.body[0:4])[0]
+                    self.fragmented_current_size = len(session_msg.body) - 4
+                    self.pending_fragments.append(session_msg.body[4:])
+                else:
+                    self.pending_fragments.append(session_msg.body)
+                    self.fragmented_current_size += len(session_msg.body)
+                #print("Fragment data: %d/%d" % (self.fragmented_current_size,
+                #                                self.fragmented_total_size))
+                if self.fragmented_current_size == self.fragmented_total_size:
+                    complete_packet = "".join(self.pending_fragments)
+                    #print("Complete packet: %s" % binascii.b2a_hex(complete_packet))
+                    self.pending_fragments = []
+                    self.fragmented_final_size = 0
+                    self.fragmented_current_size = 0
+                    return self._parse_packet(complete_packet)
+            else:
+                print("Unexpected session message: %s" % session_msg)
+                return None
 
     def send(self, app_msg):
         """ Send an application message to the server. """
@@ -377,7 +412,12 @@ class ApplicationClient(object):
         """ Parse an application message from a received packet. """
         # Extract the message type.
         msg_type, packet = struct.unpack("<H", packet[0:2])[0], packet[2:]
-        msg = LoginMessage(msg_type)
+        if self.ns == "LM":
+            msg = LoginMessage(msg_type)
+        elif self.ns == "WM":
+            msg = WorldMessage(msg_type)
+        else:
+            msg = Message(self.ns, msg_type)
         
         # Call the function that can parse the message, if it exists.
         try:
@@ -402,7 +442,7 @@ class ApplicationClient(object):
 class LoginClient(ApplicationClient):
     """ High-level interface to talk to a login server. """
     def __init__(self):
-        super(LoginClient, self).__init__(LM_Types, False)
+        super(LoginClient, self).__init__("LM", LM_Types, False)
     
     def begin_get_chat_message(self):
         request = LoginMessage(LM_ChatMessageRequest)
@@ -515,7 +555,7 @@ class LoginClient(ApplicationClient):
 class WorldClient(ApplicationClient):
     """ High-level interface to talk to a world server. """
     def __init__(self):
-        super(WorldClient, self).__init__(WM_Types, True)
+        super(WorldClient, self).__init__("WM", WM_Types, True)
     
     def begin_login(self, server_id, session_key):
         zoning = "\x00" # "\x01" when zoning.
