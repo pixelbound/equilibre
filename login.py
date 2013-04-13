@@ -367,7 +367,7 @@ class LoginClient(object):
         msg = response
         servers = []
         pos = 0
-        while pos < len(msg.body):
+        while msg.body and (pos < len(msg.body)):
             server = ServerInfo()
             server.host, pos = self._read_c_string(msg.body, pos)
             server.type, pos = self._read_field(msg.body, pos, "I")
