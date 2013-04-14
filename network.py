@@ -450,13 +450,14 @@ class ApplicationClient(object):
         try:
             msg_name = self.msg_types[msg_type]
         except KeyError:
-            pass
+            msg.body = packet
         else:
             fn_name = "_parse_%s" % msg_name
             if hasattr(self, fn_name):
                 fn = getattr(self, fn_name)
                 fn(msg, packet)
-        msg.body = packet
+            else:
+                msg.body = packet
         return msg
     
     def _read_c_string(self, data, pos):
