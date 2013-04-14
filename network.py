@@ -280,9 +280,6 @@ class SessionClient(object):
         """ Send a session packet to the server. """
         if self.dump_prefix_outgoing:
                 self._dump_packet(self.dump_prefix_outgoing, packet)
-        else:
-            print("%s >>> %s" % (self._format_addr(self.addr),
-                                 binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
     
     def _receive_packet(self, max_size=1024):
@@ -295,9 +292,6 @@ class SessionClient(object):
             unwrapped = False
             if self.dump_prefix_incoming:
                 self._dump_packet(self.dump_prefix_incoming, packet)
-            else:
-                print("%s <<< %s" % (self._format_addr(remote),
-                                 binascii.b2a_hex(packet).decode('utf8')))
         return packet, unwrapped
     
     def _dump_packet(self, dump_prefix, packet):
@@ -529,6 +523,11 @@ class ApplicationClient(object):
     def _read_field(self, data, pos, pattern):
         size = struct.calcsize(pattern)
         return struct.unpack(pattern, data[pos:pos+size])[0], pos + size
+    
+    def _read_array(self, data, pos, pattern, size):
+        array_pattern = "%d%s" % (size, pattern)
+        size = struct.calcsize(array_pattern)
+        return struct.unpack(array_pattern, data[pos:pos+size]), pos + size
 
 class LoginClient(ApplicationClient):
     """ High-level interface to talk to a login server. """
@@ -663,13 +662,88 @@ class WorldClient(ApplicationClient):
         body_chunks.append("\x00" * padding2)
         request.body = "".join(body_chunks)
         self.send(request)
+    
+    def end_login(self, response):
+        # Read the character info fields for all characters as arrays.
+        msg = response
+        num_chars = 10
+        num_equip_slots = 9
+        fields = {}
+        pos = 0
+        fields["race"], pos = self._read_array(msg.body, pos, "I", num_chars)
+        # Skip equip_colors
+        pos += (4 * num_equip_slots * num_chars)
+        fields["beard_color"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        fields["hair_style"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        # Skip equip
+        pos += (4 * num_equip_slots * num_chars)
+        fields["secondary_id"], pos = self._read_array(msg.body, pos, "I", num_chars)
+        # Skip unknown820 and unknown830
+        pos += (1 * num_chars)
+        pos += 2
+        fields["deity"], pos = self._read_array(msg.body, pos, "I", num_chars)
+        fields["gohome"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        fields["tutorial"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        fields["beard"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        # Skip unknown902
+        pos += (1 * num_chars)
+        fields["primary_id"], pos = self._read_array(msg.body, pos, "I", num_chars)
+        fields["hair_color"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        # Skip unknown962
+        pos += 2
+        fields["zone"], pos = self._read_array(msg.body, pos, "I", num_chars)
+        fields["class_id"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        fields["face"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        names = []
+        for i in range(0, num_chars):
+            name, dummy_pos = self._read_c_string(msg.body, pos)
+            pos += 64
+            names.append(name)
+        fields["name"] = names
+        fields["gender"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        eye_colors1, pos = self._read_array(msg.body, pos, "B", num_chars)
+        eye_colors2, pos = self._read_array(msg.body, pos, "B", num_chars)
+        fields["eye_colors"] = list(zip(eye_colors1, eye_colors2))
+        fields["level"], pos = self._read_array(msg.body, pos, "B", num_chars)
+        
+        # Assign the fields to the corresponding character.
+        characters = [CharacterInfo() for i in range(0, num_chars)]
+        for name, values in fields.items():
+            #print("%s = %s" % (name, values))
+            for i, value in enumerate(values):
+                setattr(characters[i], name, value)
+        
+        # Remove inexisting characters.
+        return [char for char in characters if char.level]
 
 class ServerInfo(object):
     def __init__(self):
-        self.type = 0
-        self.runtime_id = 0
-        self.status = 0
-        self.players = 0
+        self.type = None
+        self.runtime_id = None
+        self.status = None
+        self.players = None
         self.host = None
         self.name = None
         self.locale = None
+
+class CharacterInfo(object):
+    def __init__(self):
+        self.race = None
+        self.equip_colors = None
+        self.beard_color = None
+        self.hairstyle = None
+        self.equip = None
+        self.secondary_id = None
+        self.deity = None
+        self.gohome_available = None
+        self.tutorial_available = None
+        self.beard = None
+        self.primary_id = None
+        self.hair_color = None
+        self.zone = None
+        self.class_id = None
+        self.face = None
+        self.name = None
+        self.gender = None
+        self.eye_colors = None
+        self.level = None

@@ -81,6 +81,7 @@ def client_login(args):
                     # server that we can log in.
                     time.sleep(0.1)
                     client_play(args, server, sequence, session_key)
+                    break
                 else:
                     print("Server '%s' (ID=%d) disallowed play, reason = %d." %
                         (server.name, server_id, status))
@@ -97,18 +98,23 @@ def client_play(args, server, sequence, session_key):
         client.dump_prefix_outgoing = "dump_world_out_%s" % timestamp
     server_addr = (server.host, 9000)
     client.connect(server_addr)
+    characters = []
     with client:
         stage = 0
         client.begin_login(sequence, session_key)
         response = client.receive()
         while response:
             handled = False
-            #if (stage == 0) and (response.type == LM_ChatMessageResponse):
-            #    # Waiting for a login response.
-            #    print("Chat message: %s" % client.end_get_chat_message(response))
-            #    stage = 1
-            #    handled = True
-            #    client.begin_login(username, password)
+            if (stage == 0) and (response.type == network.WM_SendCharInfo):
+                # Waiting for character selection.
+                stage = 1
+                handled = True
+                characters = client.end_login(response)
+                print("%d characters on this account:" % len(characters))
+                for char in characters:
+                    print("%s (level: %d, class: %d, race: %d, zone: %d)" %
+                        (char.name, char.level, char.class_id, char.race, char.zone))
+                break
             if not handled:
                 print(response)
             response = client.receive()

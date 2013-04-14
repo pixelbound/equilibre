@@ -67,20 +67,20 @@ class PacketInfo(object):
             if self.fragment_state.complete:
                 whole_packet = self.fragment_state.assemble()
                 self.info_app(whole_packet, child_depth)
-        elif msg.body and print_verbose:
+        elif msg.body and print_verbose and not self.args.quiet:
             self.message(binascii.b2a_hex(msg.body), depth)
             print("")
     
     def info_app(self, packet, depth):
         app_msg = self.app_client.parse_packet(packet)
         self.message(str(app_msg), depth)
-        if app_msg.body:
+        if not self.args.quiet and app_msg.body:
             body_printed = app_msg.body[0:512]
             self.message(binascii.b2a_hex(body_printed), depth)
             txt = repr(body_printed)
             escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
             self.message(escaped_txt, depth)
-        print("")
+            print("")
 
 def main():
     parser = argparse.ArgumentParser(description='Interpret EQ packet files.')
@@ -91,6 +91,7 @@ def main():
     parser.add_argument("-n", "--namespace", default="WM",
                    help='Message namespace (LM for login messages, WM for world messages)')
     parser.add_argument("-v", "--verbose", action='store_true', default=False)
+    parser.add_argument("-q", "--quiet", action='store_true', default=False)
     args = parser.parse_args()
     p = PacketInfo(args)
     for file in args.files:
