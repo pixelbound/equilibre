@@ -27,6 +27,7 @@ SM_SessionRequest = 0x01
 SM_SessionResponse = 0x02
 SM_Combined = 0x03
 SM_SessionDisconnect = 0x05
+SM_KeepAlive = 0x06
 SM_ApplicationPacket = 0x09
 SM_Fragment = 0x0d
 SM_Ack = 0x15
@@ -53,6 +54,9 @@ WM_EnterWorld = 0x7cba
 WM_PostEnterWorld = 0x52a4
 WM_ExpansionInfo = 0x04ec
 WM_SendCharInfo = 0x4513
+WM_MOTD = 0x024d
+WM_SetChatServer = 0x00d7
+WM_SetChatServer2 = 0x6536
 WM_Types = {value: name for name, value in globals().items() if name.startswith("WM_")}
 
 ALL_Types = {"SM": SM_Types, "LM": LM_Types, "WM": WM_Types}

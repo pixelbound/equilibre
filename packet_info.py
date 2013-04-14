@@ -17,24 +17,44 @@
 import binascii
 import argparse
 import network
+import re
 
-def packet_info(args, packet):
-    # XXX SessionState
-    session = network.SessionClient(('127.0.0.1', 0))
-    session.crc_key = args.crc
-    if args.namespace == "LM":
-        app_client = network.LoginClient()
-    else:
-        app_client = network.WorldClient()
-        session.compressed = True
-    msg = session.parse_packet(packet)
-    print(msg)
-    print(binascii.b2a_hex(msg.body))
-    if msg.type == network.SM_ApplicationPacket:
-        app_msg = app_client.parse_packet(msg.body)
-        print("    " + str(app_msg))
-        print("    " + binascii.b2a_hex(app_msg.body))
-    print("")
+class PacketInfo(object):
+    def __init__(self, args):
+        self.args = args
+        # XXX SessionState
+        self.session = network.SessionClient(('127.0.0.1', 0))
+        self.session.crc_key = args.crc
+        if args.namespace == "LM":
+            self.app_client = network.LoginClient()
+        else:
+            self.app_client = network.WorldClient()
+            self.session.compressed = True
+
+    def info(self, packet):
+        self.info_session(packet, False, 0)
+
+    def info_session(self, packet, unwrapped, indent):
+        indent_txt = " " * indent
+        msg = self.session.parse_packet(packet, unwrapped)
+        print("%s%s" % (indent_txt, str(msg)))
+        if msg.type == network.SM_ApplicationPacket:
+            self.info_app(msg.body, indent + 4)
+        elif msg.type == network.SM_Combined:
+            sub_packets = msg.unpack_combined()
+            for sub_packet in sub_packets:
+                self.info_session(sub_packet, True, indent + 4)
+        else:
+            print("%s%s" % (indent_txt, binascii.b2a_hex(msg.body)))
+    
+    def info_app(self, packet, indent):
+        indent_txt = " " * indent
+        app_msg = self.app_client.parse_packet(packet)
+        print("%s%s" % (indent_txt, str(app_msg)))
+        print("%s%s" % (indent_txt, binascii.b2a_hex(app_msg.body)))
+        txt = repr(app_msg.body)
+        escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
+        print("%s%s" % (indent_txt, escaped_txt))
 
 def main():
     parser = argparse.ArgumentParser(description='Interpret EQ packet files.')
@@ -48,7 +68,8 @@ def main():
     for file in args.files:
         print("Reading packet '%s'." % file)
         with open(file, "rb") as f:
-            packet_info(args, f.read())     
+            p = PacketInfo(args)
+            p.info(f.read())     
 
 if __name__ == "__main__":
     main()
