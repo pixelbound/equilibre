@@ -32,7 +32,10 @@ class PacketInfo(object):
             self.session.compressed = True
 
     def message(self, msg, depth):
-        indent_txt = " " * ((depth + 1) * 4)
+        # We print packet file names in verbose mode and need to indent more.
+        if self.args.verbose:
+            depth += 1
+        indent_txt = " " * (depth * 4)
         print("%s%s" % (indent_txt, msg))
 
     def info(self, file, packet):
@@ -40,10 +43,10 @@ class PacketInfo(object):
 
     def info_session(self, file, packet, unwrapped, depth):
         msg = self.session.parse_packet(packet, unwrapped)
-        if depth == 0:
-            verbose_msg = (msg.type in (network.SM_Ack, network.SM_Fragment))
-            if (not self.args.verbose) and verbose_msg:
-                return
+        verbose_msg = (msg.type in (network.SM_Ack, network.SM_Fragment))
+        if (not self.args.verbose) and verbose_msg:
+            return
+        if (depth == 0) and self.args.verbose:
             print("Packet '%s'" % file)
         self.message(str(msg), depth)
         if msg.type == network.SM_ApplicationPacket:
@@ -51,7 +54,7 @@ class PacketInfo(object):
         elif msg.type == network.SM_Combined:
             sub_packets = msg.unpack_combined()
             for sub_packet in sub_packets:
-                self.info_session(sub_packet, True, depth + 1)
+                self.info_session(file, sub_packet, True, depth + 1)
         elif msg.type == network.SM_Fragment:
             pass
         elif msg.body:
@@ -79,7 +82,10 @@ def main():
     p = PacketInfo(args)
     for file in args.files:
         with open(file, "rb") as f:
-            p.info(file, f.read())
+            try:
+                p.info(file, f.read())
+            except Exception as e:
+                print("error while reading packet '%s': %s" % (file, e))
 
 if __name__ == "__main__":
     main()
