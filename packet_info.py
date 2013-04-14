@@ -30,6 +30,7 @@ class PacketInfo(object):
         else:
             self.app_client = network.WorldClient()
             self.session.compressed = True
+        self.fragment_state = network.FragmentState()
 
     def message(self, msg, depth):
         # We print packet file names in verbose mode and need to indent more.
@@ -44,11 +45,10 @@ class PacketInfo(object):
     def info_session(self, file, packet, unwrapped, depth):
         msg = self.session.parse_packet(packet, unwrapped)
         verbose_msg = (msg.type in (network.SM_Ack, network.SM_Fragment))
-        if (not self.args.verbose) and verbose_msg:
-            return
-        if (depth == 0) and self.args.verbose:
-            print("Packet '%s'" % file)
-        self.message(str(msg), depth)
+        if not verbose_msg or self.args.verbose:
+            self.message(str(msg), depth)
+            if (depth == 0) and self.args.verbose:
+                print("Packet '%s'" % file)
         if msg.type == network.SM_ApplicationPacket:
             self.info_app(msg.body, depth + 1)
         elif msg.type == network.SM_Combined:
@@ -56,7 +56,10 @@ class PacketInfo(object):
             for sub_packet in sub_packets:
                 self.info_session(file, sub_packet, True, depth + 1)
         elif msg.type == network.SM_Fragment:
-            pass
+            self.fragment_state.add_fragment(msg.body)
+            if self.fragment_state.complete:
+                whole_packet = self.fragment_state.assemble()
+                self.info_app(whole_packet, depth)
         elif msg.body:
             self.message(binascii.b2a_hex(msg.body), depth)
     
@@ -64,8 +67,9 @@ class PacketInfo(object):
         app_msg = self.app_client.parse_packet(packet)
         self.message(str(app_msg), depth)
         if app_msg.body:
-            self.message(binascii.b2a_hex(app_msg.body), depth)
-            txt = repr(app_msg.body)
+            body_printed = app_msg.body[0:512]
+            self.message(binascii.b2a_hex(body_printed), depth)
+            txt = repr(body_printed)
             escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
             self.message(escaped_txt, depth)
 
