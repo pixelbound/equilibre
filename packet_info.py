@@ -35,11 +35,16 @@ class PacketInfo(object):
         indent_txt = " " * ((depth + 1) * 4)
         print("%s%s" % (indent_txt, msg))
 
-    def info(self, packet):
-        self.info_session(packet, False, 0)
+    def info(self, file, packet):
+        self.info_session(file, packet, False, 0)
 
-    def info_session(self, packet, unwrapped, depth):
+    def info_session(self, file, packet, unwrapped, depth):
         msg = self.session.parse_packet(packet, unwrapped)
+        if depth == 0:
+            verbose_msg = (msg.type in (network.SM_Ack, network.SM_Fragment))
+            if (not self.args.verbose) and verbose_msg:
+                return
+            print("Packet '%s'" % file)
         self.message(str(msg), depth)
         if msg.type == network.SM_ApplicationPacket:
             self.info_app(msg.body, depth + 1)
@@ -69,12 +74,12 @@ def main():
                    help='CRC key used to verify packets')
     parser.add_argument("-n", "--namespace", default="WM",
                    help='Message namespace (LM for login messages, WM for world messages)')
+    parser.add_argument("-v", "--verbose", action='store_true', default=False)
     args = parser.parse_args()
     p = PacketInfo(args)
     for file in args.files:
-        print("Packet '%s'" % file)
         with open(file, "rb") as f:
-            p.info(f.read())     
+            p.info(file, f.read())
 
 if __name__ == "__main__":
     main()
