@@ -29,7 +29,10 @@ SM_SessionResponse = 0x02
 SM_Combined = 0x03
 SM_SessionDisconnect = 0x05
 SM_KeepAlive = 0x06
+SM_SessionStatRequest = 0x07
+SM_SessionStatResponse = 0x08
 SM_ApplicationPacket = 0x09
+SM_OutOfOrderAck = 0x11
 SM_Fragment = 0x0d
 SM_Ack = 0x15
 SM_Types = {value: name for name, value in globals().items() if name.startswith("SM_")}
@@ -58,6 +61,17 @@ WM_SendCharInfo = 0x4513
 WM_MOTD = 0x024d
 WM_SetChatServer = 0x00d7
 WM_SetChatServer2 = 0x6536
+WM_WorldClientReady = 0x5e99
+WM_AckPacket = 0x7752
+WM_World_Client_CRC1 = 0x5072
+WM_World_Client_CRC2 = 0x5b18
+WM_WorldComplete = 0x509d
+WM_ZoneEntry = 0x7213
+WM_ReqNewZone = 0x7ac5
+WM_SendExpZonein = 0x0587
+WM_ClientUpdate = 0x14cb
+WM_FloatListThing = 0x6a1b
+WM_Logout = 0x61ff
 WM_Types = {value: name for name, value in globals().items() if name.startswith("WM_")}
 
 ALL_Types = {"SM": SM_Types, "LM": LM_Types, "WM": WM_Types}
@@ -309,13 +323,11 @@ class SessionClient(object):
         crc = binascii.crc32(data, crc)
         return crc & 0xffffffff
     
-    def parse_packet(self, packet, unwrapped=False):
-        """ Parse a session packet. """
+    def _unwrap_packet(self, msg_type, packet):
         # Extract the message type and CRC and validate them.
-        msg_type = struct.unpack("!H", packet[0:2])[0]
         if msg_type > 0xff:
             raise ValueError("Message type out of range: 0x%04x" % msg_type)
-        has_crc = (msg_type not in (SM_SessionRequest, SM_SessionResponse) and not unwrapped)
+        has_crc = msg_type not in (SM_SessionRequest, SM_SessionResponse)
         if has_crc:
             crc, packet = struct.unpack("!H", packet[-2:])[0], packet[0:-2]
             computed_crc = self._crc32(packet) & 0xffff
@@ -324,7 +336,7 @@ class SessionClient(object):
         packet = packet[2:]
         
         # Decompresse the packet's payload if needed.
-        if self.compressed and not unwrapped:
+        if self.compressed:
             # Check the flag byte to see if the packet really is compressed.
             compression_flag = packet[0]
             packet = packet[1:]
@@ -336,6 +348,20 @@ class SessionClient(object):
                 pass
             else:
                 raise ValueError("Invalid compression flag: 0x%x." % ord(compression_flag))
+        return packet
+    
+    def parse_packet(self, packet, unwrapped=False):
+        """ Parse a session packet. """
+        msg_type = struct.unpack("!H", packet[0:2])[0]
+        if msg_type > 0xff:
+            # Special case where an application packet is found instead of a session packet.
+            msg = SessionMessage(SM_ApplicationPacket)
+            msg.body = packet
+            return msg
+        elif not unwrapped:
+            packet = self._unwrap_packet(msg_type, packet)
+        else:
+            packet = packet[2:] # Remove packet type.
         
         # Specify the header fields for the message, if we know about any.
         msg = SessionMessage(msg_type)
@@ -351,7 +377,7 @@ class SessionClient(object):
             msg.add_param("SeqNum", "H")
         elif msg_type == SM_Fragment:
             msg.add_param("SeqNum", "H")
-        elif msg_type == SM_Ack:
+        elif msg_type in (SM_Ack, SM_OutOfOrderAck):
             msg.add_param("SeqNum", "H")
 
         # Deserialize the session data, copying any unknown data to the body.
