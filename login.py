@@ -105,16 +105,24 @@ def client_play(args, server, sequence, session_key):
         response = client.receive()
         while response:
             handled = False
-            if (stage == 0) and (response.type == network.WM_SendCharInfo):
-                # Waiting for character selection.
+            if (stage == 0) and (response.type == network.WM_LogServer):
+                # Waiting for logging to be complete.
                 stage = 1
                 handled = True
-                characters = client.end_login(response)
+                client.begin_char_selection()
+            elif (stage == 1) and (response.type == network.WM_SendCharInfo):
+                # Waiting for character selection.
+                characters = client.end_char_selection(response)
                 print("%d characters on this account:" % len(characters))
                 for char in characters:
                     print("%s (level: %d, class: %d, race: %d, zone: %d)" %
                         (char.name, char.level, char.class_id, char.race, char.zone))
-                break
+                stage = 2
+                handled = True
+                client.begin_enter_world(char.name)
+            elif (stage == 2) and (response.type == network.WM_ZoneServerInfo):
+                # Waiting for entering the world.
+                pass
             if not handled:
                 print(response)
             response = client.receive()

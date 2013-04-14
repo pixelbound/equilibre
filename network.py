@@ -66,6 +66,7 @@ WM_AckPacket = 0x7752
 WM_World_Client_CRC1 = 0x5072
 WM_World_Client_CRC2 = 0x5b18
 WM_WorldComplete = 0x509d
+WM_ZoneServerInfo = 0x61b6
 WM_ZoneEntry = 0x7213
 WM_ReqNewZone = 0x7ac5
 WM_SendExpZonein = 0x0587
@@ -663,7 +664,30 @@ class WorldClient(ApplicationClient):
         request.body = "".join(body_chunks)
         self.send(request)
     
+    def begin_char_selection(self):
+        # XXX Obviously we should wait for an answer after sending each message.
+        # The emulator sends all of the responses at the same time so it's
+        # difficult to know the ordering of requests and responses here.
+        msg_types = [WM_ApproveWorld, WM_World_Client_CRC1, WM_World_Client_CRC2,
+                     WM_WorldClientReady]
+        for msg_type in msg_types:
+            msg = WorldMessage(msg_type)
+            self.send(msg)
+    
+    def begin_enter_world(self, char_name, tutorial=False, return_home=False):
+        request = WorldMessage(WM_EnterWorld)
+        body_chunks = []
+        body_chunks.append(char_name)
+        body_chunks.append("\x00")
+        padding = 64 - sum(len(chunk) for chunk in body_chunks)
+        body_chunks.append(struct.pack("<II", tutorial, return_home))
+        request.body = "".join(body_chunks)
+        self.send(request)
+    
     def end_login(self, response):
+        pass
+    
+    def end_char_selection(self, response):
         # Read the character info fields for all characters as arrays.
         msg = response
         num_chars = 10
@@ -715,6 +739,27 @@ class WorldClient(ApplicationClient):
         
         # Remove inexisting characters.
         return [char for char in characters if char.level]
+    
+    def end_enter_world(self, response):
+        return response["ZoneHost"], response["ZonePort"]
+    
+    def _parse_WM_MOTD(self, msg, packet):
+        motd, pos = self._read_c_string(packet, 0)
+        msg.add_param("MOTD", "s", motd)
+    
+    def _parse_WM_SetChatServer(self, msg, packet):
+        server, pos = self._read_c_string(packet, 0)
+        msg.add_param("Server", "s", server)
+    
+    def _parse_WM_SetChatServer2(self, msg, packet):
+        server, pos = self._read_c_string(packet, 0)
+        msg.add_param("Server", "s", server)
+    
+    def _parse_WM_ZoneServerInfo(self, msg, packet):
+        zone_host, pos = self._read_c_string(packet, 0)
+        zone_port, pos = self._read_field(packet, 128, "H")
+        msg.add_param("Host", "s", zone_host)
+        msg.add_param("Port", "H", zone_port)
 
 class ServerInfo(object):
     def __init__(self):
