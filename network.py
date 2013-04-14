@@ -21,6 +21,7 @@ import binascii
 import zlib
 import time
 import sys
+import os
 
 # Session message types.
 SM_SessionRequest = 0x01
@@ -273,9 +274,21 @@ class SessionClient(object):
         else:
             packet, remote = self.socket.recvfrom(1024)
             unwrapped = False
-            print("%s <<< %s" % (self._format_addr(remote),
+            if self.dump_prefix:
+                with self._open_dump_file() as f:
+                    f.write(packet)
+            else:
+                print("%s <<< %s" % (self._format_addr(remote),
                                  binascii.b2a_hex(packet).decode('utf8')))
         return packet, unwrapped
+    
+    def _open_dump_file(self):
+        counter = 0
+        while True:
+            name = "%s_%08x.packet" % (self.dump_prefix, counter)
+            if not os.path.exists(name):
+                return open(name, "wb")
+            counter += 1
     
     def _has_seq_num(self, sm_type):
         """ Determine whether the message has a sequence number parameter and
@@ -350,6 +363,7 @@ class ApplicationClient(object):
         self.pending_fragments = []
         self.fragmented_total_size = 0
         self.fragmented_current_size = 0
+        self.dump_prefix = None
     
     def __enter__(self):
         pass
@@ -362,6 +376,7 @@ class ApplicationClient(object):
         if self.session:
             return
         session = SessionClient(remote_addr)
+        session.dump_prefix = self.dump_prefix
         connected = False
         try:
             request = SessionMessage(SM_SessionRequest)

@@ -21,9 +21,11 @@ import sys
 import argparse
 import network
 
-def client_login(server_addr, username, password):
+def client_login(args):
     client = network.LoginClient()
-    client.connect(server_addr)
+    if args.dump_packets:
+        client.dump_prefix = "packet_login_%s" % time.strftime("%Y%m%d_%H-%M-%S")
+    client.connect((args.host, args.port))
     with client:
         stage = 0
         server_by_id = {}
@@ -37,7 +39,7 @@ def client_login(server_addr, username, password):
                 print("Chat message: %s" % client.end_get_chat_message(response))
                 stage = 1
                 handled = True
-                client.begin_login(username, password)
+                client.begin_login(args.user, args.password)
             elif (stage == 1) and (response.type == network.LM_LoginResponse):
                 # Waiting for a login response.
                 success, user_id, session_key = client.end_login(response)
@@ -76,7 +78,7 @@ def client_login(server_addr, username, password):
                     # HACK: give the login server a chance to tell the world
                     # server that we can log in.
                     time.sleep(0.1)
-                    client_play(server, sequence, session_key)
+                    client_play(args, server, sequence, session_key)
                 else:
                     print("Server '%s' (ID=%d) disallowed play, reason = %d." %
                         (server.name, server_id, status))
@@ -85,8 +87,10 @@ def client_login(server_addr, username, password):
                 print(response)
             response = client.receive()
 
-def client_play(server, sequence, session_key):
+def client_play(args, server, sequence, session_key):
     client = network.WorldClient()
+    if args.dump_packets:
+        client.dump_prefix = "packet_world_%s" % time.strftime("%Y%m%d_%H-%M-%S")
     server_addr = (server.host, 9000)
     client.connect(server_addr)
     with client:
@@ -111,9 +115,10 @@ def main():
     parser.add_argument("-P", "--port", type=int, default=5998)
     parser.add_argument("-u", "--user", default='user')
     parser.add_argument("-p", "--password", default='password')
+    parser.add_argument("--dump-packets", action='store_true', default=False)
     args = parser.parse_args()
     try:
-        client_login((args.host, args.port), args.user, args.password)
+        client_login(args)
     except KeyboardInterrupt:
         pass
 

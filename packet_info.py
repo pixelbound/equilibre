@@ -44,17 +44,20 @@ class PacketInfo(object):
             sub_packets = msg.unpack_combined()
             for sub_packet in sub_packets:
                 self.info_session(sub_packet, True, indent + 4)
-        else:
+        elif msg.type == network.SM_Fragment:
+            pass
+        elif msg.body:
             print("%s%s" % (indent_txt, binascii.b2a_hex(msg.body)))
     
     def info_app(self, packet, indent):
         indent_txt = " " * indent
         app_msg = self.app_client.parse_packet(packet)
         print("%s%s" % (indent_txt, str(app_msg)))
-        print("%s%s" % (indent_txt, binascii.b2a_hex(app_msg.body)))
-        txt = repr(app_msg.body)
-        escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
-        print("%s%s" % (indent_txt, escaped_txt))
+        if app_msg.body:
+            print("%s%s" % (indent_txt, binascii.b2a_hex(app_msg.body)))
+            txt = repr(app_msg.body)
+            escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
+            print("%s%s" % (indent_txt, escaped_txt))
 
 def main():
     parser = argparse.ArgumentParser(description='Interpret EQ packet files.')
