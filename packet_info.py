@@ -31,33 +31,35 @@ class PacketInfo(object):
             self.app_client = network.WorldClient()
             self.session.compressed = True
 
-    def info(self, packet):
-        self.info_session(packet, False, 4)
+    def message(self, msg, depth):
+        indent_txt = " " * ((depth + 1) * 4)
+        print("%s%s" % (indent_txt, msg))
 
-    def info_session(self, packet, unwrapped, indent):
-        indent_txt = " " * indent
+    def info(self, packet):
+        self.info_session(packet, False, 0)
+
+    def info_session(self, packet, unwrapped, depth):
         msg = self.session.parse_packet(packet, unwrapped)
-        print("%s%s" % (indent_txt, str(msg)))
+        self.message(str(msg), depth)
         if msg.type == network.SM_ApplicationPacket:
-            self.info_app(msg.body, indent + 4)
+            self.info_app(msg.body, depth + 1)
         elif msg.type == network.SM_Combined:
             sub_packets = msg.unpack_combined()
             for sub_packet in sub_packets:
-                self.info_session(sub_packet, True, indent + 4)
+                self.info_session(sub_packet, True, depth + 1)
         elif msg.type == network.SM_Fragment:
             pass
         elif msg.body:
-            print("%s%s" % (indent_txt, binascii.b2a_hex(msg.body)))
+            self.message(binascii.b2a_hex(msg.body), depth)
     
-    def info_app(self, packet, indent):
-        indent_txt = " " * indent
+    def info_app(self, packet, depth):
         app_msg = self.app_client.parse_packet(packet)
-        print("%s%s" % (indent_txt, str(app_msg)))
+        self.message(str(app_msg), depth)
         if app_msg.body:
-            print("%s%s" % (indent_txt, binascii.b2a_hex(app_msg.body)))
+            self.message(binascii.b2a_hex(app_msg.body), depth)
             txt = repr(app_msg.body)
             escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
-            print("%s%s" % (indent_txt, escaped_txt))
+            self.message(escaped_txt, depth)
 
 def main():
     parser = argparse.ArgumentParser(description='Interpret EQ packet files.')
