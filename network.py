@@ -358,6 +358,35 @@ class SessionClient(object):
         msg.deserialize(packet)
         return msg
 
+class FragmentState(object):
+    def __init__(self):
+        self.fragments = []
+        self.total_size = 0
+        self.current_size = 0
+    
+    @property
+    def complete(self):
+        return self.current_size == self.total_size
+    
+    def add_fragment(self, fragment):
+        if not self.fragments:
+            # First fragment that contains the total size.
+            self.total_size = struct.unpack("!I", fragment[0:4])[0]
+            self.current_size = len(fragment) - 4
+            self.fragments.append(fragment[4:])
+        else:
+            self.fragments.append(fragment)
+            self.current_size += len(fragment)
+    
+    def assemble(self):
+        if not self.complete:
+            raise Exception("Some fragments are missing, cannot assemble the packet. ")
+        whole_packet = "".join(self.fragments)
+        self.fragments = []
+        self.total_size = 0
+        self.current_size = 0
+        return whole_packet
+
 class ApplicationClient(object):
     """ High-level interface to send and receive messages over a session. """
     def __init__(self, ns, msg_types, compressed):
@@ -366,9 +395,7 @@ class ApplicationClient(object):
         self.session_id = 0x26ec5075 # XXX Should it be random?
         self.session = None
         self.compressed = compressed
-        self.pending_fragments = []
-        self.fragmented_total_size = 0
-        self.fragmented_current_size = 0
+        self.fragment_state = FragmentState()
         self.dump_prefix_incoming = None
         self.dump_prefix_outgoing = None
     
@@ -429,23 +456,9 @@ class ApplicationClient(object):
             elif session_msg.type == SM_ApplicationPacket:
                 return self.parse_packet(session_msg.body)
             elif session_msg.type == SM_Fragment:
-                if not self.pending_fragments:
-                    # First fragment that contains the total size.
-                    self.fragmented_total_size = struct.unpack("!I", session_msg.body[0:4])[0]
-                    self.fragmented_current_size = len(session_msg.body) - 4
-                    self.pending_fragments.append(session_msg.body[4:])
-                else:
-                    self.pending_fragments.append(session_msg.body)
-                    self.fragmented_current_size += len(session_msg.body)
-                #print("Fragment data: %d/%d" % (self.fragmented_current_size,
-                #                                self.fragmented_total_size))
-                if self.fragmented_current_size == self.fragmented_total_size:
-                    complete_packet = "".join(self.pending_fragments)
-                    #print("Complete packet: %s" % binascii.b2a_hex(complete_packet))
-                    self.pending_fragments = []
-                    self.fragmented_final_size = 0
-                    self.fragmented_current_size = 0
-                    return self.parse_packet(complete_packet)
+                self.fragment_state.add_fragment(session_msg.body)
+                if self.fragment_state.complete:
+                    return self.parse_packet(self.fragment_state.assemble())
             else:
                 print("Unexpected session message: %s" % session_msg)
                 return None
