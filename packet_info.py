@@ -44,22 +44,26 @@ class PacketInfo(object):
 
     def info_session(self, file, packet, unwrapped, depth):
         msg = self.session.parse_packet(packet, unwrapped)
-        verbose_msg = (msg.type in (network.SM_Ack, network.SM_Fragment))
+        verbose_msg = (msg.type in (network.SM_Ack, network.SM_Fragment,
+                                    network.SM_Combined, network.SM_ApplicationPacket))
         if not verbose_msg or self.args.verbose:
             self.message(str(msg), depth)
             if (depth == 0) and self.args.verbose:
                 print("Packet '%s'" % file)
+            child_depth = depth + 1
+        else:
+            child_depth = depth
         if msg.type == network.SM_ApplicationPacket:
-            self.info_app(msg.body, depth + 1)
+            self.info_app(msg.body, child_depth)
         elif msg.type == network.SM_Combined:
             sub_packets = msg.unpack_combined()
             for sub_packet in sub_packets:
-                self.info_session(file, sub_packet, True, depth + 1)
+                self.info_session(file, sub_packet, True, child_depth)
         elif msg.type == network.SM_Fragment:
             self.fragment_state.add_fragment(msg.body)
             if self.fragment_state.complete:
                 whole_packet = self.fragment_state.assemble()
-                self.info_app(whole_packet, depth)
+                self.info_app(whole_packet, child_depth)
         elif msg.body:
             self.message(binascii.b2a_hex(msg.body), depth)
     
@@ -72,6 +76,7 @@ class PacketInfo(object):
             txt = repr(body_printed)
             escaped_txt = re.sub(r"\\x[0-9a-fA-F]{2}", ".", txt)
             self.message(escaped_txt, depth)
+        print("")
 
 def main():
     parser = argparse.ArgumentParser(description='Interpret EQ packet files.')
