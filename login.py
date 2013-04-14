@@ -99,6 +99,7 @@ def client_play(args, server, sequence, session_key):
     server_addr = (server.host, 9000)
     client.connect(server_addr)
     characters = []
+    character_name = None
     with client:
         stage = 0
         client.begin_login(sequence, session_key)
@@ -117,12 +118,41 @@ def client_play(args, server, sequence, session_key):
                 for char in characters:
                     print("%s (level: %d, class: %d, race: %d, zone: %d)" %
                         (char.name, char.level, char.class_id, char.race, char.zone))
-                stage = 2
+                # Login with the first character in the list.
                 handled = True
-                client.begin_enter_world(char.name)
+                if characters:
+                    stage = 2
+                    character_name = characters[0].name
+                    client.begin_enter_world(character_name)
+                else:
+                    print("No character to play with, exiting.")
+                    break
             elif (stage == 2) and (response.type == network.WM_ZoneServerInfo):
                 # Waiting for entering the world.
-                pass
+                zone_host, zone_port = client.end_enter_world(response)
+                handled = True
+                # HACK: give the world server a chance to tell the zone
+                # server that we are entering the zone.
+                time.sleep(0.1)
+                client_enter_zone(args, (zone_host, zone_port), character_name)
+                break
+            if not handled:
+                print(response)
+            response = client.receive()
+
+def client_enter_zone(args, server_addr, char_name):
+    client = network.ZoneClient()
+    if args.dump_packets:
+        timestamp = time.strftime("%Y%m%d_%H-%M-%S")
+        client.dump_prefix_incoming = "dump_zone_inc_%s" % timestamp
+        client.dump_prefix_outgoing = "dump_zone_out_%s" % timestamp
+    client.connect(server_addr)
+    with client:
+        stage = 0
+        client.begin_enter_zone(char_name)
+        response = client.receive()
+        while response:
+            handled = False
             if not handled:
                 print(response)
             response = client.receive()

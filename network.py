@@ -67,6 +67,14 @@ WM_World_Client_CRC1 = 0x5072
 WM_World_Client_CRC2 = 0x5b18
 WM_WorldComplete = 0x509d
 WM_ZoneServerInfo = 0x61b6
+WM_PlayerProfile = 0x75df
+WM_ZoneSpawns = 0x2e78
+WM_CharInventory = 0x5394
+WM_TimeOfDay = 0x1580
+WM_TributeUpdate = 0x5639
+WM_TributeTimer = 0x4665
+WM_CompletedTasks = 0x76a2
+WM_Weather = 0x254d
 WM_ZoneEntry = 0x7213
 WM_ReqNewZone = 0x7ac5
 WM_SendExpZonein = 0x0587
@@ -741,7 +749,7 @@ class WorldClient(ApplicationClient):
         return [char for char in characters if char.level]
     
     def end_enter_world(self, response):
-        return response["ZoneHost"], response["ZonePort"]
+        return response["Host"], response["Port"]
     
     def _parse_WM_MOTD(self, msg, packet):
         motd, pos = self._read_c_string(packet, 0)
@@ -760,6 +768,22 @@ class WorldClient(ApplicationClient):
         zone_port, pos = self._read_field(packet, 128, "H")
         msg.add_param("Host", "s", zone_host)
         msg.add_param("Port", "H", zone_port)
+
+class ZoneClient(ApplicationClient):
+    """ High-level interface to talk to a world server. """
+    def __init__(self):
+        super(ZoneClient, self).__init__("WM", WM_Types, True)
+    
+    def begin_enter_zone(self, char_name):
+        request = WorldMessage(WM_ZoneEntry)
+        body_chunks = []
+        body_chunks.append(struct.pack("<I", 0))
+        body_chunks.append(char_name)
+        body_chunks.append("\x00")
+        padding = 68 - sum(len(chunk) for chunk in body_chunks)
+        body_chunks.append("\x00" * padding)
+        request.body = "".join(body_chunks)
+        self.send(request)
 
 class ServerInfo(object):
     def __init__(self):
