@@ -24,7 +24,9 @@ import network
 def client_login(args):
     client = network.LoginClient()
     if args.dump_packets:
-        client.dump_prefix = "packet_login_%s" % time.strftime("%Y%m%d_%H-%M-%S")
+        timestamp = time.strftime("%Y%m%d_%H-%M-%S")
+        client.dump_prefix_incoming = "packet_login_inc_%s" % timestamp
+        client.dump_prefix_outgoing = "packet_login_out_%s" % timestamp
     client.connect((args.host, args.port))
     with client:
         stage = 0
@@ -90,7 +92,9 @@ def client_login(args):
 def client_play(args, server, sequence, session_key):
     client = network.WorldClient()
     if args.dump_packets:
-        client.dump_prefix = "packet_world_%s" % time.strftime("%Y%m%d_%H-%M-%S")
+        timestamp = time.strftime("%Y%m%d_%H-%M-%S")
+        client.dump_prefix_incoming = "packet_world_inc_%s" % timestamp
+        client.dump_prefix_outgoing = "packet_world_out_%s" % timestamp
     server_addr = (server.host, 9000)
     client.connect(server_addr)
     with client:

@@ -194,6 +194,8 @@ class SessionClient(object):
         self.next_seq_in = 0
         self.next_seq_out = 0
         self.pending_packets = []
+        self.dump_prefix_incoming = None
+        self.dump_prefix_outgoing = None
     
     def close(self):
         self.socket.close()
@@ -262,8 +264,11 @@ class SessionClient(object):
     
     def _send_packet(self, packet):
         """ Send a session packet to the server. """
-        print("%s >>> %s" % (self._format_addr(self.addr),
-                             binascii.b2a_hex(packet).decode('utf8')))
+        if self.dump_prefix_outgoing:
+                self._dump_packet(self.dump_prefix_outgoing, packet)
+        else:
+            print("%s >>> %s" % (self._format_addr(self.addr),
+                                 binascii.b2a_hex(packet).decode('utf8')))
         self.socket.sendto(bytes(packet), self.addr)
     
     def _receive_packet(self, max_size=1024):
@@ -274,20 +279,21 @@ class SessionClient(object):
         else:
             packet, remote = self.socket.recvfrom(1024)
             unwrapped = False
-            if self.dump_prefix:
-                with self._open_dump_file() as f:
-                    f.write(packet)
+            if self.dump_prefix_incoming:
+                self._dump_packet(self.dump_prefix_incoming, packet)
             else:
                 print("%s <<< %s" % (self._format_addr(remote),
                                  binascii.b2a_hex(packet).decode('utf8')))
         return packet, unwrapped
     
-    def _open_dump_file(self):
+    def _dump_packet(self, dump_prefix, packet):
         counter = 0
         while True:
-            name = "%s_%08x.packet" % (self.dump_prefix, counter)
+            name = "%s_%08x.packet" % (dump_prefix, counter)
             if not os.path.exists(name):
-                return open(name, "wb")
+                with open(name, "wb") as f:
+                    f.write(packet)
+                break
             counter += 1
     
     def _has_seq_num(self, sm_type):
@@ -363,7 +369,8 @@ class ApplicationClient(object):
         self.pending_fragments = []
         self.fragmented_total_size = 0
         self.fragmented_current_size = 0
-        self.dump_prefix = None
+        self.dump_prefix_incoming = None
+        self.dump_prefix_outgoing = None
     
     def __enter__(self):
         pass
@@ -376,7 +383,8 @@ class ApplicationClient(object):
         if self.session:
             return
         session = SessionClient(remote_addr)
-        session.dump_prefix = self.dump_prefix
+        session.dump_prefix_incoming = self.dump_prefix_incoming
+        session.dump_prefix_outgoing = self.dump_prefix_outgoing
         connected = False
         try:
             request = SessionMessage(SM_SessionRequest)
