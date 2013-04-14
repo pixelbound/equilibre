@@ -32,7 +32,7 @@ class PacketInfo(object):
             self.session.compressed = True
 
     def info(self, packet):
-        self.info_session(packet, False, 0)
+        self.info_session(packet, False, 4)
 
     def info_session(self, packet, unwrapped, indent):
         indent_txt = " " * indent
@@ -65,10 +65,10 @@ def main():
     parser.add_argument("-n", "--namespace", default="WM",
                    help='Message namespace (LM for login messages, WM for world messages)')
     args = parser.parse_args()
+    p = PacketInfo(args)
     for file in args.files:
-        print("Reading packet '%s'." % file)
+        print("Packet '%s'" % file)
         with open(file, "rb") as f:
-            p = PacketInfo(args)
             p.info(f.read())     
 
 if __name__ == "__main__":
