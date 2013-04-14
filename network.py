@@ -154,6 +154,22 @@ class Message(object):
 class SessionMessage(Message):
     def __init__(self, type):
         super(SessionMessage, self).__init__("SM", type)
+    
+    def unpack_combined(self):
+        if self.type != SM_Combined:
+            raise ValueError("Not a SM_Combined packet.")
+        pos = 0
+        data = self.body
+        sub_packets = []
+        while pos < len(data):
+            sub_msg_len = ord(data[pos])
+            pos += 1
+            if (pos + sub_msg_len) > len(data):
+                raise Exception("Sub-message length out of range.")
+            sub_msg_data = data[pos:pos + sub_msg_len]
+            pos += sub_msg_len
+            sub_packets.append(sub_msg_data)
+        return sub_packets
 
 class LoginMessage(Message):
     def __init__(self, type):
@@ -192,16 +208,8 @@ class SessionClient(object):
                         % (seq_num, self.next_seq_out - 1))
                 self.next_ack_in = seq_num + 1
             elif session_msg.type == SM_Combined:
-                pos = 0
-                data = session_msg.body
-                while pos < len(data):
-                    sub_msg_len = ord(data[pos])
-                    pos += 1
-                    if (pos + sub_msg_len) > len(data):
-                        raise Exception("Sub-message length out of range.")
-                    sub_msg_data = data[pos:pos + sub_msg_len]
-                    pos += sub_msg_len
-                    self.pending_packets.append((sub_msg_data, True))
+                for sub_msg in session_msg.unpack_combined():
+                    self.pending_packets.append((sub_msg, True))
             elif self._has_seq_num(session_msg.type):
                 # Only accept messages in order.
                 seq_num = session_msg["SeqNum"]
@@ -444,8 +452,7 @@ class ApplicationClient(object):
             if hasattr(self, fn_name):
                 fn = getattr(self, fn_name)
                 fn(msg, packet)
-            else:
-                msg.body = packet
+        msg.body = packet
         return msg
     
     def _read_c_string(self, data, pos):
