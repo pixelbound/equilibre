@@ -184,7 +184,7 @@ class SessionClient(object):
             if not packet:
                 # XXX Is it really possible to receive zero from recvfrom?
                 return None
-            session_msg = self._parse_packet(packet, unwrapped)
+            session_msg = self.parse_packet(packet, unwrapped)
             if session_msg.type == SM_Ack:
                 seq_num = session_msg["SeqNum"]
                 if seq_num >= self.next_seq_out:
@@ -278,7 +278,7 @@ class SessionClient(object):
         crc = binascii.crc32(data, crc)
         return crc & 0xffffffff
     
-    def _parse_packet(self, packet, unwrapped=False):
+    def parse_packet(self, packet, unwrapped=False):
         """ Parse a session packet. """
         # Extract the message type and CRC and validate them.
         msg_type = struct.unpack("!H", packet[0:2])[0]
@@ -392,7 +392,7 @@ class ApplicationClient(object):
                 self.active = False
                 return None
             elif session_msg.type == SM_ApplicationPacket:
-                return self._parse_packet(session_msg.body)
+                return self.parse_packet(session_msg.body)
             elif session_msg.type == SM_Fragment:
                 if not self.pending_fragments:
                     # First fragment that contains the total size.
@@ -410,7 +410,7 @@ class ApplicationClient(object):
                     self.pending_fragments = []
                     self.fragmented_final_size = 0
                     self.fragmented_current_size = 0
-                    return self._parse_packet(complete_packet)
+                    return self.parse_packet(complete_packet)
             else:
                 print("Unexpected session message: %s" % session_msg)
                 return None
@@ -423,7 +423,7 @@ class ApplicationClient(object):
         session_msg.body = app_msg.serialize()
         self.session.send(session_msg)
 
-    def _parse_packet(self, packet):
+    def parse_packet(self, packet):
         """ Parse an application message from a received packet. """
         # Extract the message type.
         msg_type, packet = struct.unpack("<H", packet[0:2])[0], packet[2:]
